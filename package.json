@@ -1,0 +1,11 @@
+{
+  "name": "bril",
+  "version": "1.0.0",
+  "main": "build/bril.js",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@types/node": "^11.13.5",
+    "typescript": "^3.4.3"
+  }
+}
