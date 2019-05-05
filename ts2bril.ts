@@ -24,7 +24,7 @@ class Builder {
 
   buildConst(value: bril.ConstValue, dest?: string) {
     dest = dest || this.fresh();
-    let instr: bril.Const = { value, dest };
+    let instr: bril.Const = { op: "const", value, dest };
     this.insertInstr(instr);
     return instr;
   }

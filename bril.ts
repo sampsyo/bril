@@ -14,6 +14,7 @@ export interface Operation {
 export type ConstValue = number;
 
 export interface Const {
+  op: "const";
   value: ConstValue;
   dest: Ident;
 }
