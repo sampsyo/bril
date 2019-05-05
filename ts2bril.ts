@@ -5,31 +5,47 @@ class Builder {
   public program: bril.Program = { functions: [] };
 
   private curFunction: bril.Function | null = null;
+  private nextFresh: number = 0;
 
   buildFunction(name: string) {
     let func: bril.Function = { name, instrs: [] };
     this.program.functions.push(func);
     this.curFunction = func;
+    this.nextFresh = 0;
     return func;
   }
 
-  insertInstr(instr: bril.Instruction) {
+  buildOp(op: bril.OpCode, args: string[], dest?: string) {
+    dest = dest || this.fresh();
+    let instr: bril.Operation = { op, args, dest };
+    this.insertInstr(instr);
+    return instr;
+  }
+
+  buildConst(value: bril.ConstValue, dest?: string) {
+    dest = dest || this.fresh();
+    let instr: bril.Const = { value, dest };
+    this.insertInstr(instr);
+    return instr;
+  }
+
+  /**
+   * Insert an instruction at the end of the current function.
+   */
+  private insertInstr(instr: bril.Instruction) {
     if (!this.curFunction) {
       throw "cannot build instruction without a function";
     }
     this.curFunction.instrs.push(instr);
   }
 
-  buildOp(op: bril.OpCode, args: string[], dest: string) {
-    let instr: bril.Operation = { op, args, dest };
-    this.insertInstr(instr);
-    return instr;
-  }
-
-  buildConst(value: bril.ConstValue, dest: string) {
-    let instr: bril.Const = { value, dest };
-    this.insertInstr(instr);
-    return instr;
+  /**
+   * Generate an unused variable name.
+   */
+  private fresh() {
+    let out = '%' + this.nextFresh.toString();
+    this.nextFresh += 1;
+    return out;
   }
 }
 
@@ -45,7 +61,7 @@ function emitBril(prog: ts.Node): bril.Program {
     case ts.SyntaxKind.NumericLiteral:
       let lit = expr as ts.NumericLiteral;
       let val = parseInt(lit.text);
-      return builder.buildConst(val, "xxx");
+      return builder.buildConst(val);
     
     default:
       throw "unsupported expression kind";
