@@ -23,24 +23,42 @@ class Builder {
   }
 }
 
+/**
+ * Compile a complete TypeScript AST to a Bril program.
+ */
 function emitBril(node: ts.Node): bril.Program {
   let builder = new Builder();
   builder.buildFunction("main");
 
   function emit(node: ts.Node) {
     switch (node.kind) {
-      case ts.SyntaxKind.IfStatement:
-        //console.log(node);
+      // Descend through containers.
+      case ts.SyntaxKind.SourceFile:
+      case ts.SyntaxKind.Block:
+      case ts.SyntaxKind.VariableStatement:
+      case ts.SyntaxKind.VariableDeclarationList:
+        ts.forEachChild(node, emit);
         break;
+
+      // No-op.
+      case ts.SyntaxKind.EndOfFileToken:
+        break;
+
+      // Emit declarations.
       case ts.SyntaxKind.VariableDeclaration:
         let decl = node as ts.VariableDeclaration;
         builder.buildInstr(bril.Operation.id, ["foo"], decl.name.getText());
         break;
+      
+      // Operations.
       case ts.SyntaxKind.BinaryExpression:
-        //console.log(node);
+        console.log(node);
+        break;
+      
+      default:
+        console.error('unhandled TypeScript AST node', node.kind);
         break;
     }
-    ts.forEachChild(node, emit);
   }
 
   emit(node);
