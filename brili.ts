@@ -6,9 +6,19 @@ type Env = Map<bril.Ident, bril.ConstValue>;
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
   if (!val) {
-      throw `undefined variable ${ident}`;
+    throw `undefined variable ${ident}`;
   }
   return val;
+}
+
+/**
+ * Ensure that the instruction has exactly `count` arguments,
+ * throwing an exception otherwise.
+ */
+function checkArgs(instr: bril.Operation, count: number) {
+  if (instr.args.length != count) {
+    throw `${instr.op} takes ${count} argument(s); got ${instr.args.length}`;
+  }
 }
 
 function evalInstr(instr: bril.Instruction, env: Env) {
@@ -18,18 +28,14 @@ function evalInstr(instr: bril.Instruction, env: Env) {
     break;
 
   case bril.OpCode.id: {
-    if (instr.args.length != 1) {
-      throw `id takes 1 argument`;
-    }
+    checkArgs(instr, 1);
     let val = get(env, instr.args[0]);
     env.set(instr.dest, val);
     break;
   }
 
   case bril.OpCode.add: {
-    if (instr.args.length != 2) {
-      throw `add takes 2 arguments`;
-    }
+    checkArgs(instr, 2);
     let lhs = get(env, instr.args[0]);
     let rhs = get(env, instr.args[1]);
     let val = lhs + rhs;
