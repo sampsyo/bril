@@ -60,9 +60,13 @@ function emitBril(prog: ts.Node): bril.Program {
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral:
       let lit = expr as ts.NumericLiteral;
-      let val = parseInt(lit.text);
+      let val = parseInt(lit.getText());
       return builder.buildConst(val);
     
+    case ts.SyntaxKind.Identifier:
+      let ident = expr as ts.Identifier;
+      return builder.buildOp(bril.OpCode.id, [ident.getText()]);
+
     default:
       throw "unsupported expression kind";
     }
