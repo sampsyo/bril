@@ -23,7 +23,7 @@ class Builder {
   }
 }
 
-function emitBril(node: ts.Node) {
+function emitBril(node: ts.Node): bril.Program {
   let builder = new Builder();
   builder.buildFunction("main");
 
@@ -34,7 +34,7 @@ function emitBril(node: ts.Node) {
         break;
       case ts.SyntaxKind.VariableDeclaration:
         let decl = node as ts.VariableDeclaration;
-        builder.buildInstr("id", ["foo"], decl.name.getText());
+        builder.buildInstr(bril.Operation.id, ["foo"], decl.name.getText());
         break;
       case ts.SyntaxKind.BinaryExpression:
         //console.log(node);

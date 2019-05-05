@@ -1,5 +1,9 @@
-export type Operation = "add" | "id";
 export type Ident = string;
+
+export const enum Operation {
+  add = "add",
+  id = "id",
+}
 
 export interface Instruction {
   op: Operation;
