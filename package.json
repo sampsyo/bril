@@ -4,7 +4,8 @@
   "license": "MIT",
   "private": true,
   "bin": {
-    "ts2bril": "build/ts2bril.js"
+    "ts2bril": "build/ts2bril.js",
+    "brili": "build/brili.js"
   },
   "dependencies": {
     "@types/node": "^11.13.5",

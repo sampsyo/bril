@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import * as bril from './bril';
+import {readStdin} from './util';
 
 class Builder {
   public program: bril.Program = { functions: [] };
@@ -148,20 +149,6 @@ function emitBril(prog: ts.Node): bril.Program {
 
   emit(prog);
   return builder.program;
-}
-
-/**
- * Read all the data from stdin as a string.
- */
-function readStdin(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let chunks: string[] = [];
-    process.stdin.on("data", function (chunk: string) {
-      chunks.push(chunk);
-    }).on("end", function () {
-      resolve(chunks.join(""))
-    }).setEncoding("utf8");
-  });
 }
 
 async function main() {
