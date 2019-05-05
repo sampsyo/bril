@@ -3,6 +3,7 @@ export type Ident = string;
 export const enum OpCode {
   add = "add",
   id = "id",
+  print = "print",
 }
 
 export interface Operation {

@@ -69,10 +69,24 @@ function emitBril(prog: ts.Node): bril.Program {
     
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
+      let kind = bin.operatorToken.kind;
+
+      // Handle assignments.
+      switch (kind) {
+      case ts.SyntaxKind.EqualsToken:
+        if (!ts.isIdentifier(bin.left)) {
+          throw "assignment to non-variables unsupported";
+        }
+        let dest = bin.left as ts.Identifier;
+        let rhs = emitExpr(bin.right);
+        return builder.buildOp(bril.OpCode.id, [rhs.dest], dest.getText());
+      }
+
+      // Handle "normal" value operators.
       let lhs = emitExpr(bin.left);
       let rhs = emitExpr(bin.right);
       let op;
-      switch (bin.operatorToken.kind) {
+      switch (kind) {
       case ts.SyntaxKind.PlusToken:
         op = bril.OpCode.add;
         break;
@@ -80,7 +94,17 @@ function emitBril(prog: ts.Node): bril.Program {
         throw "unhandled binary operator kind";
       }
       return builder.buildOp(op, [lhs.dest, rhs.dest]);
-      
+    
+    // Support call instructions---but only for printing, for now.
+    case ts.SyntaxKind.CallExpression:
+      let call = expr as ts.CallExpression;
+      if (call.expression.getText() === "console.log") {
+        let values = call.arguments.map(emitExpr);
+        return builder.buildOp(bril.OpCode.print, values.map(v => v.dest));
+      } else {
+        throw "function calls unsupported";
+      }
+
     default:
       throw "unsupported expression kind";
     }
@@ -103,13 +127,17 @@ function emitBril(prog: ts.Node): bril.Program {
       // Emit declarations.
       case ts.SyntaxKind.VariableDeclaration:
         let decl = node as ts.VariableDeclaration;
-
         // Declarations without initializers are no-ops.
         if (decl.initializer) {
           let init = emitExpr(decl.initializer);
           builder.buildOp(bril.OpCode.id, [init.dest], decl.name.getText());
         }
-
+        break;
+      
+      // Expressions by themselves.
+      case ts.SyntaxKind.ExpressionStatement:
+        let exstmt = node as ts.ExpressionStatement;
+        emitExpr(exstmt.expression);  // Ignore the result.
         break;
       
       default:
