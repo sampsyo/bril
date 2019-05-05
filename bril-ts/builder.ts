@@ -37,7 +37,7 @@ export class Builder {
   /**
    * Build a constant instruction. As above, the destination name is optional.
    */
-  buildConst(value: bril.ConstValue, dest?: string) {
+  buildConst(value: bril.Value, dest?: string) {
     dest = dest || this.fresh();
     let instr: bril.Const = { op: "const", value, dest };
     this.insertInstr(instr);
