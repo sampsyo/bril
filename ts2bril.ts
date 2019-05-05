@@ -13,12 +13,22 @@ class Builder {
     return func;
   }
 
-  buildInstr(op: bril.Operation, args: string[], dest: string) {
-    let instr: bril.Instruction = { op, args, dest };
+  insertInstr(instr: bril.Instruction) {
     if (!this.curFunction) {
       throw "cannot build instruction without a function";
     }
     this.curFunction.instrs.push(instr);
+  }
+
+  buildOp(op: bril.OpCode, args: string[], dest: string) {
+    let instr: bril.Operation = { op, args, dest };
+    this.insertInstr(instr);
+    return instr;
+  }
+
+  buildConst(value: bril.ConstValue, dest: string) {
+    let instr: bril.Const = { value, dest };
+    this.insertInstr(instr);
     return instr;
   }
 }
@@ -26,9 +36,21 @@ class Builder {
 /**
  * Compile a complete TypeScript AST to a Bril program.
  */
-function emitBril(node: ts.Node): bril.Program {
+function emitBril(prog: ts.Node): bril.Program {
   let builder = new Builder();
   builder.buildFunction("main");
+
+  function emitExpr(expr: ts.Expression): bril.Instruction {
+    switch (expr.kind) {
+    case ts.SyntaxKind.NumericLiteral:
+      let lit = expr as ts.NumericLiteral;
+      let val = parseInt(lit.text);
+      return builder.buildConst(val, "xxx");
+    
+    default:
+      throw "unsupported expression kind";
+    }
+  }
 
   function emit(node: ts.Node) {
     switch (node.kind) {
@@ -47,7 +69,13 @@ function emitBril(node: ts.Node): bril.Program {
       // Emit declarations.
       case ts.SyntaxKind.VariableDeclaration:
         let decl = node as ts.VariableDeclaration;
-        builder.buildInstr(bril.Operation.id, ["foo"], decl.name.getText());
+
+        // Declarations without initializers are no-ops.
+        if (decl.initializer) {
+          let init = emitExpr(decl.initializer);
+          builder.buildOp(bril.OpCode.id, [init.dest], decl.name.getText());
+        }
+
         break;
       
       // Operations.
@@ -61,7 +89,7 @@ function emitBril(node: ts.Node): bril.Program {
     }
   }
 
-  emit(node);
+  emit(prog);
   return builder.program;
 }
 
