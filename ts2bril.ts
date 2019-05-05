@@ -66,7 +66,21 @@ function emitBril(prog: ts.Node): bril.Program {
     case ts.SyntaxKind.Identifier:
       let ident = expr as ts.Identifier;
       return builder.buildOp(bril.OpCode.id, [ident.getText()]);
-
+    
+    case ts.SyntaxKind.BinaryExpression:
+      let bin = expr as ts.BinaryExpression;
+      let lhs = emitExpr(bin.left);
+      let rhs = emitExpr(bin.right);
+      let op;
+      switch (bin.operatorToken.kind) {
+      case ts.SyntaxKind.PlusToken:
+        op = bril.OpCode.add;
+        break;
+      default:
+        throw "unhandled binary operator kind";
+      }
+      return builder.buildOp(op, [lhs.dest, rhs.dest]);
+      
     default:
       throw "unsupported expression kind";
     }
@@ -96,11 +110,6 @@ function emitBril(prog: ts.Node): bril.Program {
           builder.buildOp(bril.OpCode.id, [init.dest], decl.name.getText());
         }
 
-        break;
-      
-      // Operations.
-      case ts.SyntaxKind.BinaryExpression:
-        console.log(node);
         break;
       
       default:
