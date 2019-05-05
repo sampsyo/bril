@@ -1,8 +1,5 @@
 import * as ts from "typescript";
 import * as fs from "fs";
-import * as util from "util";
-
-const readFile = util.promisify(fs.readFile);
 
 function bril(node: ts.Node) {
   switch (node.kind) {
@@ -13,17 +10,28 @@ function bril(node: ts.Node) {
   ts.forEachChild(node, bril);
 }
 
+/**
+ * Read all the data from stdin as a string.
+ */
+function readStdin(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let chunks: string[] = [];
+    process.stdin.on("data", function (chunk: string) {
+      chunks.push(chunk);
+    }).on("end", function () {
+      resolve(chunks.join(""))
+    }).setEncoding("utf8");
+  });
+}
+
 async function main() {
-  const filenames = process.argv.slice(2);
-  for (let filename of filenames) {
-    let sf = ts.createSourceFile(
-      filename,
-      (await readFile(filename)).toString(),
-      ts.ScriptTarget.ES2015,
-      true,
-    );
-    bril(sf);
-  }
+  let sf = ts.createSourceFile(
+    '-',
+    await readStdin(),
+    ts.ScriptTarget.ES2015,
+    true,
+  );
+  bril(sf);
 }
 
 main();
