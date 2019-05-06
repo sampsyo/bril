@@ -1,7 +1,7 @@
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 
-type Env = Map<bril.Ident, bril.ConstValue>;
+type Env = Map<bril.Ident, bril.Value>;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
