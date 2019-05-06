@@ -21,6 +21,22 @@ function checkArgs(instr: bril.Operation, count: number) {
   }
 }
 
+function getInt(instr: bril.Operation, env: Env, index: number) {
+  let val = get(env, instr.args[index]);
+  if (typeof val !== 'number') {
+    throw `${instr.op} argument ${index} must be a number`;
+  }
+  return val;
+}
+
+function getBool(instr: bril.Operation, env: Env, index: number) {
+  let val = get(env, instr.args[index]);
+  if (typeof val !== 'boolean') {
+    throw `${instr.op} argument ${index} must be a boolean`;
+  }
+  return val;
+}
+
 function evalInstr(instr: bril.Instruction, env: Env) {
   switch (instr.op) {
   case "const":
@@ -36,9 +52,63 @@ function evalInstr(instr: bril.Instruction, env: Env) {
 
   case bril.OpCode.add: {
     checkArgs(instr, 2);
-    let lhs = get(env, instr.args[0]);
-    let rhs = get(env, instr.args[1]);
-    let val = lhs + rhs;
+    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.le: {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.lt: {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) < getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.gt: {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) > getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.ge: {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.eq: {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) === getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.not: {
+    checkArgs(instr, 1);
+    let val = !getBool(instr, env, 0);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.and: {
+    checkArgs(instr, 2);
+    let val = getBool(instr, env, 0) && getBool(instr, env, 1);
+    env.set(instr.dest, val);
+    break;
+  }
+
+  case bril.OpCode.or: {
+    checkArgs(instr, 2);
+    let val = getBool(instr, env, 0) || getBool(instr, env, 1);
     env.set(instr.dest, val);
     break;
   }

@@ -14,6 +14,14 @@ export const enum OpCode {
   add = "add",
   id = "id",
   print = "print",
+  eq = "eq",
+  lt = "lt",
+  gt = "gt",
+  ge = "ge",
+  le = "le",
+  not = "not",
+  and = "and",
+  or = "or",
 }
 
 /**
@@ -30,7 +38,7 @@ export interface Operation {
 /**
  * The type of Bril values that may appear in constants.
  */
-export type Value = number;
+export type Value = number | boolean;
 
 /**
  * An instruction that places a literal value into a variable.

@@ -3,6 +3,16 @@ import * as bril from './bril';
 import {Builder} from './builder';
 import {readStdin} from './util';
 
+const tokenToOp = new Map<ts.SyntaxKind, bril.OpCode>([
+  [ts.SyntaxKind.PlusToken,               bril.OpCode.add],
+  [ts.SyntaxKind.LessThanToken,           bril.OpCode.lt],
+  [ts.SyntaxKind.LessThanEqualsToken,     bril.OpCode.le],
+  [ts.SyntaxKind.GreaterThanToken,        bril.OpCode.lt],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  bril.OpCode.le],
+  [ts.SyntaxKind.EqualsEqualsToken,       bril.OpCode.eq],
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, bril.OpCode.eq],
+]);
+
 /**
  * Compile a complete TypeScript AST to a Bril program.
  */
@@ -12,10 +22,19 @@ function emitBril(prog: ts.Node): bril.Program {
 
   function emitExpr(expr: ts.Expression): bril.Instruction {
     switch (expr.kind) {
-    case ts.SyntaxKind.NumericLiteral:
+    case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
       let val = parseInt(lit.getText());
       return builder.buildConst(val);
+    }
+
+    case ts.SyntaxKind.TrueKeyword: {
+      return builder.buildConst(true);
+    }
+
+    case ts.SyntaxKind.FalseKeyword: {
+      return builder.buildConst(false);
+    }
 
     case ts.SyntaxKind.Identifier:
       let ident = expr as ts.Identifier;
@@ -39,13 +58,9 @@ function emitBril(prog: ts.Node): bril.Program {
       // Handle "normal" value operators.
       let lhs = emitExpr(bin.left);
       let rhs = emitExpr(bin.right);
-      let op;
-      switch (kind) {
-      case ts.SyntaxKind.PlusToken:
-        op = bril.OpCode.add;
-        break;
-      default:
-        throw "unhandled binary operator kind";
+      let op = tokenToOp.get(kind);
+      if (!op) {
+        throw `unhandled binary operator kind ${kind}`;
       }
       return builder.buildOp(op, [lhs.dest, rhs.dest]);
 
@@ -60,7 +75,7 @@ function emitBril(prog: ts.Node): bril.Program {
       }
 
     default:
-      throw "unsupported expression kind";
+      throw `unsupported expression kind: ${expr.getText()}`;
     }
   }
 
