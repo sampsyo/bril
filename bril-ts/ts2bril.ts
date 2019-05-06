@@ -94,7 +94,7 @@ function emitBril(prog: ts.Node): bril.Program {
         break;
 
       // Emit declarations.
-      case ts.SyntaxKind.VariableDeclaration:
+      case ts.SyntaxKind.VariableDeclaration: {
         let decl = node as ts.VariableDeclaration;
         // Declarations without initializers are no-ops.
         if (decl.initializer) {
@@ -102,16 +102,38 @@ function emitBril(prog: ts.Node): bril.Program {
           builder.buildOp(bril.OpCode.id, [init.dest], decl.name.getText());
         }
         break;
+      }
 
       // Expressions by themselves.
-      case ts.SyntaxKind.ExpressionStatement:
+      case ts.SyntaxKind.ExpressionStatement: {
         let exstmt = node as ts.ExpressionStatement;
         emitExpr(exstmt.expression);  // Ignore the result.
         break;
+      }
+
+      // Conditionals.
+      case ts.SyntaxKind.IfStatement: {
+        let if_ = node as ts.IfStatement;
+
+        // Branch.
+        let cond = emitExpr(if_.expression);
+        builder.buildOp(bril.OpCode.br, [cond.dest, "then", "else"]);
+
+        // Statement chunks.
+        builder.buildLabel("then");  // TODO unique name
+        emit(if_.thenStatement);
+        builder.buildOp(bril.OpCode.jmp, ["endif"]);
+        builder.buildLabel("else");
+        if (if_.elseStatement) {
+          emit(if_.elseStatement);
+        }
+        builder.buildLabel("endif");
+
+        break;
+      }
 
       default:
-        console.error('unhandled TypeScript AST node', node.kind);
-        break;
+        throw `unhandled TypeScript AST node kind ${node.kind}`;
     }
   }
 

@@ -7,10 +7,13 @@ start: func*
 
 func: CNAME "{" instr* "}"
 
-instr: VAR "=" "const" NUMBER
-  | VAR "=" CNAME VAR*
+instr: IDENT "=" "const" lit        -> const
+  | IDENT "=" CNAME IDENT*          -> op
+  | IDENT ":"                       -> label
 
-VAR: ("_"|"%"|LETTER) ("_"|"%"|LETTER|DIGIT)*
+lit: NUMBER | "true" | "false"
+
+IDENT: ("_"|"%"|LETTER) ("_"|"%"|LETTER|DIGIT)*
 
 %import common.NUMBER
 %import common.WS
@@ -29,7 +32,16 @@ class JSONTransformer(lark.Transformer):
         name = items.pop(0)
         return {'name': str(name), 'instrs': items}
 
-    def instr(self, items):
+    def const(self, items):
+        dest = items.pop(0)
+        val = items.pop(0)
+        return {
+            'op': 'const',
+            'dest': str(dest),
+            'value': str(val),
+        }
+
+    def op(self, items):
         dest = items.pop(0)
         op = items.pop(0)
         return {
@@ -37,6 +49,15 @@ class JSONTransformer(lark.Transformer):
             'dest': str(dest),
             'args': [str(t) for t in items],
          }
+
+    def label(self, items):
+        name = items.pop(0)
+        return {
+            'label': name,
+        }
+
+    def lit(self, items):
+        return str(items[0])
 
 
 def parse_bril(txt):

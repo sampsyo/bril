@@ -16,10 +16,17 @@ def print_instr(instr):
         ))
 
 
+def print_label(label):
+    print('{}:'.format(label['label']))
+
+
 def print_func(func):
     print('{} {{'.format(func['name']))
-    for instr in func['instrs']:
-        print_instr(instr)
+    for instr_or_label in func['instrs']:
+        if 'label' in instr_or_label:
+            print_label(instr_or_label)
+        else:
+            print_instr(instr_or_label)
     print('}')
 
 

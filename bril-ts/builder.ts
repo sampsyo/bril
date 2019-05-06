@@ -30,7 +30,7 @@ export class Builder {
   buildOp(op: bril.OpCode, args: string[], dest?: string) {
     dest = dest || this.fresh();
     let instr: bril.Operation = { op, args, dest };
-    this.insertInstr(instr);
+    this.insert(instr);
     return instr;
   }
 
@@ -40,16 +40,24 @@ export class Builder {
   buildConst(value: bril.Value, dest?: string) {
     dest = dest || this.fresh();
     let instr: bril.Const = { op: "const", value, dest };
-    this.insertInstr(instr);
+    this.insert(instr);
     return instr;
+  }
+
+  /**
+   * Add a label to the function at the current position.
+   */
+  buildLabel(name: string) {
+    let label = {label: name};
+    this.insert(label);
   }
 
   /**
    * Insert an instruction at the end of the current function.
    */
-  private insertInstr(instr: bril.Instruction) {
+  private insert(instr: bril.Instruction | bril.Label) {
     if (!this.curFunction) {
-      throw "cannot build instruction without a function";
+      throw "cannot build instruction/label without a function";
     }
     this.curFunction.instrs.push(instr);
   }

@@ -22,6 +22,8 @@ export const enum OpCode {
   not = "not",
   and = "and",
   or = "or",
+  br = "br",
+  jmp = "jmp",
 }
 
 /**
@@ -56,11 +58,18 @@ export interface Const {
 export type Instruction = Operation | Const;
 
 /**
+ * Jump labels just mark a position with a name.
+ */
+export interface Label {
+  label: Ident;
+}
+
+/**
  * A function consists of a sequence of instructions.
  */
 export interface Function {
   name: Ident;
-  instrs: Instruction[];
+  instrs: (Instruction | Label)[];
 }
 
 /**
