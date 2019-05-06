@@ -5,7 +5,7 @@ type Env = Map<bril.Ident, bril.Value>;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
-  if (!val) {
+  if (typeof val === 'undefined') {
     throw `undefined variable ${ident}`;
   }
   return val;

@@ -118,7 +118,7 @@ function emitBril(prog: ts.Node): bril.Program {
         // Branch.
         let cond = emitExpr(if_.expression);
         let invCond = builder.buildOp(bril.OpCode.not, [cond.dest]);
-        builder.buildOp(bril.OpCode.br, [cond.dest, "else"]);
+        builder.buildOp(bril.OpCode.br, [invCond.dest, "else"]);
 
         // Statement chunks.
         emit(if_.thenStatement);
