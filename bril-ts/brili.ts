@@ -135,9 +135,9 @@ function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
     checkArgs(instr, 3);
     let cond = getBool(instr, env, 0);
     if (cond) {
-      return instr.args[0];
-    } else {
       return instr.args[1];
+    } else {
+      return instr.args[2];
     }
   }
   }
