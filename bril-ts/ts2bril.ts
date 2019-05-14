@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as ts from 'typescript';
 import * as bril from './bril';
 import {Builder} from './builder';

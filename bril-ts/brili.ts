@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 

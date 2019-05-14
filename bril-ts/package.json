@@ -7,6 +7,9 @@
     "ts2bril": "build/ts2bril.js",
     "brili": "build/brili.js"
   },
+  "scripts": {
+    "build": "tsc && chmod a+x build/ts2bril.js build/brili.js"
+  },
   "dependencies": {
     "@types/node": "^11.13.5",
     "typescript": "^3.4.3"
