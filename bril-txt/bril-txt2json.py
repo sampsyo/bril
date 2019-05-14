@@ -11,8 +11,10 @@ instr: IDENT "=" "const" lit        -> const
   | IDENT "=" CNAME IDENT*          -> op
   | IDENT ":"                       -> label
 
-lit: NUMBER | "true" | "false"
+lit: NUMBER                         -> int
+  | BOOL                            -> bool
 
+BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|LETTER|DIGIT)*
 
 %import common.NUMBER
@@ -38,7 +40,7 @@ class JSONTransformer(lark.Transformer):
         return {
             'op': 'const',
             'dest': str(dest),
-            'value': str(val),
+            'value': val,
         }
 
     def op(self, items):
@@ -56,8 +58,14 @@ class JSONTransformer(lark.Transformer):
             'label': name,
         }
 
-    def lit(self, items):
-        return str(items[0])
+    def int(self, items):
+        return int(str(items[0]))
+
+    def bool(self, items):
+        if str(items[0]) == 'true':
+            return True
+        else:
+            return False
 
 
 def parse_bril(txt):
