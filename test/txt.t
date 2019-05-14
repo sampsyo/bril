@@ -5,7 +5,7 @@ Here's the program, translated to Bril's JSON representation:
 
 Here's the text representation:
 
-  $ python $TESTDIR/../bril-txt/bril-json2txt.py < test.json
+  $ python $TESTDIR/../bril-txt/bril2txt.py < test.json
   main {
     %0 = const 5
     x = id %0
@@ -15,6 +15,6 @@ Here's the text representation:
 
 Now we ensure that the translation back to JSON still works:
 
-  $ python $TESTDIR/../bril-txt/bril-json2txt.py < test.json > test.bril
-  $ python $TESTDIR/../bril-txt/bril-txt2json.py < test.bril | brili
+  $ python $TESTDIR/../bril-txt/bril2txt.py < test.json > test.bril
+  $ python $TESTDIR/../bril-txt/txt2bril.py < test.bril | brili
   5
