@@ -7,9 +7,11 @@ start: func*
 
 func: CNAME "{" instr* "}"
 
-instr: IDENT "=" "const" lit        -> const
-  | IDENT "=" CNAME IDENT*          -> op
-  | IDENT ":"                       -> label
+?instr: const | op | label
+
+const.3: IDENT "=" "const" lit
+op.2: IDENT "=" CNAME IDENT*
+label.1: IDENT ":"
 
 lit: NUMBER                         -> int
   | BOOL                            -> bool
