@@ -131,12 +131,12 @@ function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
   }
 
   case bril.OpCode.br: {
-    checkArgs(instr, 2);
+    checkArgs(instr, 3);
     let cond = getBool(instr, env, 0);
     if (cond) {
-      return instr.args[1];
+      return instr.args[0];
     } else {
-      return null;
+      return instr.args[1];
     }
   }
   }

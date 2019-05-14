@@ -117,10 +117,10 @@ function emitBril(prog: ts.Node): bril.Program {
 
         // Branch.
         let cond = emitExpr(if_.expression);
-        let invCond = builder.buildOp(bril.OpCode.not, [cond.dest]);
-        builder.buildOp(bril.OpCode.br, [invCond.dest, "else"]);
+        builder.buildOp(bril.OpCode.br, [cond.dest, "then", "else"]);
 
         // Statement chunks.
+        builder.buildLabel("then");  // TODO unique name
         emit(if_.thenStatement);
         builder.buildOp(bril.OpCode.jmp, ["endif"]);
         builder.buildLabel("else");  // TODO unique name
