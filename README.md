@@ -13,3 +13,24 @@ These things are written in TypeScript:
 - An interpreter (`brili`).
 
 And there is also a parser and dumper for a human-readable and -writable text format, written in Python, under `bril-txt`.
+
+
+Tests
+-----
+
+There are some tests in the `test/` directory.
+They use [Cram][], which lets us write the expected output for each shell command.
+Install it with [pip][]:
+
+    $ pip install --user cram
+
+Then run the tests:
+
+    $ cram test/*.t
+
+Or simply:
+
+    $ make test
+
+[cram]: https://bitheap.org/cram/
+[pip]: https://packaging.python.org/tutorials/installing-packages/
