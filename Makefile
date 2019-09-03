@@ -6,3 +6,7 @@ TESTS := test/parse/*.bril \
 .PHONY: test
 test:
 	turnt $(TESTS)
+
+.PHONY: save
+save:
+	turnt --save $(TESTS)
