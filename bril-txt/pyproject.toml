@@ -1,0 +1,17 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "briltxt"
+author = "Adrian Sampson"
+author-email = "asampson@cs.cornell.edu"
+home-page = "https://github.com/sampsyo/bril"
+requires-python = ">=3.4"
+requires = [
+    "lark-parser",
+]
+
+[tool.flit.scripts]
+bril2txt = "briltxt:bril2txt"
+bril2json = "briltxt:bril2json"
