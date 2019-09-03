@@ -64,6 +64,27 @@ function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
     return null;
   }
 
+  case "mul": {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) * getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return null;
+  }
+
+  case "sub": {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) - getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return null;
+  }
+
+  case "div": {
+    checkArgs(instr, 2);
+    let val = getInt(instr, env, 0) / getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return null;
+  }
+
   case "le": {
     checkArgs(instr, 2);
     let val = getInt(instr, env, 0) <= getInt(instr, env, 1);

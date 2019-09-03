@@ -20,7 +20,9 @@ export interface EffectOperation {
  * destination variable.
  */
 export interface ValueOperation {
-  op: "add" | "id" | "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+  op: "add" | "mul" | "sub" | "div" |
+      "id" |
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;
 }

@@ -6,10 +6,13 @@ import {readStdin} from './util';
 
 const tokenToOp = new Map<ts.SyntaxKind, bril.ValueOpCode>([
   [ts.SyntaxKind.PlusToken,               "add"],
+  [ts.SyntaxKind.AsteriskToken,           "mul"],
+  [ts.SyntaxKind.MinusToken,              "sub"],
+  [ts.SyntaxKind.SlashToken,              "div"],
   [ts.SyntaxKind.LessThanToken,           "lt"],
   [ts.SyntaxKind.LessThanEqualsToken,     "le"],
-  [ts.SyntaxKind.GreaterThanToken,        "lt"],
-  [ts.SyntaxKind.GreaterThanEqualsToken,  "le"],
+  [ts.SyntaxKind.GreaterThanToken,        "gt"],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  "ge"],
   [ts.SyntaxKind.EqualsEqualsToken,       "eq"],
   [ts.SyntaxKind.EqualsEqualsEqualsToken, "eq"],
 ]);
@@ -130,6 +133,34 @@ function emitBril(prog: ts.Node): bril.Program {
           emit(if_.elseStatement);
         }
         builder.buildLabel("endif");  // TODO
+
+        break;
+      }
+
+      // Plain "for" loops.
+      case ts.SyntaxKind.ForStatement: {
+        let for_ = node as ts.ForStatement;
+
+        // Initialization.
+        if (for_.initializer) {
+          emit(for_.initializer);
+        }
+
+        // Condition check.
+        builder.buildLabel("forcond");  // TODO unique name
+        if (for_.condition) {
+          let cond = emitExpr(for_.condition);
+          builder.buildEffect("br", [cond.dest, "forbody", "forend"]);
+        }
+        for_.incrementor
+
+        builder.buildLabel("forbody");  // TODO
+        emit(for_.statement);
+        if (for_.incrementor) {
+          emitExpr(for_.incrementor);
+        }
+        builder.buildEffect("jmp", ["forcond"]);
+        builder.buildLabel("forend");  // TODO
 
         break;
       }
