@@ -1,4 +1,4 @@
 main {
   v = const 5
-  x = print v
+  print v
 }

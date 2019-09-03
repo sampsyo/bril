@@ -6,13 +6,15 @@ main {
   %3 = add %1 %2
   %4 = const 6
   %5 = lt %3 %4
-  %6 = br %5 then else
+  br %5 then else
 then:
-  %7 = const 1
-  %8 = print %7
-  %9 = jmp endif
+  %6 = const 1
+  print %6
+  %7 = const 0
+  jmp endif
 else:
-  %10 = const 2
-  %11 = print %10
+  %8 = const 2
+  print %8
+  %9 = const 0
 endif:
 }

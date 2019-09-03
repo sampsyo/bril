@@ -24,12 +24,21 @@ export class Builder {
   }
 
   /**
-   * Build an operation instruction. If the name is omitted, a fresh variable
-   * is chosen automatically.
+   * Build an operation instruction that produces a result. If the name is
+   * omitted, a fresh variable is chosen automatically.
    */
-  buildOp(op: bril.OpCode, args: string[], dest?: string) {
+  buildValue(op: bril.ValueOpCode, args: string[], dest?: string) {
     dest = dest || this.fresh();
-    let instr: bril.Operation = { op, args, dest };
+    let instr: bril.ValueOperation = { op, args, dest };
+    this.insert(instr);
+    return instr;
+  }
+
+  /**
+   * Build a non-value-producing (side-effecting) operation instruction.
+   */
+  buildEffect(op: bril.EffectOpCode, args: string[]) {
+    let instr: bril.EffectOperation = { op, args };
     this.insert(instr);
     return instr;
   }

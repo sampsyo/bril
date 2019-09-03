@@ -8,31 +8,19 @@
 export type Ident = string;
 
 /**
- * The choice of operation for an `Operation` instruction.
+ * An instruction that does not produce any result.
  */
-export const enum OpCode {
-  add = "add",
-  id = "id",
-  print = "print",
-  eq = "eq",
-  lt = "lt",
-  gt = "gt",
-  ge = "ge",
-  le = "le",
-  not = "not",
-  and = "and",
-  or = "or",
-  br = "br",
-  jmp = "jmp",
+export interface EffectOperation {
+  op: "br" | "jmp" | "print";
+  args: Ident[];
 }
 
 /**
- * An instruction that manipulates arguments, which come from
- * previously-assigned identifiers, and places a result in the destination
- * variable.
+ * An operation that produces a value and places its result in the
+ * destination variable.
  */
-export interface Operation {
-  op: OpCode;
+export interface ValueOperation {
+  op: "add" | "id" | "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;
 }
@@ -52,10 +40,35 @@ export interface Const {
 }
 
 /**
+ * Operations take arguments, which come from previously-assigned identifiers.
+ */
+export type Operation = EffectOperation | ValueOperation;
+
+/**
  * Instructions can be operations (which have arguments) or constants (which
  * don't). Both produce a value in a destination variable.
  */
 export type Instruction = Operation | Const;
+
+/**
+ * Both constants and value operations produce results.
+ */
+export type ValueInstruction = Const | ValueOperation;
+
+/**
+ * The valid opcodes for value-producing instructions.
+ */
+export type ValueOpCode = ValueOperation["op"];
+
+/**
+ * The valid opcodes for effecting operations.
+ */
+export type EffectOpCode = EffectOperation["op"];
+
+/**
+ * All valid operation opcodes.
+ */
+export type OpCode = ValueOpCode | EffectOpCode;
 
 /**
  * Jump labels just mark a position with a name.

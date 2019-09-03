@@ -50,88 +50,88 @@ function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
     env.set(instr.dest, instr.value);
     return null;
 
-  case bril.OpCode.id: {
+  case "id": {
     checkArgs(instr, 1);
     let val = get(env, instr.args[0]);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.add: {
+  case "add": {
     checkArgs(instr, 2);
     let val = getInt(instr, env, 0) + getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.le: {
+  case "le": {
     checkArgs(instr, 2);
     let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.lt: {
+  case "lt": {
     checkArgs(instr, 2);
     let val = getInt(instr, env, 0) < getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.gt: {
+  case "gt": {
     checkArgs(instr, 2);
     let val = getInt(instr, env, 0) > getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.ge: {
+  case "ge": {
     checkArgs(instr, 2);
     let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.eq: {
+  case "eq": {
     checkArgs(instr, 2);
     let val = getInt(instr, env, 0) === getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.not: {
+  case "not": {
     checkArgs(instr, 1);
     let val = !getBool(instr, env, 0);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.and: {
+  case "and": {
     checkArgs(instr, 2);
     let val = getBool(instr, env, 0) && getBool(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.or: {
+  case "or": {
     checkArgs(instr, 2);
     let val = getBool(instr, env, 0) || getBool(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
-  case bril.OpCode.print: {
+  case "print": {
     let values = instr.args.map(i => get(env, i));
     console.log(...values);
     return null;
   }
 
-  case bril.OpCode.jmp: {
+  case "jmp": {
     checkArgs(instr, 1);
     return instr.args[0];
   }
 
-  case bril.OpCode.br: {
+  case "br": {
     checkArgs(instr, 3);
     let cond = getBool(instr, env, 0);
     if (cond) {

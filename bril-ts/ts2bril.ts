@@ -4,14 +4,14 @@ import * as bril from './bril';
 import {Builder} from './builder';
 import {readStdin} from './util';
 
-const tokenToOp = new Map<ts.SyntaxKind, bril.OpCode>([
-  [ts.SyntaxKind.PlusToken,               bril.OpCode.add],
-  [ts.SyntaxKind.LessThanToken,           bril.OpCode.lt],
-  [ts.SyntaxKind.LessThanEqualsToken,     bril.OpCode.le],
-  [ts.SyntaxKind.GreaterThanToken,        bril.OpCode.lt],
-  [ts.SyntaxKind.GreaterThanEqualsToken,  bril.OpCode.le],
-  [ts.SyntaxKind.EqualsEqualsToken,       bril.OpCode.eq],
-  [ts.SyntaxKind.EqualsEqualsEqualsToken, bril.OpCode.eq],
+const tokenToOp = new Map<ts.SyntaxKind, bril.ValueOpCode>([
+  [ts.SyntaxKind.PlusToken,               "add"],
+  [ts.SyntaxKind.LessThanToken,           "lt"],
+  [ts.SyntaxKind.LessThanEqualsToken,     "le"],
+  [ts.SyntaxKind.GreaterThanToken,        "lt"],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  "le"],
+  [ts.SyntaxKind.EqualsEqualsToken,       "eq"],
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, "eq"],
 ]);
 
 /**
@@ -21,7 +21,7 @@ function emitBril(prog: ts.Node): bril.Program {
   let builder = new Builder();
   builder.buildFunction("main");
 
-  function emitExpr(expr: ts.Expression): bril.Instruction {
+  function emitExpr(expr: ts.Expression): bril.ValueInstruction {
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
@@ -39,7 +39,7 @@ function emitBril(prog: ts.Node): bril.Program {
 
     case ts.SyntaxKind.Identifier:
       let ident = expr as ts.Identifier;
-      return builder.buildOp(bril.OpCode.id, [ident.getText()]);
+      return builder.buildValue("id", [ident.getText()]);
 
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
@@ -53,7 +53,7 @@ function emitBril(prog: ts.Node): bril.Program {
         }
         let dest = bin.left as ts.Identifier;
         let rhs = emitExpr(bin.right);
-        return builder.buildOp(bril.OpCode.id, [rhs.dest], dest.getText());
+        return builder.buildValue("id", [rhs.dest], dest.getText());
       }
 
       // Handle "normal" value operators.
@@ -63,14 +63,15 @@ function emitBril(prog: ts.Node): bril.Program {
       if (!op) {
         throw `unhandled binary operator kind ${kind}`;
       }
-      return builder.buildOp(op, [lhs.dest, rhs.dest]);
+      return builder.buildValue(op, [lhs.dest, rhs.dest]);
 
     // Support call instructions---but only for printing, for now.
     case ts.SyntaxKind.CallExpression:
       let call = expr as ts.CallExpression;
       if (call.expression.getText() === "console.log") {
         let values = call.arguments.map(emitExpr);
-        return builder.buildOp(bril.OpCode.print, values.map(v => v.dest));
+        builder.buildEffect("print", values.map(v => v.dest));
+        return builder.buildConst(0);  // Expressions must produce values.
       } else {
         throw "function calls unsupported";
       }
@@ -100,7 +101,7 @@ function emitBril(prog: ts.Node): bril.Program {
         // Declarations without initializers are no-ops.
         if (decl.initializer) {
           let init = emitExpr(decl.initializer);
-          builder.buildOp(bril.OpCode.id, [init.dest], decl.name.getText());
+          builder.buildValue("id", [init.dest], decl.name.getText());
         }
         break;
       }
@@ -118,12 +119,12 @@ function emitBril(prog: ts.Node): bril.Program {
 
         // Branch.
         let cond = emitExpr(if_.expression);
-        builder.buildOp(bril.OpCode.br, [cond.dest, "then", "else"]);
+        builder.buildEffect("br", [cond.dest, "then", "else"]);
 
         // Statement chunks.
         builder.buildLabel("then");  // TODO unique name
         emit(if_.thenStatement);
-        builder.buildOp(bril.OpCode.jmp, ["endif"]);
+        builder.buildEffect("jmp", ["endif"]);
         builder.buildLabel("else");  // TODO unique name
         if (if_.elseStatement) {
           emit(if_.elseStatement);

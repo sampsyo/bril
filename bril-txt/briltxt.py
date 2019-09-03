@@ -21,10 +21,11 @@ start: func*
 
 func: CNAME "{" instr* "}"
 
-?instr: const | op | label
+?instr: const | vop | eop | label
 
-const.3: IDENT "=" "const" lit
-op.2: IDENT "=" CNAME IDENT*
+const.4: IDENT "=" "const" lit
+vop.3: IDENT "=" CNAME IDENT*
+eop.2: CNAME IDENT*
 label.1: IDENT ":"
 
 lit: NUMBER                         -> int
@@ -59,12 +60,19 @@ class JSONTransformer(lark.Transformer):
             'value': val,
         }
 
-    def op(self, items):
+    def vop(self, items):
         dest = items.pop(0)
         op = items.pop(0)
         return {
             'op': str(op),
             'dest': str(dest),
+            'args': [str(t) for t in items],
+         }
+
+    def eop(self, items):
+        op = items.pop(0)
+        return {
+            'op': str(op),
             'args': [str(t) for t in items],
          }
 
@@ -99,9 +107,14 @@ def print_instr(instr):
             instr['dest'],
             instr['value'],
         ))
-    else:
+    elif 'dest' in instr:
         print('  {} = {} {}'.format(
             instr['dest'],
+            instr['op'],
+            ' '.join(instr['args']),
+        ))
+    else:
+        print('  {} {}'.format(
             instr['op'],
             ' '.join(instr['args']),
         ))

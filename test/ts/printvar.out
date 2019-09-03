@@ -2,5 +2,6 @@ main {
   %0 = const 5
   x = id %0
   %1 = id x
-  %2 = print %1
+  print %1
+  %2 = const 0
 }
