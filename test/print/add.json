@@ -5,26 +5,26 @@
       "instrs": [
         {
           "op": "const",
-          "dest": "%0",
+          "dest": "v0",
           "value": 1
         },
         {
           "op": "const",
-          "dest": "%1",
+          "dest": "v1",
           "value": 2
         },
         {
           "op": "add",
-          "dest": "%2",
+          "dest": "v2",
           "args": [
-            "%0",
-            "%1"
+            "v0",
+            "v1"
           ]
         },
         {
           "op": "print",
           "args": [
-            "%2"
+            "v2"
           ]
         }
       ]

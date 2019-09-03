@@ -1,20 +1,20 @@
 main {
-  %0 = const 5;
-  value = id %0;
-  %1 = id value;
-  %2 = const 3;
-  %3 = add %1 %2;
-  %4 = const 6;
-  %5 = lt %3 %4;
-  br %5 then else;
+  v0 = const 5;
+  value = id v0;
+  v1 = id value;
+  v2 = const 3;
+  v3 = add v1 v2;
+  v4 = const 6;
+  v5 = lt v3 v4;
+  br v5 then else;
 then:
-  %6 = const 1;
-  print %6;
-  %7 = const 0;
+  v6 = const 1;
+  print v6;
+  v7 = const 0;
   jmp endif;
 else:
-  %8 = const 2;
-  print %8;
-  %9 = const 0;
+  v8 = const 2;
+  print v8;
+  v9 = const 0;
 endif:
 }

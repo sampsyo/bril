@@ -75,7 +75,7 @@ export class Builder {
    * Generate an unused variable name.
    */
   private fresh() {
-    let out = '%' + this.nextFresh.toString();
+    let out = 'v' + this.nextFresh.toString();
     this.nextFresh += 1;
     return out;
   }

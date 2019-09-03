@@ -1,7 +1,7 @@
 main {
-  %0 = const 5;
-  x = id %0;
-  %1 = id x;
-  print %1;
-  %2 = const 0;
+  v0 = const 5;
+  x = id v0;
+  v1 = id x;
+  print v1;
+  v2 = const 0;
 }
