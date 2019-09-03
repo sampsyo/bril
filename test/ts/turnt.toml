@@ -1,0 +1,1 @@
+command = "ts2bril < {filename} | bril2txt"

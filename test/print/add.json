@@ -1,0 +1,34 @@
+{
+  "functions": [
+    {
+      "name": "main",
+      "instrs": [
+        {
+          "op": "const",
+          "dest": "%0",
+          "value": 1
+        },
+        {
+          "op": "const",
+          "dest": "%1",
+          "value": 2
+        },
+        {
+          "op": "add",
+          "dest": "%2",
+          "args": [
+            "%0",
+            "%1"
+          ]
+        },
+        {
+          "op": "print",
+          "dest": "%3",
+          "args": [
+            "%2"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+main {
+  %0 = const 5
+  value = id %0
+  %1 = id value
+  %2 = const 3
+  %3 = add %1 %2
+  %4 = const 6
+  %5 = lt %3 %4
+  %6 = br %5 then else
+then:
+  %7 = const 1
+  %8 = print %7
+  %9 = jmp endif
+else:
+  %10 = const 2
+  %11 = print %10
+endif:
+}
