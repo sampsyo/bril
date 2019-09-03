@@ -1,6 +1,6 @@
 main {
-  %0 = const 1
-  %1 = const 2
-  %2 = add %0 %1
-  print %2
+  %0 = const 1;
+  %1 = const 2;
+  %2 = add %0 %1;
+  print %2;
 }

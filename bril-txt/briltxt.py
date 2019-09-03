@@ -23,9 +23,9 @@ func: CNAME "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
-const.4: IDENT "=" "const" lit
-vop.3: IDENT "=" CNAME IDENT*
-eop.2: CNAME IDENT*
+const.4: IDENT "=" "const" lit ";"
+vop.3: IDENT "=" CNAME IDENT* ";"
+eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
 lit: NUMBER                         -> int
@@ -103,18 +103,18 @@ def parse_bril(txt):
 
 def print_instr(instr):
     if instr['op'] == 'const':
-        print('  {} = const {}'.format(
+        print('  {} = const {};'.format(
             instr['dest'],
             instr['value'],
         ))
     elif 'dest' in instr:
-        print('  {} = {} {}'.format(
+        print('  {} = {} {};'.format(
             instr['dest'],
             instr['op'],
             ' '.join(instr['args']),
         ))
     else:
-        print('  {} {}'.format(
+        print('  {} {};'.format(
             instr['op'],
             ' '.join(instr['args']),
         ))

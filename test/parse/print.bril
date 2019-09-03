@@ -1,0 +1,4 @@
+main {
+  v = const 42;
+  print v;
+}
