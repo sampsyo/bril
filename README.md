@@ -15,6 +15,42 @@ These things are written in TypeScript:
 And there is also a parser and dumper for a human-readable and -writable text format, written in Python, under `bril-txt`.
 
 
+Install the Tools
+-----------------
+
+### TypeScript Compiler & IR Interpreter
+
+To install the TypeScript compiler and IR interpreter, you will need [Node][] and [Yarn][].
+Go to the `bril-ts` directory and do this:
+
+    $ yarn
+    $ yarn build
+    $ yarn link
+
+The last thing will install symlinks to the two utility programs---for me, they ended up in `/usr/local/bin`.
+The tools are `ts2bril`, which compiles TypeScript to Bril, and `brili`, an interpreter.
+Both of them expect input on stdin and send results to stdout.
+
+[node]: https://nodejs.org/en/
+[yarn]: https://yarnpkg.com/en/
+
+### Text Format
+
+The parser & pretty printer for the human-editable text form of Bril are written for Python 3.
+To install them, you need [Flit][], so run this:
+
+    $ pip install --user flit
+
+Then use Flit to install symlinks to the tools:
+
+    $ flit install --symlink --user
+
+The tools are called `bril2json` and `bril2txt`.
+They also take input on stdin and produce output on stdout.
+
+[flit]: https://flit.readthedocs.io/
+
+
 Tests
 -----
 
