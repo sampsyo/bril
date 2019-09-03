@@ -2,6 +2,25 @@
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 
+const argCounts:{[key in bril.OpCode]: number | null} = {
+  add: 2,
+  mul: 2,
+  sub: 2,
+  div: 2,
+  id: 1,
+  lt: 2,
+  le: 2,
+  gt: 2,
+  ge: 2,
+  eq: 2,
+  not: 2,
+  and: 2,
+  or: 2,
+  print: null,  // Any number of arguments.
+  br: 1,
+  jmp: 1,
+};
+
 type Env = Map<bril.Ident, bril.Value>;
 
 function get(env: Env, ident: bril.Ident) {
@@ -45,97 +64,92 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
  * instruction.
  */
 function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
+  // Check that we have the right number of arguments.
+  if (instr.op !== "const") {
+    let count = argCounts[instr.op];
+    if (count !== null) {
+      checkArgs(instr, count);
+    }
+  }
+
   switch (instr.op) {
   case "const":
     env.set(instr.dest, instr.value);
     return null;
 
   case "id": {
-    checkArgs(instr, 1);
     let val = get(env, instr.args[0]);
     env.set(instr.dest, val);
     return null;
   }
 
   case "add": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) + getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "mul": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) * getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "sub": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) - getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "div": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) / getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "le": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "lt": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) < getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "gt": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) > getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "ge": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "eq": {
-    checkArgs(instr, 2);
     let val = getInt(instr, env, 0) === getInt(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "not": {
-    checkArgs(instr, 1);
     let val = !getBool(instr, env, 0);
     env.set(instr.dest, val);
     return null;
   }
 
   case "and": {
-    checkArgs(instr, 2);
     let val = getBool(instr, env, 0) && getBool(instr, env, 1);
     env.set(instr.dest, val);
     return null;
   }
 
   case "or": {
-    checkArgs(instr, 2);
     let val = getBool(instr, env, 0) || getBool(instr, env, 1);
     env.set(instr.dest, val);
     return null;
@@ -148,12 +162,10 @@ function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
   }
 
   case "jmp": {
-    checkArgs(instr, 1);
     return instr.args[0];
   }
 
   case "br": {
-    checkArgs(instr, 3);
     let cond = getBool(instr, env, 0);
     if (cond) {
       return instr.args[1];
@@ -201,5 +213,8 @@ async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
   evalProg(prog);
 }
+
+// Make unhandled promise rejections terminate.
+process.on('unhandledRejection', e => { throw e });
 
 main();

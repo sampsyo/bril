@@ -187,4 +187,7 @@ async function main() {
   );
 }
 
+// Make unhandled promise rejections terminate.
+process.on('unhandledRejection', e => { throw e });
+
 main();
