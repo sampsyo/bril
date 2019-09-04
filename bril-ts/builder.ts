@@ -55,6 +55,20 @@ export class Builder {
   }
 
   /**
+   * Build a constant integer value.
+   */
+  buildInt(value: number, dest?: string) {
+    return this.buildConst(value, "int", dest);
+  }
+
+  /**
+   * Build a constant boolean value.
+   */
+  buildBool(value: boolean, dest?: string) {
+    return this.buildConst(value, "bool", dest);
+  }
+
+  /**
    * Add a label to the function at the current position.
    */
   buildLabel(name: string) {

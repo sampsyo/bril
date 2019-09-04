@@ -40,15 +40,15 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
       let val = parseInt(lit.text);
-      return builder.buildConst(val, "int");
+      return builder.buildInt(val);
     }
 
     case ts.SyntaxKind.TrueKeyword: {
-      return builder.buildConst(true, "bool");
+      return builder.buildBool(true);
     }
 
     case ts.SyntaxKind.FalseKeyword: {
-      return builder.buildConst(false, "bool");
+      return builder.buildBool(false);
     }
 
     case ts.SyntaxKind.Identifier: {
@@ -90,7 +90,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       if (call.expression.getText() === "console.log") {
         let values = call.arguments.map(emitExpr);
         builder.buildEffect("print", values.map(v => v.dest));
-        return builder.buildConst(0, "int");  // Expressions must produce values.
+        return builder.buildInt(0);  // Expressions must produce values.
       } else {
         throw "function calls unsupported";
       }
