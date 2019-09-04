@@ -8,6 +8,11 @@
 export type Ident = string;
 
 /**
+ * Value types.
+ */
+export type Type = "int" | "bool";
+
+/**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
@@ -25,6 +30,7 @@ export interface ValueOperation {
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;
+  type: Type;
 }
 
 /**
@@ -39,6 +45,7 @@ export interface Const {
   op: "const";
   value: Value;
   dest: Ident;
+  type: Type;
 }
 
 /**

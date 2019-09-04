@@ -27,9 +27,10 @@ export class Builder {
    * Build an operation instruction that produces a result. If the name is
    * omitted, a fresh variable is chosen automatically.
    */
-  buildValue(op: bril.ValueOpCode, args: string[], dest?: string) {
+  buildValue(op: bril.ValueOpCode, args: string[],
+             type: bril.Type, dest?: string) {
     dest = dest || this.fresh();
-    let instr: bril.ValueOperation = { op, args, dest };
+    let instr: bril.ValueOperation = { op, args, dest, type };
     this.insert(instr);
     return instr;
   }
@@ -46,9 +47,9 @@ export class Builder {
   /**
    * Build a constant instruction. As above, the destination name is optional.
    */
-  buildConst(value: bril.Value, dest?: string) {
+  buildConst(value: bril.Value, type: bril.Type, dest?: string) {
     dest = dest || this.fresh();
-    let instr: bril.Const = { op: "const", value, dest };
+    let instr: bril.Const = { op: "const", value, dest, type };
     this.insert(instr);
     return instr;
   }

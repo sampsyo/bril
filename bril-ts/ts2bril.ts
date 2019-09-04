@@ -4,23 +4,34 @@ import * as bril from './bril';
 import {Builder} from './builder';
 import {readStdin} from './util';
 
-const tokenToOp = new Map<ts.SyntaxKind, bril.ValueOpCode>([
-  [ts.SyntaxKind.PlusToken,               "add"],
-  [ts.SyntaxKind.AsteriskToken,           "mul"],
-  [ts.SyntaxKind.MinusToken,              "sub"],
-  [ts.SyntaxKind.SlashToken,              "div"],
-  [ts.SyntaxKind.LessThanToken,           "lt"],
-  [ts.SyntaxKind.LessThanEqualsToken,     "le"],
-  [ts.SyntaxKind.GreaterThanToken,        "gt"],
-  [ts.SyntaxKind.GreaterThanEqualsToken,  "ge"],
-  [ts.SyntaxKind.EqualsEqualsToken,       "eq"],
-  [ts.SyntaxKind.EqualsEqualsEqualsToken, "eq"],
+const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
+  [ts.SyntaxKind.PlusToken,               ["add", "int"]],
+  [ts.SyntaxKind.AsteriskToken,           ["mul", "int"]],
+  [ts.SyntaxKind.MinusToken,              ["sub", "int"]],
+  [ts.SyntaxKind.SlashToken,              ["div", "int"]],
+  [ts.SyntaxKind.LessThanToken,           ["lt",  "bool"]],
+  [ts.SyntaxKind.LessThanEqualsToken,     ["le",  "bool"]],
+  [ts.SyntaxKind.GreaterThanToken,        ["gt",  "bool"]],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  ["ge",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsToken,       ["eq",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, ["eq",  "bool"]],
 ]);
+
+function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
+  let tsType = checker.getTypeAtLocation(node);
+  if (tsType.flags === ts.TypeFlags.Number) {
+    return "int";
+  } else if (tsType.flags === ts.TypeFlags.Boolean) {
+    return "bool";
+  } else {
+    throw "unimplemented type " + checker.typeToString(tsType);
+  }
+}
 
 /**
  * Compile a complete TypeScript AST to a Bril program.
  */
-function emitBril(prog: ts.Node): bril.Program {
+function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
   builder.buildFunction("main");
 
@@ -28,21 +39,23 @@ function emitBril(prog: ts.Node): bril.Program {
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
-      let val = parseInt(lit.getText());
-      return builder.buildConst(val);
+      let val = parseInt(lit.text);
+      return builder.buildConst(val, "int");
     }
 
     case ts.SyntaxKind.TrueKeyword: {
-      return builder.buildConst(true);
+      return builder.buildConst(true, "bool");
     }
 
     case ts.SyntaxKind.FalseKeyword: {
-      return builder.buildConst(false);
+      return builder.buildConst(false, "bool");
     }
 
-    case ts.SyntaxKind.Identifier:
+    case ts.SyntaxKind.Identifier: {
       let ident = expr as ts.Identifier;
-      return builder.buildValue("id", [ident.getText()]);
+      let type = brilType(ident, checker);
+      return builder.buildValue("id", [ident.text], type);
+    }
 
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
@@ -56,17 +69,20 @@ function emitBril(prog: ts.Node): bril.Program {
         }
         let dest = bin.left as ts.Identifier;
         let rhs = emitExpr(bin.right);
-        return builder.buildValue("id", [rhs.dest], dest.getText());
+        let type = brilType(dest, checker);
+        return builder.buildValue("id", [rhs.dest], type, dest.text);
       }
 
       // Handle "normal" value operators.
-      let lhs = emitExpr(bin.left);
-      let rhs = emitExpr(bin.right);
-      let op = tokenToOp.get(kind);
-      if (!op) {
+      let p = opTokens.get(kind);
+      if (!p) {
         throw `unhandled binary operator kind ${kind}`;
       }
-      return builder.buildValue(op, [lhs.dest, rhs.dest]);
+      let [op, type] = p;
+
+      let lhs = emitExpr(bin.left);
+      let rhs = emitExpr(bin.right);
+      return builder.buildValue(op, [lhs.dest, rhs.dest], type);
 
     // Support call instructions---but only for printing, for now.
     case ts.SyntaxKind.CallExpression:
@@ -74,7 +90,7 @@ function emitBril(prog: ts.Node): bril.Program {
       if (call.expression.getText() === "console.log") {
         let values = call.arguments.map(emitExpr);
         builder.buildEffect("print", values.map(v => v.dest));
-        return builder.buildConst(0);  // Expressions must produce values.
+        return builder.buildConst(0, "int");  // Expressions must produce values.
       } else {
         throw "function calls unsupported";
       }
@@ -104,7 +120,8 @@ function emitBril(prog: ts.Node): bril.Program {
         // Declarations without initializers are no-ops.
         if (decl.initializer) {
           let init = emitExpr(decl.initializer);
-          builder.buildValue("id", [init.dest], decl.name.getText());
+          let type = brilType(decl, checker);
+          builder.buildValue("id", [init.dest], type, decl.name.getText());
         }
         break;
       }
@@ -174,16 +191,36 @@ function emitBril(prog: ts.Node): bril.Program {
   return builder.program;
 }
 
-async function main() {
-  let sf = ts.createSourceFile(
-    '-',
-    await readStdin(),
-    ts.ScriptTarget.ES2015,
-    true,
-  );
-  let prog = emitBril(sf);
+function main() {
+  // Get the TypeScript filename.
+  let filename = process.argv[2];
+  if (!filename) {
+    console.error(`usage: ${process.argv[1]} src.ts`)
+    process.exit(1);
+  }
+
+  // Load up the TypeScript context.
+  let program = ts.createProgram([filename], {
+    target: ts.ScriptTarget.ES5,
+  });
+  let checker = program.getTypeChecker();
+
+  // Do a weird dance to look up our source file.
+  let sf: ts.SourceFile | undefined;
+  for (let file of program.getSourceFiles()) {
+    if (file.fileName === filename) {
+      sf = file;
+      break;
+    }
+  }
+  if (!sf) {
+    throw "source file not found";
+  }
+
+  // Generate Bril code.
+  let brilProg = emitBril(sf, checker);
   process.stdout.write(
-    JSON.stringify(prog, undefined, 2)
+    JSON.stringify(brilProg, undefined, 2)
   );
 }
 
