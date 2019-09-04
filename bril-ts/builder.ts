@@ -29,7 +29,7 @@ export class Builder {
    */
   buildValue(op: bril.ValueOpCode, args: string[],
              type: bril.Type, dest?: string) {
-    dest = dest || this.fresh();
+    dest = dest || this.freshVar();
     let instr: bril.ValueOperation = { op, args, dest, type };
     this.insert(instr);
     return instr;
@@ -48,7 +48,7 @@ export class Builder {
    * Build a constant instruction. As above, the destination name is optional.
    */
   buildConst(value: bril.Value, type: bril.Type, dest?: string) {
-    dest = dest || this.fresh();
+    dest = dest || this.freshVar();
     let instr: bril.Const = { op: "const", value, dest, type };
     this.insert(instr);
     return instr;
@@ -89,8 +89,17 @@ export class Builder {
   /**
    * Generate an unused variable name.
    */
-  private fresh() {
+  freshVar() {
     let out = 'v' + this.nextFresh.toString();
+    this.nextFresh += 1;
+    return out;
+  }
+
+  /**
+   * Generate an unused suffix.
+   */
+  freshSuffix() {
+    let out = '.' + this.nextFresh.toString();
     this.nextFresh += 1;
     return out;
   }

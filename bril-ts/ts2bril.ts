@@ -137,19 +137,25 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       case ts.SyntaxKind.IfStatement: {
         let if_ = node as ts.IfStatement;
 
+        // Label names.
+        let sfx = builder.freshSuffix();
+        let thenLab = "then" + sfx;
+        let elseLab = "else" + sfx;
+        let endLab = "endif" + sfx;
+
         // Branch.
         let cond = emitExpr(if_.expression);
-        builder.buildEffect("br", [cond.dest, "then", "else"]);
+        builder.buildEffect("br", [cond.dest, thenLab, elseLab]);
 
         // Statement chunks.
-        builder.buildLabel("then");  // TODO unique name
+        builder.buildLabel(thenLab);
         emit(if_.thenStatement);
         builder.buildEffect("jmp", ["endif"]);
-        builder.buildLabel("else");  // TODO unique name
+        builder.buildLabel(elseLab);
         if (if_.elseStatement) {
           emit(if_.elseStatement);
         }
-        builder.buildLabel("endif");  // TODO
+        builder.buildLabel(endLab);
 
         break;
       }
@@ -158,26 +164,32 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       case ts.SyntaxKind.ForStatement: {
         let for_ = node as ts.ForStatement;
 
+        // Label names.
+        let sfx = builder.freshSuffix();
+        let condLab = "for.cond" + sfx;
+        let bodyLab = "for.body" + sfx;
+        let endLab = "for.end" + sfx;
+
         // Initialization.
         if (for_.initializer) {
           emit(for_.initializer);
         }
 
         // Condition check.
-        builder.buildLabel("forcond");  // TODO unique name
+        builder.buildLabel(condLab);
         if (for_.condition) {
           let cond = emitExpr(for_.condition);
-          builder.buildEffect("br", [cond.dest, "forbody", "forend"]);
+          builder.buildEffect("br", [cond.dest, bodyLab, endLab]);
         }
         for_.incrementor
 
-        builder.buildLabel("forbody");  // TODO
+        builder.buildLabel(bodyLab);
         emit(for_.statement);
         if (for_.incrementor) {
           emitExpr(for_.incrementor);
         }
-        builder.buildEffect("jmp", ["forcond"]);
-        builder.buildLabel("forend");  // TODO
+        builder.buildEffect("jmp", [condLab]);
+        builder.buildLabel(endLab);
 
         break;
       }
