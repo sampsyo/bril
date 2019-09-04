@@ -3,30 +3,11 @@
     {
       "name": "main",
       "instrs": [
-        {
-          "op": "const",
-          "dest": "v0",
-          "value": 1
-        },
-        {
-          "op": "const",
-          "dest": "v1",
-          "value": 2
-        },
-        {
-          "op": "add",
-          "dest": "v2",
-          "args": [
-            "v0",
-            "v1"
-          ]
-        },
-        {
-          "op": "print",
-          "args": [
-            "v2"
-          ]
-        }
+        { "op": "const", "type": "int", "dest": "v0", "value": 1 },
+        { "op": "const", "type": "int", "dest": "v1", "value": 2 },
+        { "op": "add", "type": "int", "dest": "v2",
+          "args": ["v0", "v1"] },
+        { "op": "print", "args": ["v2"] }
       ]
     }
   ]

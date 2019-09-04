@@ -28,8 +28,7 @@ Go to the `bril-ts` directory and do this:
     $ yarn link
 
 The last thing will install symlinks to the two utility programs---for me, they ended up in `/usr/local/bin`.
-The tools are `ts2bril`, which compiles TypeScript to Bril, and `brili`, an interpreter.
-Both of them expect input on stdin and send results to stdout.
+The tools are `brili`, an interpreter, which takes a Bril program as JSON on stdin, and `ts2bril`, which compiles a TypeScript file given on the command line to Bril.
 
 [node]: https://nodejs.org/en/
 [yarn]: https://yarnpkg.com/en/

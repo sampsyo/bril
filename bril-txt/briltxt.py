@@ -23,16 +23,17 @@ func: CNAME "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
-const.4: IDENT "=" "const" lit ";"
-vop.3: IDENT "=" CNAME IDENT* ";"
+const.4: IDENT ":" type "=" "const" lit ";"
+vop.3: IDENT ":" type "=" CNAME IDENT* ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
-lit: NUMBER                         -> int
-  | BOOL                            -> bool
+lit: NUMBER  -> int
+  | BOOL     -> bool
 
+type: CNAME
 BOOL: "true" | "false"
-IDENT: ("_"|"%"|LETTER) ("_"|"%"|LETTER|DIGIT)*
+IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 
 %import common.NUMBER
 %import common.WS
@@ -53,19 +54,23 @@ class JSONTransformer(lark.Transformer):
 
     def const(self, items):
         dest = items.pop(0)
+        type = items.pop(0)
         val = items.pop(0)
         return {
             'op': 'const',
             'dest': str(dest),
+            'type': type,
             'value': val,
         }
 
     def vop(self, items):
         dest = items.pop(0)
+        type = items.pop(0)
         op = items.pop(0)
         return {
             'op': str(op),
             'dest': str(dest),
+            'type': type,
             'args': [str(t) for t in items],
          }
 
@@ -91,6 +96,9 @@ class JSONTransformer(lark.Transformer):
         else:
             return False
 
+    def type(self, items):
+        return str(items[0])
+
 
 def parse_bril(txt):
     parser = lark.Lark(GRAMMAR)
@@ -103,13 +111,15 @@ def parse_bril(txt):
 
 def print_instr(instr):
     if instr['op'] == 'const':
-        print('  {} = const {};'.format(
+        print('  {}: {} = const {};'.format(
             instr['dest'],
+            instr['type'],
             instr['value'],
         ))
     elif 'dest' in instr:
-        print('  {} = {} {};'.format(
+        print('  {}: {} = {} {};'.format(
             instr['dest'],
+            instr['type'],
             instr['op'],
             ' '.join(instr['args']),
         ))

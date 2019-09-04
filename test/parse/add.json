@@ -6,16 +6,19 @@
         {
           "op": "const",
           "dest": "v0",
+          "type": "int",
           "value": 1
         },
         {
           "op": "const",
           "dest": "v1",
+          "type": "int",
           "value": 2
         },
         {
           "op": "add",
           "dest": "v2",
+          "type": "int",
           "args": [
             "v0",
             "v1"

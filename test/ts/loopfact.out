@@ -1,27 +1,27 @@
 main {
-  v0 = const 8;
-  value = id v0;
-  v1 = const 1;
-  result = id v1;
-  v2 = id value;
-  i = id v2;
+  v0: int = const 8;
+  value: int = id v0;
+  v1: int = const 1;
+  result: int = id v1;
+  v2: int = id value;
+  i: int = id v2;
 forcond:
-  v3 = id i;
-  v4 = const 0;
-  v5 = gt v3 v4;
+  v3: int = id i;
+  v4: int = const 0;
+  v5: bool = gt v3 v4;
   br v5 forbody forend;
 forbody:
-  v6 = id result;
-  v7 = id i;
-  v8 = mul v6 v7;
-  result = id v8;
-  v9 = id i;
-  v10 = const 1;
-  v11 = sub v9 v10;
-  i = id v11;
+  v6: int = id result;
+  v7: int = id i;
+  v8: int = mul v6 v7;
+  result: int = id v8;
+  v9: int = id i;
+  v10: int = const 1;
+  v11: int = sub v9 v10;
+  i: int = id v11;
   jmp forcond;
 forend:
-  v12 = id result;
+  v12: int = id result;
   print v12;
-  v13 = const 0;
+  v13: int = const 0;
 }
