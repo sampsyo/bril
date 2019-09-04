@@ -17,7 +17,7 @@ const argCounts:{[key in bril.OpCode]: number | null} = {
   and: 2,
   or: 2,
   print: null,  // Any number of arguments.
-  br: 1,
+  br: 3,
   jmp: 1,
 };
 
