@@ -52,6 +52,7 @@ def print_blocks(bril):
         leader = block[0]
         if 'label' in leader:
             print('block "{}":'.format(leader['label']))
+            del block[0]  # Hide the label, for concision.
         else:
             print('anonymous block:')
 
