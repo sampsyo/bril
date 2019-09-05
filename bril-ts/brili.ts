@@ -67,7 +67,9 @@ function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
-    if (count !== null) {
+    if (count === undefined) {
+      throw "unknown opcode " + instr.op;
+    } else if (count !== null) {
       checkArgs(instr, count);
     }
   }
