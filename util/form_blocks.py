@@ -47,6 +47,8 @@ def form_blocks(instrs):
 def print_blocks(bril):
     """Given a Bril program, print out its basic blocks.
     """
+    import briltxt
+
     func = bril['functions'][0]  # We only process one function.
     for block in form_blocks(func['instrs']):
         leader = block[0]
@@ -58,7 +60,7 @@ def print_blocks(bril):
 
         # Print the instructions.
         for instr in block:
-            print(' ', instr)
+            print('  {}'.format(briltxt.instr_to_string(instr)))
 
 
 if __name__ == '__main__':

@@ -109,25 +109,29 @@ def parse_bril(txt):
 
 # Text format pretty-printer.
 
-def print_instr(instr):
+def instr_to_string(instr):
     if instr['op'] == 'const':
-        print('  {}: {} = const {};'.format(
+        return '{}: {} = const {}'.format(
             instr['dest'],
             instr['type'],
             instr['value'],
-        ))
+        )
     elif 'dest' in instr:
-        print('  {}: {} = {} {};'.format(
+        return '{}: {} = {} {}'.format(
             instr['dest'],
             instr['type'],
             instr['op'],
             ' '.join(instr['args']),
-        ))
+        )
     else:
-        print('  {} {};'.format(
+        return '{} {}'.format(
             instr['op'],
             ' '.join(instr['args']),
-        ))
+        )
+
+
+def print_instr(instr):
+    print('  {};'.format(instr_to_string(instr)))
 
 
 def print_label(label):
