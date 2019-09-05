@@ -40,7 +40,7 @@ To install them, you need [Flit][], so run this:
 
     $ pip install --user flit
 
-Then use Flit to install symlinks to the tools:
+Then, go to the `bril-txt` directory and use Flit to install symlinks to the tools:
 
     $ flit install --symlink --user
 
