@@ -181,7 +181,6 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
           let cond = emitExpr(for_.condition);
           builder.buildEffect("br", [cond.dest, bodyLab, endLab]);
         }
-        for_.incrementor
 
         builder.buildLabel(bodyLab);
         emit(for_.statement);
