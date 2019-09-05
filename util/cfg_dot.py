@@ -63,9 +63,11 @@ def successors(instr):
         raise ValueError('{} is not a terminator'.format(instr['op']))
 
 
-def cfg_dot(bril):
+def cfg_dot(bril, verbose):
     """Generate a GraphViz "dot" file showing the control flow graph for
     a Bril program.
+
+    In `verbose` mode, include the instructions in the vertices.
     """
     for func in bril['functions']:
         print('digraph {} {{'.format(func['name']))
@@ -85,7 +87,15 @@ def cfg_dot(bril):
 
         # Add the vertices.
         for name, block in blocks.items():
-            print('  {};'.format(name))
+            if verbose:
+                import briltxt
+                print(r'  {} [shape=box, xlabel="{}", label="{}\l"];'.format(
+                    name,
+                    name,
+                    r'\l'.join(briltxt.instr_to_string(i) for i in block),
+                ))
+            else:
+                print('  {};'.format(name))
 
         # Add the control-flow edges.
         for i, (name, block) in enumerate(blocks.items()):
@@ -97,4 +107,4 @@ def cfg_dot(bril):
 
 
 if __name__ == '__main__':
-    cfg_dot(json.load(sys.stdin))
+    cfg_dot(json.load(sys.stdin), '-v' in sys.argv[1:])
