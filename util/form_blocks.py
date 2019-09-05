@@ -1,8 +1,11 @@
-"""Create and print out the basic blocks in a Bril program.
+"""Create and print out the basic blocks in a Bril function.
 """
 
 import json
 import sys
+
+# Instructions that terminate a basic block.
+TERMINATORS = 'br', 'jmp', 'ret'
 
 
 def form_blocks(instrs):
@@ -27,7 +30,7 @@ def form_blocks(instrs):
             # If this is a terminator (branching instruction), it's the
             # last instruction in the block. Finish this block and
             # start a new one.
-            if instr['op'] in ('br', 'jmp'):
+            if instr['op'] in TERMINATORS:
                 yield cur_block
                 cur_block = []
 
@@ -51,10 +54,11 @@ def print_blocks(bril):
 
     func = bril['functions'][0]  # We only process one function.
     for block in form_blocks(func['instrs']):
+        # Mark the block.
         leader = block[0]
         if 'label' in leader:
             print('block "{}":'.format(leader['label']))
-            del block[0]  # Hide the label, for concision.
+            block = block[1:]  # Hide the label, for concision.
         else:
             print('anonymous block:')
 
