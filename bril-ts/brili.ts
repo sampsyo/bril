@@ -19,6 +19,7 @@ const argCounts:{[key in bril.OpCode]: number | null} = {
   print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
+  ret: 0,
 };
 
 type Env = Map<bril.Ident, bril.Value>;
@@ -58,12 +59,23 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 }
 
 /**
+ * The thing to do after interpreting an instruction: either transfer
+ * control to a label, go to the next instruction, or end thefunction.
+ */
+type Action =
+  {"label": bril.Ident} |
+  {"next": true} |
+  {"end": true};
+let NEXT: Action = {"next": true};
+let END: Action = {"end": true};
+
+/**
  * Interpret an instruction in a given environment, possibly updating the
  * environment. If the instruction branches to a new label, return that label;
- * otherwise, return `null` to indicate that we should proceed to the next
- * instruction.
+ * otherwise, return "next" to indicate that we should proceed to the next
+ * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
+function evalInstr(instr: bril.Instruction, env: Env): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -77,103 +89,107 @@ function evalInstr(instr: bril.Instruction, env: Env): bril.Ident | null {
   switch (instr.op) {
   case "const":
     env.set(instr.dest, instr.value);
-    return null;
+    return NEXT;
 
   case "id": {
     let val = get(env, instr.args[0]);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "add": {
     let val = getInt(instr, env, 0) + getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "mul": {
     let val = getInt(instr, env, 0) * getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "sub": {
     let val = getInt(instr, env, 0) - getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "div": {
     let val = getInt(instr, env, 0) / getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "le": {
     let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "lt": {
     let val = getInt(instr, env, 0) < getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "gt": {
     let val = getInt(instr, env, 0) > getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "ge": {
     let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "eq": {
     let val = getInt(instr, env, 0) === getInt(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "not": {
     let val = !getBool(instr, env, 0);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "and": {
     let val = getBool(instr, env, 0) && getBool(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "or": {
     let val = getBool(instr, env, 0) || getBool(instr, env, 1);
     env.set(instr.dest, val);
-    return null;
+    return NEXT;
   }
 
   case "print": {
     let values = instr.args.map(i => get(env, i));
     console.log(...values);
-    return null;
+    return NEXT;
   }
 
   case "jmp": {
-    return instr.args[0];
+    return {"label": instr.args[0]};
   }
 
   case "br": {
     let cond = getBool(instr, env, 0);
     if (cond) {
-      return instr.args[1];
+      return {"label": instr.args[1]};
     } else {
-      return instr.args[2];
+      return {"label": instr.args[2]};
     }
+  }
+  
+  case "ret": {
+    return END;
   }
   }
   unreachable(instr);
@@ -185,19 +201,21 @@ function evalFunc(func: bril.Function) {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let destLabel = evalInstr(line, env);
+      let action = evalInstr(line, env);
 
-      // Search for the label and transfer control.
-      if (destLabel) {
+      if ('label' in action) {
+        // Search for the label and transfer control.
         for (i = 0; i < func.instrs.length; ++i) {
           let sLine = func.instrs[i];
-          if ('label' in sLine && sLine.label === destLabel) {
+          if ('label' in sLine && sLine.label === action.label) {
             break;
           }
         }
         if (i === func.instrs.length) {
-          throw `label ${destLabel} not found`;
+          throw `label ${action.label} not found`;
         }
+      } else if ('end' in action) {
+        return;
       }
     }
   }
