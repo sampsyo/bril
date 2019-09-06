@@ -104,7 +104,7 @@ def parse_bril(txt):
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
-    return json.dumps(data, indent=2)
+    return json.dumps(data, indent=2, sort_keys=True)
 
 
 # Text format pretty-printer.
