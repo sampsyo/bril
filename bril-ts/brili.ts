@@ -2,7 +2,7 @@
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 
-const argCounts:{[key in bril.OpCode]: number | null} = {
+const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
   mul: 2,
   sub: 2,
@@ -20,6 +20,7 @@ const argCounts:{[key in bril.OpCode]: number | null} = {
   br: 3,
   jmp: 1,
   ret: 0,
+  nop: 0,
 };
 
 type Env = Map<bril.Ident, bril.Value>;
@@ -190,6 +191,10 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   
   case "ret": {
     return END;
+  }
+
+  case "nop": {
+    return NEXT;
   }
   }
   unreachable(instr);

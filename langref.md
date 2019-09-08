@@ -157,3 +157,4 @@ None of these operations produce results (i.e., they appear as Effect Operations
 
 * `id`: A type-insensitive identity. Takes one argument, which is a variable of any type, and produces the same value (which must have the same type, obvi).
 * `print`: Output values to the console. Takes any number of arguments of any type and does not produce a result.
+* `nop`: Do nothing. Takes no arguments and produces no result.
