@@ -5,7 +5,7 @@ Bril (the Big Red Intermediate Language) is a compiler IR made for teaching [CS 
 It is an extremely simple instruction-based IR that is meant to be extended.
 Its canonical representation is JSON, which makes it easy to build tools from scratch to manipulate it.
 
-This repository contains some infrastructure for Bril.
+This repository contains the [language reference document][langref] and some infrastructure for Bril.
 These things are written in TypeScript:
 
 - A definition of the JSON format in `bril.ts`.
@@ -13,6 +13,8 @@ These things are written in TypeScript:
 - An interpreter (`brili`).
 
 And there is also a parser and dumper for a human-readable and -writable text format, written in Python, under `bril-txt`.
+
+[langref]: https://github.com/sampsyo/bril/blob/master/langref.md
 
 
 Install the Tools
