@@ -4,8 +4,8 @@ Bril is a instruction-oriented programming language with an emphasis on minimali
 Bril programs are JSON objects that directly represent abstract syntax.
 
 This language reference has two sections:
-*Syntax* describes the structure of Bril programs
-and *Operations* lists all the built-in kinds of instructions and what they do.
+[*Syntax*](#syntax) describes the structure of Bril programs
+and [*Operations*](#operations) lists all the built-in kinds of instructions and what they do.
 
 
 ## Syntax
@@ -66,7 +66,7 @@ An Instruction represents a unit of computational work.
 Every instruction must have this field:
 
 * `op`, a string: the *opcode* that determines what the instruction does.
-  (See the *Operations* section, below.)
+  (See the [*Operations*](#operations) section, below.)
 
 Depending on the opcode, the instruction might also have:
 
