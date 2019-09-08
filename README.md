@@ -8,13 +8,18 @@ Its canonical representation is JSON, which makes it easy to build tools from sc
 This repository contains the [language reference document][langref] and some infrastructure for Bril.
 These things are written in TypeScript:
 
-- A definition of the JSON format in `bril.ts`.
-- A compiler from a very small subscript of TypeScript to Bril (`ts2bril`).
-- An interpreter (`brili`).
+- A [definition of the JSON format][brilts] as a TypeScript declaration.
+  Even if you're not using TypeScript, this file can serve as a succinct definition of the syntax.
+  It has lots of comments.
+- A reference interpreter (`brili`).
+  It is meant to be readable but not fast.
+- A compiler from a very small subset of TypeScript to Bril (`ts2bril`).
+  This is useful to make it easy to write bigger Bril programs.
 
 And there is also a parser and dumper for a human-readable and -writable text format, written in Python, under `bril-txt`.
 
 [langref]: https://github.com/sampsyo/bril/blob/master/langref.md
+[brilts]: https://github.com/sampsyo/bril/blob/master/bril-ts/bril.ts
 
 
 Install the Tools
