@@ -76,12 +76,24 @@ def trivial_dce(func):
         pass
 
 
-def demo(bril):
+MODES = {
+    'tdce': trivial_dce,
+    'tdcep': trivial_dce_pass,
+}
+
+
+def localopt():
+    if len(sys.argv) > 1:
+        modify_func = MODES[sys.argv[1]]
+    else:
+        modify_func = trivial_dce
+
+    # Apply the change to all the functions in the input program.
+    bril = json.load(sys.stdin)
     for func in bril['functions']:
-        trivial_dce(func)
+        modify_func(func)
+    json.dump(bril, sys.stdout, indent=2, sort_keys=True)
 
 
 if __name__ == '__main__':
-    program = json.load(sys.stdin)
-    demo(program)
-    json.dump(program, sys.stdout, indent=2, sort_keys=True)
+    localopt()
