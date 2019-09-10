@@ -116,7 +116,7 @@ def instr_to_string(instr):
         return '{}: {} = const {}'.format(
             instr['dest'],
             instr['type'],
-            instr['value'],
+            str(instr['value']).lower(),
         )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(
