@@ -72,13 +72,74 @@ def trivial_dce(func):
     """Iteratively remove dead instructions, stopping when nothing
     remains to remove.
     """
+    # An exercise for the reader: prove that this loop terminates.
     while trivial_dce_pass(func):
+        pass
+
+
+def drop_killed_local(block):
+    """Delete instructions in a single block whose result is unused
+    before the next assignment. Return a bool indicating whether
+    anything changed.
+    """
+    # A map from variable names to the last place they were assigned
+    # since the last use. These are candidates for deletion---if a
+    # variable is assigned while in this map, we'll delete what the maps
+    # point to.
+    last_def = {}
+
+    # Find the indices of droppable instructions.
+    to_drop = set()
+    for i, instr in enumerate(block):
+        # Check for uses. Anything we use is no longer a candidate for
+        # deletion.
+        for var in var_args(instr):
+            if var in last_def:
+                del last_def[var]
+
+        # Check for definitions. This *has* to happen after the use
+        # check, so we don't count "a = a + 1" as killing a before using
+        # it.
+        if 'dest' in instr:
+            dest = instr['dest']
+            if dest in last_def:
+                # Another definition since the most recent use. Drop the
+                # last definition.
+                to_drop.add(last_def[dest])
+            last_def[dest] = i
+
+    # Remove the instructions marked for deletion.
+    new_block = [instr for i, instr in enumerate(block)
+                 if i not in to_drop]
+    changed = len(new_block) != len(block)
+    block[:] = new_block
+    return changed
+
+
+def drop_killed_pass(func):
+    """Drop killed functions from *all* blocks. Return a bool indicating
+    whether anything changed.
+    """
+    blocks = list(form_blocks(func['instrs']))
+    changed = False
+    for block in blocks:
+        changed |= drop_killed_local(block)
+    func['instrs'] = flatten(blocks)
+    return changed
+
+
+def trivial_dce_plus(func):
+    """Like `trivial_dce`, but also deletes locally killed instructions.
+    """
+    while trivial_dce_pass(func) or drop_killed_pass(func):
         pass
 
 
 MODES = {
     'tdce': trivial_dce,
     'tdcep': trivial_dce_pass,
+    'dkp': drop_killed_pass,
+    'tdce+': trivial_dce_plus,
 }
 
 
