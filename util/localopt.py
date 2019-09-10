@@ -32,6 +32,10 @@ def var_args(instr):
 
 
 def trivial_dce_pass(func):
+    """Remove instructions from `func` that are never used as arguments
+    to any other function. Return a bool indicating whether we deleted
+    anything.
+    """
     blocks = list(form_blocks(func['instrs']))
 
     # Find all the variables used as an argument to any instruction,
@@ -43,21 +47,38 @@ def trivial_dce_pass(func):
             used.update(var_args(instr))
 
     # Delete the instructions that write to unused variables.
+    changed = False
     for block in blocks:
         # Avoid deleting *effect instructions* that do not produce a
         # result. The `'dest' in i` predicate is true for all the *value
         # functions*, which are pure and can be eliminated if their
         # results are never used.
-        block[:] = [i for i in block
-                    if 'dest' not in i or i['dest'] in used]
+        new_block = [i for i in block
+                     if 'dest' not in i or i['dest'] in used]
+
+        # Record whether we deleted anything.
+        changed |= len(new_block) != len(block)
+
+        # Replace the block with the filtered one.
+        block[:] = new_block
 
     # Reassemble the function.
     func['instrs'] = flatten(blocks)
 
+    return changed
+
+
+def trivial_dce(func):
+    """Iteratively remove dead instructions, stopping when nothing
+    remains to remove.
+    """
+    while trivial_dce_pass(func):
+        pass
+
 
 def demo(bril):
     for func in bril['functions']:
-        trivial_dce_pass(func)
+        trivial_dce(func)
 
 
 if __name__ == '__main__':
