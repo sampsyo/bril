@@ -34,6 +34,7 @@ lit: NUMBER  -> int
 type: CNAME
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
+COMMENT: /#.*/
 
 %import common.NUMBER
 %import common.WS
@@ -41,6 +42,7 @@ IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 %import common.LETTER
 %import common.DIGIT
 %ignore WS
+%ignore COMMENT
 """.strip()
 
 
