@@ -1,0 +1,9 @@
+main {
+  v0: ptr<int> = alloc;
+  free v0;
+  v1: ptr<ptr<bool>> = alloc;
+  v2: bool = const false;
+  store v1 v2;
+  v3: ptr<bool> = load v1;
+  free v1;
+}

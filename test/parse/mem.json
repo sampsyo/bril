@@ -1,0 +1,62 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "args": [],
+          "dest": "v0",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "op": "free"
+        },
+        {
+          "args": [],
+          "dest": "v1",
+          "op": "alloc",
+          "type": {
+            "ptr": {
+              "ptr": "bool"
+            }
+          }
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "v3",
+          "op": "load",
+          "type": {
+            "ptr": "bool"
+          }
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

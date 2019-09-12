@@ -10,7 +10,11 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | Pointer;
+
+export type Pointer = {
+  ptr: Type
+}
 
 /**
  * An instruction that does not produce any result.
