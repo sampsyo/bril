@@ -26,7 +26,7 @@ export interface EffectOperation {
  */
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
-      "id" |
+      "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;
@@ -41,7 +41,7 @@ export type Value = number | boolean;
 /**
  * An instruction that places a literal value into a variable.
  */
-export interface Const {
+export interface Constant {
   op: "const";
   value: Value;
   dest: Ident;
@@ -57,12 +57,12 @@ export type Operation = EffectOperation | ValueOperation;
  * Instructions can be operations (which have arguments) or constants (which
  * don't). Both produce a value in a destination variable.
  */
-export type Instruction = Operation | Const;
+export type Instruction = Operation | Constant;
 
 /**
  * Both constants and value operations produce results.
  */
-export type ValueInstruction = Const | ValueOperation;
+export type ValueInstruction = Constant | ValueOperation;
 
 /**
  * The valid opcodes for value-producing instructions.

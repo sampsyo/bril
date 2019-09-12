@@ -49,7 +49,7 @@ export class Builder {
    */
   buildConst(value: bril.Value, type: bril.Type, dest?: string) {
     dest = dest || this.freshVar();
-    let instr: bril.Const = { op: "const", value, dest, type };
+    let instr: bril.Constant = { op: "const", value, dest, type };
     this.insert(instr);
     return instr;
   }
