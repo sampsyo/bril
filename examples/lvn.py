@@ -25,9 +25,9 @@ Value = namedtuple('Value', ['op', 'args'])
 #         return n
 
 #     def __getitem__(self, key):
-#         if key in self:
-#             return key[self]
-#         else:
+#         try:
+#             return super(Numbering, self).__getitem__(key)
+#         except KeyError:
 #             return self.add(key)
 
 #     def add(self, key):
@@ -39,9 +39,8 @@ Value = namedtuple('Value', ['op', 'args'])
 
 def lvn_block(block):
     # The current value of every defined variable. We'll update this
-    # every time a variable is modified. Initially, all variables get
-    # distinct numbers, in case they're used as inputs without
-    # modification.
+    # every time a variable is modified. Different variables can have
+    # the same value number (if they represent identical computations).
     var2num = {}
 
     # The canonical variable holding a given value. Every time we're
@@ -49,6 +48,9 @@ def lvn_block(block):
     # can reuse it later.
     value2num = {}
 
+    # The *canonical* variable name holding a given numbered value.
+    # There is only one canonical variable per value number (so this is
+    # not the inverse of var2num).
     num2var = {}
 
     fresh = 0
@@ -90,7 +92,9 @@ def lvn_block(block):
             else:
                 # We actually need to compute something. Create a new
                 # number for this value.
-                newnum = getnum(instr['dest'])  # var2num.add(instr['dest'])
+                newnum = fresh
+                fresh = fresh + 1  # XXX
+                var2num[instr['dest']] = newnum
                 value2num[val] = newnum
 
                 # We must put the value in a new variable so it can be
