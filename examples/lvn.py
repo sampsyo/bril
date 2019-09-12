@@ -11,37 +11,31 @@ from util import flatten, var_args
 Value = namedtuple('Value', ['op', 'args'])
 
 
-# class Numbering(dict):
-#     """A dict mapping anything numbers that automatically grows to
-#     assign new numbers to unknown values when they're first looked up.
-#     """
-#     def __init__(self, init={}):
-#         super(Numbering, self).__init__(init)
-#         self._fresh = 0
+class Numbering(dict):
+    """A dict mapping anything to numbers that can generate new numbers
+    for you when adding new values.
+    """
+    def __init__(self, init={}):
+        super(Numbering, self).__init__(init)
+        self._next_fresh = 0
 
-#     def _get_fresh(self):
-#         n = self._fresh
-#         self._fresh = n + 1
-#         return n
+    def _fresh(self):
+        n = self._next_fresh
+        self._next_fresh = n + 1
+        return n
 
-#     def __getitem__(self, key):
-#         try:
-#             return super(Numbering, self).__getitem__(key)
-#         except KeyError:
-#             return self.add(key)
-
-#     def add(self, key):
-#         assert key not in self
-#         value = self._get_fresh()
-#         self[key] = value
-#         return value
+    def add(self, key):
+        assert key not in self
+        n = self._fresh()
+        self[key] = n
+        return n
 
 
 def lvn_block(block):
     # The current value of every defined variable. We'll update this
     # every time a variable is modified. Different variables can have
     # the same value number (if they represent identical computations).
-    var2num = {}
+    var2num = Numbering()
 
     # The canonical variable holding a given value. Every time we're
     # forced to compute a new value, we'll keep track of it here so we
@@ -53,22 +47,22 @@ def lvn_block(block):
     # not the inverse of var2num).
     num2var = {}
 
-    fresh = 0
-
-    # XXX
+    # Get the number for a variable, but generate a new (canonical)
+    # number for unseen variables. This is the thing to do with
+    # arguments that may come from "outside" so they're read without
+    # being written to first (e.g., live-in variables), which become
+    # their own canonical source on first use.
     def getnum(var):
         if var in var2num:
             return var2num[var]
         else:
-            nonlocal fresh
-            num = fresh
-            fresh = fresh + 1
-            var2num[var] = num
-            num2var[num] = var
-            return num
+            n = var2num.add(var)
+            num2var[n] = var
+            return n
 
     for idx, instr in enumerate(block):
-        # Look up the value numbers for all variable arguments.
+        # Look up the value numbers for all variable arguments,
+        # generating new numbers for unseen variables.
         argvars = var_args(instr)
         argnums = tuple(getnum(var) for var in argvars)
 
@@ -95,9 +89,7 @@ def lvn_block(block):
             else:
                 # We actually need to compute something. Create a new
                 # number for this value.
-                newnum = fresh
-                fresh = fresh + 1  # XXX
-                var2num[instr['dest']] = newnum
+                newnum = var2num.add(instr['dest'])
                 value2num[val] = newnum
 
                 # We must put the value in a new variable so it can be
