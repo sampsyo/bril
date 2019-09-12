@@ -93,17 +93,17 @@ def lvn_block(block):
         if 'dest' in instr:
             newnum = var2num.add(instr['dest'])
 
+            # If this instruction computes a value, record the new
+            # variable as its canonical source.
+            if val:
+                value2num[val] = newnum
+
             # We must put the value in a new variable so it can be
             # reused by another computation in the feature (in case
             # the current variable name is reassigned before then).
             newvar = 'lvn.{}'.format(newnum)
             num2var[newnum] = newvar
             instr['dest'] = newvar  # Replace the old variable.
-
-            # If this instruction computes a value, record the new
-            # variable as the canonical place to get the value.
-            if val:
-                value2num[val] = newnum
 
         # Update argument variable names.
         if 'args' in instr:
