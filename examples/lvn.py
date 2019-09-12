@@ -70,6 +70,7 @@ def lvn_block(block):
         argnums = tuple(getnum(var) for var in argvars)
 
         # Value operations are candidates for replacement.
+        val = None
         if 'dest' in instr and 'args' in instr:
             # Construct a Value for this computation.
             val = Value(instr['op'], argnums)
@@ -86,41 +87,29 @@ def lvn_block(block):
                     'op': 'id',
                     'args': [num2var[num]],
                 })
+                continue
 
-            else:
-                # We actually need to compute something. Create a new
-                # number for this value.
-                newnum = var2num.add(instr['dest'])
+        # If this instruction produces a result, give it a number.
+        if 'dest' in instr:
+            newnum = var2num.add(instr['dest'])
+
+            # We must put the value in a new variable so it can be
+            # reused by another computation in the feature (in case
+            # the current variable name is reassigned before then).
+            newvar = 'lvn.{}'.format(newnum)
+            num2var[newnum] = newvar
+            instr['dest'] = newvar  # Replace the old variable.
+
+            # If this instruction computes a value, record the new
+            # variable as the canonical place to get the value.
+            if val:
                 value2num[val] = newnum
 
-                # We must put the value in a new variable so it can be
-                # reused by another computation in the feature (in case
-                # the current variable name is reassigned before then).
-                newvar = 'lvn.{}'.format(newnum)
-                num2var[newnum] = newvar
-
-                # Replace the arguments and output variable.
-                instr.update({
-                    'dest': newvar,
-                    'args': [num2var[n] for n in argnums],
-                })
-
-        # Other instructions may also need updates.
-        else:
-            # Update argument variable names.
-            if 'args' in instr:
-                # XXX duplicated
-                instr['args'] = [num2var[n] for n in argnums]
-                if instr['op'] == 'br':
-                    instr['args'] += instr['args'][1:]
-
-            # Give results new names.
-            if 'dest' in instr:
-                # XXX duplicated
-                newnum = var2num.add(instr['dest'])
-                newvar = 'lvn.{}'.format(newnum)
-                num2var[newnum] = newvar
-                instr['dest'] = newvar
+        # Update argument variable names.
+        if 'args' in instr:
+            instr['args'] = [num2var[n] for n in argnums]
+            if instr['op'] == 'br':
+                instr['args'] += instr['args'][1:]
 
 
 def lvn(bril):
