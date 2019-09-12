@@ -25,7 +25,10 @@ class Numbering(dict):
         return n
 
     def add(self, key):
-        assert key not in self
+        """Associate the key with a new, fresh number and return it. The
+        value may already be in the map; if so, it is overwritten and
+        the old number is forgotten.
+        """
         n = self._fresh()
         self[key] = n
         return n
@@ -106,17 +109,25 @@ def lvn_block(block):
                     'args': [num2var[n] for n in argnums],
                 }
 
-        # Other instructions with arguments need new argument names.
-        elif 'args' in instr:
-            new_instr = dict(instr)
-            new_instr['args'] = [num2var[n] for n in argnums]
-            if instr['op'] == 'br':
-                new_instr['args'] += instr['args'][1:]
-            yield new_instr
-
-        # Instructions without arguments are unchanged.
+        # Other instructions may also need updates.
         else:
-            yield instr
+            new_instr = dict(instr)
+
+            # Update argument variable names.
+            if 'args' in instr:
+                new_instr['args'] = [num2var[n] for n in argnums]
+                if instr['op'] == 'br':
+                    new_instr['args'] += instr['args'][1:]
+
+            # Give results new names.
+            if 'dest' in instr:
+                # XXX duplicated
+                newnum = var2num.add(instr['dest'])
+                newvar = 'lvn.{}'.format(newnum)
+                num2var[newnum] = newvar
+                new_instr['dest'] = newvar
+
+            yield new_instr
 
 
 def lvn(bril):

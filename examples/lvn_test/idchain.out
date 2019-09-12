@@ -1,6 +1,6 @@
 main {
-  x: int = const 4;
-  lvn.1: int = id x;
+  lvn.0: int = const 4;
+  lvn.1: int = id lvn.0;
   lvn.2: int = id lvn.1;
   lvn.3: int = id lvn.2;
   print lvn.3;

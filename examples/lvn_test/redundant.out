@@ -1,7 +1,7 @@
 main {
-  a: int = const 4;
-  b: int = const 2;
-  lvn.2: int = add a b;
+  lvn.0: int = const 4;
+  lvn.1: int = const 2;
+  lvn.2: int = add lvn.0 lvn.1;
   sum2: int = id lvn.2;
   lvn.3: int = mul lvn.2 lvn.2;
   print lvn.3;
