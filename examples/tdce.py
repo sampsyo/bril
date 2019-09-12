@@ -4,14 +4,8 @@ local optimization.
 
 import sys
 import json
-import itertools
 from form_blocks import form_blocks, TERMINATORS
-
-
-def flatten(ll):
-    """Flatten an iterable of iterable to a single list.
-    """
-    return list(itertools.chain(*ll))
+from util import flatten
 
 
 def var_args(instr):
