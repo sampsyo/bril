@@ -1,5 +1,0 @@
-main {
-  a: int = const 100;
-  a: int = const 42;
-  print a;
-}
