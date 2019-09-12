@@ -21,10 +21,18 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
+  alloc: 0,
+  free: 1,
+  store: 2,
+  load: 1,
 };
 
 type Value = boolean | BigInt;
 type Env = Map<bril.Ident, Value>;
+type Heap = {
+  nextKey: number;
+  store: Map<number, Value | bril.Pointer | null>
+}
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -32,6 +40,29 @@ function get(env: Env, ident: bril.Ident) {
     throw `undefined variable ${ident}`;
   }
   return val;
+}
+
+function alloc(ptrType: bril.PointerType, heap:Heap): bril.Pointer {
+  if (typeof ptrType != 'object') {
+    throw `unspecified pointer type ${ptrType}`
+  } else {
+    let loc = heap.nextKey
+    heap.nextKey += 1
+    heap.store.set(loc, null)
+    let dataType = ptrType.ptr;
+    if (dataType !== "int" && dataType !== "bool") {
+      dataType = "ptr";
+    }
+    return {
+      loc: loc,
+      type: dataType
+    }
+  }
+}
+
+function free(ptr: bril.Pointer, heap:Heap) { 
+  heap.store.delete(ptr.loc);
+  return;
 }
 
 /**
@@ -42,6 +73,14 @@ function checkArgs(instr: bril.Operation, count: number) {
   if (instr.args.length != count) {
     throw `${instr.op} takes ${count} argument(s); got ${instr.args.length}`;
   }
+}
+
+function getPtr(instr: bril.Operation, env: Env, index: number): bril.Pointer {
+  let val = get(env, instr.args[index]);
+  if (typeof val !== 'object') {
+    throw `${instr.op} argument ${index} must be a Pointer`;
+  }
+  return val;
 }
 
 function getInt(instr: bril.Operation, env: Env, index: number) {
@@ -77,7 +116,7 @@ let END: Action = {"end": true};
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env): Action {
+function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -205,17 +244,59 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "nop": {
     return NEXT;
   }
+
+  case "alloc": {
+    let ptr = alloc(instr.type, heap)
+    env.set(instr.dest, ptr);
+    return NEXT;
+  }
+
+  case "free": {
+    let val = getPtr(instr, env, 0)
+    free(val, heap)
+    return NEXT;
+  }
+
+  case "store": {
+    let target = getPtr(instr, env, 0)
+    switch (target.type) {
+      case "int": {
+        heap.store.set(target.loc, getInt(instr, env, 1))
+        break;
+      }
+      case "bool": {
+        heap.store.set(target.loc, getBool(instr, env, 1))
+        break;
+      }
+      case "ptr": {
+        heap.store.set(target.loc, getPtr(instr, env, 1))
+        break;
+      }
+    }
+    return NEXT;
+  }
+
+  case "load": {
+    let ptr = getPtr(instr, env, 0)
+    let val = heap.store.get(ptr.loc)
+    if (val == undefined || val == null) {
+      throw `Pointer ${instr.args[0]} is uninitialized`;
+    } else {
+      env.set(instr.dest, val)
+    }
+    return NEXT;
+  }
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function) {
+function evalFunc(func: bril.Function, heap: Heap) {
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env);
+      let action = evalInstr(line, env, heap);
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -236,9 +317,13 @@ function evalFunc(func: bril.Function) {
 }
 
 function evalProg(prog: bril.Program) {
+  let heap: Heap = {
+    nextKey: 0,
+    store: new Map()
+  }
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func);
+      evalFunc(func, heap);
     }
   }
 }
