@@ -63,7 +63,7 @@ def lvn_block(block):
             num2var[n] = var
             return n
 
-    for idx, instr in enumerate(block):
+    for instr in block:
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
         argvars = var_args(instr)
@@ -74,7 +74,7 @@ def lvn_block(block):
             # Construct a Value for this computation.
             val = Value(instr['op'], argnums)
 
-            # Is this variable already stored in a variable?
+            # Is this value already stored in a variable?
             if val in value2num:
                 # The value already exists; we can reuse it. Provide the
                 # original value number to any subsequent uses.
@@ -82,12 +82,10 @@ def lvn_block(block):
                 var2num[instr['dest']] = num
 
                 # Replace this instruction with a copy.
-                yield {
+                instr.update({
                     'op': 'id',
-                    'dest': instr['dest'],
-                    'type': instr['type'],
                     'args': [num2var[num]],
-                }
+                })
 
             else:
                 # We actually need to compute something. Create a new
@@ -101,23 +99,20 @@ def lvn_block(block):
                 newvar = 'lvn.{}'.format(newnum)
                 num2var[newnum] = newvar
 
-                # Reconstruct the operation with new arguments.
-                yield {
-                    'op': instr['op'],
+                # Replace the arguments and output variable.
+                instr.update({
                     'dest': newvar,
-                    'type': instr['type'],
                     'args': [num2var[n] for n in argnums],
-                }
+                })
 
         # Other instructions may also need updates.
         else:
-            new_instr = dict(instr)
-
             # Update argument variable names.
             if 'args' in instr:
-                new_instr['args'] = [num2var[n] for n in argnums]
+                # XXX duplicated
+                instr['args'] = [num2var[n] for n in argnums]
                 if instr['op'] == 'br':
-                    new_instr['args'] += instr['args'][1:]
+                    instr['args'] += instr['args'][1:]
 
             # Give results new names.
             if 'dest' in instr:
@@ -125,16 +120,15 @@ def lvn_block(block):
                 newnum = var2num.add(instr['dest'])
                 newvar = 'lvn.{}'.format(newnum)
                 num2var[newnum] = newvar
-                new_instr['dest'] = newvar
-
-            yield new_instr
+                instr['dest'] = newvar
 
 
 def lvn(bril):
     for func in bril['functions']:
         blocks = list(form_blocks(func['instrs']))
-        new_blocks = [list(lvn_block(block)) for block in blocks]
-        func['instrs'] = flatten(new_blocks)
+        for block in blocks:
+            lvn_block(block)
+        func['instrs'] = flatten(blocks)
 
 
 if __name__ == '__main__':
