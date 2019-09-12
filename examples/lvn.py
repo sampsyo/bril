@@ -5,7 +5,7 @@ import sys
 from collections import namedtuple
 
 from form_blocks import form_blocks
-from util import flatten
+from util import flatten, var_args
 
 # A Value uniquely represents a computation in terms of sub-values.
 Value = namedtuple('Value', ['op', 'args'])
@@ -55,6 +55,7 @@ def lvn_block(block):
 
     fresh = 0
 
+    # XXX
     def getnum(var):
         if var in var2num:
             return var2num[var]
@@ -67,11 +68,13 @@ def lvn_block(block):
             return num
 
     for idx, instr in enumerate(block):
-        # Only deal with value operations.
+        # Look up the value numbers for all variable arguments.
+        argvars = var_args(instr)
+        argnums = tuple(getnum(var) for var in argvars)
+
+        # Value operations are candidates for replacement.
         if 'dest' in instr and 'args' in instr:
-            # Construct a Value for this expression, using the numbers
-            # for its arguments.
-            argnums = tuple(getnum(var) for var in instr['args'])
+            # Construct a Value for this computation.
             val = Value(instr['op'], argnums)
 
             # Is this variable already stored in a variable?
@@ -111,6 +114,15 @@ def lvn_block(block):
                     'args': [num2var[n] for n in argnums],
                 }
 
+        # Other instructions with arguments need new argument names.
+        elif 'args' in instr:
+            new_instr = dict(instr)
+            new_instr['args'] = [num2var[n] for n in argnums]
+            if instr['op'] == 'br':
+                new_instr['args'] += instr['args'][1:]
+            yield new_instr
+
+        # Instructions without arguments are unchanged.
         else:
             yield instr
 

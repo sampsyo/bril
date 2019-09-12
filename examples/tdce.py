@@ -4,26 +4,8 @@ local optimization.
 
 import sys
 import json
-from form_blocks import form_blocks, TERMINATORS
-from util import flatten
-
-
-def var_args(instr):
-    """Get a list of all the variables that are arguments to this
-    instruction. If the instruction is "add x y", for example, return
-    the list ["x", "y"]. Label arguments are not included.
-    """
-    if 'op' in instr:
-        if instr['op'] == 'br':
-            # Only the first argument to a branch is a variable.
-            return [instr['args'][0]]
-        elif instr['op'] in TERMINATORS:
-            # Unconditional branch, for example, has no variable arguments.
-            return []
-        else:
-            return instr.get('args', [])
-    else:
-        return []
+from form_blocks import form_blocks
+from util import flatten, var_args
 
 
 def trivial_dce_pass(func):
