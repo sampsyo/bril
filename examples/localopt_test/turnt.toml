@@ -1,1 +1,0 @@
-command = "bril2json < {filename} | python3 ../localopt.py {args} | bril2txt"

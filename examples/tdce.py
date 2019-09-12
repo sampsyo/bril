@@ -1,4 +1,5 @@
-"""Some examples demonstrating *local* optimization of Bril programs.
+"""Trivial dead code elimination for Bril programs---a demonstration of
+local optimization.
 """
 
 import sys
