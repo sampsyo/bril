@@ -34,6 +34,22 @@ class Numbering(dict):
         return n
 
 
+def last_writes(instrs):
+    """Given a block of instructions, return a list of bools---one per
+    instruction---that indicates whether that instruction is the last
+    write for its variable.
+    """
+    out = [False] * len(instrs)
+    seen = set()
+    for idx, instr in reversed(list(enumerate(instrs))):
+        if 'dest' in instr:
+            dest = instr['dest']
+            if dest not in seen:
+                out[idx] = True
+                seen.add(instr['dest'])
+    return out
+
+
 def lvn_block(block):
     # The current value of every defined variable. We'll update this
     # every time a variable is modified. Different variables can have
@@ -63,7 +79,7 @@ def lvn_block(block):
             num2var[n] = var
             return n
 
-    for instr in block:
+    for instr, last_write in zip(block, last_writes(block)):
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
         argvars = var_args(instr)
@@ -98,12 +114,18 @@ def lvn_block(block):
             if val:
                 value2num[val] = newnum
 
-            # We must put the value in a new variable so it can be
-            # reused by another computation in the feature (in case
-            # the current variable name is reassigned before then).
-            newvar = 'lvn.{}'.format(newnum)
-            num2var[newnum] = newvar
-            instr['dest'] = newvar  # Replace the old variable.
+            if last_write:
+                # Preserve the variable name for other blocks.
+                var = instr['dest']
+            else:
+                # We must put the value in a new variable so it can be
+                # reused by another computation in the feature (in case
+                # the current variable name is reassigned before then).
+                var = 'lvn.{}'.format(newnum)
+
+            # Record the variable name and update the instruction.
+            num2var[newnum] = var
+            instr['dest'] = var
 
         # Update argument variable names.
         if 'args' in instr:
