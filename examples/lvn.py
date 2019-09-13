@@ -4,7 +4,7 @@ import json
 import sys
 from collections import namedtuple
 
-from form_blocks import form_blocks
+from form_blocks import form_blocks, TERMINATORS
 from util import flatten, var_args
 
 # A Value uniquely represents a computation in terms of sub-values.
@@ -129,9 +129,11 @@ def lvn_block(block):
 
         # Update argument variable names.
         if 'args' in instr:
-            instr['args'] = [num2var[n] for n in argnums]
-            if instr['op'] == 'br':
-                instr['args'] += instr['args'][1:]
+            new_args = [num2var[n] for n in argnums]
+            if instr['op'] not in TERMINATORS:
+                instr['args'] = new_args
+            elif instr['op'] == 'br':
+                instr['args'] += instr['args'][1:] + new_args
 
 
 def lvn(bril):
