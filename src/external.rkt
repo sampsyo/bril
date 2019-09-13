@@ -31,8 +31,7 @@
         (with-output-to-file tmp-file
           #:exists 'replace
           (thunk (display dot-string)))
-        (displayln tmp-file)
-        (system (format "xdot ~a" tmp-file))
+        (system (format "xdot ~a 2>/dev/null" tmp-file))
         (delete-file tmp-file))
       (with-output-to-file "out.dot"
         (thunk (print dot-string)))))

@@ -9,6 +9,8 @@
          racket/match
          racket/hash)
 
+(provide cfg)
+
 (define idx 0)
 (define (unique-label [pre "lbl-"])
   (define l (format "~a~a" pre idx))
@@ -88,19 +90,3 @@
          blocks))
 
   (cons blocks-p g))
-
-(~> "../test/interp/ret.bril"
-    input-bril
-    json->ast
-    (map function-instrs _)
-    (map cfg _)
-    car
-    cdr
-    graphviz
-    show-graph
-
-    ;; (map (lambda (bl) (hash-ref bl 'instrs)) _)
-    ;; (map)
-    ;; car
-    ;; (map basic-blocks _)
-    )
