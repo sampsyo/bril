@@ -6,6 +6,7 @@ main {
   x1: int = const 4;
   print x1;
   x1: int = load v0;
+  print x1;
   free v0;
   v1: ptr<ptr<bool>> = alloc;
   vx: ptr<bool> = alloc;

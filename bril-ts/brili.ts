@@ -326,6 +326,9 @@ function evalProg(prog: bril.Program) {
       evalFunc(func, heap);
     }
   }
+  if (heap.store.size > 0) {
+    throw `${heap.store.size} memory locations have not been freed by end of execution.`
+  }
 }
 
 async function main() {
