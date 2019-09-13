@@ -28,7 +28,7 @@ vop.3: IDENT ":" type "=" CNAME IDENT* ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
-lit: NUMBER  -> int
+lit: SIGNED_INT  -> int
   | BOOL     -> bool
 
 type: CNAME
@@ -36,7 +36,7 @@ BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
 
-%import common.NUMBER
+%import common.SIGNED_INT
 %import common.WS
 %import common.CNAME
 %import common.LETTER
