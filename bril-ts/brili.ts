@@ -196,6 +196,18 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "nop": {
     return NEXT;
   }
+
+  /*
+  case "call": {
+    // check well-formedness: arity of function matches number of args provided
+    // look up function by name
+    // look up arg types in function, compare to provided argument types
+    // check that labeled return type matches function return type
+    // create a new environment, populate with arguments
+    // 
+  }
+  */
+
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
