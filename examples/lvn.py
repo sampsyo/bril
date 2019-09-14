@@ -144,11 +144,9 @@ def lvn_block(block, lookup, canonicalize):
             num2var[newnum] = var
             instr['dest'] = var
 
-        # Update argument variable names.
+        # Update argument variable names to canonical variables.
         if 'args' in instr:
-            # Numbers not in the table are inputs and left unchanged.
-            new_args = [num2var.get(n, v)
-                        for n, v in zip(argnums, argvars)]
+            new_args = [num2var[n] for n in argnums]
             if instr['op'] not in TERMINATORS:
                 instr['args'] = new_args
             elif instr['op'] == 'br':
