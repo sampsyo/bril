@@ -90,6 +90,9 @@ def lvn_block(block, lookup, canonicalize):
     # not the inverse of var2num).
     num2var = {}
 
+    # Track constant values for values assigned with `const`.
+    num2const = {}
+
     # Initialize the table with numbers for input variables. These
     # variables are their own canonical source.
     for var in read_first(block):
@@ -108,23 +111,32 @@ def lvn_block(block, lookup, canonicalize):
             # Construct a Value for this computation.
             val = canonicalize(Value(instr['op'], argnums))
 
-            # Is this value already stored in a variable?
+            # Is this value already available?
             num = lookup(value2num, val)
             if num is not None:
-                # The value already exists; we can reuse it. Provide the
-                # original value number to any subsequent uses.
+                # Mark this variable as containing the value.
                 var2num[instr['dest']] = num
 
-                # Replace this instruction with a copy.
-                instr.update({
-                    'op': 'id',
-                    'args': [num2var[num]],
-                })
+                # Replace the instruction with a copy or a constant.
+                if num in num2const:  # Value is a constant.
+                    instr.update({
+                        'op': 'const',
+                        'value': num2const[num],
+                    })
+                else:  # Value is in a variable.
+                    instr.update({
+                        'op': 'id',
+                        'args': [num2var[num]],
+                    })
                 continue
 
         # If this instruction produces a result, give it a number.
         if 'dest' in instr:
             newnum = var2num.add(instr['dest'])
+
+            # Record constant values.
+            if instr['op'] == 'const':
+                num2const[newnum] = instr['value']
 
             # If this instruction computes a value, record the new
             # variable as its canonical source.
