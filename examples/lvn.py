@@ -63,12 +63,17 @@ def read_first(instrs):
     return read
 
 
-def lvn_block(block, lookup):
+def lvn_block(block, lookup, canonicalize):
     """Use local value numbering to optimize a basic block. Modify the
     instructions in place.
 
-    The `lookup` function must take a value-to-number map and a value
-    and returns the corresponding number (or None if it does not exist).
+    You can extend the basic LVN algorithm to bring interesting language
+    semantics with these functions:
+
+    - `lookup` takes a value-to-number map and a value and returns the
+      corresponding number (or None if it does not exist).
+    - `canonicalize` takes a value and returns an equivalent value in a
+      canonical form.
     """
     # The current value of every defined variable. We'll update this
     # every time a variable is modified. Different variables can have
@@ -101,7 +106,7 @@ def lvn_block(block, lookup):
         val = None
         if 'dest' in instr and 'args' in instr:
             # Construct a Value for this computation.
-            val = Value(instr['op'], argnums)
+            val = canonicalize(Value(instr['op'], argnums))
 
             # Is this value already stored in a variable?
             num = lookup(value2num, val)
@@ -150,14 +155,8 @@ def lvn_block(block, lookup):
                 instr['args'] += instr['args'][1:] + new_args
 
 
-def _lookup_simple(value2num, value):
-    """Simple value lookup.
-    """
-    return value2num.get(value)
-
-
-def _lookup_prop(value2num, value):
-    """Improved value lookup with propagation through `id` values.
+def _lookup(value2num, value):
+    """Value lookup function with propagation through `id` values.
     """
     if value.op == 'id':
         return value.args[0]  # Use the underlying value number.
@@ -165,7 +164,16 @@ def _lookup_prop(value2num, value):
         return value2num.get(value)
 
 
-def lvn(bril, propagate=False):
+def _canonicalize(value):
+    """Cannibalize values for commutative math operators.
+    """
+    if value.op in ('add', 'mul'):
+        return Value(value.op, tuple(sorted(value.args)))
+    else:
+        return value
+
+
+def lvn(bril, prop=False, canon=False):
     """Apply the local value numbering optimization to every basic block
     in every function.
     """
@@ -174,12 +182,13 @@ def lvn(bril, propagate=False):
         for block in blocks:
             lvn_block(
                 block,
-                lookup=_lookup_prop if propagate else _lookup_simple,
+                lookup=_lookup if prop else lambda v2n, v: v2n.get(v),
+                canonicalize=_canonicalize if canon else lambda v: v,
             )
         func['instrs'] = flatten(blocks)
 
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
-    lvn(bril, '-p' in sys.argv[1:])
+    lvn(bril, '-p' in sys.argv[1:], '-c' in sys.argv[1:])
     json.dump(bril, sys.stdout, indent=2, sort_keys=True)
