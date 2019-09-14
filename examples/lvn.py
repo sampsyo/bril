@@ -33,6 +33,15 @@ class Numbering(dict):
         self[key] = n
         return n
 
+    def get(self, key):
+        """Get the current number for a given key, or generate a new one
+        if it is not yet in the map.
+        """
+        if key in self:
+            return self[key]
+        else:
+            return self.add(key)
+
 
 def last_writes(instrs):
     """Given a block of instructions, return a list of bools---one per
@@ -63,27 +72,15 @@ def lvn_block(block):
 
     # The *canonical* variable name holding a given numbered value.
     # There is only one canonical variable per value number (so this is
-    # not the inverse of var2num).
+    # not the inverse of var2num). A value number not present in this
+    # map represents an input to the block.
     num2var = {}
-
-    # Get the number for a variable, but generate a new (canonical)
-    # number for unseen variables. This is the thing to do with
-    # arguments that may come from "outside" so they're read without
-    # being written to first (e.g., live-in variables), which become
-    # their own canonical source on first use.
-    def getnum(var):
-        if var in var2num:
-            return var2num[var]
-        else:
-            n = var2num.add(var)
-            num2var[n] = var
-            return n
 
     for instr, last_write in zip(block, last_writes(block)):
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
         argvars = var_args(instr)
-        argnums = tuple(getnum(var) for var in argvars)
+        argnums = tuple(var2num.get(var) for var in argvars)
 
         # Value operations are candidates for replacement.
         val = None
@@ -129,7 +126,9 @@ def lvn_block(block):
 
         # Update argument variable names.
         if 'args' in instr:
-            new_args = [num2var[n] for n in argnums]
+            # Numbers not in the table are inputs and left unchanged.
+            new_args = [num2var.get(n, v)
+                        for n, v in zip(argnums, argvars)]
             if instr['op'] not in TERMINATORS:
                 instr['args'] = new_args
             elif instr['op'] == 'br':
