@@ -33,15 +33,6 @@ class Numbering(dict):
         self[key] = n
         return n
 
-    def get(self, key):
-        """Get the current number for a given key, or generate a new one
-        if it is not yet in the map.
-        """
-        if key in self:
-            return self[key]
-        else:
-            return self.add(key)
-
 
 def last_writes(instrs):
     """Given a block of instructions, return a list of bools---one per
@@ -59,7 +50,23 @@ def last_writes(instrs):
     return out
 
 
+def read_first(instrs):
+    """Given a block of instructions, return a set of variable names
+    that are read before they are written.
+    """
+    read = set()
+    written = set()
+    for instr in instrs:
+        read.update(set(var_args(instr)) - written)
+        if 'dest' in instr:
+            written.add(instr['dest'])
+    return read
+
+
 def lvn_block(block):
+    """Use local value numbering to optimize a basic block. Modify the
+    instructions in place.
+    """
     # The current value of every defined variable. We'll update this
     # every time a variable is modified. Different variables can have
     # the same value number (if they represent identical computations).
@@ -72,15 +79,20 @@ def lvn_block(block):
 
     # The *canonical* variable name holding a given numbered value.
     # There is only one canonical variable per value number (so this is
-    # not the inverse of var2num). A value number not present in this
-    # map represents an input to the block.
+    # not the inverse of var2num).
     num2var = {}
+
+    # Initialize the table with numbers for input variables. These
+    # variables are their own canonical source.
+    for var in read_first(block):
+        num = var2num.add(var)
+        num2var[num] = var
 
     for instr, last_write in zip(block, last_writes(block)):
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
         argvars = var_args(instr)
-        argnums = tuple(var2num.get(var) for var in argvars)
+        argnums = tuple(var2num[var] for var in argvars)
 
         # Value operations are candidates for replacement.
         val = None
@@ -136,6 +148,9 @@ def lvn_block(block):
 
 
 def lvn(bril):
+    """Apply the local value numbering optimization to every basic block
+    in every function.
+    """
     for func in bril['functions']:
         blocks = list(form_blocks(func['instrs']))
         for block in blocks:
