@@ -63,9 +63,12 @@ def read_first(instrs):
     return read
 
 
-def lvn_block(block):
+def lvn_block(block, lookup):
     """Use local value numbering to optimize a basic block. Modify the
     instructions in place.
+
+    The `lookup` function must take a value-to-number map and a value
+    and returns the corresponding number (or None if it does not exist).
     """
     # The current value of every defined variable. We'll update this
     # every time a variable is modified. Different variables can have
@@ -101,10 +104,10 @@ def lvn_block(block):
             val = Value(instr['op'], argnums)
 
             # Is this value already stored in a variable?
-            if val in value2num:
+            num = lookup(value2num, val)
+            if num is not None:
                 # The value already exists; we can reuse it. Provide the
                 # original value number to any subsequent uses.
-                num = value2num[val]
                 var2num[instr['dest']] = num
 
                 # Replace this instruction with a copy.
@@ -147,18 +150,36 @@ def lvn_block(block):
                 instr['args'] += instr['args'][1:] + new_args
 
 
-def lvn(bril):
+def _lookup_simple(value2num, value):
+    """Simple value lookup.
+    """
+    return value2num.get(value)
+
+
+def _lookup_prop(value2num, value):
+    """Improved value lookup with propagation through `id` values.
+    """
+    if value.op == 'id':
+        return value.args[0]  # Use the underlying value number.
+    else:
+        return value2num.get(value)
+
+
+def lvn(bril, propagate=False):
     """Apply the local value numbering optimization to every basic block
     in every function.
     """
     for func in bril['functions']:
         blocks = list(form_blocks(func['instrs']))
         for block in blocks:
-            lvn_block(block)
+            lvn_block(
+                block,
+                lookup=_lookup_prop if propagate else _lookup_simple,
+            )
         func['instrs'] = flatten(blocks)
 
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
-    lvn(bril)
+    lvn(bril, '-p' in sys.argv[1:])
     json.dump(bril, sys.stdout, indent=2, sort_keys=True)
