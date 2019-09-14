@@ -74,9 +74,8 @@ def lvn_block(block, lookup, canonicalize, fold):
       corresponding number (or None if it does not exist).
     - `canonicalize`. Argument: a value. Returns an equivalent value in
       a canonical form.
-    - `fold`. Arguments: a number-to-constant map, a value number, and a
-      value. Return a new constant if it can be computed directly (or
-      None otherwise).
+    - `fold`. Arguments: a number-to-constant map  and a value. Return a
+      new constant if it can be computed directly (or None otherwise).
     """
     # The current value of every defined variable. We'll update this
     # every time a variable is modified. Different variables can have
@@ -121,12 +120,12 @@ def lvn_block(block, lookup, canonicalize, fold):
                 var2num[instr['dest']] = num
 
                 # Replace the instruction with a copy or a constant.
-                const = fold(num2const, num, val)
-                if const is not None:  # Value is a constant.
+                if num in num2const:  # Value is a constant.
                     instr.update({
                         'op': 'const',
-                        'value': const,
+                        'value': num2const[num],
                     })
+                    del instr['args']
                 else:  # Value is in a variable.
                     instr.update({
                         'op': 'id',
@@ -142,11 +141,6 @@ def lvn_block(block, lookup, canonicalize, fold):
             if instr['op'] == 'const':
                 num2const[newnum] = instr['value']
 
-            # If this instruction computes a value, record the new
-            # variable as its canonical source.
-            if val:
-                value2num[val] = newnum
-
             if last_write:
                 # Preserve the variable name for other blocks.
                 var = instr['dest']
@@ -159,6 +153,22 @@ def lvn_block(block, lookup, canonicalize, fold):
             # Record the variable name and update the instruction.
             num2var[newnum] = var
             instr['dest'] = var
+
+            if val:
+                # Is this value foldable to a constant?
+                const = fold(num2const, val)
+                if const:
+                    num2const[newnum] = const
+                    instr.update({
+                        'op': 'const',
+                        'value': const,
+                    })
+                    del instr['args']
+                    continue
+
+                # If not, record the new variable as the canonical
+                # source for the newly computed value.
+                value2num[val] = newnum
 
         # Update argument variable names to canonical variables.
         if 'args' in instr:
@@ -190,10 +200,8 @@ FOLDABLE_OPS = {
 }
 
 
-def _fold(num2const, num, value):
-    if num in num2const:
-        return num2const[num]
-    elif value.op in FOLDABLE_OPS:
+def _fold(num2const, value):
+    if value.op in FOLDABLE_OPS:
         try:
             const_args = [num2const[n] for n in value.args]
         except KeyError:  # At least one argument is not a constant.
@@ -223,7 +231,7 @@ def lvn(bril, prop=False, canon=False, fold=False):
                 block,
                 lookup=_lookup if prop else lambda v2n, v: v2n.get(v),
                 canonicalize=_canonicalize if canon else lambda v: v,
-                fold=_fold if fold else lambda n2c, n, v: n2c.get(n),
+                fold=_fold if fold else lambda n2c, v: None,
             )
         func['instrs'] = flatten(blocks)
 
