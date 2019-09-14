@@ -63,17 +63,20 @@ def read_first(instrs):
     return read
 
 
-def lvn_block(block, lookup, canonicalize):
+def lvn_block(block, lookup, canonicalize, fold):
     """Use local value numbering to optimize a basic block. Modify the
     instructions in place.
 
     You can extend the basic LVN algorithm to bring interesting language
     semantics with these functions:
 
-    - `lookup` takes a value-to-number map and a value and returns the
+    - `lookup`. Arguments: a value-to-number map and a value. Return the
       corresponding number (or None if it does not exist).
-    - `canonicalize` takes a value and returns an equivalent value in a
-      canonical form.
+    - `canonicalize`. Argument: a value. Returns an equivalent value in
+      a canonical form.
+    - `fold`. Arguments: a number-to-constant map, a value number, and a
+      value. Return a new constant if it can be computed directly (or
+      None otherwise).
     """
     # The current value of every defined variable. We'll update this
     # every time a variable is modified. Different variables can have
@@ -118,10 +121,11 @@ def lvn_block(block, lookup, canonicalize):
                 var2num[instr['dest']] = num
 
                 # Replace the instruction with a copy or a constant.
-                if num in num2const:  # Value is a constant.
+                const = fold(num2const, num, val)
+                if const is not None:  # Value is a constant.
                     instr.update({
                         'op': 'const',
-                        'value': num2const[num],
+                        'value': const,
                     })
                 else:  # Value is in a variable.
                     instr.update({
@@ -174,6 +178,31 @@ def _lookup(value2num, value):
         return value2num.get(value)
 
 
+FOLDABLE_OPS = {
+    'add': lambda a, b: a + b,
+    'mul': lambda a, b: a * b,
+    'sub': lambda a, b: a - b,
+    'div': lambda a, b: a // b,
+    'gt': lambda a, b: a > b,
+    'lt': lambda a, b: a < b,
+    'ge': lambda a, b: a >= b,
+    'le': lambda a, b: a <= b,
+}
+
+
+def _fold(num2const, num, value):
+    if num in num2const:
+        return num2const[num]
+    elif value.op in FOLDABLE_OPS:
+        try:
+            const_args = [num2const[n] for n in value.args]
+        except KeyError:  # At least one argument is not a constant.
+            return None
+        return FOLDABLE_OPS[value.op](*const_args)
+    else:
+        return None
+
+
 def _canonicalize(value):
     """Cannibalize values for commutative math operators.
     """
@@ -183,7 +212,7 @@ def _canonicalize(value):
         return value
 
 
-def lvn(bril, prop=False, canon=False):
+def lvn(bril, prop=False, canon=False, fold=False):
     """Apply the local value numbering optimization to every basic block
     in every function.
     """
@@ -194,11 +223,12 @@ def lvn(bril, prop=False, canon=False):
                 block,
                 lookup=_lookup if prop else lambda v2n, v: v2n.get(v),
                 canonicalize=_canonicalize if canon else lambda v: v,
+                fold=_fold if fold else lambda n2c, n, v: n2c.get(n),
             )
         func['instrs'] = flatten(blocks)
 
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
-    lvn(bril, '-p' in sys.argv[1:], '-c' in sys.argv[1:])
+    lvn(bril, '-p' in sys.argv, '-c' in sys.argv, '-f' in sys.argv)
     json.dump(bril, sys.stdout, indent=2, sort_keys=True)
