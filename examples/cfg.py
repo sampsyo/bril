@@ -65,12 +65,12 @@ def add_terminators(blocks):
 def edges(blocks):
     """Given a block map containing blocks complete with terminators,
     generate two mappings: predecessors and successors. Both map block
-    names to sets of block names.
+    names to lists of block names.
     """
-    preds = {name: set() for name in blocks}
-    succs = {name: set() for name in blocks}
+    preds = {name: [] for name in blocks}
+    succs = {name: [] for name in blocks}
     for name, block in blocks.items():
         for succ in successors(block[-1]):
-            succs[name].add(succ)
-            preds[succ].add(name)
+            succs[name].append(succ)
+            preds[succ].append(name)
     return preds, succs
