@@ -24,3 +24,14 @@ def var_args(instr):
             return instr.get('args', [])
     else:
         return []
+
+
+def fresh(seed, names):
+    """Generate a new name that is not in `names` starting with `seed`.
+    """
+    i = 1
+    while True:
+        name = seed + str(i)
+        if name not in names:
+            return name
+        i += 1
