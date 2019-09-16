@@ -33,6 +33,14 @@ export interface ValueOperation {
   type: Type;
 }
 
+export interface CallOperation {
+  op: "call";
+  name: Ident;
+  args: Ident[];
+  dest: Ident; // TODO: maybe make optional
+  type: Type;  // TODO: maybe make optional
+}
+
 /**
  * The type of Bril values that may appear in constants.
  */
@@ -51,7 +59,7 @@ export interface Constant {
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
-export type Operation = EffectOperation | ValueOperation;
+export type Operation = EffectOperation | ValueOperation | CallOperation;
 
 /**
  * Instructions can be operations (which have arguments) or constants (which
@@ -74,10 +82,12 @@ export type ValueOpCode = ValueOperation["op"];
  */
 export type EffectOpCode = EffectOperation["op"];
 
+export type CallOpCode = CallOperation["op"];
+
 /**
  * All valid operation opcodes.
  */
-export type OpCode = ValueOpCode | EffectOpCode;
+export type OpCode = ValueOpCode | EffectOpCode | CallOpCode;
 
 /**
  * Jump labels just mark a position with a name.
@@ -86,11 +96,17 @@ export interface Label {
   label: Ident;
 }
 
+export interface Argument {
+  name: Ident;
+  type: Type;
+}
+
 /**
  * A function consists of a sequence of instructions.
  */
 export interface Function {
   name: Ident;
+  args: Argument[];
   instrs: (Instruction | Label)[];
 }
 

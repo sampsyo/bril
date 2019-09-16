@@ -21,6 +21,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
+  call: null,
 };
 
 type Env = Map<bril.Ident, bril.Value>;
@@ -31,6 +32,15 @@ function get(env: Env, ident: bril.Ident) {
     throw `undefined variable ${ident}`;
   }
   return val;
+}
+
+function findFunc(func : bril.Ident, funcs: bril.Function[]) {
+  for (let f of funcs) {
+    if (f.name === func) {
+      return f;
+    }
+  }
+  return null;
 }
 
 /**
@@ -76,7 +86,7 @@ let END: Action = {"end": true};
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env): Action {
+function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -197,28 +207,48 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     return NEXT;
   }
 
-  /*
   case "call": {
-    // check well-formedness: arity of function matches number of args provided
+    // check well-formedness: does function exist? arity of function matches number of args provided
     // look up function by name
     // look up arg types in function, compare to provided argument types
     // check that labeled return type matches function return type
     // create a new environment, populate with arguments
-    // 
+
+    let name = instr.name;
+    let func = findFunc(name, funcs);
+    if (func === null) {
+      throw `undefined function ${name}`;
+    }
+
+    let new_env: Env = new Map();
+
+    for (let i = 0; i < func.args.length; i++) {
+      // TODO: check types! and arity!
+
+      // Look up the variable in the current (calling) environment
+      let value = get(env, instr.args[i]);
+
+      // Set the value of the arg in the new (function) environemt
+      new_env.set(func.args[i].name, value);
+    }
+
+    // TODO handle return
+    evalFunc(func, funcs);
+    return NEXT;
   }
-  */
+  
 
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function) {
+function evalFunc(func: bril.Function, funcs: bril.Function[]) {
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env);
+      let action = evalInstr(line, env, funcs);
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -239,10 +269,11 @@ function evalFunc(func: bril.Function) {
 }
 
 function evalProg(prog: bril.Program) {
-  for (let func of prog.functions) {
-    if (func.name === "main") {
-      evalFunc(func);
-    }
+  let main = findFunc("main", funcs);
+  if (main === null) {
+    console.log(`warning: no main function defined, doing nothing`);
+  } else {
+    evalFunc(main, prog.functions);
   }
 }
 

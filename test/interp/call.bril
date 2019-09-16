@@ -1,10 +1,9 @@
 void main() {
     v : int = const 2;
-    v : int = call funct();
-    call funct();
+    call print4();
     print v;
 }
-void funct() {
+void print4() {
     v : int = const 4;
     print v;
 }
