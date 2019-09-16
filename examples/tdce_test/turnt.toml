@@ -1,0 +1,1 @@
+command = "bril2json < {filename} | python3 ../tdce.py {args} | bril2txt"

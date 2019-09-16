@@ -78,7 +78,8 @@ There are three kinds of instructions: constants, value operations, and effect o
 
 #### Constant
 
-    { "op": "const", "dest": "<string>", "type": <Type>, value: ... }
+    { "op": "const", "dest": "<string>", "type": <Type>,
+      "value": ... }
 
 A Constant is an instruction that produces a literal value.
 Its `op` field must be the string `"const"`.
