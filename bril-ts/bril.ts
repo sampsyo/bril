@@ -8,9 +8,14 @@
 export type Ident = string;
 
 /**
+ * An array.
+ */
+export type array = int[];
+
+/**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | "array";
 
 /**
  * An instruction that does not produce any result.
@@ -26,7 +31,7 @@ export interface EffectOperation {
  */
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
-      "id" | "nop" |
+      "id" | "idx" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;
@@ -36,7 +41,7 @@ export interface ValueOperation {
 /**
  * The type of Bril values that may appear in constants.
  */
-export type Value = number | boolean;
+export type Value = number | boolean | number[];
 
 /**
  * An instruction that places a literal value into a variable.
