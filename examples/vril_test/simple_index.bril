@@ -1,0 +1,5 @@
+main {
+  arr1: array = aconst [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  elem: int = idx arr1 5;
+  print elem;
+}

@@ -7,7 +7,10 @@ main {
   cond: bool = gt length i;
   br cond loop end;
 loop:
-  arr3[i]: int = add arr1[i] arr2[i];
+  id1: int idx arr1 i;
+  id2: int idx arr2 i;
+  id3: int = add id1 id2;
+  arr3: array idx id3 i;
   i: int = add i inc;
   cond: bool = gt length i;
   br cond loop end;
