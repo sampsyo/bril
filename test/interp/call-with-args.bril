@@ -1,0 +1,10 @@
+main {
+    x : int = const 2;
+    y : int = const 2;
+    z : int = call add2(x, y);
+    print z;
+}
+void add2(x : int, y : int) {
+    w : int = add x y;
+    ret w;
+}
