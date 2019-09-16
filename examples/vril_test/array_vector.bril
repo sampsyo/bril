@@ -1,0 +1,19 @@
+main {
+  one: int = const 1;
+  inc: int = const VL;
+  length: int = const 10;
+  arr1: array = aconst [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  arr2: array = aconst [1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+  i: int = const 0;
+  cond: bool = gt length i;
+  br cond loop end;
+loop:
+  lvl: int = sub length one; 
+  vl: int = setvl lvl;
+  arr3: array = vadd arr1 arr2;
+  i: int = add i inc;
+  cond: bool = gt length i;
+  br cond loop end;
+end:
+  aprint arr3;
+}
