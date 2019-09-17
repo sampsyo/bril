@@ -19,13 +19,14 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
-  ret: 0,
+  ret: null,
   nop: 0,
   call: 1,
 };
 
 type Env = Map<bril.Ident, bril.Value>;
 type FunctionMap = Map<bril.Ident, bril.Function>;
+const returnVar = "_ret";
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -79,7 +80,10 @@ let END: Action = {"end": true};
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env): Action {
+function evalInstr(
+  instr: bril.Instruction,
+  env: Env,
+  functionMap: FunctionMap): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -193,10 +197,27 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "call": {
-    return {"call": instr.args[0]};
+    let name = instr.args[0];
+    if (functionMap.has(name)) {
+      let newEnv = new Map();
+      // TODO add arguments to newEnv
+      let func = functionMap.get(name) as bril.Function;
+      evalFunc(func, newEnv, functionMap);
+      if (func.type !== undefined) {
+        let returnVal = newEnv.get(returnVar);
+        env.set(instr.dest, returnVal);
+      }
+    } else {
+      throw `function ${name} not found`;
+    }
+    return NEXT;
   }
 
   case "ret": {
+    if (instr.args.length > 0) {
+      let returnVal = env.get(instr.args[0]);
+      env.set(returnVar, returnVal as any);
+    }
     return END;
   }
 
@@ -212,7 +233,7 @@ function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env);
+      let action = evalInstr(line, env, functionMap);
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -224,14 +245,6 @@ function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
         }
         if (i === func.instrs.length) {
           throw `label ${action.label} not found`;
-        }
-      } else if ('call' in action) {
-        // TODO do something with dest
-        if (functionMap.has(action.call)) {
-          let newEnv = new Map(); // TODO add arguments to newEnv
-          evalFunc(functionMap.get(action.call) as bril.Function, newEnv, functionMap);
-        } else {
-          throw `function ${action.call} not found`;
         }
       } else if ('end' in action) {
         return;

@@ -17,9 +17,10 @@ __version__ = '0.0.1'
 # Text format parser.
 
 GRAMMAR = """
-start: func*
+start: (func | func_with_return)*
 
 func: CNAME "{" instr* "}"
+func_with_return: CNAME ":" type "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
@@ -53,6 +54,11 @@ class JSONTransformer(lark.Transformer):
     def func(self, items):
         name = items.pop(0)
         return {'name': str(name), 'instrs': items}
+
+    def func_with_return(self, items):
+        name = items.pop(0)
+        type = items.pop(0)
+        return {'name': str(name), 'type': type, 'instrs': items}
 
     def const(self, items):
         dest = items.pop(0)
@@ -141,7 +147,7 @@ def print_label(label):
 
 
 def print_func(func):
-    print('{} {{'.format(func['name']))
+    print('{} {{'.format(func['name'], func.get('type', 'void')))
     for instr_or_label in func['instrs']:
         if 'label' in instr_or_label:
             print_label(instr_or_label)

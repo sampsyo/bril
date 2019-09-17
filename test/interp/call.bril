@@ -1,14 +1,18 @@
 main {
+  v0: int = call hello;
   call world;
+  print v0;
 }
 
-world {
-  call hello;
-}
-
-hello {
+hello: int {
   v0: int = const 1;
   v1: int = const 2;
   v2: int = add v0 v1;
-  print v2;
+  ret v2;
+}
+
+world {
+  v0: int = const 4;
+  print v0;
+  ret;
 }
