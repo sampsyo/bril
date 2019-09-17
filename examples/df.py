@@ -85,15 +85,13 @@ def run_df(bril, analysis):
 
 
 def gen(block):
-    return {i['dest'] for i in block if 'dest' in i}
-
-
-def kill(block):
+    """Variables that are written in the block.
+    """
     return {i['dest'] for i in block if 'dest' in i}
 
 
 def use(block):
-    """Variables that are used before they are defined in the block.
+    """Variables that are read before they are written in the block.
     """
     defined = set()  # Locally defined.
     used = set()
@@ -105,12 +103,17 @@ def use(block):
 
 
 ANALYSES = {
+    # A really really basic analysis that just accumulates all the
+    # currently-defined variables.
     'defined': Analysis(
         True,
         init=set(),
         merge=union,
-        transfer=lambda block, in_: gen(block).union(in_ - kill(block)),
+        transfer=lambda block, in_: in_.union(gen(block)),
     ),
+
+    # Live variable analysis: the variables that are both defined at a
+    # given point and might be read along some path in the future.
     'live': Analysis(
         False,
         init=set(),
