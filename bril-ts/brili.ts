@@ -21,9 +21,11 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
+  call: 1,
 };
 
 type Env = Map<bril.Ident, bril.Value>;
+type FunctionMap = Map<bril.Ident, bril.Function>;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -66,7 +68,8 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 type Action =
   {"label": bril.Ident} |
   {"next": true} |
-  {"end": true};
+  {"end": true} |
+  {"call": bril.Ident};
 let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
 
@@ -188,7 +191,11 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
       return {"label": instr.args[2]};
     }
   }
-  
+
+  case "call": {
+    return {"call": instr.args[0]};
+  }
+
   case "ret": {
     return END;
   }
@@ -201,8 +208,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function) {
-  let env: Env = new Map();
+function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
@@ -219,6 +225,14 @@ function evalFunc(func: bril.Function) {
         if (i === func.instrs.length) {
           throw `label ${action.label} not found`;
         }
+      } else if ('call' in action) {
+        // TODO do something with dest
+        if (functionMap.has(action.call)) {
+          let newEnv = new Map(); // TODO add arguments to newEnv
+          evalFunc(functionMap.get(action.call) as bril.Function, newEnv, functionMap);
+        } else {
+          throw `function ${action.call} not found`;
+        }
       } else if ('end' in action) {
         return;
       }
@@ -227,10 +241,13 @@ function evalFunc(func: bril.Function) {
 }
 
 function evalProg(prog: bril.Program) {
+  let functionMap = new Map();
   for (let func of prog.functions) {
-    if (func.name === "main") {
-      evalFunc(func);
-    }
+    functionMap.set(func.name, func);
+  }
+  if (functionMap.has("main")) {
+    evalFunc(functionMap.get("main"), new Map(), functionMap);
+  } else {
   }
 }
 
