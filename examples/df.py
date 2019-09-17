@@ -22,6 +22,9 @@ def union(sets):
 
 
 def df_worklist(blocks, analysis):
+    """The worklist algorithm for iterating a data flow analysis to a
+    fixed point.
+    """
     preds, succs = cfg.edges(blocks)
 
     # Switch between directions.
@@ -59,12 +62,18 @@ def df_worklist(blocks, analysis):
 
 
 def fmt(val):
-    """Guess a good way to format a data flow value. (Works for sets, at
-    least.)
+    """Guess a good way to format a data flow value. (Works for sets and
+    dicts, at least.)
     """
     if isinstance(val, set):
         if val:
             return ', '.join(v for v in sorted(val))
+        else:
+            return '∅'
+    elif isinstance(val, dict):
+        if val:
+            return ', '.join('{}: {}'.format(k, v)
+                             for k, v in sorted(val.items()))
         else:
             return '∅'
     else:
@@ -102,6 +111,33 @@ def use(block):
     return used
 
 
+def cprop_transfer(block, in_vals):
+    out_vals = dict(in_vals)
+    for instr in block:
+        if 'dest' in instr:
+            if instr['op'] == 'const':
+                out_vals[instr['dest']] = instr['value']
+            else:
+                out_vals[instr['dest']] = '?'
+    return out_vals
+
+
+def cprop_merge(vals_list):
+    out_vals = {}
+    for vals in vals_list:
+        for name, val in vals.items():
+            if val == '?':
+                if name not in out_vals:
+                    out_vals[name] = val
+            else:
+                if name in out_vals:
+                    if out_vals[name] != val:
+                        out_vals[name] = '?'
+                else:
+                    out_vals[name] = val
+    return out_vals
+
+
 ANALYSES = {
     # A really really basic analysis that just accumulates all the
     # currently-defined variables.
@@ -119,6 +155,14 @@ ANALYSES = {
         init=set(),
         merge=union,
         transfer=lambda block, out: use(block).union(out - gen(block)),
+    ),
+
+    # A simple constant propagation pass.
+    'cprop': Analysis(
+        True,
+        init={},
+        merge=cprop_merge,
+        transfer=cprop_transfer,
     ),
 }
 
