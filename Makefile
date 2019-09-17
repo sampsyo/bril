@@ -10,3 +10,7 @@ test:
 .PHONY: save
 save:
 	turnt --save $(TESTS)
+
+.PHONY: build
+build:
+	cd bril-ts; yarn build
