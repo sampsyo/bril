@@ -29,10 +29,6 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
 
 type Value = boolean | BigInt;
 type Env = Map<bril.Ident, Value>;
-type Heap = {
-  nextKey: number;
-  store: Map<number, Value | bril.Pointer | null>
-}
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -42,7 +38,7 @@ function get(env: Env, ident: bril.Ident) {
   return val;
 }
 
-function alloc(ptrType: bril.PointerType, heap:Heap): bril.Pointer {
+function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): bril.Pointer {
   if (typeof ptrType != 'object') {
     throw `unspecified pointer type ${ptrType}`
   } else {
@@ -116,7 +112,7 @@ let END: Action = {"end": true};
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
+function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -291,7 +287,7 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function, heap: Heap) {
+function evalFunc(func: bril.Function, heap: Heap<Value>) {
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
@@ -317,10 +313,7 @@ function evalFunc(func: bril.Function, heap: Heap) {
 }
 
 function evalProg(prog: bril.Program) {
-  let heap: Heap = {
-    nextKey: 0,
-    store: new Map()
-  }
+  let heap = new Heap<Value>()
   for (let func of prog.functions) {
     if (func.name === "main") {
       evalFunc(func, heap);
