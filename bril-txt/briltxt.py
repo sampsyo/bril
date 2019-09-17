@@ -30,11 +30,13 @@ label.1: IDENT ":"
 
 lit: SIGNED_INT  -> int
   | BOOL     -> bool
+  | ARRAY 
 
 type: CNAME
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
+ARRAY: "[" [DIGIT ("," DIGIT)*] "]"
 
 %import common.SIGNED_INT
 %import common.WS
