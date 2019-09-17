@@ -1,8 +1,10 @@
 import sys
 import json
+from collections import namedtuple
+
 from form_blocks import form_blocks
 import cfg
-from collections import namedtuple
+from util import var_args
 
 # A single dataflow analysis consists of these part:
 # - forward: True for forward, False for backward.
@@ -10,6 +12,13 @@ from collections import namedtuple
 # - merge: Take a list of values and produce a single value.
 # - transfer: The transfer function.
 Analysis = namedtuple('Analysis', ['forward', 'init', 'merge', 'transfer'])
+
+
+def union(sets):
+    out = set()
+    for s in sets:
+        out.update(s)
+    return out
 
 
 def df_worklist(blocks, analysis):
@@ -49,6 +58,19 @@ def df_worklist(blocks, analysis):
         return out, in_
 
 
+def run_df(bril, analysis):
+    for func in bril['functions']:
+        # Form the CFG.
+        blocks = cfg.block_map(form_blocks(func['instrs']))
+        cfg.add_terminators(blocks)
+
+        in_, out = df_worklist(blocks, analysis)
+        for block in blocks:
+            print('{}:'.format(block))
+            print('  in: ', in_[block])
+            print('  out:', out[block])
+
+
 def gen(block):
     return {i['dest'] for i in block if 'dest' in i}
 
@@ -57,11 +79,16 @@ def kill(block):
     return {i['dest'] for i in block if 'dest' in i}
 
 
-def union(sets):
-    out = set()
-    for s in sets:
-        out.update(s)
-    return out
+def use(block):
+    """Variables that are used before they are defined in the block.
+    """
+    defined = set()  # Locally defined.
+    used = set()
+    for i in block:
+        used.update(v for v in var_args(i) if v not in defined)
+        if 'dest' in i:
+            defined.add(i['dest'])
+    return used
 
 
 ANALYSES = {
@@ -70,23 +97,15 @@ ANALYSES = {
         init=set(),
         merge=union,
         transfer=lambda block, in_: gen(block).union(in_ - kill(block)),
-    )
+    ),
+    'live': Analysis(
+        False,
+        init=set(),
+        merge=union,
+        transfer=lambda block, out: use(block).union(out - gen(block)),
+    ),
 }
-
-
-def run_df(bril):
-    for func in bril['functions']:
-        # Form the CFG.
-        blocks = cfg.block_map(form_blocks(func['instrs']))
-        cfg.add_terminators(blocks)
-
-        in_, out = df_worklist(blocks, ANALYSES['defined'])
-        for block in blocks:
-            print('{}:', block)
-            print('  in: ', in_[block])
-            print('  out:', out[block])
-
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
-    run_df(bril)
+    run_df(bril, ANALYSES[sys.argv[1]])
