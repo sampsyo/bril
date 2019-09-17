@@ -4,7 +4,7 @@ from form_blocks import form_blocks
 import cfg
 
 
-def df_worklist(blocks, bottom, join, transfer):
+def df_worklist(blocks, bottom, merge, transfer):
     preds, succs = cfg.edges(blocks)
     entry = list(blocks.keys())[0]
 
@@ -17,7 +17,7 @@ def df_worklist(blocks, bottom, join, transfer):
     while worklist:
         node = worklist.pop(0)
 
-        inval = join(outvals[n] for n in preds[node])
+        inval = merge(outvals[n] for n in preds[node])
         invals[node] = inval
 
         outval = transfer(blocks[node], inval)
@@ -54,7 +54,7 @@ def run_df(bril):
         df_worklist(
             blocks,
             bottom=set(),
-            join=_union,
+            merge=_union,
             transfer=lambda block, in_: gen(block).union(in_ - kill(block)),
         )
 
