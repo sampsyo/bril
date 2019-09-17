@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
+import { Heap } from './heap';
 import {readStdin, unreachable} from './util';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
@@ -21,18 +22,15 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
-  alloc: 0,
+  alloc: 1,
   free: 1,
   store: 2,
   load: 1,
+  ptradd: 2
 };
 
 type Env = Map<bril.Ident, bril.Value>;
-type Heap = {
-  nextKey: number;
-  store: Map<number, bril.Value | bril.Pointer | null>
-}
-
+type HeapValue = bril.Value | number 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
   if (typeof val === 'undefined') {
@@ -41,13 +39,13 @@ function get(env: Env, ident: bril.Ident) {
   return val;
 }
 
-function alloc(ptrType: bril.PointerType, heap:Heap): bril.Pointer {
+function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<HeapValue>): bril.Pointer {
   if (typeof ptrType != 'object') {
     throw `unspecified pointer type ${ptrType}`
+  } else if (amt <= 0) {
+    throw `must allocate a positive amount of memory: ${amt} <= 0`
   } else {
-    let loc = heap.nextKey
-    heap.nextKey += 1
-    heap.store.set(loc, null)
+    let loc = heap.alloc(amt)
     let dataType = ptrType.ptr;
     if (dataType !== "int" && dataType !== "bool") {
       dataType = "ptr";
@@ -57,11 +55,6 @@ function alloc(ptrType: bril.PointerType, heap:Heap): bril.Pointer {
       type: dataType
     }
   }
-}
-
-function free(ptr: bril.Pointer, heap:Heap) { 
-  heap.store.delete(ptr.loc);
-  return;
 }
 
 /**
@@ -115,7 +108,7 @@ let END: Action = {"end": true};
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
+function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<HeapValue>): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -237,14 +230,15 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
   }
 
   case "alloc": {
-    let ptr = alloc(instr.type, heap)
+    let amt = getInt(instr, env, 0)
+    let ptr = alloc(instr.type, amt, heap)
     env.set(instr.dest, ptr);
     return NEXT;
   }
 
   case "free": {
     let val = getPtr(instr, env, 0)
-    free(val, heap)
+    heap.free(val.loc);
     return NEXT;
   }
 
@@ -252,15 +246,15 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
     let target = getPtr(instr, env, 0)
     switch (target.type) {
       case "int": {
-        heap.store.set(target.loc, getInt(instr, env, 1))
+        heap.write(target.loc, getInt(instr, env, 1))
         break;
       }
       case "bool": {
-        heap.store.set(target.loc, getBool(instr, env, 1))
+        heap.write(target.loc, getBool(instr, env, 1))
         break;
       }
       case "ptr": {
-        heap.store.set(target.loc, getPtr(instr, env, 1))
+        heap.write(target.loc, getPtr(instr, env, 1))
         break;
       }
     }
@@ -269,12 +263,19 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
 
   case "load": {
     let ptr = getPtr(instr, env, 0)
-    let val = heap.store.get(ptr.loc)
+    let val = heap.read(ptr.loc)
     if (val == undefined || val == null) {
-      throw `Pointer ${instr.args[0]} is uninitialized`;
+      throw `Pointer ${instr.args[0]} points to uninitialized data`;
     } else {
       env.set(instr.dest, val)
     }
+    return NEXT;
+  }
+
+  case "ptradd": {
+    let ptr = getPtr(instr, env, 0)
+    let val = getInt(instr, env, 1)
+    env.set(instr.dest, { loc: ptr.loc.add(val), type: ptr.type })
     return NEXT;
   }
   }
@@ -282,7 +283,7 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap): Action {
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function, heap: Heap) {
+function evalFunc(func: bril.Function, heap: Heap<HeapValue>) {
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
@@ -308,17 +309,14 @@ function evalFunc(func: bril.Function, heap: Heap) {
 }
 
 function evalProg(prog: bril.Program) {
-  let heap: Heap = {
-    nextKey: 0,
-    store: new Map()
-  }
+  let heap = new Heap<HeapValue>()
   for (let func of prog.functions) {
     if (func.name === "main") {
       evalFunc(func, heap);
     }
   }
-  if (heap.store.size > 0) {
-    throw `${heap.store.size} memory locations have not been freed by end of execution.`
+  if (!heap.isEmpty()) {
+    throw `Some memory locations have not been freed by end of execution.`
   }
 }
 
