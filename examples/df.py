@@ -58,6 +58,19 @@ def df_worklist(blocks, analysis):
         return out, in_
 
 
+def fmt(val):
+    """Guess a good way to format a data flow value. (Works for sets, at
+    least.)
+    """
+    if isinstance(val, set):
+        if val:
+            return ', '.join(v for v in sorted(val))
+        else:
+            return '∅'
+    else:
+        return str(val)
+
+
 def run_df(bril, analysis):
     for func in bril['functions']:
         # Form the CFG.
@@ -67,8 +80,8 @@ def run_df(bril, analysis):
         in_, out = df_worklist(blocks, analysis)
         for block in blocks:
             print('{}:'.format(block))
-            print('  in: ', in_[block])
-            print('  out:', out[block])
+            print('  in: ', fmt(in_[block]))
+            print('  out:', fmt(out[block]))
 
 
 def gen(block):
