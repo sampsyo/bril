@@ -87,13 +87,18 @@ export interface Label {
   label: Ident;
 }
 
+export interface FunctionArg {
+    name: Ident;
+    type: Type | undefined;
+}
+
 /**
  * A function consists of a sequence of instructions.
  */
 export interface Function {
   name: Ident;
   type: Type | undefined;
-  args: (Ident)[];
+  args: (FunctionArg)[];
   instrs: (Instruction | Label)[];
 }
 

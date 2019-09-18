@@ -207,7 +207,7 @@ function evalInstr(
         `got ${args.length}`;
       }
       for (let i = 0; i < args.length; i++) {
-        newEnv.set(func.args[i], env.get(args[i]));
+        newEnv.set(func.args[i].name, env.get(args[i]));
       }
       evalFunc(func, newEnv, functionMap);
       if (func.type !== undefined) {
