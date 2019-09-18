@@ -1,0 +1,18 @@
+main {
+  inc: int = const 1;
+  v: int = const 1000;
+  max: int = const 1000000;
+  count: int = const 0;
+  pi: ptr<int> = alloc v;
+  pp: ptr<ptr<int>> = alloc v;
+lbl:
+  count: int = add count inc;
+  store pp pi;
+  pi: ptr<int> = load pp;
+  loop: bool = ge count max;
+  br loop end lbl;
+end:
+  free pi;
+  free pp;
+  print count;
+}
