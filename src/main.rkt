@@ -8,12 +8,16 @@
          "external.rkt"
          "ast.rkt"
          "cfg.rkt"
-         "interpret.rkt")
+         "typecheck.rkt"
+         "interpret.rkt"
+         "lvn.rkt")
 
 (define convert-bril (make-parameter #f))
 (define show-cfg (make-parameter #f))
 (define output-blocks (make-parameter #f))
 (define disable-typecheck (make-parameter #f))
+(define run-interpreter (make-parameter #f))
+(define lvn (make-parameter #f))
 
 (define (main filename)
   (define ast
@@ -31,28 +35,51 @@
         (map function-instrs _)
         (map cfg _)))
 
+  (define cfgs-p
+    (if (lvn)
+        (map (match-lambda
+               [(cons blocks graph)
+                (cons (map local-value-numbering blocks) graph)])
+             cfgs)
+        cfgs))
+
   (when (output-blocks)
     (for-each (match-lambda
                 [(cons blocks _)
                  (pretty-print blocks)])
-              cfgs))
+              cfgs-p))
 
   (when (show-cfg)
     (for-each (match-lambda
                 [(cons blocks graph)
                  (show-graph (graphviz graph))])
-              cfgs)))
+              cfgs-p))
 
-(command-line
- #:program "shrimp"
- #:once-each
- [("-b" "--bril") "Convert <filename> to json before processing"
-                  (convert-bril #t)]
- [("--blocks") "Output representation of basic blocks"
-               (output-blocks #t)]
- [("-p" "--plot") "Show the cfgs using xdot"
-                  (show-cfg #t)]
- [("--disable-typecheck") "Disable type checking"
-                          (disable-typecheck #t)]
- #:args (filename)
- (main filename))
+  (when (run-interpreter)
+    (pretty-print (interpret cfgs-p))))
+
+(module+ main
+  (command-line
+   #:program "shrimp"
+   #:once-each
+   [("-b" "--bril") "Convert <filename> to json before processing"
+                    (convert-bril #t)]
+   [("--blocks") "Output representation of basic blocks"
+                 (output-blocks #t)]
+   [("-p" "--plot") "Show the cfgs using xdot"
+                    (show-cfg #t)]
+   [("--disable-typecheck") "Disable type checking"
+                            (disable-typecheck #t)]
+   [("-i" "--interpret") "Interpret the given files"
+                       (run-interpreter #t)]
+   [("--lvn") "Enable lvn optimizations"
+              (lvn #t)]
+   #:args (filename)
+   (main filename)))
+
+(parameterize ([convert-bril #t]
+               [run-interpreter #f]
+               [output-blocks #t]
+               [disable-typecheck #t])
+  (main "../test/ts/loopfact.out"))
+
