@@ -3,6 +3,7 @@ use serde_json::Value;
 
 // IR JSON Types
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Type {
   Int,
   Bool,
@@ -38,9 +39,15 @@ pub struct EffectOp {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(tag = "op")]
+#[serde(untagged)]
 pub enum Instruction {
   Label(Label),
+  Operation(Operation),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "op", rename_all = "lowercase")]
+pub enum Operation {
   Const {
     dest: String,
     #[serde(rename = "type")]
