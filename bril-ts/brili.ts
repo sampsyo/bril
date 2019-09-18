@@ -262,7 +262,7 @@ function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
   }
 }
 
-function evalProg(prog: bril.Program) {
+function evalProg(prog: bril.Program, cliArgs: (Number | Boolean)[]) {
   let functionMap = new Map();
   for (let func of prog.functions) {
     if (functionMap.has(func.name)) {
@@ -271,14 +271,42 @@ function evalProg(prog: bril.Program) {
     functionMap.set(func.name, func);
   }
   if (functionMap.has("main")) {
-    evalFunc(functionMap.get("main"), new Map(), functionMap);
+    let mainFunc = functionMap.get("main") as bril.Function;
+    if (mainFunc.args === undefined) {
+        mainFunc.args = [];
+    }
+    if (mainFunc.args.length !== cliArgs.length) {
+      throw `main function expected ${mainFunc.args.length} arguments, ` +
+      `got ${cliArgs.length}`;
+    }
+    let env = new Map();
+    for (let i = 0; i < cliArgs.length; i++) {
+        env.set(mainFunc.args[i].name, cliArgs[i]);
+    }
+    evalFunc(functionMap.get("main"), env, functionMap);
   } else {
   }
 }
 
+function isNumeric(value: string) {
+    return /^\d+$/.test(value);
+}
+
 async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
-  evalProg(prog);
+  // First two arguments of process.argv are node and brili binary paths.
+  let rawArgs = process.argv.slice(2);
+  let cliArgs = [] as (Number | Boolean)[];
+  for (let arg of rawArgs) {
+      if (isNumeric(arg)) {
+          cliArgs.push(parseInt(arg));
+      } else if (arg === "true" || arg === "false") {
+          cliArgs.push(arg === "true");
+      } else {
+          throw `Argument ${arg} is not of type int or bool; exiting.`;
+      }
+  }
+  evalProg(prog, cliArgs);
 }
 
 // Make unhandled promise rejections terminate.
