@@ -9,7 +9,8 @@
          racket/match
          racket/hash)
 
-(provide cfg)
+(provide cfg
+         (struct-out basic-block))
 
 (define idx 0)
 (define (unique-label [pre "lbl-"])
@@ -57,8 +58,7 @@
                `(,(basic-block "start" '())) ;; init empty start block
                _)
         reverse
-        (filter-not (compose empty? basic-block-instrs) _)
-        ))
+        (filter-not (compose empty? basic-block-instrs) _)))
 
   ;; add vertex for every block
   (for-each (lambda (x)
