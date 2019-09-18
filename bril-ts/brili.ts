@@ -264,6 +264,9 @@ function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
 function evalProg(prog: bril.Program) {
   let functionMap = new Map();
   for (let func of prog.functions) {
+    if (functionMap.has(func.name)) {
+      throw `function names must be unique (${func.name})`;
+    }
     functionMap.set(func.name, func);
   }
   if (functionMap.has("main")) {
