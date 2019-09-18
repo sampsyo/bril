@@ -17,7 +17,7 @@ mod parse;
 
 use std::fs::File;
 
-use simplelog::{TermLogger, LevelFilter, Config, TerminalMode};
+use simplelog::{Config, LevelFilter, TermLogger, TerminalMode};
 
 fn main() {
   let args = clap_app!(brilirs =>
@@ -37,7 +37,7 @@ fn main() {
       LevelFilter::Info
     },
     Config::default(),
-    TerminalMode::Mixed
+    TerminalMode::Mixed,
   )
   .unwrap();
 
@@ -52,4 +52,15 @@ fn main() {
       Box::new(File::open(input_file).unwrap())
     }
   };
+
+  match parse::load(input).map(basic_block::find_basic_blocks).map(
+    |(main_idx, blocks, label_index)| (main_idx, cfg::build_cfg(blocks, &label_index), label_index),
+  ) {
+    Ok((main_idx, blocks, label_index)) => {
+      dbg!(main_idx);
+      dbg!(blocks);
+      dbg!(label_index);
+    }
+    Err(e) => error!("{}", e),
+  }
 }
