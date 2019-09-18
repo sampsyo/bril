@@ -21,6 +21,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
+  lw: 1,
+  sw: 1
 };
 
 type Env = Map<bril.Ident, bril.Value>;
@@ -194,6 +196,19 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "nop": {
+    return NEXT;
+  }
+
+
+  case "lw": {
+    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "sw": {
+    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
+    env.set(instr.dest, val);
     return NEXT;
   }
   }
