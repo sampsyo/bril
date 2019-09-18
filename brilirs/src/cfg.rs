@@ -1,5 +1,5 @@
 use crate::basic_block::BasicBlock;
-use crate::ir_types::Instruction;
+use crate::ir_types::Operation;
 
 use std::collections::HashMap;
 
@@ -11,17 +11,22 @@ pub fn build_cfg(mut blocks: Vec<BasicBlock>, labels: &HashMap<String, usize>) -
     // If we're before the last block
     if i < last_idx {
       // Get the last instruction
-      let last_instr: &Instruction = block.instrs.last().unwrap();
+      let last_instr: &Operation = block.instrs.last().unwrap();
       match last_instr {
         // Either the last instruction is a terminal instruction...
-        Instruction::Jmp { params } | Instruction::Br { params } => {
+        Operation::Jmp { params } => {
           for arg in params.args.iter() {
+            block.exit.push(labels[arg]);
+          }
+        }
+        Operation::Br { params } => {
+          for arg in params.args.iter().skip(1) {
             block.exit.push(labels[arg]);
           }
         }
 
         // Or it's a return, which we hack around until function calls are implemented
-        Instruction::Ret { .. } => {}
+        Operation::Ret { .. } => {}
 
         // Or the first instruction of the *next* block is a label and we fall through
         _ => {

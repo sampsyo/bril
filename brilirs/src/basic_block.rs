@@ -1,8 +1,9 @@
-use crate::ir_types::{Function, Instruction, Program};
+use crate::ir_types::{Function, Instruction, Operation, Program};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct BasicBlock {
-  pub instrs: Vec<Instruction>,
+  pub instrs: Vec<Operation>,
   pub exit: Vec<usize>,
 }
 
@@ -39,22 +40,22 @@ pub fn find_basic_blocks(
           }
 
           label = Some(l.label.clone());
-          curr_block.instrs.push(instr);
         }
+        Instruction::Operation(op) => match op {
+          Operation::Jmp { .. } | Operation::Br { .. } | Operation::Ret { .. } => {
+            curr_block.instrs.push(op);
+            blocks.push(curr_block);
+            if let Some(l) = label {
+              labels.insert(l, blocks.len() - 1);
+              label = None;
+            }
 
-        Instruction::Jmp { .. } | Instruction::Br { .. } | Instruction::Ret { .. } => {
-          curr_block.instrs.push(instr);
-          blocks.push(curr_block);
-          if let Some(l) = label {
-            labels.insert(l, blocks.len() - 1);
-            label = None;
+            curr_block = BasicBlock::new();
           }
-
-          curr_block = BasicBlock::new();
-        }
-        _ => {
-          curr_block.instrs.push(instr);
-        }
+          _ => {
+            curr_block.instrs.push(op);
+          }
+        },
       }
     }
 
