@@ -4,7 +4,7 @@ main {
     print v1;
 }
 
-le_one n: bool {
+le_one (n: int): bool {
     one: int = const 1;
     lto: bool = le n one;
     ret lto;

@@ -11,7 +11,7 @@ hello: int {
   ret v2;
 }
 
-world arg0 {
+world (arg0: int) {
   v0: int = const 4;
   v1: int = add v0 arg0;
   print v1;

@@ -19,8 +19,8 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: (func | func_with_return)*
 
-func: CNAME IDENT* "{" instr* "}"
-func_with_return: CNAME IDENT* ":" type "{" instr* "}"
+func: CNAME arg* "{" instr* "}"
+func_with_return: CNAME arg* ":" type "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
@@ -33,6 +33,7 @@ lit: SIGNED_INT  -> int
   | BOOL     -> bool
 
 type: CNAME
+arg: IDENT | "(" IDENT ":" type ")"
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -54,9 +55,9 @@ class JSONTransformer(lark.Transformer):
     def func(self, items):
         name = items.pop(0)
         args = []
-        while len(items) > 0 and type(items[0]) == lark.lexer.Token and \
-            items[0].type == "IDENT":
-            args.append(items.pop(0))
+        while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
+            items[0].data == "arg":
+            args.append(items.pop(0).children[0])
         if len(args):
             return {'name': str(name), 'args': args, 'instrs': items}
         else:  # Just for backwards compatibility with existing tests
@@ -65,9 +66,9 @@ class JSONTransformer(lark.Transformer):
     def func_with_return(self, items):
         name = items.pop(0)
         args = []
-        while len(items) > 0 and type(items[0]) == lark.lexer.Token and \
-            items[0].type == "IDENT":
-            args.append(items.pop(0))
+        while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
+            items[0].data == "arg":
+            args.append(items.pop(0).children[0])
         function_type = items.pop(0)
         return {
             'name': str(name),
