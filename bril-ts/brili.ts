@@ -201,7 +201,8 @@ function evalInstr(
       let newEnv = new Map();
       let func = functionMap.get(name) as bril.Function;
       let args = instr.args.slice(1);
-      if (func.args.length !== args.length) {
+      if (func.args === undefined && args.length > 0
+        || args.length > 0 && func.args.length !== args.length) {
         throw `function ${name} expects ${func.args.length} arguments, ` +
         `got ${args.length}`;
       }

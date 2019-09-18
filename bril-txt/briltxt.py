@@ -17,10 +17,9 @@ __version__ = '0.0.1'
 # Text format parser.
 
 GRAMMAR = """
-start: (func | func_with_return)*
+start: func*
 
-func: CNAME arg* "{" instr* "}"
-func_with_return: CNAME arg* ":" type "{" instr* "}"
+func: CNAME arg* "{" instr* "}" | CNAME arg* ":" type "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
@@ -58,24 +57,13 @@ class JSONTransformer(lark.Transformer):
         while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
             items[0].data == "arg":
             args.append(items.pop(0).children[0])
+        function_type = items.pop(0) if type(items[0]) == str else None
+        data = {'name': str(name), 'instrs': items}
         if len(args):
-            return {'name': str(name), 'args': args, 'instrs': items}
-        else:  # Just for backwards compatibility with existing tests
-            return {'name': str(name), 'instrs': items}
-
-    def func_with_return(self, items):
-        name = items.pop(0)
-        args = []
-        while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
-            items[0].data == "arg":
-            args.append(items.pop(0).children[0])
-        function_type = items.pop(0)
-        return {
-            'name': str(name),
-            'args': args,
-            'type': function_type,
-            'instrs': items
-        }
+            data['args'] = args
+        if function_type is not None:
+            data['type'] = function_type
+        return data
 
     def const(self, items):
         dest = items.pop(0)
