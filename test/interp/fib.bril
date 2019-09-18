@@ -1,0 +1,20 @@
+main {
+    v0: int = const 23;
+    v1: int = call fib v0;
+    print v1;
+}
+
+fib n: int {
+    one: int = const 1;
+    base: bool = le n one;
+    br base return continue;
+return:
+    ret n;
+continue:
+    prev: int = sub n one;
+    prev2: int = sub prev one;
+    fib1: int = call fib prev;
+    fib2: int = call fib prev2;
+    ans: int = add fib1 fib2;
+    ret ans;
+}

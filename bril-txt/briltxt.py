@@ -64,11 +64,11 @@ class JSONTransformer(lark.Transformer):
 
     def func_with_return(self, items):
         name = items.pop(0)
-        function_type = items.pop(0)
         args = []
         while len(items) > 0 and type(items[0]) == lark.lexer.Token and \
             items[0].type == "IDENT":
             args.append(items.pop(0))
+        function_type = items.pop(0)
         return {
             'name': str(name),
             'args': args,

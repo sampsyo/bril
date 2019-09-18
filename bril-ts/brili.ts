@@ -202,7 +202,7 @@ function evalInstr(
       let func = functionMap.get(name) as bril.Function;
       let args = instr.args.slice(1);
       if (func.args.length !== args.length) {
-        throw `function ${name} expects ${func.args.length} arguments` +
+        throw `function ${name} expects ${func.args.length} arguments, ` +
         `got ${args.length}`;
       }
       for (let i = 0; i < args.length; i++) {
@@ -212,6 +212,8 @@ function evalInstr(
       if (func.type !== undefined) {
         let returnVal = newEnv.get(returnVar);
         env.set(instr.dest, returnVal);
+      } else if (instr.dest !== undefined) {
+        throw `function ${func.name} does not return`;
       }
     } else {
       throw `function ${name} not found`;
