@@ -21,7 +21,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: null,
   nop: 0,
-  call: 1,
+  call: null,
 };
 
 type Env = Map<bril.Ident, bril.Value>;
@@ -69,8 +69,7 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 type Action =
   {"label": bril.Ident} |
   {"next": true} |
-  {"end": true} |
-  {"call": bril.Ident};
+  {"end": true};
 let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
 
@@ -200,8 +199,15 @@ function evalInstr(
     let name = instr.args[0];
     if (functionMap.has(name)) {
       let newEnv = new Map();
-      // TODO add arguments to newEnv
       let func = functionMap.get(name) as bril.Function;
+      let args = instr.args.slice(1);
+      if (func.args.length !== args.length) {
+        throw `function ${name} expects ${func.args.length} arguments` +
+        `got ${args.length}`;
+      }
+      for (let i = 0; i < args.length; i++) {
+        newEnv.set(func.args[i], env.get(args[i]));
+      }
       evalFunc(func, newEnv, functionMap);
       if (func.type !== undefined) {
         let returnVal = newEnv.get(returnVar);

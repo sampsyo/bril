@@ -93,6 +93,7 @@ export interface Label {
 export interface Function {
   name: Ident;
   type: Type | undefined;
+  args: (Ident)[];
   instrs: (Instruction | Label)[];
 }
 

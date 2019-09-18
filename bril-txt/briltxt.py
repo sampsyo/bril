@@ -19,8 +19,8 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: (func | func_with_return)*
 
-func: CNAME "{" instr* "}"
-func_with_return: CNAME ":" type "{" instr* "}"
+func: CNAME IDENT* "{" instr* "}"
+func_with_return: CNAME IDENT* ":" type "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
@@ -53,12 +53,28 @@ class JSONTransformer(lark.Transformer):
 
     def func(self, items):
         name = items.pop(0)
-        return {'name': str(name), 'instrs': items}
+        args = []
+        while len(items) > 0 and type(items[0]) == lark.lexer.Token and \
+            items[0].type == "IDENT":
+            args.append(items.pop(0))
+        if len(args):
+            return {'name': str(name), 'args': args, 'instrs': items}
+        else:  # Just for backwards compatibility with existing tests
+            return {'name': str(name), 'instrs': items}
 
     def func_with_return(self, items):
         name = items.pop(0)
-        type = items.pop(0)
-        return {'name': str(name), 'type': type, 'instrs': items}
+        function_type = items.pop(0)
+        args = []
+        while len(items) > 0 and type(items[0]) == lark.lexer.Token and \
+            items[0].type == "IDENT":
+            args.append(items.pop(0))
+        return {
+            'name': str(name),
+            'args': args,
+            'type': function_type,
+            'instrs': items
+        }
 
     def const(self, items):
         dest = items.pop(0)
