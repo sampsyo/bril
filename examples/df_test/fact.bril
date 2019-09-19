@@ -1,0 +1,24 @@
+# ARGS: live
+
+main {
+  result: int = const 1;
+  i: int = const 8;
+
+header:
+  # Enter body if i >= 0.
+  zero: int = const 0;
+  cond: bool = gt i zero;
+  br cond body end;
+
+body:
+  result: int = mul result i;
+
+  # i--
+  one: int = const 1;
+  i: int = sub i one;
+
+  jmp header;
+
+end:
+  print result;
+}
