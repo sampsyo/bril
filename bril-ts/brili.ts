@@ -25,7 +25,13 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
 };
 
 type Value = boolean | BigInt;
+type ReturnValue = Value | null;
 type Env = Map<bril.Ident, Value>;
+
+// const typeIDToType: {string : bril.Type} = {
+//   'number': bril.number,
+//   'bool': bril.bool,
+// }
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -77,7 +83,7 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 type Action =
   {"label": bril.Ident} |
   {"next": true} |
-  {"end": bril.ReturnValue};
+  {"end": ReturnValue};
 let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
 
@@ -250,9 +256,24 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
     }
 
     // TODO check function return type against what's being returned
-    let retType = instr.type;
-
+    // let retType = instr.type;
     let retVal = evalFuncInEnv(func, funcs, newEnv);
+    switch (instr.type) {
+      case undefined:
+        // void return type
+        if (retVal !== null) {
+          throw `unexpected value returned by void function`;
+        }
+        break;
+      default:
+        console.log(typeof retVal);
+        console.log(typeof instr.type);
+        //if (typeof retVal !== typeof instr.type) {
+
+        //}
+        // code...
+        break;
+    }
 
     if (retVal != null) {
       env.set(instr.dest, retVal);
@@ -272,7 +293,7 @@ function evalFunc(func: bril.Function, funcs: bril.Function[]) {
   evalFuncInEnv(func, funcs, newEnv);
 }
 
-function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env) : bril.ReturnValue {
+function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env) : ReturnValue {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
