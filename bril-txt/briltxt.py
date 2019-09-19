@@ -157,6 +157,12 @@ def instr_to_string(instr):
             instr['type'],
             str(instr['value']).lower(),
         )
+    elif instr['op'] == 'init':
+        return '{}: {} = init {}'.format(
+            instr['dest'],
+            instr['type'],
+            str(instr['value']).lower(),
+        )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(
             instr['dest'],
