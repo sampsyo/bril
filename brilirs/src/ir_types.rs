@@ -115,7 +115,8 @@ pub enum Operation {
     params: EffectOp,
   },
   Id {
-    args: Vec<String>,
+    #[serde(flatten)]
+    params: ValueOp,
   },
   Print {
     args: Vec<String>,
