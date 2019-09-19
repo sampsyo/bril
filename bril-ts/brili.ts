@@ -23,7 +23,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   nop: 0,
 };
 
-type Env = Map<bril.Ident, bril.Value>;
+type Value = boolean | BigInt;
+type Env = Map<bril.Ident, Value>;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -90,9 +91,11 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   switch (instr.op) {
   case "const":
     // Ensure that JSON ints get represented appropriately.
-    let value = instr.value;
+    let value: Value;
     if (typeof instr.value === "number") {
       value = BigInt(instr.value);
+    } else {
+      value = instr.value;
     }
 
     env.set(instr.dest, value);
