@@ -8,7 +8,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   sub: 2,
   div: 2,
   id: 1,
-  idx: 2,
+  init: 1,
   lt: 2,
   le: 2,
   gt: 2,
@@ -30,20 +30,6 @@ function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
   if (typeof val === 'undefined') {
     throw `undefined variable ${ident}`;
-  }
-  return val;
-}
-
-function getVal(env: Env, array: bril.Ident, index: number) {
-  if (typeof index !== 'number') {
-    throw `idx argument ${index} must be a number`;
-  }
-  if (typeof (env.get(array)) === 'undefined') {
-    throw `undefined variable ${array}`;
-  }
-  let val = env.get(array)[number];
-  if (typeof val !== 'number') {
-    throw `array element ${array}[${index}] must be a number`;
   }
   return val;
 }
@@ -113,9 +99,10 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     return NEXT;
   }
 
-  case "idx": {
-    let val = getVal(env, instr.args[0], getInt(instr, env, 1));
-    env.set(instr.dest, val);
+  case "init": {
+    for (let i = 0; i < getInt(instr, env, 1); i++) {
+	env.set(instr.dest + "[" + i + "]", 0);
+    }
     return NEXT;
   }
 
