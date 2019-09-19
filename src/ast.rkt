@@ -2,7 +2,10 @@
 
 (require json
          racket/match
+         racket/format
          racket/system
+         racket/set
+         racket/function
          racket/file
          racket/generic)
 
@@ -22,7 +25,7 @@
 (struct label (name) #:transparent)
 
 (struct dest-instr (dest type vals) #:transparent)
-(struct binop dest-intr () #:transparent)
+(struct binop dest-instr () #:transparent)
 
 ;; math
 (struct add binop () #:transparent)
@@ -38,12 +41,12 @@
 (struct ge binop () #:transparent)
 
 ;; logic
-(struct lnot dest-intsr () #:transparent)
+(struct lnot dest-instr () #:transparent)
 (struct land binop () #:transparent)
 (struct lor binop () #:transparent)
 
 (struct constant dest-instr () #:transparent)
-(struct id destr-instr () #:transparent)
+(struct id dest-instr () #:transparent)
 
 (struct control () #:transparent)
 
@@ -58,6 +61,29 @@
 (define (input-json filename)
   (with-input-from-file filename
     (lambda () (read-json))))
+
+; Get function associated with a op name.
+(define (op-name->ast name)
+  (match name
+    ["add" add]
+    ["sub" sub]
+    ["mul" mul]
+    ["div" div]
+    ["eq" ieq]
+    ["lt" lt]
+    ["gt" gt]
+    ["le" le]
+    ["ge" ge]
+    ["not" lnot]
+    ["and" land]
+    ["or" lor]
+    ["const" constant]
+    ["id" id]
+    [else (raise-argument-error 'op-name->ast (~a "Unknown op " name))]))
+
+; Ops known in Bril. Should be exactly the domain of the op-name->ast.
+(define valid-ops
+  (set "add" "sub" "mul" "div" "eq" "lt" "gt" "le" "ge" "not" "and" "or" "const" "id"))
 
 (define (json->ast instr-map)
   (cond
@@ -75,25 +101,7 @@
      (define vals (hash-ref instr-map 'args '()))
      (match (hash-ref instr-map 'op)
        ;; math instr-mapuctions
-       ["add" (add dest type vals)]
-       ["sub" (add dest type vals)]
-       ["mul" (mul dest type vals)]
-       ["div" (div dest type vals)]
-
-       ;; comparison
-       ["eq" (ieq dest type vals)]
-       ["lt" (lt dest type vals)]
-       ["gt" (gt dest type vals)]
-       ["le" (le dest type vals)]
-       ["ge" (ge dest type vals)]
-
-       ;; logic
-       ["not" (lnot dest type vals)]
-       ["and" (land dest type vals)]
-       ["or" (lor dest type vals)]
-
-       ["const" (constant dest type vals)]
-       ["id" (id dest type vals)]
+       [(? ((curry set-member?) valid-ops) op) ((op-name->ast op) dest type vals)]
 
        ;; control
        ["jmp" (jump (car vals))]
