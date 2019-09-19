@@ -16,13 +16,29 @@ __version__ = '0.0.1'
 
 # Text format parser.
 
+# in case we need to add an array lit it's - array: "[" [SIGNED_INT ("," SIGNED_INT)*] "] from https://github.com/lark-parser/lark/blob/master/docs/json_tutorial.md#conclusion"
+
+# CNAME is CNAME: ("_"|LETTER) ("_"|LETTER|DIGIT)* from https://github.com/lark-parser/lark/blob/master/lark/grammars/common.lark
+
+# Currently this spec should allow
+# name: array = init number;
+# name[number]: int = v2a name;
+# name: int = a2v name[number]
+
+# To start with AELEM and array names are separate
+# Also AELEM can have arbitrary sequences of [ and ] not one and only [INT]
+
+#a2v.7: IDENT ":" type "=" "a2v" AELEM ";"
+
 GRAMMAR = """
 start: func*
 
 func: CNAME "{" instr* "}"
 
-?instr: const | vop | eop | label
+?instr: const | vop | eop | label | init | aop
 
+aop.6: AELEM ":" type "=" CNAME AELEM ";"
+init.5: IDENT ":" type "=" "init" lit ";"
 const.4: IDENT ":" type "=" "const" lit ";"
 vop.3: IDENT ":" type "=" CNAME IDENT* ";"
 eop.2: CNAME IDENT* ";"
@@ -30,13 +46,12 @@ label.1: IDENT ":"
 
 lit: SIGNED_INT  -> int
   | BOOL     -> bool
-  | ARRAY 
 
 type: CNAME
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
-ARRAY: "[" [DIGIT ("," DIGIT)*] "]"
+AELEM: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT|"["|"]")*
 
 %import common.SIGNED_INT
 %import common.WS
@@ -56,6 +71,17 @@ class JSONTransformer(lark.Transformer):
         name = items.pop(0)
         return {'name': str(name), 'instrs': items}
 
+    def init(self, items):
+        dest = items.pop(0)
+        type = items.pop(0)
+        val = items.pop(0)
+        return {
+            'op': 'init',
+            'dest': str(dest),
+            'type': type,
+            'value': val,
+        }
+
     def const(self, items):
         dest = items.pop(0)
         type = items.pop(0)
@@ -66,6 +92,17 @@ class JSONTransformer(lark.Transformer):
             'type': type,
             'value': val,
         }
+
+    def aop(self, items):
+        dest = items.pop(0)
+        type = items.pop(0)
+        op = items.pop(0)
+        return {
+            'op': str(op),
+            'dest': str(dest),
+            'type': type,
+            'args': [str(t) for t in items],
+         }
 
     def vop(self, items):
         dest = items.pop(0)

@@ -1,3 +1,8 @@
 main {
-  arr1: array = const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  arr1: array = init 10;
+  i: int = const 5;
+  o: int = a2v arr1[0];
+  arr1[0]: int = v2a i;
+  print arr1;
+  print o;
 }

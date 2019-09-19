@@ -1,4 +1,0 @@
-main {
-  arr1: array = aconst [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  aprint array;
-}
