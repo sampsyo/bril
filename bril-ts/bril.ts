@@ -46,6 +46,11 @@ export interface CallOperation {
  */
 export type Value = number | boolean;
 
+
+export type ReturnValue = Value | null;
+
+
+
 /**
  * An instruction that places a literal value into a variable.
  */

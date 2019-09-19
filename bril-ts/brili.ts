@@ -19,7 +19,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
-  ret: 0,
+  ret: null, // Should be 0 or 1
   nop: 0,
   call: null,
 };
@@ -76,7 +76,7 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 type Action =
   {"label": bril.Ident} |
   {"next": true} |
-  {"end": true};
+  {"end": bril.ReturnValue};
 let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
 
@@ -200,7 +200,15 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
   }
   
   case "ret": {
-    return END;
+    let argCount = instr.args.length;
+    if (argCount == 0) {
+      return {"end": null};
+    } else if (argCount == 1) {
+      let val = get(env, instr.args[0]);
+      return {"end": val};
+    } else {
+      throw `ret takes 0 or 1 argument(s); got ${argCount}`;
+    }
   }
 
   case "nop": {
@@ -220,7 +228,7 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
       throw `undefined function ${name}`;
     }
 
-    let new_env: Env = new Map();
+    let newEnv: Env = new Map();
 
     for (let i = 0; i < func.args.length; i++) {
       // TODO: check types! and arity!
@@ -229,11 +237,18 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
       let value = get(env, instr.args[i]);
 
       // Set the value of the arg in the new (function) environemt
-      new_env.set(func.args[i].name, value);
+      newEnv.set(func.args[i].name, value);
     }
 
-    // TODO handle return
-    evalFunc(func, funcs);
+    // TODO check function return type against what's being returned
+    let retType = instr.type;
+
+    let retVal = evalFuncInEnv(func, funcs, newEnv);
+
+    if (retVal != null) {
+      env.set(instr.dest, retVal);
+    }
+
     return NEXT;
   }
   
@@ -244,7 +259,11 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
 }
 
 function evalFunc(func: bril.Function, funcs: bril.Function[]) {
-  let env: Env = new Map();
+  let newEnv: Env = new Map();
+  evalFuncInEnv(func, funcs, newEnv);
+}
+
+function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env) : bril.ReturnValue {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
@@ -262,14 +281,16 @@ function evalFunc(func: bril.Function, funcs: bril.Function[]) {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return;
+        return action.end;
       }
     }
   }
+
+  return null;
 }
 
 function evalProg(prog: bril.Program) {
-  let main = findFunc("main", funcs);
+  let main = findFunc("main", prog.functions);
   if (main === null) {
     console.log(`warning: no main function defined, doing nothing`);
   } else {
