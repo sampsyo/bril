@@ -8,36 +8,38 @@
 
 (provide interpret)
 
+(define (state-ref . other) (void))
+
 (define (interpret-block state block)
   (define (f instr)
-    (cond instr
-          [dest-instr?
+    (cond [(dest-instr? instr)
            (match-define (dest-instr dest _ vals) instr)
            (define syms (apply ((curry state-ref) state)
                                vals))
-           (cond instr
-             [add? (apply + syms)]
-             [sub? (apply - syms)]
-             [mul? (apply * syms)]
-             [div? (apply / syms)]
-             [ieq? (apply = syms)]
-             [lt? (apply < syms)]
-             [gt? (apply > syms)]
-             [le? (apply <= syms)]
-             [ge? (apply >= syms)]
-             [lnot? (apply not syms)]
-             [land? (andmap (lambda (x) x) syms)]
-             [lor? (ormap (lambda (x) x) syms)]
-             [constant? (car vals)]
-             [id? (car syms)])]
-          [control?
-           ]
+           (cond
+             [(add? instr) (apply + syms)]
+             [(sub? instr) (apply - syms)]
+             [(mul? instr) (apply * syms)]
+             [(div? instr) (apply / syms)]
+             [(ieq? instr) (apply = syms)]
+             [(lt? instr) (apply < syms)]
+             [(gt? instr) (apply > syms)]
+             [(le? instr) (apply <= syms)]
+             [(ge? instr) (apply >= syms)]
+             [(lnot? instr) (apply not syms)]
+             [(land? instr) (andmap (lambda (x) x) syms)]
+             [(lor? instr) (ormap (lambda (x) x) syms)]
+             [(constant? instr) (car vals)]
+             [(id? instr) (car syms)])]
+          ;; [control?
+          ;;  ]
           )
     )
-  (foldl ()
-         acc
-         (basic-block-intrs block)
-         )
+  (println "nyi")
+  ;; (foldl ()
+  ;;        acc
+  ;;        (basic-block-intrs block)
+  ;;        )
   )
 
 (define (interpret cfgs)

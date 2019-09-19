@@ -1,0 +1,1 @@
+command = "bril2json < {filename} | python3 ../lvn.py {args} | bril2txt"
