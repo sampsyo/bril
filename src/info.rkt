@@ -2,4 +2,10 @@
 
 (define version "0.1")
 
-(define build-deps (list "threading" "graph"))
+(define deps (list "threading"
+                   "rosette"
+                   "graph"))
+
+(define build-deps (list "threading"
+                         "rosette"
+                         "graph"))
