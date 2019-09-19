@@ -58,7 +58,7 @@ export class Builder {
    * Build a constant integer value.
    */
   buildInt(value: number, dest?: string) {
-    return this.buildConst(value, "int", dest);
+    return this.buildConst(BigInt(value), "int", dest);
   }
 
   /**

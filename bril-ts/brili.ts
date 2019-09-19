@@ -45,7 +45,7 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getInt(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
-  if (typeof val !== 'number') {
+  if (typeof val !== 'bigint') {
     throw `${instr.op} argument ${index} must be a number`;
   }
   return val;
@@ -89,7 +89,13 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   switch (instr.op) {
   case "const":
-    env.set(instr.dest, instr.value);
+    // Ensure that JSON ints get represented appropriately.
+    let value = instr.value;
+    if (typeof instr.value === "number") {
+      value = BigInt(instr.value);
+    }
+
+    env.set(instr.dest, value);
     return NEXT;
 
   case "id": {
@@ -171,7 +177,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "print": {
-    let values = instr.args.map(i => get(env, i));
+    let values = instr.args.map(i => get(env, i).toString());
     console.log(...values);
     return NEXT;
   }

@@ -36,7 +36,7 @@ export interface ValueOperation {
 /**
  * The type of Bril values that may appear in constants.
  */
-export type Value = number | boolean;
+export type Value = BigInt | boolean;
 
 /**
  * An instruction that places a literal value into a variable.
