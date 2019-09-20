@@ -1,0 +1,1 @@
+command = "vril2json < {filename} | python3 ../../examples/cfg_dot.py {args}"
