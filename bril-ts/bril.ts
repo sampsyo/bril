@@ -33,12 +33,17 @@ export interface ValueOperation {
   type: Type;
 }
 
+/**
+ * An operation that calls another Bril function. The operation places the
+ * result in the destination variable if the function has a non-void return
+ * type.
+ */
 export interface CallOperation {
   op: "call";
   name: Ident;
   args: Ident[];
-  dest: Ident; // TODO: maybe make optional
-  type: Type;  // TODO: maybe make optional
+  dest?: Ident;
+  type?: Type; 
 }
 
 /**

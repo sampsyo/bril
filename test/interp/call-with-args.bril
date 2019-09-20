@@ -5,7 +5,7 @@ main {
     print y;
     print z;
 }
-void add2(x : int, y : int) {
+int add2(x : int, y : int) {
     w : int = add x y;
     y : int = const 5;
     print w;

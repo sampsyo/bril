@@ -45,6 +45,19 @@ export class Builder {
   }
 
   /**
+   * Build a call operation that may or may not write to a destination.
+   */
+  buildCallOperation(op: bril.CallOpCode, name : string, args: string[],
+                     dest?: string, type?: bril.Type) {
+    if ((type !== undefined && dest !== undefined)
+      && (type !== undefined || dest !== undefined)) {
+      throw 'call must provide both or neither dest and type';
+    }
+    let instr : bril.CallOperation = { op, name, args, dest, type }
+    return instr;
+  }
+
+  /**
    * Build a constant instruction. As above, the destination name is optional.
    */
   buildConst(value: bril.Value, type: bril.Type, dest?: string) {

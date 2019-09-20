@@ -1,0 +1,6 @@
+void main() {
+    v : int = call print4();
+}
+int print4() {
+    ret;
+}

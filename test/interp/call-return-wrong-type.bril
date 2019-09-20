@@ -1,0 +1,7 @@
+void main() {
+    v : int = call print4();
+}
+int print4() {
+    b : bool = const false;
+    ret b;
+}
