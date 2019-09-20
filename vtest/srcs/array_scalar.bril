@@ -40,5 +40,6 @@ loop:
   cond: bool = gt length i;
   br cond loop end;
 end:
-  print arr3;
+  o: int = a2v arr3[0];
+  print o;
 }
