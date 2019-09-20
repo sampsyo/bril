@@ -2,8 +2,8 @@
 
 This module defines both a parser and a pretty-printer for a
 human-editable representation of Bril programs. There are two commands:
-`bril2txt`, which takes a Bril program in its (canonical) JSON format and
-pretty-prints it in the text format, and `bril2json`, which parses the
+`vril2txt`, which takes a Bril program in its (canonical) JSON format and
+pretty-prints it in the text format, and `vril2json`, which parses the
 format and emits the ordinary JSON representation.
 """
 
@@ -202,9 +202,9 @@ def print_prog(prog):
 
 # Command-line entry points.
 
-def bril2json():
+def vril2json():
     print(parse_bril(sys.stdin.read()))
 
 
-def bril2txt():
+def vril2txt():
     print_prog(json.load(sys.stdin))
