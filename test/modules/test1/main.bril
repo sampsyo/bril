@@ -1,0 +1,7 @@
+import math;
+
+main {
+    v0: int = const 1;
+    v1: int = const 2;
+    v2: int = modcall math add v0 v1;
+}
