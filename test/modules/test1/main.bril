@@ -2,5 +2,8 @@ import math;
 
 main {
     v0: int = const 5;
-    v2: int = call double v0;
+    v1: int = call double v0;
+    v2: int = call triple v0;
+    print v1;
+    print v2;
 }

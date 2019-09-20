@@ -19,7 +19,7 @@ __version__ = '0.0.2'
 GRAMMAR = """
 start: (func | imp)*
 
-imp: "import" CNAME ";"
+imp: "import" CNAME from* ";"
 func: CNAME arg* "{" instr* "}" | CNAME arg* ":" type "{" instr* "}"
 
 ?instr: const | vop | eop | label
@@ -34,6 +34,7 @@ lit: SIGNED_INT  -> int
 
 type: CNAME
 arg: IDENT | "(" IDENT ":" type ")"
+from: IDENT | "(" IDENT ")"
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -54,7 +55,17 @@ class JSONTransformer(lark.Transformer):
 
     def imp(self, items):
         name = items.pop(0)
-        return {'import': name}
+        functions = []
+        while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
+            items[0].data == "from":
+            func = items.pop(0).children
+            functions.append(func[0])
+        data = {'import': str(name)}
+        if len(functions):
+            data['functions'] = functions
+        else:
+            data['functions'] = []
+        return data
 
     def func(self, items):
         name = items.pop(0)
@@ -127,16 +138,20 @@ def parse_bril(txt):
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
-    imports = []
-    for i,line in enumerate(data['functions']):
+    imports = {}
+    for line in data['functions']:
         if "import" in line.keys():
-            imports.append(line['import'])
-    for imp in imports:
+            imports[line['import']] = line['functions']
+    for imp in imports.keys():
         data['functions'].pop(0)
         with open('./{}.bril'.format(imp), 'r') as mod:
             mod_code = mod.read()
         mod_data = parse_bril(mod_code)
-        data['functions'] = data['functions'] + mod_data['functions']
+        for func in mod_data['functions']:
+            if (func['name'] in imports[imp]):
+                data['functions'] = data['functions'] + [func]
+        if imports[imp] == []:
+            data['functions'] = data['functions'] + mod_data['functions']
     return data
 
 

@@ -3,3 +3,9 @@ double (a: int): int {
     v1: int = mul a v0;
     ret v1;
 }
+
+triple (a: int): int {
+    v0: int = const 3;
+    v1: int = mul a v0;
+    ret v1;
+}
