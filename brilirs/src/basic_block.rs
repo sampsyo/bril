@@ -1,7 +1,11 @@
 use crate::ir_types::{Function, Instruction, Operation, Program};
 use std::collections::HashMap;
 
-#[derive(Debug)]
+// A program composed of basic blocks.
+// (BB index of main program, list of BBs, mapping of label -> BB index)
+pub type BBProgram = (Option<usize>, Vec<BasicBlock>, HashMap<String, usize>);
+
+#[derive(Debug, Clone)]
 pub struct BasicBlock {
   pub instrs: Vec<Operation>,
   pub exit: Vec<usize>,
@@ -16,9 +20,7 @@ impl BasicBlock {
   }
 }
 
-pub fn find_basic_blocks(
-  prog: Program,
-) -> (Option<usize>, Vec<BasicBlock>, HashMap<String, usize>) {
+pub fn find_basic_blocks(prog: Program) -> BBProgram {
   let mut main_fn = None;
   let mut blocks = Vec::new();
   let mut labels = HashMap::new();
