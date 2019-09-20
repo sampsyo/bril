@@ -11,14 +11,15 @@ import lark
 import sys
 import json
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 # Text format parser.
 
 GRAMMAR = """
-start: func*
+start: (func | imp)*
 
+imp: "import" CNAME ";"
 func: CNAME arg* "{" instr* "}" | CNAME arg* ":" type "{" instr* "}"
 
 ?instr: const | vop | eop | label
@@ -50,6 +51,10 @@ COMMENT: /#.*/
 class JSONTransformer(lark.Transformer):
     def start(self, items):
         return {'functions': items}
+
+    def imp(self, items):
+        name = items.pop(0)
+        return {'import': name}
 
     def func(self, items):
         name = items.pop(0)
@@ -114,12 +119,25 @@ class JSONTransformer(lark.Transformer):
     def type(self, items):
         return str(items[0])
 
+def initial_parse(txt):
+    data = parse_bril(txt)
+    return json.dumps(data, indent=2, sort_keys=True)
 
 def parse_bril(txt):
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
-    return json.dumps(data, indent=2, sort_keys=True)
+    imports = []
+    for i,imp in enumerate(data['functions']):
+        if "import" in imp.keys():
+            imports.append(imp["import"])
+            data['functions'].pop(i)
+    for imp in imports:
+        with open('../test/modules/test1/{}.bril'.format(imp), 'r') as mod:
+            mod_code = mod.read()
+        mod_data = parse_bril(mod_code)
+        data['functions'] = data['functions'] + mod_data['functions']
+    return data
 
 
 # Text format pretty-printer.
@@ -171,7 +189,7 @@ def print_prog(prog):
 # Command-line entry points.
 
 def bril2json():
-    print(parse_bril(sys.stdin.read()))
+    print(initial_parse(sys.stdin.read()))
 
 
 def bril2txt():
