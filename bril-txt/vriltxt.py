@@ -30,6 +30,8 @@ __version__ = '0.0.1'
 
 #a2v.7: IDENT ":" type "=" "a2v" AELEM ";"
 # The order might matter! aop sent down to 3
+# If we want to constraint how arrays are written
+# AELEM: IDENT "[" INT "]"
 
 GRAMMAR = """
 start: func*
@@ -38,10 +40,10 @@ func: CNAME "{" instr* "}"
 
 ?instr: const | vop | eop | label | init | aop
 
-init.6: IDENT ":" type "=" "init" INT ";"
+init.6: IDENT ":" type "=" "init" lit ";"
 const.5: IDENT ":" type "=" "const" lit ";"
 vop.4: IDENT ":" type "=" CNAME IDENT* ";"
-aop.3: AIDEN ":" type "=" CNAME AIDEN* ";"
+aop.3: AIDENT ":" type "=" CNAME AIDENT* ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
@@ -52,10 +54,8 @@ type: CNAME
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
-AELEM: IDENT "[" INT "]"
-AIDEN: IDENT | AELEM
+AIDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT|"["|"]")*
 
-%import common.INT
 %import common.SIGNED_INT
 %import common.WS
 %import common.CNAME

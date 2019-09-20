@@ -3,6 +3,12 @@
     {
       "instrs": [
         {
+          "dest": "VL",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
           "dest": "one",
           "op": "const",
           "type": "int",
@@ -13,7 +19,7 @@
             "VL"
           ],
           "dest": "inc",
-          "op": "const",
+          "op": "id",
           "type": "int"
         },
         {
@@ -234,8 +240,17 @@
         },
         {
           "args": [
-            "length",
+            "i",
             "one"
+          ],
+          "dest": "alias",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "length",
+            "alias"
           ],
           "dest": "lvl",
           "op": "sub",
