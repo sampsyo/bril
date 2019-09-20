@@ -1,0 +1,103 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "inc",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "length",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "arr1",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "dest": "arr2",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "length",
+            "i"
+          ],
+          "dest": "cond",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond",
+            "loop",
+            "end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "arr1",
+            "arr2"
+          ],
+          "dest": "arr3",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "inc"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "length",
+            "i"
+          ],
+          "dest": "cond",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond",
+            "loop",
+            "end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "arr3"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

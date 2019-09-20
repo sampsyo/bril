@@ -1,0 +1,49 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "arr1",
+          "op": "init",
+          "type": "array",
+          "value": 10
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "args": [
+            "arr1[0]"
+          ],
+          "dest": "o",
+          "op": "a2v",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "arr1[0]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "arr1"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "o"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

@@ -29,6 +29,7 @@ __version__ = '0.0.1'
 # Also AELEM can have arbitrary sequences of [ and ] not one and only [INT]
 
 #a2v.7: IDENT ":" type "=" "a2v" AELEM ";"
+# The order might matter! aop sent down to 3
 
 GRAMMAR = """
 start: func*
@@ -37,10 +38,10 @@ func: CNAME "{" instr* "}"
 
 ?instr: const | vop | eop | label | init | aop
 
-aop.6: AELEM ":" type "=" CNAME AELEM ";"
-init.5: IDENT ":" type "=" "init" lit ";"
-const.4: IDENT ":" type "=" "const" lit ";"
-vop.3: IDENT ":" type "=" CNAME IDENT* ";"
+init.6: IDENT ":" type "=" "init" lit ";"
+const.5: IDENT ":" type "=" "const" lit ";"
+vop.4: IDENT ":" type "=" CNAME IDENT* ";"
+aop.3: AELEM ":" type "=" CNAME AELEM ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 

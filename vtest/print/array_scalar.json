@@ -1,0 +1,299 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "inc",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "length",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "arr1",
+          "op": "init",
+          "type": "array",
+          "value": 10
+        },
+        {
+          "dest": "arr2",
+          "op": "init",
+          "type": "array",
+          "value": 10
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[0]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[1]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[2]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[3]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[4]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[5]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[6]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[7]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[8]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "arr1[9]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[0]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[1]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[2]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[3]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[4]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[5]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[6]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[7]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[8]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr2[9]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "length",
+            "i"
+          ],
+          "dest": "cond",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond",
+            "loop",
+            "end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "arr1[i]"
+          ],
+          "dest": "id1",
+          "op": "a2v",
+          "type": "int"
+        },
+        {
+          "args": [
+            "arr2[i]"
+          ],
+          "dest": "id2",
+          "op": "a2v",
+          "type": "int"
+        },
+        {
+          "args": [
+            "id1",
+            "id2"
+          ],
+          "dest": "id3",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "id3"
+          ],
+          "dest": "arr3[i]",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "inc"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "length",
+            "i"
+          ],
+          "dest": "cond",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond",
+            "loop",
+            "end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "arr3"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
