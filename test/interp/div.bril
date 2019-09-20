@@ -1,0 +1,6 @@
+main {
+  v0: int = const 9;
+  v1: int = const -20;
+  res: int = div v0 v1;
+  print res;
+}
