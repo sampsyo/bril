@@ -26,7 +26,7 @@ export interface EffectOperation {
  */
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
-      "id" | "nop" | "init" | "a2v" |
+      "id" | "nop" | "init" | "a2v" | "v2a" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;

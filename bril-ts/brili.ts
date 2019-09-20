@@ -10,6 +10,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   id: 1,
   init: 1,
   a2v: 1,
+  v2a: 1,
   lt: 2,
   le: 2,
   gt: 2,
@@ -108,6 +109,12 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "a2v": {
+    let val = get(env, instr.args[0]);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "v2a": {
     let val = get(env, instr.args[0]);
     env.set(instr.dest, val);
     return NEXT;
