@@ -1,0 +1,9 @@
+main {
+    x : int = const 1;
+    y : int = const 2;
+    call addboth(x, y);
+}
+void addboth(x : int, y : int, z : int) {
+    w : int = add x y;
+    print w;
+}

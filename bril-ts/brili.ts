@@ -94,6 +94,61 @@ let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
 
 /**
+ * Interpet a call instruction.
+ */
+function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[]): Action  {
+  let func = findFunc(instr.name, funcs);
+    if (func === null) {
+      throw `undefined function ${name}`;
+    }
+
+    let newEnv: Env = new Map();
+
+    // check arity of arguments and definition
+    if (func.args.length !== instr.args.length) {
+      throw `function expected ${func.args.length} arguments, got ${instr.args.length}`;
+    }
+
+    for (let i = 0; i < func.args.length; i++) {
+      // Look up the variable in the current (calling) environment
+      let value = get(env, instr.args[i]);
+
+      // Check argument types
+      if (brilTypeToDynamicType[func.args[i].type] !== typeof value) {
+        throw `function argument type mismatch`;
+      }
+
+      // Set the value of the arg in the new (function) environemt
+      newEnv.set(func.args[i].name, value);
+    }
+
+    // Dynamically check the function's return value and type
+    let retVal = evalFuncInEnv(func, funcs, newEnv);
+    if (instr.dest === undefined && instr.type === undefined) {
+       // Expected void function
+      if (retVal !== null) {
+        throw `unexpected value returned by void function`;
+      }
+    } else {
+      // Expected non-void function
+      if (instr.type === undefined) {
+        throw `function call must include a type if it has a destination`;  
+      }
+      if (instr.dest === undefined) {
+        throw `function call must include a destination if it has a type`;  
+      }
+      if (retVal === null) {
+        throw `nothing returned from non-void function`;
+      }
+      if (brilTypeToDynamicType[instr.type] !== typeof retVal) {
+        throw `type of value returned by function does not match declaration`;
+      }
+      env.set(instr.dest, retVal);
+    }
+    return NEXT;
+}
+
+/**
  * Interpret an instruction in a given environment, possibly updating the
  * environment. If the instruction branches to a new label, return that label;
  * otherwise, return "next" to indicate that we should proceed to the next
@@ -237,59 +292,7 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
   }
 
   case "call": {
-    // check well-formedness: does function exist? arity of function matches number of args provided
-    // look up function by name
-    // look up arg types in function, compare to provided argument types
-    // check that labeled return type matches function return type
-    // create a new environment, populate with arguments
-
-    let name = instr.name;
-    let func = findFunc(name, funcs);
-    if (func === null) {
-      throw `undefined function ${name}`;
-    }
-
-    let newEnv: Env = new Map();
-
-    // check arity of arguments and definition
-
-    for (let i = 0; i < func.args.length; i++) {
-      // Look up the variable in the current (calling) environment
-      let value = get(env, instr.args[i]);
-
-      // check argument types
-      // if (brilTypeToDynamicType[func.args[i].type] !== typeof value) {
-      //   throw `function argument type mismatch`
-      // }
-
-      // Set the value of the arg in the new (function) environemt
-      newEnv.set(func.args[i].name, value);
-    }
-
-    // Dynamically check the function's return value and type
-    let retVal = evalFuncInEnv(func, funcs, newEnv);
-    if (instr.dest === undefined && instr.type === undefined) {
-       // Expected void function
-      if (retVal !== null) {
-        throw `unexpected value returned by void function`;
-      }
-    } else {
-      // Expected non-void function
-      if (instr.type === undefined) {
-        throw `function call must include a type if it has a destination`;  
-      }
-      if (instr.dest === undefined) {
-        throw `function call must include a destination if it has a type`;  
-      }
-      if (retVal === null) {
-        throw `nothing returned from non-void function`
-      }
-      if (brilTypeToDynamicType[instr.type] !== typeof retVal) {
-        throw `type of value returned by function does not match declaration`;
-      }
-      env.set(instr.dest, retVal);
-    }
-    return NEXT;
+    return evalCall(instr, env, funcs);
   }
   
   }

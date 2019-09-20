@@ -92,7 +92,10 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         builder.buildEffect("print", values.map(v => v.dest));
         return builder.buildInt(0);  // Expressions must produce values.
       } else {
-        throw "function calls unsupported";
+        // Recursively translate arguments
+        let values = call.arguments.map(emitExpr);
+        console.log(call)
+        builder.buildCallOperation('call', call.expression.getText(), values.map(v => v.dest))
       }
 
     default:
@@ -192,6 +195,12 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
         break;
       }
+
+      case ts.SyntaxKind.FunctionDeclaration: 
+        let funcDef = node as ts.FunctionDeclaration;
+        builder.buildFunction(funcDef.getText()); 
+        throw `TODO: handle function declarations`
+        break;
 
       default:
         throw `unhandled TypeScript AST node kind ${node.kind}`;
