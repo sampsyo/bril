@@ -38,10 +38,10 @@ func: CNAME "{" instr* "}"
 
 ?instr: const | vop | eop | label | init | aop
 
-init.6: IDENT ":" type "=" "init" lit ";"
+init.6: IDENT ":" type "=" "init" INT ";"
 const.5: IDENT ":" type "=" "const" lit ";"
 vop.4: IDENT ":" type "=" CNAME IDENT* ";"
-aop.3: AELEM ":" type "=" CNAME AELEM ";"
+aop.3: AIDEN ":" type "=" CNAME AIDEN* ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
@@ -52,8 +52,10 @@ type: CNAME
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
-AELEM: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT|"["|"]")*
+AELEM: IDENT "[" INT "]"
+AIDEN: IDENT | AELEM
 
+%import common.INT
 %import common.SIGNED_INT
 %import common.WS
 %import common.CNAME
