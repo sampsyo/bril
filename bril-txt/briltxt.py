@@ -133,7 +133,7 @@ def parse_bril(txt):
             imports.append(line['import'])
     for imp in imports:
         data['functions'].pop(0)
-        with open('../test/modules/test2/{}.bril'.format(imp), 'r') as mod:
+        with open('./{}.bril'.format(imp), 'r') as mod:
             mod_code = mod.read()
         mod_data = parse_bril(mod_code)
         data['functions'] = data['functions'] + mod_data['functions']
