@@ -8,7 +8,6 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   sub: 2,
   div: 2,
   id: 1,
-  init: 1,
   a2v: 1,
   v2a: 1,
   lt: 2,
@@ -81,7 +80,7 @@ let END: Action = {"end": true};
  */
 function evalInstr(instr: bril.Instruction, env: Env): Action {
   // Check that we have the right number of arguments.
-  if (instr.op !== "const") {
+  if ((instr.op !== "const") && (instr.op !== "init")) {
     let count = argCounts[instr.op];
     if (count === undefined) {
       throw "unknown opcode " + instr.op;
@@ -95,16 +94,16 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     env.set(instr.dest, instr.value);
     return NEXT;
 
-  case "id": {
-    let val = get(env, instr.args[0]);
-    env.set(instr.dest, val);
+  case "init": {
+    for (let i = 0; i < instr.value; i++) {
+	env.set(instr.dest + "[" + i + "]", 7);
+    }
     return NEXT;
   }
 
-  case "init": {
-    for (let i = 0; i < getInt(instr, env, 1); i++) {
-	env.set(instr.dest + "[" + i + "]", 0);
-    }
+  case "id": {
+    let val = get(env, instr.args[0]);
+    env.set(instr.dest, val);
     return NEXT;
   }
 

@@ -26,9 +26,19 @@ export interface EffectOperation {
  */
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
-      "id" | "nop" | "init" | "a2v" | "v2a" |
+      "id" | "nop" | "a2v" | "v2a" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
+  dest: Ident;
+  type: Type;
+}
+
+/**
+ * An array operation.
+ */
+export interface ArrayOperation {
+  op: "init";
+  value: Value;
   dest: Ident;
   type: Type;
 }
@@ -57,12 +67,12 @@ export type Operation = EffectOperation | ValueOperation;
  * Instructions can be operations (which have arguments) or constants (which
  * don't). Both produce a value in a destination variable.
  */
-export type Instruction = Operation | Constant;
+export type Instruction = Operation | Constant | ArrayOperation;
 
 /**
  * Both constants and value operations produce results.
  */
-export type ValueInstruction = Constant | ValueOperation;
+export type ValueInstruction = Constant | ValueOperation | ArrayOperation;
 
 /**
  * The valid opcodes for value-producing instructions.
@@ -73,6 +83,11 @@ export type ValueOpCode = ValueOperation["op"];
  * The valid opcodes for effecting operations.
  */
 export type EffectOpCode = EffectOperation["op"];
+
+/**
+ * The valid opcodes for array operations.
+ */
+export type ArrayOpCode = ArrayOperation["op"];
 
 /**
  * All valid operation opcodes.
