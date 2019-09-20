@@ -1,12 +1,10 @@
 main {
   VL: int = const 5;
   one: int = const 1;
-  inc: int = id VL; 
-  # This is vector length
+  inc: int = id VL;
   length: int = const 10;
   arr1: array = init 10;
   arr2: array = init 10;
-
   zero: int = const 0;
   arr1[0]: int = v2a zero;
   arr1[1]: int = v2a zero;
@@ -18,7 +16,6 @@ main {
   arr1[7]: int = v2a zero;
   arr1[8]: int = v2a zero;
   arr1[9]: int = v2a zero;
-
   one: int = const 1;
   arr2[0]: int = v2a one;
   arr2[1]: int = v2a one;
@@ -30,7 +27,6 @@ main {
   arr2[7]: int = v2a one;
   arr2[8]: int = v2a one;
   arr2[9]: int = v2a one;
-
   i: int = const 0;
   cond: bool = gt length i;
   br cond loop end;
@@ -38,7 +34,6 @@ loop:
   alias: int = add i one;
   lvl: int = sub length alias;
   vl: int = setvl lvl;
-  #vl will take min of lvl and microarch vector length
   arr3: array = vadd arr1 arr2;
   i: int = add i inc;
   cond: bool = gt length i;
