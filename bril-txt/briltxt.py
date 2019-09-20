@@ -128,12 +128,12 @@ def parse_bril(txt):
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
     imports = []
-    for i,line in enumerate(data['functions']):
-        if "import" in line.keys():
-            imports.append(line['import'])
+    for i,imp in enumerate(data['functions']):
+        if "import" in imp.keys():
+            imports.append(imp["import"])
+            data['functions'].pop(i)
     for imp in imports:
-        data['functions'].pop(0)
-        with open('../test/modules/test2/{}.bril'.format(imp), 'r') as mod:
+        with open('../test/modules/test1/{}.bril'.format(imp), 'r') as mod:
             mod_code = mod.read()
         mod_data = parse_bril(mod_code)
         data['functions'] = data['functions'] + mod_data['functions']
