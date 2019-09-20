@@ -1,7 +1,13 @@
-ifeq ($(OPTEST),1)
-TESTS := examples/tdce_test/*.bril \
-	examples/lvn_test/*.bril \
-#	examples/df_test/*.bril
+
+ifeq ($(VOPTEST),1)
+TESTS := vtest/cfg_test/*.bril
+#	vtest/tdce_test/*.bril
+#	vtest/lvn_test/*.bril
+else ifeq ($(OPTEST),1)
+TESTS := test/cfg_test/*.bril
+#	test/tdce_test/*.bril
+#	test/lvn_test/*.bril
+#	test/df_test/*.bril
 else ifeq ($(VTEST),1)
 TESTS := vtest/parse/*.bril \
 	vtest/print/*.json

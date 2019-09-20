@@ -1,0 +1,41 @@
+main {
+  inc: int = const 1;
+  length: int = const 10;
+  arr1: array = init 10;
+  arr2: array = init 10;
+  zero: int = const 0;
+  arr1[0]: int = v2a zero;
+  arr1[1]: int = v2a zero;
+  arr1[2]: int = v2a zero;
+  arr1[3]: int = v2a zero;
+  arr1[4]: int = v2a zero;
+  arr1[5]: int = v2a zero;
+  arr1[6]: int = v2a zero;
+  arr1[7]: int = v2a zero;
+  arr1[8]: int = v2a zero;
+  arr1[9]: int = v2a zero;
+  one: int = const 1;
+  arr2[0]: int = v2a one;
+  arr2[1]: int = v2a one;
+  arr2[2]: int = v2a one;
+  arr2[3]: int = v2a one;
+  arr2[4]: int = v2a one;
+  arr2[5]: int = v2a one;
+  arr2[6]: int = v2a one;
+  arr2[7]: int = v2a one;
+  arr2[8]: int = v2a one;
+  arr2[9]: int = v2a one;
+  i: int = const 0;
+  cond: bool = gt length i;
+  br cond loop end;
+loop:
+  id1: int = a2v arr1[i];
+  id2: int = a2v arr2[i];
+  id3: int = add id1 id2;
+  arr3[i]: int = v2a id3;
+  i: int = add i inc;
+  cond: bool = gt length i;
+  br cond loop end;
+end:
+  print arr3;
+}

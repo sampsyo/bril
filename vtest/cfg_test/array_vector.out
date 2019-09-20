@@ -1,0 +1,9 @@
+digraph main {
+  b1;
+  loop;
+  end;
+  b1 -> loop;
+  b1 -> end;
+  loop -> loop;
+  loop -> end;
+}
