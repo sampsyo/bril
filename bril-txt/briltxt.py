@@ -61,7 +61,7 @@ class JSONTransformer(lark.Transformer):
             func = items.pop(0).children
             if (len(func) == 2):
                 functions.append({'name': func[0], 'alias': func[1]})
-            else:
+            elif (len(func) == 1):
                 functions.append({'name': func[0], 'alias': func[0]})
         data = {'import': str(name)}
         if len(functions):
@@ -137,6 +137,8 @@ def initial_parse(txt):
     data = parse_bril(txt)
     return json.dumps(data, indent=2, sort_keys=True)
 
+global_imported = []
+
 def func_walk(imp, funcspace):
     calls = imp
     data = []
@@ -145,12 +147,14 @@ def func_walk(imp, funcspace):
         func_pointer = 0
         while(func_pointer != len(funcspace)):
             func = funcspace[func_pointer]
-            if 'instrs' in func and func['name'] == check_func['name']:
+            if 'instrs' in func and func['name'] == check_func['name'] and check_func['alias'] not in global_imported:
                 func['name'] = check_func['alias']
                 data.append(func)
+                global_imported.append(check_func['alias'])
                 for instr in func['instrs']:
                     if instr['op'] == 'call' and instr['args'][0] not in calls:
-                        calls.append(instr['args'][0])
+                        if instr['args'][0] not in global_imported:
+                            calls.append({'name': instr['args'][0], 'alias': instr['args'][0]})
                 func_pointer = len(funcspace)
             else:
                 func_pointer += 1
