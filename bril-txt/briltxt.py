@@ -21,7 +21,7 @@ start: func*
 
 func: CNAME arg* "{" instr* "}" | CNAME arg* ":" type "{" instr* "}"
 
-?instr: const | vop | eop | label
+?instr: const | vop | eop | label 
 
 const.4: IDENT ":" type "=" "const" lit ";"
 vop.3: IDENT ":" type "=" CNAME IDENT* ";"
