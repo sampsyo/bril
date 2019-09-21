@@ -1,0 +1,5 @@
+double (a: int): int {
+    v0: int = const 2;
+    v1: int = mul a v0;
+    ret v1;
+}

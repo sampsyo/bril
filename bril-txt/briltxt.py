@@ -134,6 +134,24 @@ def initial_parse(txt):
     data = parse_bril(txt)
     return json.dumps(data, indent=2, sort_keys=True)
 
+def func_walk(imp, funcspace):
+    calls = imp
+    data = []
+    while (calls):
+        check_func = calls.pop(0)
+        func_pointer = 0
+        while(func_pointer != len(funcspace)):
+            func = funcspace[func_pointer]
+            if 'instrs' in func and func['name'] == check_func:
+                data.append(func)
+                for instr in func['instrs']:
+                    if instr['op'] == 'call' and instr['args'][0] not in calls:
+                        calls.append(instr['args'][0])
+                func_pointer = len(funcspace)
+            else:
+                func_pointer += 1
+    return data
+
 def parse_bril(txt):
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
@@ -146,11 +164,11 @@ def parse_bril(txt):
         data['functions'].pop(0)
         with open('./{}.bril'.format(imp), 'r') as mod:
             mod_code = mod.read()
-        mod_data = parse_bril(mod_code)
-        for func in mod_data['functions']:
-            if (func['name'] in imports[imp]):
-                data['functions'] = data['functions'] + [func]
-        if imports[imp] == []:
+        mod_data = parse_bril(mod_code) 
+        if imports[imp] != []:
+            nested_data = func_walk(imports[imp], mod_data['functions'])
+            data['functions'] = data['functions'] + nested_data
+        elif imports[imp] == []:
             data['functions'] = data['functions'] + mod_data['functions']
     return data
 
