@@ -102,6 +102,9 @@ export interface Label {
   label: Ident;
 }
 
+/*
+ * An argument has a name and a type.
+ */
 export interface Argument {
   name: Ident;
   type: Type;

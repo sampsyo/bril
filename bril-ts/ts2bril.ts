@@ -33,7 +33,9 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
  */
 function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
-  builder.buildFunction("main");
+
+  // TODO: let main have args!
+  builder.buildFunction("main", []);
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
     switch (expr.kind) {
@@ -198,8 +200,29 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
       case ts.SyntaxKind.FunctionDeclaration: 
         let funcDef = node as ts.FunctionDeclaration;
-        builder.buildFunction(funcDef.getText()); 
-        throw `TODO: handle function declarations`
+        if (funcDef.name === undefined) {
+          throw `no anonymous functions!`
+        }
+        let name : string = funcDef.name.getText();
+
+        let args : bril.Argument[] = [];
+
+        for (let p of funcDef.parameters) {
+          let argName = p.name.getText();
+          let typeString = "";
+          if (p.type) {
+            if (p.type.getText() === 'number') {
+              typeString = "int"
+            } else if (p.type.getText() === 'boolean') {
+              typeString = "bool"
+            } else {
+              throw `unsupported type in function arguments`;
+            }
+          }
+          args.push({name: argName, type: typeString} as bril.Argument);
+        }
+
+        builder.buildFunction(name, args);
         break;
 
       default:

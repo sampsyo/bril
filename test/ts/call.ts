@@ -1,6 +1,8 @@
-function add2(x : number) : number {
+var x : number = 5;
+var y : number = 2;
+//var b = add2(x, y);
+//console.log(y)
+
+function add2(x : number, y : number) : number {
     return x + 1;
 }
-
-// var x = 5;
-// var y = add1(x);
