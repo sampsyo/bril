@@ -294,6 +294,7 @@ function evalProg(prog: bril.Program, cliArgs: (Number | Boolean)[]) {
     }
     evalFunc(functionMap.get("main"), env, functionMap);
   } else {
+      throw `main function missing`
   }
 }
 
