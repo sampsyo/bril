@@ -1,0 +1,13 @@
+main {
+  a0: int = const 1;
+  b0: int = const 2;
+  c0: int = const 3;
+  v1: int = call add3 a0 b0 c0;
+  print v1;
+}
+
+add3 (a: int) (b: int) (c: int): int {
+  v2: int = add a b;
+  v3: int = add v2 c;
+  ret v3;
+}

@@ -1,7 +1,10 @@
-TESTS := test/parse/*.bril \
-	test/print/*.json \
+TESTS := \
+	test/ts/*.ts \
+	test/cli/*.bril \
+	test/func/*.bril \
+    test/parse/*.bril \
 	test/interp/*.bril \
-	test/ts/*.ts
+	test/print/*.json 
 
 .PHONY: test
 test:
