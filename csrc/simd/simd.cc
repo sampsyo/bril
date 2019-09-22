@@ -1,10 +1,15 @@
-#include <string>
 #include <iostream>
-#include <immintrin.h>  // portable to all x86 compilers
+#include <array>
 
-void print128_num(__m128 var)
+// vector support
+#include <smmintrin.h>
+#include <immintrin.h>
+
+#include "nbind/api.h"
+
+void print128_num(__m128i var)
 {
-    float *val = (float*) &var;
+    uint32_t *val = (uint32_t*) &var;
     std::cout << "Numerical: ";
     for (int i = 0; i < 4; i++) {
       std::cout << val[i] << " ";
@@ -16,23 +21,40 @@ void print128_num(__m128 var)
 }
 
 struct SIMD {
-  static void vecAdd(
-    std::string name
+  static std::array<int, 4> vecAdd(
+    // prob important to do more than one vec add?
+    // because calling into binding is expensive?
+    int size,
+    // std::array or std::vector supported here
+    // also can use nbind buffer which requires no memcpy
+    std::array<int,4> a,
+    std::array<int,4> b
+    //nbind::Buffer a,
+    //nbind::Buffer b,
+    //nbind::Buffer c,
   ) {
-    std::cout
-      << "Hello, "
-      << name << "!\n";
 
-    // vector https://stackoverflow.com/questions/1389712/getting-started-with-intel-x86-sse-simd-instructions
-    __m128 vector1 = _mm_set_ps(4.0, 3.0, 2.0, 1.0); // high element first, opposite of C array order.  Use _mm_setr_ps if you want "little endian" element order in the source.
-    __m128 vector2 = _mm_set_ps(7.0, 8.0, 9.0, 0.0);
+    // https://www.cs.virginia.edu/~cr4bd/3330/F2018/simdref.html
+    /*__m256i a = _mm256_loadu_si256((__m256i_u*) array);
+    __m256i b = _mm256_loadu_si256((__m256i_u*) array);
 
-    __m128 sum = _mm_add_ps(vector1, vector2); // result = vector1 + vector 2
+    // takes two __m256i types  and treats are 32 bit ints then adds them
+    __m256i c = _mm256_add_epi32(a, b);*/
 
-    vector1 = _mm_shuffle_ps(vector1, vector1, _MM_SHUFFLE(0,1,2,3));
-    // vector1 is now (1, 2, 3, 4) (above shuffle reversed it)
-    //return 0;
-    print128_num(sum);
+    // loadu -> 32 bit(?), si -> signed int, 128 -> 128 bits
+    __m128i vecA = _mm_loadu_si128((__m128i*)&(a[0]));
+    __m128i vecB = _mm_loadu_si128((__m128i*)&(b[0]));
+
+    // mm -> 128 bits, epi32 -> 32 bit arithmetic
+    __m128i vecC = _mm_add_epi32(vecA, vecB);
+    //print128_num(vecC);
+
+    // store into a buffer and return it
+    std::array<int,4> c;
+    _mm_storeu_si128((__m128i*)&(c[0]), vecC);
+    return c;
+
+    
 
   }
 };

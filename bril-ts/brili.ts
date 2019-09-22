@@ -22,7 +22,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   ret: 0,
   nop: 0,
   lw: 1,
-  sw: 2
+  sw: 2,
+  vadd: 4
 };
 
 // this represents an infinite size register file
@@ -70,14 +71,13 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
   return val;
 }
 
-function getMem(instr: bril.Operation, env: Env, index: number) {
-  let addr = getInt(instr, env, index);
+function getMem(addr: number) {
   if (addr < stackSize) {
     let val = stack[addr];
     return val;
   }
   else {
-    throw `${instr.op} argument ${index} with addr ${addr} out of range of stack`;
+    throw `load with addr ${addr} out of range of stack`;
   }
 }
 
@@ -231,11 +231,9 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   case "lw": {
     // lookup memory based on value in register
-    let val = getMem(instr, env, 0);
+    let addr = getInt(instr, env, 0);
+    let val = getMem(addr);
     env.set(instr.dest, val);
-    let nbind = require('nbind');
-    let lib = nbind.init().lib;
-    lib.SIMD.vecAdd('you');
     return NEXT;
   }
 
@@ -245,6 +243,34 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     setMem(val, addr);
     return NEXT;
   }
+
+  case "vadd": {
+    // cptr, aptr, bptr, size
+    let nbind = require('nbind');
+    let lib = nbind.init().lib;
+
+    // get memory over the specified range to pass in as array
+    // TODO vector registers. llvm does that
+    let size = getInt(instr, env, 3);
+    let aBase = getInt(instr, env, 1);
+    let bBase = getInt(instr, env, 2);
+    let cBase = getInt(instr, env, 0);
+    let a = Array<number>(size);
+    let b = Array<number>(size);
+    for (let i = 0; i < size; i++) {
+      a[i] = getMem(aBase + i);
+      b[i] = getMem(bBase + i);
+    }
+
+    let c: Array<number> = lib.SIMD.vecAdd(4, a, b);
+    for (let i = 0; i < size; i++) {
+      setMem(c[i], cBase + i);
+    }
+
+    //console.log(c);
+    return NEXT;
+  }
+
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
