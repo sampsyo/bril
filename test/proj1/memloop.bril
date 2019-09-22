@@ -1,0 +1,19 @@
+main {
+  size: int = const 16;
+  inc: int = const 1;
+  i: int = const 0;
+sw_loop:
+  sw i i;
+  i: int = add i inc;
+  done: bool = eq i size;
+  br done sw_done sw_loop;
+sw_done:
+  i: int = const 0;
+lw_loop:
+  v: int = lw i;
+  print v;
+  i: int = add i inc;
+  done: bool = eq i size;
+  br done lw_done lw_loop;
+lw_done:
+}
