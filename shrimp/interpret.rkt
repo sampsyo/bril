@@ -8,45 +8,51 @@
 
 (provide interpret)
 
-(define (state-ref . other) (void))
+; Extract this out into a separate file
+(define (empty-state) (make-hash))
+(define state-key? string?)
+(define (state-ref state key)
+  (if (state-key? key) (hash-ref state key) key))
+(define (state-store state key val)
+  (hash-set! state key val))
 
-(define (interpret-block block [state '()])
+(define (dest-instr-to-func instr)
+  (cond
+    [(add? instr)  + ]
+    [(sub? instr)  - ]
+    [(mul? instr)  * ]
+    [(div? instr)  / ]
+    [(ieq? instr)  = ]
+    [(lt? instr)   < ]
+    [(gt? instr)   > ]
+    [(le? instr)   <=]
+    [(ge? instr)   >=]
+    [(lnot? instr) not]
+    [(land? instr) ((curry andmap) identity)]
+    [(lor? instr)  ((curry ormap) identity)]
+    [(constant? instr) identity]
+    [(id? instr) identity]
+    [else (raise-argument-error 'interpret-block
+                                (~a "Unknown instruction: " instr ))]))
+
+
+(define (interpret-block state block)
   (define (instr-to-func instr)
     (cond [(dest-instr? instr)
+           (define func (dest-instr-to-func instr))
            (match-define (dest-instr dest _ vals) instr)
-           (define syms (apply ((curry state-ref) state)
-                               vals))
-           (cond
-             [(add? instr) (apply + syms)]
-             [(sub? instr) (apply - syms)]
-             [(mul? instr) (apply * syms)]
-             [(div? instr) (apply / syms)]
-             [(ieq? instr) (apply = syms)]
-             [(lt? instr) (apply < syms)]
-             [(gt? instr) (apply > syms)]
-             [(le? instr) (apply <= syms)]
-             [(ge? instr) (apply >= syms)]
-             [(lnot? instr) (apply not syms)]
-             [(land? instr) (andmap (lambda (x) x) syms)]
-             [(lor? instr) (ormap (lambda (x) x) syms)]
-             [(constant? instr) (car vals)]
-             [(id? instr) (car syms)]
-             [else (raise-argument-error 'interpret-block
-                                         (~a "Unknown instruction: " instr ))])]
-          [else (raise-argument-error 'interpret-block
-                                      (~a "Unknown instruction: " instr))]))
+           (define args (map (lambda (arg) (state-ref state arg)) vals))
+           (define res (apply func args))
+           (state-store state dest res)]))
 
-  (pretty-print block)
-  (println "nyi")
-  ;; (foldl ()
-  ;;        acc
-  ;;        (basic-block-intrs block)
-  ;;        )
-  )
+  (for ([inst (basic-block-instrs block)])
+    (instr-to-func inst))
+
+  (pretty-print state))
 
 (define (interpret cfgs)
   (map (match-lambda
          [(cons bs g)
-          (map interpret-block bs)])
+          (map ((curry interpret-block) (empty-state)) bs)])
        cfgs))
 

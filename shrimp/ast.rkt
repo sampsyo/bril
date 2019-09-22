@@ -101,8 +101,10 @@
                     (if v (string->type v) #f)))
 
      ;; If the op is a constant, it has value instead of 'args
-     (define vals (or (hash-ref instr-map 'args #f)
-                      (hash-ref instr-map 'value '())))
+     (define vals
+       (let [(val (or (hash-ref instr-map 'args #f)
+                      (hash-ref instr-map 'value '())))]
+         (if (list? val) val (list val))))
 
      (match (hash-ref instr-map 'op)
        ;; math instr-mapuctions
