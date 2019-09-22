@@ -1,7 +1,9 @@
 #lang racket/base
 
 (require racket/system
+         racket/port
          racket/match
+         racket/contract
          racket/file
          racket/function
          json
@@ -9,21 +11,27 @@
 (provide input-bril
          show-graph)
 
-(define (input-bril filename)
-  ;; (define in (open-input-file filename))
-  ;; (define out (open-output-string))
-  (match-define (list output input pid err info-proc) (process "bril2json"))
+(define/contract (input-bril filename)
+  (-> string? jsexpr?)
 
+  (match-define (list output input pid err-port info-proc)
+    (process "bril2json"))
   (fprintf input "~a" (file->string filename))
   (close-output-port input)
-
   (info-proc 'wait)
 
-  (define res (read-json output))
-
+  (define-values (out err)
+    (values (port->string output)
+            (port->string err-port)))
   (close-input-port output)
-  (close-input-port err)
-  res)
+  (close-input-port err-port)
+
+  (when (not (string=? "" err))
+    (raise-result-error 'input-bril
+                        "No error"
+                        err))
+
+  (string->jsexpr output))
 
 (define (show-graph dot-string)
   (if (find-executable-path "xdot")

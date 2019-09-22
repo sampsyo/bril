@@ -2,6 +2,7 @@
 
 (require racket/cmdline
          racket/match
+         racket/format
          racket/pretty
          graph
          threading
@@ -20,6 +21,10 @@
 (define lvn (make-parameter #f))
 
 (define (main filename)
+  (when (not (file-exists? filename))
+    (raise-argument-error 'main
+                          (~a filename " does not exist")))
+
   (define ast
     (json->ast
      (if (convert-bril)
@@ -68,7 +73,7 @@
                  (output-blocks #t)]
    [("-p" "--plot") "Show the cfgs using xdot"
                     (show-cfg #t)]
-   [("--disable-typecheck") "Disable type checking"
+   [("-T" "--disable-typecheck") "Disable type checking"
                             (disable-typecheck #t)]
    [("-i" "--interpret") "Interpret the given files"
                        (run-interpreter #t)]
@@ -77,9 +82,9 @@
    #:args (filename)
    (main filename)))
 
-(parameterize ([convert-bril #t]
-               [run-interpreter #f]
-               [output-blocks #t]
-               [disable-typecheck #t])
-  (main "../test/ts/loopfact.out"))
-
+(module+ test
+  (parameterize ([convert-bril #t]
+                 [run-interpreter #f]
+                 [output-blocks #t]
+                 [disable-typecheck #t])
+    (main "../test/ts/loopfact.out")))
