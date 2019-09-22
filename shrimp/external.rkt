@@ -14,16 +14,16 @@
 (define/contract (input-bril filename)
   (-> string? jsexpr?)
 
-  (match-define (list output input pid err-port info-proc)
+  (match-define (list out-port input pid err-port info-proc)
     (process "bril2json"))
   (fprintf input "~a" (file->string filename))
   (close-output-port input)
   (info-proc 'wait)
 
   (define-values (out err)
-    (values (port->string output)
+    (values (port->string out-port)
             (port->string err-port)))
-  (close-input-port output)
+  (close-input-port out-port)
   (close-input-port err-port)
 
   (when (not (string=? "" err))
@@ -31,7 +31,7 @@
                         "No error"
                         err))
 
-  (string->jsexpr output))
+  (string->jsexpr out))
 
 (define (show-graph dot-string)
   (if (find-executable-path "xdot")
@@ -42,4 +42,5 @@
         (system (format "xdot ~a 2>/dev/null" tmp-file))
         (delete-file tmp-file))
       (with-output-to-file "out.dot"
-        (thunk (print dot-string)))))
+        #:exists 'replace
+        (thunk (display dot-string)))))
