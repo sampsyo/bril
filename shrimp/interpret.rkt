@@ -51,8 +51,8 @@
   (pretty-print state))
 
 (define (interpret cfgs)
-  (map (match-lambda
-         [(cons bs g)
-          (map ((curry interpret-block) (empty-state)) bs)])
-       cfgs))
+  (for-each (match-lambda
+              [(cons bs g)
+               (map ((curry interpret-block) (empty-state)) bs)])
+            cfgs))
 
