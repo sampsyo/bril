@@ -65,9 +65,9 @@ class JSONTransformer(lark.Transformer):
                 functions.append({'name': func[0], 'alias': func[0]})
         data = {'import': str(name)}
         if len(functions):
-            data['functions'] = functions
+            data['functionids'] = functions
         else:
-            data['functions'] = []
+            data['functionids'] = []
         return data
 
     def func(self, items):
@@ -133,53 +133,65 @@ class JSONTransformer(lark.Transformer):
     def type(self, items):
         return str(items[0])
 
-def initial_parse(txt):
-    data = parse_bril(txt)
-    return json.dumps(data, indent=2, sort_keys=True)
-
-global_imported = []
-
-def func_walk(imp, funcspace):
-    calls = imp
-    data = []
-    while (calls):
-        check_func = calls.pop(0)
-        func_pointer = 0
-        while(func_pointer != len(funcspace)):
-            func = funcspace[func_pointer]
-            if 'instrs' in func and func['name'] == check_func['name'] and check_func['alias'] not in global_imported:
-                func['name'] = check_func['alias']
-                data.append(func)
-                global_imported.append(check_func['alias'])
-                for instr in func['instrs']:
-                    if instr['op'] == 'call' and instr['args'][0] not in calls:
-                        if instr['args'][0] not in global_imported:
-                            calls.append({'name': instr['args'][0], 'alias': instr['args'][0]})
-                func_pointer = len(funcspace)
-            else:
-                func_pointer += 1
-    return data
-
-def parse_bril(txt):
+def parse_helper(txt):
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
-    imports = {}
-    for line in data['functions']:
-        if "import" in line.keys():
-            imports[line['import']] = line['functions']
-    for imp in imports.keys():
-        data['functions'].pop(0)
-        with open('./{}.bril'.format(imp), 'r') as mod:
-            mod_code = mod.read()
-        mod_data = parse_bril(mod_code) 
-        if imports[imp] != []:
-            nested_data = func_walk(imports[imp], mod_data['functions'])
-            data['functions'] = data['functions'] + nested_data
-        elif imports[imp] == []:
-            data['functions'] = data['functions'] + mod_data['functions']
+    return data
+    data = parse_bril(txt)
+    return json.dumps(data, indent=2, sort_keys=True)
+
+# Import dependencies of imported functions as well
+
+def func_walk(imports, statements):
+    dependencies = imports
+    imported = []
+    data = []
+    while(dependencies):
+        dependency = dependencies.pop(0)
+        statement_pointer = 0
+
+        while (statement_pointer != len(statements)):
+            statement = statements[statement_pointer]
+            if 'instrs' in statement and \
+             dependency['name'] == statement['name'] and \
+             dependency['alias'] not in imported:
+                statement['name'] = dependency['alias']
+                imported.append(statement['name'])
+                data.append(statement)
+                for instr in statement['instrs']:
+                    if instr['op'] == 'call':
+                        dependencies.append({'name': instr['args'][0], 'alias': instr['args'][0]})
+                statement_pointer = len(statements)
+            else:
+                statement_pointer += 1
     return data
 
+def unroll_imports(txt):
+    stage_one = parse_helper(txt)
+
+    imports = {}
+    for statement in stage_one['functions']:
+        if "import" in statement.keys():
+            imports[statement['import']] = statement['functionids']
+
+    for imp in imports.keys():
+        stage_one['functions'].pop(0)
+        with open('./{}.bril'.format(imp), 'r') as mod:
+            mod_code = mod.read()
+        mod_data = unroll_imports(mod_code)
+
+        if imports[imp] != []:
+            dependencies = func_walk(imports[imp], mod_data['functions'])
+            stage_one['functions'] = stage_one['functions'] + dependencies
+        else:
+            stage_one['functions'] = stage_one['functions'] + mod_data['functions']
+    
+    return stage_one
+
+def parse_bril(txt):
+    stage_two = unroll_imports(txt)
+    return json.dumps(stage_two, indent=2, sort_keys=True)
 
 # Text format pretty-printer.
 
@@ -230,7 +242,7 @@ def print_prog(prog):
 # Command-line entry points.
 
 def bril2json():
-    print(initial_parse(sys.stdin.read()))
+    print(parse_bril(sys.stdin.read()))
 
 
 def bril2txt():
