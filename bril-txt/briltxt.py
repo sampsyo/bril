@@ -10,6 +10,7 @@ format and emits the ordinary JSON representation.
 import lark
 import sys
 import json
+import ntpath
 
 __version__ = '0.0.2'
 
@@ -64,7 +65,7 @@ class JSONTransformer(lark.Transformer):
                 functions.append({'name': func[0], 'alias': func[1]})
             elif len(func) == 1:
                 functions.append({'name': func[0], 'alias': func[0]})
-                
+
         data = {'import': str(name)}
         if len(functions):
             data['functionids'] = functions
@@ -140,8 +141,6 @@ def parse_helper(txt):
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
     return data
-    data = parse_bril(txt)
-    return json.dumps(data, indent=2, sort_keys=True)
 
 # Import dependencies of imported functions as well
 
@@ -169,7 +168,7 @@ def func_walk(imports, statements):
                 statement_pointer += 1
     return data
 
-def unroll_imports(txt):
+def unroll_imports(txt, modules):
     stage_one = parse_helper(txt)
 
     imports = {}
@@ -179,9 +178,9 @@ def unroll_imports(txt):
 
     for imp in imports.keys():
         stage_one['functions'].pop(0)
-        with open('./{}.bril'.format(imp), 'r') as mod:
+        with open(modules['{}.bril'.format(imp)], 'r') as mod:
             mod_code = mod.read()
-        mod_data = unroll_imports(mod_code)
+        mod_data = unroll_imports(mod_code, modules)
 
         if imports[imp] != []:
             dependencies = func_walk(imports[imp], mod_data['functions'])
@@ -191,8 +190,12 @@ def unroll_imports(txt):
     
     return stage_one
 
-def parse_bril(txt):
-    stage_two = unroll_imports(txt)
+def parse_bril(txt, module_paths):
+    modules = {}
+    for path in module_paths:
+        head, tail = ntpath.split(path)
+        modules[tail or ntpath.basename(head)] = path
+    stage_two = unroll_imports(txt, modules)
     return json.dumps(stage_two, indent=2, sort_keys=True)
 
 # Text format pretty-printer.
@@ -244,8 +247,9 @@ def print_prog(prog):
 # Command-line entry points.
 
 def bril2json():
-    print(parse_bril(sys.stdin.read()))
-
+    prog_txt = sys.stdin.read()
+    module_paths = sys.argv[1:]
+    print(parse_bril(prog_txt, module_paths))
 
 def bril2txt():
     print_prog(json.load(sys.stdin))
