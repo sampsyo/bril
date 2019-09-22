@@ -233,6 +233,9 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     // lookup memory based on value in register
     let val = getMem(instr, env, 0);
     env.set(instr.dest, val);
+    let nbind = require('nbind');
+    let lib = nbind.init().lib;
+    lib.SIMD.vecAdd('you');
     return NEXT;
   }
 
