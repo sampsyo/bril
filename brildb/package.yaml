@@ -1,0 +1,24 @@
+name:                brildb
+version:             0.1.0.0
+github:              "anastos/bril"
+license:             MIT
+author:              "Mark Anastos"
+
+extra-source-files:
+- readme.md
+
+dependencies:
+- base >= 4.7 && < 5
+- aeson
+- bytestring
+- containers
+- transformers
+
+executables:
+  brildb:
+    main:                Main.hs
+    source-dirs:         .
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
