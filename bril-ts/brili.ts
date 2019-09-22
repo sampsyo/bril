@@ -22,7 +22,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   ret: 0,
   nop: 0,
   lw: 1,
-  sw: 1
+  sw: 2
 };
 
 type Env = Map<bril.Ident, bril.Value>;
