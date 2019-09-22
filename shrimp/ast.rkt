@@ -96,9 +96,14 @@
      (label (hash-ref instr-map 'label))]
     [(hash-has-key? instr-map 'op)
      (define dest (hash-ref instr-map 'dest #f))
+
      (define type (let ([v (hash-ref instr-map 'type #f)])
                     (if v (string->type v) #f)))
-     (define vals (hash-ref instr-map 'args '()))
+
+     ;; If the op is a constant, it has value instead of 'args
+     (define vals (or (hash-ref instr-map 'args #f)
+                      (hash-ref instr-map 'value '())))
+
      (match (hash-ref instr-map 'op)
        ;; math instr-mapuctions
        [(? ((curry set-member?) valid-ops) op) ((op-name->ast op) dest type vals)]

@@ -10,8 +10,8 @@
 
 (define (state-ref . other) (void))
 
-(define (interpret-block state block)
-  (define (f instr)
+(define (interpret-block block [state '()])
+  (define (instr-to-func instr)
     (cond [(dest-instr? instr)
            (match-define (dest-instr dest _ vals) instr)
            (define syms (apply ((curry state-ref) state)
@@ -30,11 +30,13 @@
              [(land? instr) (andmap (lambda (x) x) syms)]
              [(lor? instr) (ormap (lambda (x) x) syms)]
              [(constant? instr) (car vals)]
-             [(id? instr) (car syms)])]
-          ;; [control?
-          ;;  ]
-          )
-    )
+             [(id? instr) (car syms)]
+             [else (raise-argument-error 'interpret-block
+                                         (~a "Unknown instruction: " instr ))])]
+          [else (raise-argument-error 'interpret-block
+                                      (~a "Unknown instruction: " instr))]))
+
+  (pretty-print block)
   (println "nyi")
   ;; (foldl ()
   ;;        acc
