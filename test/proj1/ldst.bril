@@ -1,7 +1,7 @@
 main {
-  v: int = const 5
-  a0: int = const 0
-  sw v a0
-  u: int = lw a0
-  print u
+  v: int = const 5;
+  a0: int = const 42;
+  sw v a0;
+  u: int = lw a0;
+  print u;
 }

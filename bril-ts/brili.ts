@@ -25,7 +25,16 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   sw: 2
 };
 
+// this represents an infinite size register file
 type Env = Map<bril.Ident, bril.Value>;
+
+/*
+ * Declare an array of memory to represent a stack-like memory structure.
+ * Locations of memory dictated by software and freed if ever change stack frame/function
+ * The freeing isn't supported yet because there is only one function
+ */
+let stackSize: number = 1024;
+let stack = new Array<number>(stackSize);
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -59,6 +68,26 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
     throw `${instr.op} argument ${index} must be a boolean`;
   }
   return val;
+}
+
+function getMem(instr: bril.Operation, env: Env, index: number) {
+  let addr = getInt(instr, env, index);
+  if (addr < stackSize) {
+    let val = stack[addr];
+    return val;
+  }
+  else {
+    throw `${instr.op} argument ${index} with addr ${addr} out of range of stack`;
+  }
+}
+
+function setMem(val: number, addr: number) {
+  if (addr < stackSize) {
+    stack[addr] = val;
+  }
+  else {
+    throw `store addr ${addr} out of range of stack`;
+  }
 }
 
 /**
@@ -201,14 +230,16 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
 
   case "lw": {
-    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
+    // lookup memory based on value in register
+    let val = getMem(instr, env, 0);
     env.set(instr.dest, val);
     return NEXT;
   }
 
   case "sw": {
-    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, env, 0);
+    let addr = getInt(instr, env, 1);
+    setMem(val, addr);
     return NEXT;
   }
   }
