@@ -2,8 +2,10 @@
 
 (require racket/match
          racket/function
+         racket/hash
          graph
          "ast.rkt"
+         "analysis.rkt"
          "cfg.rkt")
 
 (provide interpret)
@@ -15,6 +17,9 @@
   (if (state-key? key) (hash-ref state key) key))
 (define (state-store state key val)
   (hash-set! state key val))
+(define (state-merge! s1 s2)
+  (hash-union! s1 s2
+               #:combine (lambda (v1 _) v1)))
 
 (define (dest-instr-to-func instr)
   (cond
@@ -35,8 +40,14 @@
     [else (raise-argument-error 'interpret-block
                                 (~a "Unknown instruction: " instr ))]))
 
+(define (make-symbolic-unknown-type name)
+  (define-symbolic* is-bool? boolean?)
+  (define-symbolic* b boolean?)
+  (define-symbolic* i integer?)
+  (if is-bool? b i))
 
 (define (interpret-block state block)
+
   (define (instr-to-func instr)
     (cond [(dest-instr? instr)
            (define func (dest-instr-to-func instr))
@@ -44,6 +55,13 @@
            (define args (map (lambda (arg) (state-ref state arg)) vals))
            (define res (apply func args))
            (state-store state dest res)]))
+
+  (define sym-live-ins
+    (make-hash
+      (map (lambda (i) (cons i (make-symbolic-unknown-type i)))
+           (live-ins block))))
+
+  (state-merge! state sym-live-ins)
 
   (for ([inst (basic-block-instrs block)])
     (instr-to-func inst))
