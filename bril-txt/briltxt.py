@@ -56,13 +56,15 @@ class JSONTransformer(lark.Transformer):
     def imp(self, items):
         name = items.pop(0)
         functions = []
+
         while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
             items[0].data == "modfunc":
             func = items.pop(0).children
-            if (len(func) == 2):
+            if len(func) == 2:
                 functions.append({'name': func[0], 'alias': func[1]})
-            elif (len(func) == 1):
+            elif len(func) == 1:
                 functions.append({'name': func[0], 'alias': func[0]})
+                
         data = {'import': str(name)}
         if len(functions):
             data['functionids'] = functions
