@@ -19,6 +19,8 @@
 ; Return the resulting state
 (define (symbolic-interpret block)
 
+  (pretty-print (live-ins block))
+
   (define symbolic-live
     (make-hash
       (map (lambda (i) (cons i (make-symbolic-unknown-type i)))
@@ -27,7 +29,6 @@
   (interpret-block symbolic-live block))
 
 (define (verify-block block1 block2)
-
   (define state1 (symbolic-interpret block1))
   (define state2 (symbolic-interpret block2))
   ;; merge state2 into state1
@@ -38,6 +39,7 @@
     (for ([st state1])
       (match-define (cons k v)
         (when (pair? v)
+          (println "hello!!!")
           (assert (= (car v) (cdr v)))))
       (void) ;; XXX(sam) do something better to get rid of define being the last expression
       )))

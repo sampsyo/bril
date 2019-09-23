@@ -23,8 +23,8 @@
   (define live (mutable-set))
   (define defined (mutable-set))
 
-  (for ([inst (basic-block-instrs block)])
-    (define-values (inps out) (get-inps-and-out inst))
+  (for ([instr (basic-block-instrs block)])
+    (define-values (inps out) (get-inps-and-out instr))
 
     (for ([inp inps])
       (unless (or (not (string? inp)) (set-member? defined inp))

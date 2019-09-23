@@ -48,9 +48,12 @@
          (input-json filename))))
 
   ;; typecheck
-  (unless (disable-typecheck)
-    (for ([func ast])
-      (typecheck (function-instrs func))))
+  (define type-context
+    (unless (disable-typecheck)
+      (for/list ([func ast])
+        (typecheck (function-instrs func)))))
+
+  (pretty-print type-context)
 
   ;; cfg
   (define cfg (cfg-passes ast))
@@ -85,10 +88,10 @@
           [compare-cfg compare-cfgs])
       (for ([block (hash-values (car cfg))]
             [compare-block (hash-values (car compare-cfg))])
-        (println "block:")
-        (pretty-print block)
-        (println "compare against:")
-        (pretty-print compare-block)
+        ;; (println "block:")
+        ;; (pretty-print block)
+        ;; (println "compare against:")
+        ;; (pretty-print compare-block)
         (verify-block block compare-block)))))
 
 (module+ main
@@ -117,8 +120,8 @@
 (module+ test
   (parameterize ([convert-bril #t]
                  [run-interpreter #f]
-                 [output-blocks #t]
-                 [disable-typecheck #t]
+                 [output-blocks #f]
+                 [disable-typecheck #f]
                  [run-verify "../test/ts/cond.out"]
                  )
     (main "../test/ts/loopfact.out")))

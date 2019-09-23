@@ -7,92 +7,68 @@
 
 (provide typecheck)
 
-(define ((check! acc desired) val)
-  (define type (hash-ref acc val))
-  (unless (equal? type desired)
-    (error 'typecheck "~a was ~a, but expected ~a"
-           val type desired)))
+(define (typecheck-assert exp1 exp2)
+  (unless (equal? exp1 exp2)
+    (error 'typecheck "Got ~a but expected ~a" exp1 exp2)))
 
+;; (typecheck instrs) returns a map mapping variables to types
 (define (typecheck instrs)
-  instrs
-  ;; (foldl (lambda (x acc)
-  ;;          (match x
-  ;;            [(label _) acc]
-  ;;            ;; arithmetic
-  ;;            [(dest-instr (add) dest vals)
-  ;;             (apply (check! acc (int)) vals)
-  ;;             (hash-set acc dest (int))]
-  ;;            [(sub dest (int) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (int))]
-  ;;            [(mul dest (int) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (int))]
-  ;;            [(div dest (int) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (int))]
+  (for/fold ([context (hash)])  ;; init accum
+            ([instr instrs])
+    (cond [(dest-instr? instr)
+           (match-define (dest-instr dest type vals) instr)
+           (if (hash-has-key? context dest)
+               (begin
+                 (typecheck-assert (hash-ref context dest) type)
+                 context)
+               (let-values
+                   ([(arg-type res-type)
+                     (cond
+                       ;; (int, int) -> int instrs
+                       [(or (add? instr)
+                            (sub? instr)
+                            (mul? instr)
+                            (div? instr))
+                        (values (int) (int))]
 
-  ;;            ;; comparison
-  ;;            [(eq dest (bool) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (bool))]
-  ;;            [(lt dest (bool) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (bool))]
-  ;;            [(gt dest (bool) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (bool))]
-  ;;            [(le dest (bool) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (bool))]
-  ;;            [(ge dest (bool) v0 v1)
-  ;;             (check! acc v0 (int))
-  ;;             (check! acc v1 (int))
-  ;;             (hash-set acc dest (bool))]
+                       ;; (int, int) -> bool instrs
+                       [(or (ieq? instr)
+                            (lt? instr)
+                            (gt? instr)
+                            (le? instr)
+                            (ge? instr))
+                        (values (int) (bool))]
 
-  ;;            ;; logic
-  ;;            [(lnot dest (bool) v)
-  ;;             (check! acc v (bool))
-  ;;             (hash-set acc dest (bool))]
-  ;;            [(land dest (bool) v0 v1)
-  ;;             (check! acc v0 (bool))
-  ;;             (check! acc v1 (bool))
-  ;;             (hash-set acc dest (bool))]
-  ;;            [(lor dest (bool) v0 v1)
-  ;;             (check! acc v0 (bool))
-  ;;             (check! acc v1 (bool))
-  ;;             (hash-set acc dest (bool))]
+                       ;; (bool ...) -> bool instrs
+                       [(or (lnot? instr)
+                            (land? instr)
+                            (lor? instr))
+                        (values (bool) (bool))]
 
-  ;;            ;; control
-  ;;            [(jump _) acc]
-  ;;            [(branch con _ _)
-  ;;             (check! acc con (bool))
-  ;;             acc]
-  ;;            [(return) acc]
+                       ;; (int | bool) literal -> (int | bool)
+                       [(constant? instr)
+                        (cond [(int? type)
+                               (values integer? (int))]
+                              [(bool? type)
+                               (values boolean? (bool))])]
 
-  ;;            ;; other
-  ;;            [(constant dest (bool) v)
-  ;;             (unless (boolean? v)
-  ;;               (error 'typecheck "~a is not a boolean" v))
-  ;;             (hash-set acc dest (bool))]
-  ;;            [(constant dest (int) v)
-  ;;             (unless (integer? v)
-  ;;               (error 'typecheck "~a is not an integer" v))
-  ;;             (hash-set acc dest (int))]
-  ;;            [(print-val _) acc]
-  ;;            [(id dest type v)
-  ;;             (check! acc v type)
-  ;;             (hash-set acc dest type)]
-  ;;            [(nop) acc]))
-  ;;        (make-immutable-hash)
-  ;;        instrs)
-  )
+                       ;; t -> t
+                       [(id? instr)
+                        (values type type)])])
+                 ;; check arg types
+                 (for ([v vals])
+                   (if (string? v)
+                       (typecheck-assert (hash-ref context v) arg-type)
+                       (arg-type v)))
+                 ;; check result type
+                 (typecheck-assert type res-type)
 
-;; (define (eval ))
+                 ;; update the context with the type of dest
+                 (hash-set context dest type)))]
+
+          [(branch? instr)
+           (match-define (branch con _ _) instr)
+           (typecheck-assert (hash-ref context con) (bool))
+           context]
+
+          [else context])))
