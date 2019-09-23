@@ -16,7 +16,7 @@ export class Builder {
    * Create a new, empty function into which further code will be generated.
    */
   buildFunction(name: string) {
-    let func: bril.Function = { name, instrs: [] };
+    let func: bril.Function = { name, args:[], instrs: [] };
     this.program.functions.push(func);
     this.curFunction = func;
     this.nextFresh = 0;

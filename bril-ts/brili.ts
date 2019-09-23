@@ -21,9 +21,13 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
+  call: null, // don't allow passing of arguments for now
 };
 
 type Env = Map<bril.Ident, bril.Value>;
+type PCIndex = number;
+type StackFrame = [bril.Function, Env, PCIndex]; // function name, locals, PC function index
+type ProgramStack = Array<StackFrame>;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -66,6 +70,7 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 type Action =
   {"label": bril.Ident} |
   {"next": true} |
+  {"call": bril.Ident, "args": bril.Ident[]} | // call a function
   {"end": true};
 let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
@@ -196,31 +201,106 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "nop": {
     return NEXT;
   }
+
+  case "call": {
+    return {"call": instr.args[0], "args": instr.args.slice(1)};
+  }
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function) {
-  let env: Env = new Map();
-  for (let i = 0; i < func.instrs.length; ++i) {
-    let line = func.instrs[i];
+function isCorrectType(val: number|boolean, type: bril.Type) {
+  return (typeof val === 'number' && type === "int") ||
+         (typeof val === 'boolean' && type === "bool");
+}
+
+function evalFunc(prog: bril.Program, stack:ProgramStack,
+    beginFunc: bril.Function, beginEnv: Env, beginPc: PCIndex)
+{
+  let func = beginFunc;
+  let env = beginEnv;
+  let pc = beginPc;
+  while (pc < func.instrs.length) {
+    let line = func.instrs[pc];
     if ('op' in line) {
       let action = evalInstr(line, env);
 
-      if ('label' in action) {
+      if ('next' in action) {
+        pc++;
+
+      } else if ('label' in action) {
         // Search for the label and transfer control.
-        for (i = 0; i < func.instrs.length; ++i) {
+        let labelFound = false;
+
+        for (let i = 0; i < func.instrs.length; ++i) {
           let sLine = func.instrs[i];
           if ('label' in sLine && sLine.label === action.label) {
+            pc = i;
+            labelFound = true;
             break;
           }
         }
-        if (i === func.instrs.length) {
+
+        if (!labelFound) {
           throw `label ${action.label} not found`;
         }
+
+      } else if ('call' in action) {
+        let calleeFound = false;
+
+        for (let callee of prog.functions) {
+          if (callee.name === action.call) {
+            // push current activation record into stack frame
+            stack.push([func, env, pc+1]);
+            func = callee;
+
+            if (func.args.length === action.args.length) {
+              let calleeEnv = new Map();
+              for (let i = 0; i < func.args.length; i++) {
+                let formal = func.args[i];
+                let actual = action.args[i];
+                let actualVal = env.get(actual);
+                if (actualVal != undefined) {
+                  if (isCorrectType(actualVal, formal.type)) {
+                    calleeEnv.set(formal.ident, actualVal);
+
+                  } else {
+                    throw `function ${callee.name} argument ${formal.ident} has type ${formal.type}`;
+                  }
+
+                } else {
+                  throw `variable ${actual} does not exist`;
+                }
+              }
+
+              env = calleeEnv;
+              pc = 0;
+              calleeFound = true;
+              break;
+
+            } else {
+              throw `function ${callee.name} expects ${func.args.length} arguments`;
+            }
+          }
+        }
+
+        if (!calleeFound) {
+          throw `function ${action.call} not found`;
+        }
+
       } else if ('end' in action) {
-        return;
+        // restore the activation record at the top of the stack
+        let oldFrame = stack.pop();
+        if (oldFrame != undefined) {
+          let [oldFunc, oldEnv, oldPc] = oldFrame;
+          func = oldFunc;
+          env = oldEnv;
+          pc = oldPc;
+
+        } else {
+          return;
+        }
       }
     }
   }
@@ -229,7 +309,7 @@ function evalFunc(func: bril.Function) {
 function evalProg(prog: bril.Program) {
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func);
+      evalFunc(prog, [], func, new Map(), 0);
     }
   }
 }

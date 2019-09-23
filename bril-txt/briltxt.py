@@ -19,7 +19,9 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: func*
 
-func: CNAME "{" instr* "}"
+ident_type: IDENT ":" type
+
+func: CNAME (ident_type)* "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
@@ -50,9 +52,21 @@ class JSONTransformer(lark.Transformer):
     def start(self, items):
         return {'functions': items}
 
+    def ident_type(self, items):
+        return {'ident': items[0], 'type': items[1]}
+
     def func(self, items):
         name = items.pop(0)
-        return {'name': str(name), 'instrs': items}
+        args = []
+        instrs = []
+        for item in items:
+            if 'ident' in item and 'type' in item:
+                args.append(item)
+            
+            else:
+                instrs.append(item)
+
+        return {'name': str(name), 'args': args, 'instrs': instrs}
 
     def const(self, items):
         dest = items.pop(0)
@@ -141,12 +155,20 @@ def print_label(label):
 
 
 def print_func(func):
-    print('{} {{'.format(func['name']))
+    print('{} '.format(func['name']), end='')
+
+    if 'args' in func:
+        for arg in func['args']:
+            print('{}:{} '.format(arg['ident'], arg['type']), end='')
+
+    print('{')
+
     for instr_or_label in func['instrs']:
         if 'label' in instr_or_label:
             print_label(instr_or_label)
         else:
             print_instr(instr_or_label)
+
     print('}')
 
 

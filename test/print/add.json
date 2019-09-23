@@ -2,6 +2,7 @@
   "functions": [
     {
       "name": "main",
+      "args": [],
       "instrs": [
         { "op": "const", "type": "int", "dest": "v0", "value": 1 },
         { "op": "const", "type": "int", "dest": "v1", "value": 2 },

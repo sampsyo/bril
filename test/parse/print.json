@@ -15,6 +15,7 @@
           "op": "print"
         }
       ],
+      "args": [],
       "name": "main"
     }
   ]

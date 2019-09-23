@@ -16,7 +16,7 @@ export type Type = "int" | "bool";
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret";
+  op: "br" | "jmp" | "print" | "ret" | "call";
   args: Ident[];
 }
 
@@ -87,10 +87,19 @@ export interface Label {
 }
 
 /**
+ * An identifier and type pair.
+ */
+export interface IdentType {
+  ident: Ident;
+  type: Type;
+}
+
+/**
  * A function consists of a sequence of instructions.
  */
 export interface Function {
   name: Ident;
+  args: IdentType[];
   instrs: (Instruction | Label)[];
 }
 
