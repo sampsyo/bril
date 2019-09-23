@@ -300,12 +300,8 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function, funcs: bril.Function[]) {
-  let newEnv: Env = new Map();
-  evalFuncInEnv(func, funcs, newEnv);
-}
-
-function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env) : ReturnValue {
+function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env)
+  : ReturnValue {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
@@ -331,12 +327,49 @@ function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env) : 
   return null;
 }
 
+function parseBool(s : string) : boolean {
+  if (s === 'true') {
+    return true;
+  } else if (s === 'false') {
+    return false;
+  } else {
+    throw `boolean argument to main must be 'true'/'false'; got ${s}`;
+  }
+}
+
+function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
+  let newEnv: Env = new Map();
+
+  if (args.length !== expected.length) {
+    throw 'mismatched main argument arity: expected ${expected.length}; got \
+      ${args.length}';
+  }
+
+  for (let i = 0; i < args.length; i++) {
+    let type = expected[i].type;
+    switch (type) {
+      case "int":
+        let n : bigint = BigInt(parseInt(args[i]));
+        newEnv.set(expected[i].name, n as Value);
+        break;
+      case "bool":
+        let b : boolean = parseBool(args[i]);
+        newEnv.set(expected[i].name, b as Value);
+        break;
+    }
+  }
+  return newEnv;
+}
+
 function evalProg(prog: bril.Program) {
   let main = findFunc("main", prog.functions);
   if (main === null) {
     console.log(`warning: no main function defined, doing nothing`);
   } else {
-    evalFunc(main, prog.functions);
+    let expected = main.args;
+    let args : string[] = process.argv.slice(2, process.argv.length);
+    let newEnv = parseMainArguments(expected, args);
+    evalFuncInEnv(main, prog.functions, newEnv);
   }
 }
 
