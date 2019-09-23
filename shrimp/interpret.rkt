@@ -2,11 +2,13 @@
 
 (require racket/match
          racket/function
+         racket/hash
          graph
          "ast.rkt"
+         "analysis.rkt"
          "cfg.rkt")
 
-(provide interpret)
+(provide interpret-block)
 
 ; Extract this out into a separate file
 (define (empty-state) (make-hash))
@@ -15,6 +17,9 @@
   (if (state-key? key) (hash-ref state key) key))
 (define (state-store state key val)
   (hash-set! state key val))
+(define (state-merge! s1 s2)
+  (hash-union! s1 s2
+               #:combine (lambda (v1 _) v1)))
 
 (define (dest-instr-to-func instr)
   (cond
@@ -35,8 +40,10 @@
     [else (raise-argument-error 'interpret-block
                                 (~a "Unknown instruction: " instr ))]))
 
-
+; Interpret a basic block with the given state. Returns a new state and the
+; label for the next basic block to execute.
 (define (interpret-block state block)
+
   (define (instr-to-func instr)
     (cond [(dest-instr? instr)
            (define func (dest-instr-to-func instr))
@@ -48,11 +55,4 @@
   (for ([inst (basic-block-instrs block)])
     (instr-to-func inst))
 
-  (pretty-print state))
-
-(define (interpret cfgs)
-  (for-each (match-lambda
-              [(cons bs g)
-               (map ((curry interpret-block) (empty-state)) bs)])
-            cfgs))
-
+  state)
