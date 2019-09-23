@@ -190,12 +190,19 @@ def unroll_imports(txt, modules):
     
     return stage_one
 
-def parse_bril(txt, module_paths):
+def parse_bril(txt):
+    data = parse_helper(txt)
+    return json.dumps(data, indent=2, sort_keys=True)
+
+def link_bril(main_module, module_paths):
     modules = {}
+    with open(main_module, 'r') as main:
+        program_txt = main.read()
+
     for path in module_paths:
         head, tail = ntpath.split(path)
         modules[tail or ntpath.basename(head)] = path
-    stage_two = unroll_imports(txt, modules)
+    stage_two = unroll_imports(program_txt, modules)
     return json.dumps(stage_two, indent=2, sort_keys=True)
 
 # Text format pretty-printer.
@@ -246,10 +253,14 @@ def print_prog(prog):
 
 # Command-line entry points.
 
+def linkbril():
+    main_module = sys.argv[1]
+    module_paths = sys.argv[2:]
+    print(link_bril(main_module, module_paths))
+
 def bril2json():
     prog_txt = sys.stdin.read()
-    module_paths = sys.argv[1:]
-    print(parse_bril(prog_txt, module_paths))
+    print(parse_bril(prog_txt))
 
 def bril2txt():
     print_prog(json.load(sys.stdin))
