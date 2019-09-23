@@ -13,11 +13,6 @@ export type Ident = string;
 export type Type = "int" | "bool";
 
 /**
- * The return type of a function.
- */
-export type ReturnType = Type | null;
-
-/**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
@@ -39,17 +34,31 @@ export interface ValueOperation {
 }
 
 /**
- * An operation that calls another Bril function. The operation places the
- * result in the destination variable if the function has a non-void return
- * type.
+ * An operation that calls another Bril function which has a return type and 
+ * stores the result in the destination variable.
  */
-export interface CallOperation {
+export interface ValueCallOperation {
   op: "call";
   name: Ident;
   args: Ident[];
-  dest?: Ident;
-  type?: Type; 
+  dest: Ident;
+  type: Type; 
 }
+
+/**
+ * An operation that calls another Bril function with a void return type.
+ */
+export interface EffectCallOperation {
+  op: "call";
+  name: Ident;
+  args: Ident[];
+}
+
+
+/**
+ * An operation that calls another Bril function.
+ */
+export type CallOperation = ValueCallOperation | EffectCallOperation;
 
 /**
  * The type of Bril values that may appear in constants.
@@ -80,7 +89,7 @@ export type Instruction = Operation | Constant;
 /**
  * Both constants and value operations produce results.
  */
-export type ValueInstruction = Constant | ValueOperation;
+export type ValueInstruction = Constant | ValueOperation | ValueCallOperation;
 
 /**
  * The valid opcodes for value-producing instructions.
@@ -92,6 +101,9 @@ export type ValueOpCode = ValueOperation["op"];
  */
 export type EffectOpCode = EffectOperation["op"];
 
+/**
+ * The valid opcode for call operations.
+ */
 export type CallOpCode = CallOperation["op"];
 
 /**
@@ -121,7 +133,7 @@ export interface Function {
   name: Ident;
   args: Argument[];
   instrs: (Instruction | Label)[];
-  type: ReturnType;
+  type?: Type;
 }
 
 /**

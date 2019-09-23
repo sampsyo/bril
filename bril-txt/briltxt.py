@@ -75,12 +75,19 @@ class JSONTransformer(lark.Transformer):
         name = items.pop(0)
         arg_list = items.pop(0)
         instr_list = items.pop(0)
-        return {
-            'name': str(name),
-            'type': typ,
-            'args': arg_list,
-            'instrs': instr_list,
-        }
+        if typ == 'void':
+            return {
+                'name': str(name),
+                'args': arg_list,
+                'instrs': instr_list,
+            }
+        else:
+            return {
+                'name': str(name),
+                'type': typ,
+                'args': arg_list,
+                'instrs': instr_list,
+            }
 
     def arg_list(self, items):
         return items

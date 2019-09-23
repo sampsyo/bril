@@ -1,0 +1,12 @@
+main {
+  v0: int = const 5;
+  x: int = id v0;
+  v1: int = id x;
+  call v1;
+  v2: int = const 0;
+}
+callPrint {
+  v0: int = id x;
+  print v0;
+  v1: int = const 0;
+}

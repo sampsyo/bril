@@ -34,8 +34,8 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
 
   // TODO: let main have args!
-  // main has no return type
-  builder.buildFunction("main", [], null);
+  // Main has no return type
+  builder.buildFunction("main", []);
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
     switch (expr.kind) {
@@ -91,17 +91,25 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       if (call.expression.getText() === "console.log") {
         let values = call.arguments.map(emitExpr);
         builder.buildEffect("print", values.map(v => v.dest));
+        return builder.buildInt(0);  // Expressions must produce values.
       } else {
         // Recursively translate arguments
         let values = call.arguments.map(emitExpr);
-        // console.log(call.parent.parent);
-        // console.log(call.parent as unknown as ts.SyntaxKind.ExpressionStatement);
-        // let dest = call as ts.BinaryExpression as ts.Identifier;
-        // TODO add dest, type if present (& error check)
-        builder.buildCallOperation('call', call.expression.getText(), values.map(v => v.dest))
-      }
-      return builder.buildInt(0);  // Expressions must produce values.
+        if (call.parent.kind === ts.SyntaxKind.VariableDeclaration) {
+          let decl = call.parent as ts.VariableDeclaration;
+          let type = brilType(decl, checker);
+          return builder.buildValueCallOperation('call', 
+            call.expression.getText(), 
+            values.map(v => v.dest), 
+            decl.name.getText(), 
+            type);
 
+        } else {
+          builder.buildEffectCallOperation('call', call.expression.getText(), 
+            values.map(v => v.dest));
+          return builder.buildInt(0);  // Expressions must produce values
+        }
+      }
     default:
       throw `unsupported expression kind: ${expr.getText()}`;
     }
@@ -218,8 +226,8 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         }
 
         // TODO: MAYBE do this the type checker way?
-        let retType : bril.ReturnType = null;
         if (funcDef.type) {
+          let retType : bril.Type;
           if (funcDef.type.getText() === 'number') {
             retType = "int";
           } else if (funcDef.type.getText() === 'boolean') {
@@ -227,8 +235,10 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
           } else {
             throw `unsupported type for function return: ${funcDef.type}`;
           }
+          builder.buildFunction(name, args, retType);
+        } else {
+          builder.buildFunction(name, args);
         }
-        builder.buildFunction(name, args, retType);
         if (funcDef.body) {
           emit(funcDef.body);
         }
