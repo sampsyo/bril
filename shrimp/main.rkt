@@ -17,7 +17,6 @@
 (define convert-bril (make-parameter #f))
 (define show-cfg (make-parameter #f))
 (define output-blocks (make-parameter #f))
-(define disable-typecheck (make-parameter #f))
 (define run-interpreter (make-parameter #f))
 (define run-verify (make-parameter #f))
 (define lvn (make-parameter #f))
@@ -50,10 +49,8 @@
   ;; typecheck
   ;; XXX(sam) I don't really like this being a list. mabye a hash would be better
   (define type-contexts
-    (if (disable-typecheck)
-        #f
-        (for/list ([func ast])
-          (typecheck (function-instrs func)))))
+    (for/list ([func ast])
+      (typecheck (function-instrs func))))
 
   ;; do cfg passes
   (define cfg (cfg-passes ast))
@@ -106,8 +103,6 @@
                  (output-blocks #t)]
    [("-p" "--plot") "Show the cfgs using xdot"
                     (show-cfg #t)]
-   [("-T" "--disable-typecheck") "Disable type checking"
-                            (disable-typecheck #t)]
    [("-i" "--interpret") "Interpret the given files"
                        (run-interpreter #t)]
    [("-v" "--verify") compare-file ; verify takes in an argument
@@ -123,7 +118,6 @@
   (parameterize ([convert-bril #t]
                  [run-interpreter #f]
                  [output-blocks #f]
-                 [disable-typecheck #f]
                  [run-verify "../test/ts/loopfact.out"]
                  )
     (main "../test/ts/loopfact.out")))

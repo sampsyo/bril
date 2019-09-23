@@ -47,11 +47,8 @@
   ;; (pretty-print state1)
 
   (verify
-    (for ([st state1])
-      (match-define (cons k v)
-        (when (pair? v)
-          (assert (= (car v) (cdr v)))))
-      (void) ;; XXX(sam) do something better to get rid of define being the last expression
-      )))
+   (for ([val (hash-values state1)])
+     (when (pair? val)
+       (assert (= (car val) (cdr val)))))))
 
 (define (verify-prog) (void))
