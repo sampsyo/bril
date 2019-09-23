@@ -83,12 +83,15 @@
     )
 
   (when (run-verify)
-    (define-values (compare-ast compare-cfgs compare-context) (process-file (run-verify)))
+    (define-values (compare-ast compare-cfgs compare-contexts) (process-file (run-verify)))
     (for ([cfg cfgs]
-          [compare-cfg compare-cfgs])
-      (for ([block (hash-values (car cfg))]
-            [compare-block (hash-values (car compare-cfg))]
-            [context contexts])
+          [compare-cfg compare-cfgs]
+          [context contexts]
+          [compare-context compare-contexts])
+      (for ([block-lbl (hash-keys (car cfg))])
+        (define-values (block compare-block)
+          (values (hash-ref (car cfg) block-lbl)
+                  (hash-ref (car compare-cfg) block-lbl)))
         (unless context
           (error 'verify "Verification requires the typechecker to be run"))
         (verify-block block context compare-block compare-context)))))
@@ -121,6 +124,6 @@
                  [run-interpreter #f]
                  [output-blocks #f]
                  [disable-typecheck #f]
-                 [run-verify "../test/ts/cond.out"]
+                 [run-verify "../test/ts/loopfact.out"]
                  )
     (main "../test/ts/loopfact.out")))

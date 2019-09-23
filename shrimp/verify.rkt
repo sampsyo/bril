@@ -39,12 +39,13 @@
   (define state1 (symbolic-interpret context1 block1))
   (define state2 (symbolic-interpret context2 block2))
 
-  ;; (pretty-print state1)
-  ;; (pretty-print state2)
-
   ;; merge state2 into state1
   (hash-union! state1 state2
                #:combine (lambda (v1 v2) (cons v1 v2)))
+
+  ;; (println (basic-block-label block1))
+  ;; (pretty-print state1)
+
   (verify
     (for ([st state1])
       (match-define (cons k v)
