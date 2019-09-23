@@ -10,13 +10,13 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | "vector";
 
 /**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret" | "sw" | "vadd";
+  op: "br" | "jmp" | "print" | "ret" | "sw" | "vstore";
   args: Ident[];
 }
 
@@ -28,7 +28,7 @@ export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
-      "lw";
+      "lw" | "vload" | "vadd" ;
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -37,7 +37,7 @@ export interface ValueOperation {
 /**
  * The type of Bril values that may appear in constants.
  */
-export type Value = number | boolean;
+export type Value = number | boolean | Array<number>;
 
 /**
  * An instruction that places a literal value into a variable.

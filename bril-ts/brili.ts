@@ -23,7 +23,9 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   nop: 0,
   lw: 1,
   sw: 2,
-  vadd: 4
+  vadd: 2,
+  vload: 1,
+  vstore: 2
 };
 
 // this represents an infinite size register file
@@ -36,6 +38,12 @@ type Env = Map<bril.Ident, bril.Value>;
  */
 let stackSize: number = 1024;
 let stack = new Array<number>(stackSize);
+
+/*
+ * We're doing fixed array size of 4 so set this here
+ * It's all my computer support natively so don't go beyond
+ */
+let fixedVecSize: number = 4;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -71,6 +79,7 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
   return val;
 }
 
+// memory lookup
 function getMem(addr: number) {
   if (addr < stackSize) {
     let val = stack[addr];
@@ -81,6 +90,7 @@ function getMem(addr: number) {
   }
 }
 
+// memory write
 function setMem(val: number, addr: number) {
   if (addr < stackSize) {
     stack[addr] = val;
@@ -89,6 +99,17 @@ function setMem(val: number, addr: number) {
     throw `store addr ${addr} out of range of stack`;
   }
 }
+
+// get vector value from vector register file
+function getVec(instr: bril.Operation, env: Env, index: number) {
+  let val = get(env, instr.args[index]);
+  if (!(val instanceof Array) || (typeof val[0] !== 'number')) {
+    throw `${instr.op} argument ${index} must be a Array<number>`;
+  }
+
+  return val;
+}
+
 
 /**
  * The thing to do after interpreting an instruction: either transfer
@@ -246,7 +267,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   case "vadd": {
     // cptr, aptr, bptr, size
-    let nbind = require('nbind');
+    /*let nbind = require('nbind');
     let lib = nbind.init().lib;
 
     // get memory over the specified range to pass in as array
@@ -265,9 +286,42 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let c: Array<number> = lib.SIMD.vecAdd(4, a, b);
     for (let i = 0; i < size; i++) {
       setMem(c[i], cBase + i);
+    }*/
+
+    // serialized version
+    let vecA = getVec(instr, env, 0);
+    let vecB = getVec(instr, env, 1);
+    let vecC = new Array<number>(fixedVecSize);
+    for (let i = 0; i < fixedVecSize; i++) {
+      vecC[i] = vecA[i] + vecB[i];
     }
+    env.set(instr.dest, vecC);    
 
     //console.log(c);
+    return NEXT;
+  }
+
+  case "vload": {
+
+    // serialized version
+    let addr = getInt(instr, env, 0);
+    let vec = new Array<number>(4);
+    for (let i = 0; i < fixedVecSize; i++) {
+      vec[i] = getMem(addr + i);
+    }
+    env.set(instr.dest, vec);
+    return NEXT;
+  }
+
+  case "vstore": {
+    
+    // serialized version
+    let val = getVec(instr, env, 0);
+    let addr = getInt(instr, env, 1);
+    for (let i = 0; i < fixedVecSize; i++) {
+      setMem(val[i], addr + i);
+    }
+
     return NEXT;
   }
 

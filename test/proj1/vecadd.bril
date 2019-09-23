@@ -1,7 +1,8 @@
 main {
   zero: int = const 0;
   inc:int = const 1;
-  size: int = const 4;
+  size: int = const 16;
+  vecSize: int = const 4;
   a: int = const 0;
   b: int = add a size;
   c: int = add b size;
@@ -20,8 +21,23 @@ sw_loop:
   done: bool = eq i size;
   br done sw_done sw_loop;
 sw_done:
+  # calculate how many vector adds to do
+  vadds: int = div size vecSize;
+  i: int = const 0;
+vvadd_loop:
+  ai: int = add a i;
+  bi: int = add b i;
+  ci: int = add c i;
 
-  vadd c a b size;
+  va: vector = vload ai;
+  vb: vector = vload bi;   
+  vc: vector = vadd va vb;
+  vstore vc ci;
+
+  i: int = add i vecSize;
+  done: bool = ge i size;
+  br done vvadd_done vvadd_loop;
+vvadd_done:
 
   i: int = const 0;
 lw_loop:
