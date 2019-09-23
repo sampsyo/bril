@@ -24,14 +24,14 @@
 ;; function that takes a list and produces a list of pairs
 ;; where each element is matched with it's successor
 (define (pairs l)
+  (define (add-duplicate hd lst)
+    (println hd)
+    (match lst
+      [(cons (cons a _) tl)
+       (cons (cons hd #f) (cons (cons a hd) tl))]))
   (~>
-   (foldl (lambda (x acc)
-            (match acc
-              [(cons (cons a _) tl)
-               `((,x . #f) . ((,a . ,x) . tl))
-               (cons (cons x #f) (cons (cons a x) tl))
-               ]))
-          `((,(car l) . #f))
+   (foldl add-duplicate
+          (list (cons (car l) #f)) ;; start list with head and empty
           (cdr l))
    cdr
    reverse))
