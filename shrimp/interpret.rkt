@@ -52,7 +52,7 @@
            (define res (apply func args))
            (state-store state dest res)]))
 
-  (for ([inst (basic-block-instrs block)])
-    (instr-to-func inst))
+  (for ([instr (basic-block-instrs block)])
+    (instr-to-func instr))
 
   state)

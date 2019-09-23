@@ -48,21 +48,21 @@
          (input-json filename))))
 
   ;; typecheck
-  (define type-context
-    (unless (disable-typecheck)
-      (for/list ([func ast])
-        (typecheck (function-instrs func)))))
+  ;; XXX(sam) I don't really like this being a list. mabye a hash would be better
+  (define type-contexts
+    (if (disable-typecheck)
+        #f
+        (for/list ([func ast])
+          (typecheck (function-instrs func)))))
 
-  (pretty-print type-context)
-
-  ;; cfg
+  ;; do cfg passes
   (define cfg (cfg-passes ast))
 
-  (values ast cfg))
+  (values ast cfg type-contexts))
 
 (define (main filename)
 
-  (define-values (ast cfgs) (process-file filename))
+  (define-values (ast cfgs contexts) (process-file filename))
 
   (when (output-blocks)
     (for-each (match-lambda
@@ -83,16 +83,15 @@
     )
 
   (when (run-verify)
-    (define-values (compare-ast compare-cfgs) (process-file (run-verify)))
+    (define-values (compare-ast compare-cfgs compare-context) (process-file (run-verify)))
     (for ([cfg cfgs]
           [compare-cfg compare-cfgs])
       (for ([block (hash-values (car cfg))]
-            [compare-block (hash-values (car compare-cfg))])
-        ;; (println "block:")
-        ;; (pretty-print block)
-        ;; (println "compare against:")
-        ;; (pretty-print compare-block)
-        (verify-block block compare-block)))))
+            [compare-block (hash-values (car compare-cfg))]
+            [context contexts])
+        (unless context
+          (error 'verify "Verification requires the typechecker to be run"))
+        (verify-block block context compare-block compare-context)))))
 
 (module+ main
   (command-line
