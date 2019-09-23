@@ -25,7 +25,6 @@
 ;; where each element is matched with it's successor
 (define (pairs l)
   (define (add-duplicate hd lst)
-    (println hd)
     (match lst
       [(cons (cons a _) tl)
        (cons (cons hd #f) (cons (cons a hd) tl))]))
