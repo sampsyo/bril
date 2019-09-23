@@ -13,6 +13,11 @@ export type Ident = string;
 export type Type = "int" | "bool";
 
 /**
+ * The return type of a function.
+ */
+export type ReturnType = Type | null;
+
+/**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
@@ -50,7 +55,6 @@ export interface CallOperation {
  * The type of Bril values that may appear in constants.
  */
 export type Value = number | boolean;
-
 
 /**
  * An instruction that places a literal value into a variable.
@@ -117,6 +121,7 @@ export interface Function {
   name: Ident;
   args: Argument[];
   instrs: (Instruction | Label)[];
+  type: ReturnType;
 }
 
 /**

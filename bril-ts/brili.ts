@@ -127,7 +127,10 @@ function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[]): 
     if (instr.dest === undefined && instr.type === undefined) {
        // Expected void function
       if (retVal !== null) {
-        throw `unexpected value returned by void function`;
+        throw `unexpected value returned without destination`;
+      }
+      if (func.type !== null) {
+        throw `non-void function doesn't return anything`; 
       }
     } else {
       // Expected non-void function
@@ -141,7 +144,10 @@ function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[]): 
         throw `nothing returned from non-void function`;
       }
       if (brilTypeToDynamicType[instr.type] !== typeof retVal) {
-        throw `type of value returned by function does not match declaration`;
+        throw `type of value returned by function does not match destination type`;
+      }
+      if (func.type !== instr.type ) {
+        throw `type of value returned by function does not match declaration`
       }
       env.set(instr.dest, retVal);
     }
@@ -341,8 +347,7 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
   let newEnv: Env = new Map();
 
   if (args.length !== expected.length) {
-    throw 'mismatched main argument arity: expected ${expected.length}; got \
-      ${args.length}';
+    throw `mismatched main argument arity: expected ${expected.length}; got ${args.length}`;
   }
 
   for (let i = 0; i < args.length; i++) {

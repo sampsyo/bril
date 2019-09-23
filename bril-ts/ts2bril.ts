@@ -27,7 +27,6 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
     throw "unimplemented type " + checker.typeToString(tsType);
   }
 }
-
 /**
  * Compile a complete TypeScript AST to a Bril program.
  */
@@ -35,7 +34,8 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
 
   // TODO: let main have args!
-  builder.buildFunction("main", []);
+  // main has no return type
+  builder.buildFunction("main", [], null);
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
     switch (expr.kind) {
@@ -62,7 +62,6 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
       let kind = bin.operatorToken.kind;
-
       // Handle assignments.
       switch (kind) {
       case ts.SyntaxKind.EqualsToken:
@@ -92,13 +91,16 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       if (call.expression.getText() === "console.log") {
         let values = call.arguments.map(emitExpr);
         builder.buildEffect("print", values.map(v => v.dest));
-        return builder.buildInt(0);  // Expressions must produce values.
       } else {
         // Recursively translate arguments
         let values = call.arguments.map(emitExpr);
-        console.log(call)
+        // console.log(call.parent.parent);
+        // console.log(call.parent as unknown as ts.SyntaxKind.ExpressionStatement);
+        // let dest = call as ts.BinaryExpression as ts.Identifier;
+        // TODO add dest, type if present (& error check)
         builder.buildCallOperation('call', call.expression.getText(), values.map(v => v.dest))
       }
+      return builder.buildInt(0);  // Expressions must produce values.
 
     default:
       throw `unsupported expression kind: ${expr.getText()}`;
@@ -204,26 +206,44 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
           throw `no anonymous functions!`
         }
         let name : string = funcDef.name.getText();
-
         let args : bril.Argument[] = [];
 
         for (let p of funcDef.parameters) {
           let argName = p.name.getText();
           let typeString = "";
           if (p.type) {
-            if (p.type.getText() === 'number') {
-              typeString = "int"
-            } else if (p.type.getText() === 'boolean') {
-              typeString = "bool"
-            } else {
-              throw `unsupported type in function arguments`;
-            }
+            typeString = brilType(p, checker);
           }
           args.push({name: argName, type: typeString} as bril.Argument);
         }
 
-        builder.buildFunction(name, args);
+        // TODO: MAYBE do this the type checker way?
+        let retType : bril.ReturnType = null;
+        if (funcDef.type) {
+          if (funcDef.type.getText() === 'number') {
+            retType = "int";
+          } else if (funcDef.type.getText() === 'boolean') {
+            retType = "bool";
+          } else {
+            throw `unsupported type for function return: ${funcDef.type}`;
+          }
+        }
+        builder.buildFunction(name, args, retType);
+        if (funcDef.body) {
+          emit(funcDef.body);
+        }
         break;
+
+      case ts.SyntaxKind.ReturnStatement: {
+        let retstmt = node as ts.ReturnStatement;
+        if (retstmt.expression) {
+          let val = emitExpr(retstmt.expression);
+          builder.buildEffect("ret", [val.dest]);
+        } else {
+          builder.buildEffect("ret", []);
+        }
+        break;
+      }
 
       default:
         throw `unhandled TypeScript AST node kind ${node.kind}`;

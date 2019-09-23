@@ -15,8 +15,9 @@ export class Builder {
   /**
    * Create a new, empty function into which further code will be generated.
    */
-  buildFunction(name: string, args: bril.Argument[]) {
-    let func: bril.Function = { name: name, instrs: [], args: args };
+  buildFunction(name: string, args: bril.Argument[], type: bril.ReturnType) {
+    //console.log("buildFunction", name);
+    let func: bril.Function = { name: name, instrs: [], args: args , type: type};
     this.program.functions.push(func);
     this.curFunction = func;
     this.nextFresh = 0;
@@ -29,6 +30,7 @@ export class Builder {
    */
   buildValue(op: bril.ValueOpCode, args: string[],
              type: bril.Type, dest?: string) {
+    //console.log("buildValue", op, "current", this.curFunction.name);
     dest = dest || this.freshVar();
     let instr: bril.ValueOperation = { op, args, dest, type };
     this.insert(instr);
@@ -39,6 +41,7 @@ export class Builder {
    * Build a non-value-producing (side-effecting) operation instruction.
    */
   buildEffect(op: bril.EffectOpCode, args: string[]) {
+    //console.log("buildEffect", op, "current", this.curFunction.name);
     let instr: bril.EffectOperation = { op, args };
     this.insert(instr);
     return instr;
@@ -53,7 +56,8 @@ export class Builder {
       && (type !== undefined || dest !== undefined)) {
       throw 'call must provide both or neither dest and type';
     }
-    let instr : bril.CallOperation = { op, name, args, dest, type }
+    let instr : bril.CallOperation = { op, name, args, dest, type };
+    this.insert(instr);
     return instr;
   }
 
