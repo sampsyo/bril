@@ -14,7 +14,8 @@
      (match-define (dest-instr dest _ vals) instr)
      (values vals dest)]
     [(branch? instr) (values (branch-con instr) #f)]
-    [(print-val? instr) (values (print-val-v instr) #f)]))
+    [(print-val? instr) (values (print-val-v instr) #f)]
+    [else (values '() #f)]))
 
 ;; Return the set of live-in variables to a basic block.
 (define (live-ins block)

@@ -8,7 +8,7 @@
          "analysis.rkt"
          "cfg.rkt")
 
-(provide interpret)
+(provide interpret-block)
 
 ; Extract this out into a separate file
 (define (empty-state) (make-hash))
@@ -40,12 +40,8 @@
     [else (raise-argument-error 'interpret-block
                                 (~a "Unknown instruction: " instr ))]))
 
-(define (make-symbolic-unknown-type name)
-  (define-symbolic* is-bool? boolean?)
-  (define-symbolic* b boolean?)
-  (define-symbolic* i integer?)
-  (if is-bool? b i))
-
+; Interpret a basic block with the given state. Returns a new state and the
+; label for the next basic block to execute.
 (define (interpret-block state block)
 
   (define (instr-to-func instr)
@@ -56,21 +52,7 @@
            (define res (apply func args))
            (state-store state dest res)]))
 
-  (define sym-live-ins
-    (make-hash
-      (map (lambda (i) (cons i (make-symbolic-unknown-type i)))
-           (live-ins block))))
-
-  (state-merge! state sym-live-ins)
-
   (for ([inst (basic-block-instrs block)])
     (instr-to-func inst))
 
-  (pretty-print state))
-
-(define (interpret cfgs)
-  (for-each (match-lambda
-              [(cons bs g)
-               (map ((curry interpret-block) (empty-state)) bs)])
-            cfgs))
-
+  state)

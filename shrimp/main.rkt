@@ -60,8 +60,9 @@
                  (show-graph (graphviz graph))])
               cfgs-p))
 
+  ;; XXX(rachit): THIS IS WRONG. interpret block works for basic blocks.
   (when (run-interpreter)
-    (pretty-print (interpret cfgs-p))))
+    (pretty-print (interpret-block cfgs-p))))
 
 (module+ main
   (command-line
