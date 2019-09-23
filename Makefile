@@ -11,7 +11,6 @@ test:
 save:
 	turnt --save $(TESTS)
 
-<<<<<<< HEAD
 .PHONY: book
 book:
 	rm -rf book

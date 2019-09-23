@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
+import { Heap } from './heap';
 import {readStdin, unreachable} from './util';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
@@ -21,13 +22,14 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
-  alloc: 0,
+  alloc: 1,
   free: 1,
   store: 2,
   load: 1,
+  ptradd: 2
 };
 
-type Value = boolean | BigInt;
+type Value = boolean | bril.Pointer | BigInt;
 type Env = Map<bril.Ident, Value>;
 
 function get(env: Env, ident: bril.Ident) {
@@ -41,10 +43,10 @@ function get(env: Env, ident: bril.Ident) {
 function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): bril.Pointer {
   if (typeof ptrType != 'object') {
     throw `unspecified pointer type ${ptrType}`
+  } else if (amt <= 0) {
+    throw `must allocate a positive amount of memory: ${amt} <= 0`
   } else {
-    let loc = heap.nextKey
-    heap.nextKey += 1
-    heap.store.set(loc, null)
+    let loc = heap.alloc(amt)
     let dataType = ptrType.ptr;
     if (dataType !== "int" && dataType !== "bool") {
       dataType = "ptr";
@@ -54,11 +56,6 @@ function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): bril.Po
       type: dataType
     }
   }
-}
-
-function free(ptr: bril.Pointer, heap:Heap) { 
-  heap.store.delete(ptr.loc);
-  return;
 }
 
 /**
@@ -73,13 +70,13 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getPtr(instr: bril.Operation, env: Env, index: number): bril.Pointer {
   let val = get(env, instr.args[index]);
-  if (typeof val !== 'object') {
+  if (typeof val !== 'object' || val instanceof BigInt) {
     throw `${instr.op} argument ${index} must be a Pointer`;
   }
   return val;
 }
 
-function getInt(instr: bril.Operation, env: Env, index: number) {
+function getInt(instr: bril.Operation, env: Env, index: number): bigint {
   let val = get(env, instr.args[index]);
   if (typeof val !== 'bigint') {
     throw `${instr.op} argument ${index} must be a number`;
@@ -242,14 +239,15 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>): Action 
   }
 
   case "alloc": {
-    let ptr = alloc(instr.type, heap)
+    let amt = getInt(instr, env, 0)
+    let ptr = alloc(instr.type, Number(amt), heap)
     env.set(instr.dest, ptr);
     return NEXT;
   }
 
   case "free": {
     let val = getPtr(instr, env, 0)
-    free(val, heap)
+    heap.free(val.loc);
     return NEXT;
   }
 
@@ -257,15 +255,15 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>): Action 
     let target = getPtr(instr, env, 0)
     switch (target.type) {
       case "int": {
-        heap.store.set(target.loc, getInt(instr, env, 1))
+        heap.write(target.loc, getInt(instr, env, 1))
         break;
       }
       case "bool": {
-        heap.store.set(target.loc, getBool(instr, env, 1))
+        heap.write(target.loc, getBool(instr, env, 1))
         break;
       }
       case "ptr": {
-        heap.store.set(target.loc, getPtr(instr, env, 1))
+        heap.write(target.loc, getPtr(instr, env, 1))
         break;
       }
     }
@@ -274,12 +272,19 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>): Action 
 
   case "load": {
     let ptr = getPtr(instr, env, 0)
-    let val = heap.store.get(ptr.loc)
+    let val = heap.read(ptr.loc)
     if (val == undefined || val == null) {
-      throw `Pointer ${instr.args[0]} is uninitialized`;
+      throw `Pointer ${instr.args[0]} points to uninitialized data`;
     } else {
       env.set(instr.dest, val)
     }
+    return NEXT;
+  }
+
+  case "ptradd": {
+    let ptr = getPtr(instr, env, 0)
+    let val = getInt(instr, env, 1)
+    env.set(instr.dest, { loc: ptr.loc.add(Number(val)), type: ptr.type })
     return NEXT;
   }
   }
@@ -319,8 +324,8 @@ function evalProg(prog: bril.Program) {
       evalFunc(func, heap);
     }
   }
-  if (heap.store.size > 0) {
-    throw `${heap.store.size} memory locations have not been freed by end of execution.`
+  if (!heap.isEmpty()) {
+    throw `Some memory locations have not been freed by end of execution.`
   }
 }
 
