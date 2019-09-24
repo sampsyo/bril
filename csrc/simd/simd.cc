@@ -7,6 +7,9 @@
 
 #include "nbind/api.h"
 
+// pretend like there are really big vector lengths to offset comm overhead
+//#define BIG_VECTOR 1
+
 void print128_num(__m128i var)
 {
     uint32_t *val = (uint32_t*) &var;
@@ -20,74 +23,57 @@ void print128_num(__m128i var)
     //       val[0], val[1], val[2], val[3]);
 }
 
-// can these be saved in the vector register file?
-// possible to specify register keyword here?
-static __m128i _vecRegs[4];
 
 struct SIMD {
   static void vecAdd(
-    // prob important to do more than one vec add?
-    // because calling into binding is expensive?
-    int size,
     // std::array or std::vector supported here
     // also can use nbind buffer which requires no memcpy
     //std::array<int,4> a,
     //std::array<int,4> b
-    //nbind::Buffer a,
-    //nbind::Buffer b,
-    //nbind::Buffer c,
-    int index0,
-    int index1,
-    int index2
+    nbind::Buffer aBuf,
+    nbind::Buffer bBuf,
+    nbind::Buffer cBuf
   ) {
 
-    // https://www.cs.virginia.edu/~cr4bd/3330/F2018/simdref.html
-    /*__m256i a = _mm256_loadu_si256((__m256i_u*) array);
-    __m256i b = _mm256_loadu_si256((__m256i_u*) array);
+    unsigned char *a = aBuf.data();
+    unsigned char *b = bBuf.data();
+    unsigned char *c = cBuf.data();
 
-    // takes two __m256i types  and treats are 32 bit ints then adds them
-    __m256i c = _mm256_add_epi32(a, b);*/
+    // going to lose performance here because doing twice as many vec loads as needed
+    __m128i vecA = _mm_loadu_si128((__m128i*)a);
+    __m128i vecB = _mm_loadu_si128((__m128i*)b);
 
-    // loadu -> 32 bit(?), si -> signed int, 128 -> 128 bits
-    //__m128i vecA = _mm_loadu_si128((__m128i*)&(a[0]));
-    //__m128i vecB = _mm_loadu_si128((__m128i*)&(b[0]));
+    __m128i vecC = _mm_add_epi32(vecA, vecB);
 
-    // mm -> 128 bits, epi32 -> 32 bit arithmetic
-    //_vecRegs[index0] = _mm_add_epi32(_vecRegs[index1], _vecRegs[index2]);
-    _vecRegs[index0] = _mm_add_epi32(_vecRegs[index1], _vecRegs[index2]);
-    //print128_num(vecC);
+    // going to lose performance here
+    _mm_storeu_si128((__m128i*)c, vecC);
+    cBuf.commit();
 
-    // store into a buffer and return it
-    //std::array<int,4> c;
-    //_mm_storeu_si128((__m128i*)&(c[0]), vecC);
-    //return c;
   }
 
   static void vecLoad(
-    int size,
     nbind::Buffer tsMem,
-    int index,
+    nbind::Buffer destReg,
     int addr
   ) {
-    int *data = (int*)tsMem.data();
+    int *mem = (int*)tsMem.data();
+    unsigned char *reg = destReg.data();
 
     // loadu -> 32 bit(?), si -> signed int, 128 -> 128 bits
-    _vecRegs[index] = _mm_loadu_si128((__m128i*)&(data[addr]));
-    //__m128i vecB = _mm_loadu_si128((__m128i*)&(b[0]));
-
-    // just keep in a c++ variable, hopefully a vector register
-
-    //tsMem.commit();
+    __m128i vec = _mm_loadu_si128((__m128i*)&(mem[addr]));
+    _mm_storeu_si128((__m128i*)reg, vec);
+    destReg.commit();
   }
 
   static void vecStore(
-    int size,
     nbind::Buffer tsMem,
-    int index,
+    nbind::Buffer srcReg,
     int addr
   ) {
-    int *data = (int*)tsMem.data();
-    _mm_storeu_si128((__m128i*)&(data[addr]), _vecRegs[index]);
+    int *mem = (int*)tsMem.data();
+    unsigned char *reg = srcReg.data();
+    __m128i src = _mm_loadu_si128((__m128i*)reg);
+    _mm_storeu_si128((__m128i*)&(mem[addr]), src);
     tsMem.commit();
   }
 };

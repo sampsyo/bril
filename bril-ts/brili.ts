@@ -25,7 +25,10 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   sw: 2,
   vadd: 2,
   vload: 1,
-  vstore: 2
+  vstore: 2,
+  _vadd: 2,
+  _vload: 1,
+  _vstore: 2
 };
 
 // this represents an infinite size register file
@@ -44,6 +47,13 @@ let stack = new Array<number>(stackSize);
  * It's all my computer support natively so don't go beyond
  */
 let fixedVecSize: number = 4;
+
+/*
+ * Initialize the binding
+ */
+
+//let nbind = require('nbind');
+//let lib = nbind.init().lib;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -103,8 +113,8 @@ function setMem(val: number, addr: number) {
 // get vector value from vector register file
 function getVec(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
-  if (!(val instanceof Array) || (typeof val[0] !== 'number')) {
-    throw `${instr.op} argument ${index} must be a Array<number>`;
+  if (!(val instanceof Int32Array)) {
+    throw `${instr.op} argument ${index} must be a Int32Array`;
   }
 
   return val;
@@ -266,32 +276,11 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "vadd": {
-    // cptr, aptr, bptr, size
-    /*let nbind = require('nbind');
-    let lib = nbind.init().lib;
-
-    // get memory over the specified range to pass in as array
-    // TODO vector registers. llvm does that
-    let size = getInt(instr, env, 3);
-    let aBase = getInt(instr, env, 1);
-    let bBase = getInt(instr, env, 2);
-    let cBase = getInt(instr, env, 0);
-    let a = Array<number>(size);
-    let b = Array<number>(size);
-    for (let i = 0; i < size; i++) {
-      a[i] = getMem(aBase + i);
-      b[i] = getMem(bBase + i);
-    }
-
-    let c: Array<number> = lib.SIMD.vecAdd(4, a, b);
-    for (let i = 0; i < size; i++) {
-      setMem(c[i], cBase + i);
-    }*/
 
     // serialized version
     let vecA = getVec(instr, env, 0);
     let vecB = getVec(instr, env, 1);
-    let vecC = new Array<number>(fixedVecSize);
+    let vecC = new Int32Array(fixedVecSize);
     for (let i = 0; i < fixedVecSize; i++) {
       vecC[i] = vecA[i] + vecB[i];
     }
@@ -305,7 +294,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
     // serialized version
     let addr = getInt(instr, env, 0);
-    let vec = new Array<number>(4);
+    let vec = new Int32Array(4);
     for (let i = 0; i < fixedVecSize; i++) {
       vec[i] = getMem(addr + i);
     }
@@ -324,6 +313,48 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
     return NEXT;
   }
+
+  case "_vadd": {
+    /*let nbind = require('nbind');
+let lib = nbind.init().lib;
+    // if end up doing big vectors, then need to compare serial c impl as well
+    let vecA = getVec(instr, env, 0);
+    let vecB = getVec(instr, env, 1);
+    //let vecA = new Int32Array(fixedVecSize);
+    //let vecB = new Int32Array(fixedVecSize);
+    let vecC = new Array<number>(fixedVecSize);
+    //let vecC = new Int32Array(fixedVecSize);
+    lib.SIMD.vecAdd(vecA, vecB, vecC);
+    env.set(instr.dest, vecC);
+    console.log("_vadd");*/
+
+    return NEXT;
+  }
+
+  case "_vload": {
+
+    // serialized version
+    /*let addr = getInt(instr, env, 0);
+    let vec = new Array<number>(4);
+    for (let i = 0; i < fixedVecSize; i++) {
+      vec[i] = getMem(addr + i);
+    }
+    env.set(instr.dest, vec);*/
+    return NEXT;
+  }
+
+  case "_vstore": {
+    
+    // serialized version
+    /*let val = getVec(instr, env, 0);
+    let addr = getInt(instr, env, 1);
+    for (let i = 0; i < fixedVecSize; i++) {
+      setMem(val[i], addr + i);
+    }*/
+
+    return NEXT;
+  }
+
 
   }
   unreachable(instr);

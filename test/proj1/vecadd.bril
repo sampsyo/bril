@@ -30,7 +30,7 @@ vvadd_loop:
   ci: int = add c i;
 
   va: vector = vload ai;
-  vb: vector = vload bi;   
+  vb: vector = vload bi;
   vc: vector = vadd va vb;
   vstore vc ci;
 

@@ -16,7 +16,7 @@ export type Type = "int" | "bool" | "vector";
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret" | "sw" | "vstore";
+  op: "br" | "jmp" | "print" | "ret" | "sw" | "vstore" | "_vstore";
   args: Ident[];
 }
 
@@ -28,7 +28,7 @@ export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
-      "lw" | "vload" | "vadd" ;
+      "lw" | "vload" | "vadd" | "_vadd" | "_vload";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -37,7 +37,7 @@ export interface ValueOperation {
 /**
  * The type of Bril values that may appear in constants.
  */
-export type Value = number | boolean | Array<number>;
+export type Value = number | boolean | Int32Array;
 
 /**
  * An instruction that places a literal value into a variable.
