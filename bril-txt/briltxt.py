@@ -192,6 +192,21 @@ def instr_to_string(instr):
             instr['type'],
             str(instr['value']).lower(),
         )
+    elif instr['op'] == 'call':
+        if 'dest' in instr:
+            return '{}: {} = {} {}({})'.format(
+                instr['dest'],
+                instr['type'],
+                instr['op'],
+                instr['name'],
+                ' '.join(instr['args']),
+            )
+        else: 
+            return '{} {}({})'.format(
+                instr['op'],
+                instr['name'],
+                ' '.join(instr['args']),
+            )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(
             instr['dest'],
@@ -213,9 +228,13 @@ def print_instr(instr):
 def print_label(label):
     print('{}:'.format(label['label']))
 
+def print_args(args):
+    return '{}'.format(', '.join(['{} : {}'.format(arg['name'], arg['type']) for arg in args]))
+
 
 def print_func(func):
-    print('{} {{'.format(func['name']))
+    typ = func['type'] if 'type' in func else 'void'
+    print('{} {}({}) {{'.format(typ, func['name'], print_args(func['args'])))
     for instr_or_label in func['instrs']:
         if 'label' in instr_or_label:
             print_label(instr_or_label)

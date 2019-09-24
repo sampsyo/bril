@@ -33,7 +33,6 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
 function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
 
-  // TODO: let main have args!
   // Main has no return type
   builder.buildFunction("main", []);
 
@@ -225,7 +224,8 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
           args.push({name: argName, type: typeString} as bril.Argument);
         }
 
-        // TODO: MAYBE do this the type checker way?
+        // The type checker gives a full function type;
+        // we want only the return type.
         if (funcDef.type) {
           let retType : bril.Type;
           if (funcDef.type.getText() === 'number') {
