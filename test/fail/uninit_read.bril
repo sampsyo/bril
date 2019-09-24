@@ -1,0 +1,7 @@
+main {
+  two: int = const 2;
+  p: ptr<int> = alloc two;
+  tmp: int = load p;
+  print tmp;
+  free p;
+}

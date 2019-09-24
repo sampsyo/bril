@@ -1,0 +1,2 @@
+command = "bril2json < {filename} | brili 2>/dev/null"
+return_code = "1"
