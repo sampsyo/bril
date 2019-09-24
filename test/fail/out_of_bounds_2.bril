@@ -1,0 +1,8 @@
+main {
+  two: int = const 2;
+  negone: int = const -1;
+  p: ptr<int> = alloc two;
+  p1: ptr<int> = ptradd p negone;
+  store p1 two;
+  free p;
+}
