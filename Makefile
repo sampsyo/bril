@@ -1,6 +1,7 @@
 TESTS := test/parse/*.bril \
 	test/print/*.json \
 	test/interp/*.bril \
+	test/mem/*.bril \
 	test/fail/*.t \
 	test/ts/*.ts
 
