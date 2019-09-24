@@ -5,22 +5,22 @@ import {Builder} from './builder';
 import {readStdin} from './util';
 
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
-  [ts.SyntaxKind.PlusToken,               ["add", "int"]],
-  [ts.SyntaxKind.AsteriskToken,           ["mul", "int"]],
-  [ts.SyntaxKind.MinusToken,              ["sub", "int"]],
-  [ts.SyntaxKind.SlashToken,              ["div", "int"]],
-  [ts.SyntaxKind.LessThanToken,           ["lt",  "bool"]],
-  [ts.SyntaxKind.LessThanEqualsToken,     ["le",  "bool"]],
-  [ts.SyntaxKind.GreaterThanToken,        ["gt",  "bool"]],
-  [ts.SyntaxKind.GreaterThanEqualsToken,  ["ge",  "bool"]],
-  [ts.SyntaxKind.EqualsEqualsToken,       ["eq",  "bool"]],
-  [ts.SyntaxKind.EqualsEqualsEqualsToken, ["eq",  "bool"]],
+  [ts.SyntaxKind.PlusToken,               ["fadd", "float"]],
+  [ts.SyntaxKind.AsteriskToken,           ["fmul", "float"]],
+  [ts.SyntaxKind.MinusToken,              ["fsub", "float"]],
+  [ts.SyntaxKind.SlashToken,              ["fdiv", "float"]],
+  [ts.SyntaxKind.LessThanToken,           ["flt",  "bool"]],
+  [ts.SyntaxKind.LessThanEqualsToken,     ["fle",  "bool"]],
+  [ts.SyntaxKind.GreaterThanToken,        ["fgt",  "bool"]],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  ["fge",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsToken,       ["feq",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, ["feq",  "bool"]],
 ]);
 
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
   if (tsType.flags === ts.TypeFlags.Number) {
-    return "int";
+    return "float";
   } else if (tsType.flags === ts.TypeFlags.Boolean) {
     return "bool";
   } else {
@@ -39,8 +39,8 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
-      let val = parseInt(lit.text);
-      return builder.buildInt(val);
+      let val = parseFloat(lit.text);
+      return builder.buildFloat(val);
     }
 
     case ts.SyntaxKind.TrueKeyword: {
