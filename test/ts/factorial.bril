@@ -16,7 +16,7 @@ int fac(x : int) {
 then.0:
   v4: int = const 1;
   ret v4;
-  jmp endif;
+  jmp endif.0;
 else.0:
 endif.0:
   v5: int = id x;

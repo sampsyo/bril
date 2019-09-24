@@ -199,13 +199,13 @@ def instr_to_string(instr):
                 instr['type'],
                 instr['op'],
                 instr['name'],
-                ' '.join(instr['args']),
+                ', '.join(instr['args']),
             )
         else: 
             return '{} {}({})'.format(
                 instr['op'],
                 instr['name'],
-                ' '.join(instr['args']),
+                ', '.join(instr['args']),
             )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(

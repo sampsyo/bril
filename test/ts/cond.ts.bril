@@ -11,7 +11,7 @@ then.1:
   v7: int = const 1;
   print v7;
   v8: int = const 0;
-  jmp endif;
+  jmp endif.1;
 else.1:
   v9: int = const 2;
   print v9;
