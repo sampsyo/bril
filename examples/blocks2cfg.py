@@ -65,7 +65,15 @@ def form_cfg(bril, verbose):
 
         # Add the control-flow edges.
         for i, (name, block) in enumerate(blocks.items()):
-            block_name = '{}'.format(name)
+            if verbose:
+                import vriltxt
+                block_name = r'  {} [shape=box, xlabel="{}", label="{}\l"];'.format(
+                    name,
+                    name,
+                    r'\l'.join(vriltxt.instr_to_string(i) for i in block),
+                )
+            else:
+                block_name = '{}'.format(name)
             edges = []
             succ = successors(block[-1])
             for label in succ:
