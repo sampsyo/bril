@@ -1,0 +1,9 @@
+digraph main {
+  b1 [shape=box, xlabel="b1", label="inc: int = const 1\llength: int = const 10\larr1: array = init 10\larr2: array = init 10\lzero: int = const 0\larr1[0]: int = v2a zero\larr1[1]: int = v2a zero\larr1[2]: int = v2a zero\larr1[3]: int = v2a zero\larr1[4]: int = v2a zero\larr1[5]: int = v2a zero\larr1[6]: int = v2a zero\larr1[7]: int = v2a zero\larr1[8]: int = v2a zero\larr1[9]: int = v2a zero\lone: int = const 1\larr2[0]: int = v2a one\larr2[1]: int = v2a one\larr2[2]: int = v2a one\larr2[3]: int = v2a one\larr2[4]: int = v2a one\larr2[5]: int = v2a one\larr2[6]: int = v2a one\larr2[7]: int = v2a one\larr2[8]: int = v2a one\larr2[9]: int = v2a one\li: int = const 0\lcond: bool = gt length i\lbr cond loop end\l"];
+  loop [shape=box, xlabel="loop", label="id1: int = a2v arr1[i]\lid2: int = a2v arr2[i]\lid3: int = add id1 id2\larr3[i]: int = v2a id3\li: int = add i inc\lcond: bool = gt length i\lbr cond loop end\l"];
+  end [shape=box, xlabel="end", label="o: int = a2v arr3[0]\lprint o\lret \l"];
+  b1 -> loop;
+  b1 -> end;
+  loop -> loop;
+  loop -> end;
+}
