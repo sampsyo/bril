@@ -2,8 +2,8 @@ main {
   v0: float = const 9;
   v1: float = const -20;
   v2: float = const .25;
-  res: float = div v0 v1;
+  res: float = fdiv v0 v1;
   print res;
-  res2: float = add v0 v2;
+  res2: float = fadd v0 v2;
   print res2;
 }

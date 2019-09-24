@@ -16,6 +16,15 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   not: 1,
   and: 2,
   or: 2,
+  fadd: 2,
+  fmul: 2,
+  fsub: 2,
+  fdiv: 2,
+  flt: 2,
+  fle: 2,
+  fgt: 2,
+  fge: 2,
+  feq: 2,
   print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
@@ -23,7 +32,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   nop: 0,
 };
 
-type Value = boolean | BigInt;
+type Value = boolean | BigInt | Number;
 type Env = Map<bril.Ident, Value>;
 
 function get(env: Env, ident: bril.Ident) {
@@ -56,6 +65,14 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
   if (typeof val !== 'boolean') {
     throw `${instr.op} argument ${index} must be a boolean`;
+  }
+  return val;
+}
+
+function getFloat(instr: bril.Operation, env: Env, index: number) {
+  let val = get(env, instr.args[index]);
+  if (typeof val !== 'number') {
+    throw `${instr.op} argument ${index} must be a float`;
   }
   return val;
 }
@@ -93,7 +110,11 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     // Ensure that JSON ints get represented appropriately.
     let value: Value;
     if (typeof instr.value === "number") {
-      value = BigInt(instr.value);
+      if (instr.type === "float")
+        value = instr.value;
+      else {
+        value = BigInt(Math.floor(instr.value))
+      }
     } else {
       value = instr.value;
     }
@@ -175,6 +196,60 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   case "or": {
     let val = getBool(instr, env, 0) || getBool(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fadd": {
+    let val = getFloat(instr, env, 0) + getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fsub": {
+    let val = getFloat(instr, env, 0) - getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fmul": {
+    let val = getFloat(instr, env, 0) * getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fdiv": {
+    let val = getFloat(instr, env, 0) / getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fle": {
+    let val = getFloat(instr, env, 0) <= getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "flt": {
+    let val = getFloat(instr, env, 0) < getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fgt": {
+    let val = getFloat(instr, env, 0) > getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fge": {
+    let val = getFloat(instr, env, 0) >= getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "feq": {
+    let val = getFloat(instr, env, 0) === getFloat(instr, env, 1);
     env.set(instr.dest, val);
     return NEXT;
   }
