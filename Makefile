@@ -11,7 +11,21 @@ test:
 save:
 	turnt --save $(TESTS)
 
+.PHONY: ts
 ts:
 	cd bril-ts ; \
 	yarn ; \
 	yarn build ; \
+
+.PHONY: book
+book:
+	rm -rf book
+	mdbook build
+
+.PHONY: deploy
+RSYNCARGS := --compress --recursive --checksum --itemize-changes \
+	--delete -e ssh --perms --chmod=Du=rwx,Dgo=rx,Fu=rw,Fog=r
+DEST := courses:coursewww/capra.cs.cornell.edu/htdocs/bril
+deploy: book
+	rsync $(RSYNCARGS) ./book/ $(DEST)
+
