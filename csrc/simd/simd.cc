@@ -47,7 +47,7 @@ struct SIMD {
 
     // going to lose performance here
     _mm_storeu_si128((__m128i*)c, vecC);
-    cBuf.commit();
+    //cBuf.commit(); // only needed for emscripten apparently?
 
   }
 
@@ -62,7 +62,7 @@ struct SIMD {
     // loadu -> 32 bit(?), si -> signed int, 128 -> 128 bits
     __m128i vec = _mm_loadu_si128((__m128i*)&(mem[addr]));
     _mm_storeu_si128((__m128i*)reg, vec);
-    destReg.commit();
+    //destReg.commit();
   }
 
   static void vecStore(
@@ -74,7 +74,7 @@ struct SIMD {
     unsigned char *reg = srcReg.data();
     __m128i src = _mm_loadu_si128((__m128i*)reg);
     _mm_storeu_si128((__m128i*)&(mem[addr]), src);
-    tsMem.commit();
+    //tsMem.commit();
   }
 };
 

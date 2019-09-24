@@ -40,7 +40,7 @@ type Env = Map<bril.Ident, bril.Value>;
  * The freeing isn't supported yet because there is only one function
  */
 let stackSize: number = 1024;
-let stack = new Array<number>(stackSize);
+let stack = new Int32Array(stackSize);
 
 /*
  * We're doing fixed array size of 4 so set this here
@@ -52,8 +52,8 @@ let fixedVecSize: number = 4;
  * Initialize the binding
  */
 
-//let nbind = require('nbind');
-//let lib = nbind.init().lib;
+let nbind = require('nbind');
+let lib = nbind.init().lib;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -315,42 +315,30 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "_vadd": {
-    /*let nbind = require('nbind');
-let lib = nbind.init().lib;
     // if end up doing big vectors, then need to compare serial c impl as well
     let vecA = getVec(instr, env, 0);
     let vecB = getVec(instr, env, 1);
-    //let vecA = new Int32Array(fixedVecSize);
-    //let vecB = new Int32Array(fixedVecSize);
-    let vecC = new Array<number>(fixedVecSize);
-    //let vecC = new Int32Array(fixedVecSize);
+    let vecC = new Int32Array(fixedVecSize);
     lib.SIMD.vecAdd(vecA, vecB, vecC);
     env.set(instr.dest, vecC);
-    console.log("_vadd");*/
 
     return NEXT;
   }
 
   case "_vload": {
 
-    // serialized version
-    /*let addr = getInt(instr, env, 0);
-    let vec = new Array<number>(4);
-    for (let i = 0; i < fixedVecSize; i++) {
-      vec[i] = getMem(addr + i);
-    }
-    env.set(instr.dest, vec);*/
+    let addr = getInt(instr, env, 0);
+    let vec = new Int32Array(4);
+    lib.SIMD.vecLoad(stack, vec, addr);
+    env.set(instr.dest, vec);
     return NEXT;
   }
 
   case "_vstore": {
     
-    // serialized version
-    /*let val = getVec(instr, env, 0);
+    let val = getVec(instr, env, 0);
     let addr = getInt(instr, env, 1);
-    for (let i = 0; i < fixedVecSize; i++) {
-      setMem(val[i], addr + i);
-    }*/
+    lib.SIMD.vecStore(stack, val, addr);
 
     return NEXT;
   }
