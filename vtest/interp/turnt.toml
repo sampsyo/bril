@@ -1,1 +1,1 @@
-command = "vril2json < {filename} | brili"
+command = "vril2json < {filename} | vrili"

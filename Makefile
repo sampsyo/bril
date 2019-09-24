@@ -10,8 +10,8 @@ TESTS := test/cfg_test/*.bril
 #	test/df_test/*.bril
 else ifeq ($(VTEST),1)
 TESTS := vtest/parse/*.bril \
-	vtest/print/*.json
-#	vtest/interp/*.brili
+	vtest/print/*.json \
+	vtest/interp/*.bril
 else
 TESTS := test/parse/*.bril \
 	test/print/*.json \
