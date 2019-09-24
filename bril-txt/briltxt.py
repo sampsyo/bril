@@ -174,6 +174,9 @@ class JSONTransformer(lark.Transformer):
 
 
 def parse_bril(txt):
+    # Strip comments (must be entire line) from Bril before parsing
+    lines = [l for l in txt.split("\n") if not l.strip().startswith("//")]
+    txt = "\n".join(lines)
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
