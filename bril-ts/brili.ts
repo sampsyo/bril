@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
+import { isConstructSignatureDeclaration } from 'typescript';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -39,7 +40,7 @@ type Env = Map<bril.Ident, bril.Value>;
  * Locations of memory dictated by software and freed if ever change stack frame/function
  * The freeing isn't supported yet because there is only one function
  */
-let stackSize: number = 1024;
+let stackSize: number = 3072;
 let stack = new Int32Array(stackSize);
 
 /*
@@ -384,7 +385,13 @@ function evalProg(prog: bril.Program) {
 
 async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
+
+  // time the execution here, b/c file io is picked up by python
+  console.time("brili");
+
   evalProg(prog);
+
+  console.timeEnd('brili');
 }
 
 // Make unhandled promise rejections terminate.

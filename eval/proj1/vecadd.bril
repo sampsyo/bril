@@ -1,0 +1,25 @@
+main {
+  size: int = const 1024;
+  vecSize: int = const 4;
+
+  a: int = const 0;
+  b: int = add a size;
+  c: int = add b size;
+
+  i: int = const 0;
+vvadd_loop:
+  ai: int = add a i;
+  bi: int = add b i;
+  ci: int = add c i;
+
+  va: vector = vload ai;
+  vb: vector = vload bi;
+  vc: vector = vadd va vb;
+  vstore vc ci;
+  
+  i: int = add i vecSize;
+  done: bool = ge i size;
+  br done vvadd_done vvadd_loop;
+vvadd_done:
+
+}
