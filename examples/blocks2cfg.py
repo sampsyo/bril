@@ -5,7 +5,6 @@ emit a pydot generated image.
 # To read in files from json format
 import json
 import sys
-#sys.path.append("examples")
 
 # To generate diagrams
 import pydot
@@ -56,6 +55,8 @@ def form_cfg(bril, verbose):
     In `verbose` mode, include the instructions in the vertices.
     """
     cfg = {}
+    txt = open("update.bril","w+")
+    txt.write('main { \n')
 
     for func in bril['functions']:
         blocks = block_map(form_blocks(func['instrs']))
@@ -72,6 +73,7 @@ def form_cfg(bril, verbose):
                     name,
                     r'\l'.join(vriltxt.instr_to_string(i) for i in block),
                 )
+                inbril = '{}:\n{};\n'.format(name,';\n'.join(vriltxt.instr_to_string(i) for i in block))
             else:
                 block_name = '{}'.format(name)
             edges = []
@@ -79,9 +81,12 @@ def form_cfg(bril, verbose):
             for label in succ:
                 edges.append('{}'.format(label))
             cfg.update({ block_name : edges })
+            txt.write(inbril)
             
     print_cfg(cfg)
     draw_cfg(cfg)
+    txt.write('}\n')
+    txt.close()
 
 if __name__ == '__main__':
     form_cfg(json.load(sys.stdin), '-v' in sys.argv[1:])
