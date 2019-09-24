@@ -24,17 +24,25 @@
         },
         {
           "args": [
+            "o"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
             "i"
           ],
-          "dest": "arr1[0]",
+          "dest": "arr1[5]",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "arr1"
+            "arr1[5]"
           ],
-          "op": "print"
+          "dest": "o",
+          "op": "a2v",
+          "type": "int"
         },
         {
           "args": [

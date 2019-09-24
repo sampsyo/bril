@@ -288,7 +288,15 @@
         },
         {
           "args": [
-            "arr3"
+            "arr3[0]"
+          ],
+          "dest": "o",
+          "op": "a2v",
+          "type": "int"
+        },
+        {
+          "args": [
+            "o"
           ],
           "op": "print"
         }
