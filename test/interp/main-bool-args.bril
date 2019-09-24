@@ -1,3 +1,4 @@
+// ARGS: true
 void main(b : bool) {
     br b here there;
 here:

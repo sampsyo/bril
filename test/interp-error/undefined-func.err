@@ -1,0 +1,5 @@
+
+/Users/avh/Documents/research/bril/bril-ts/build/brili.js:347
+process.on('unhandledRejection', e => { throw e; });
+                                        ^
+undefined function notafun

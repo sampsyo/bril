@@ -100,7 +100,7 @@ function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[])
   : Action {
   let func = findFunc(instr.name, funcs);
   if (func === null) {
-    throw `undefined function ${name}`;
+    throw `undefined function ${instr.name}`;
   }
 
   let newEnv: Env = new Map();
