@@ -10,9 +10,9 @@ The goal of the project was to add a static type checker to find type errors, mu
 
 
 
-##Design and Implementation
+## Design and Implementation
 
-###Design
+### Design
 
 
 To establish type checking rules we define a basic enviroment $$\sigma$$:
