@@ -10,7 +10,7 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | "float";
 
 /**
  * An instruction that does not produce any result.

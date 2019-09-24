@@ -1,0 +1,30 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "float",
+          "value": 1.1
+        },
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "float",
+          "value": 0.02
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "v2",
+          "op": "add",
+          "type": "float"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+main {
+  v0: float = const 1.1;
+  v1: float = const .02;
+  v2: float = add v0 v1;
+}
