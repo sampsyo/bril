@@ -5,17 +5,6 @@ extern crate clap;
 extern crate log;
 extern crate simplelog;
 
-#[macro_use]
-extern crate serde_derive;
-extern crate serde;
-extern crate serde_json;
-
-mod basic_block;
-mod cfg;
-mod ir_types;
-mod parse;
-mod interp;
-
 use std::fs::File;
 
 use simplelog::{Config, LevelFilter, TermLogger, TerminalMode};
@@ -54,15 +43,5 @@ fn main() {
     }
   };
 
-  match parse::load(input).map(basic_block::find_basic_blocks).map(
-    |(main_idx, blocks, label_index)| (main_idx, cfg::build_cfg(blocks, &label_index), label_index),
-  ) {
-    Ok((main_idx, blocks, label_index)) => {
-      //dbg!(main_idx);
-      //dbg!(blocks);
-      //dbg!(label_index);
-      interp::execute((main_idx, blocks, label_index));
-    }
-    Err(e) => error!("{}", e),
-  }
+  brilirs::run_input(input, std::io::stdout());
 }

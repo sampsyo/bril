@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::fmt;
 
 use serde_json::Value;
 
@@ -34,6 +35,16 @@ impl BrilValue {
     }
 }
 
+impl fmt::Display for BrilValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use BrilValue::*;
+        match self {
+            Int(i) => write!(f, "{}", i),
+            Bool(b) => write!(f, "{}", b),
+        }
+    }
+}
+
 impl TryFrom<BrilValue> for i64 {
     type Error = InterpError;
     fn try_from(value: BrilValue) -> Result<i64, InterpError> {
@@ -64,6 +75,7 @@ pub enum InterpError {
     BadAsmtType(Type, Type), // (expected, actual). For when the LHS type of an instruction is bad
     LabelNotFound(String),
     BadValueType(Type, Type), // (expected, actual)
+    IoError(Box<std::io::Error>),
 }
 
 fn check_asmt_type(expected: Type, actual: Type) -> Result<(), InterpError> {
@@ -95,7 +107,7 @@ where T: TryFrom<BrilValue>,
     Ok(arg_vals)
 }
 
-pub fn execute(prog: BBProgram) -> Result<(), InterpError> {
+pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), InterpError> {
     let (main_fn, blocks, labels) = prog;
     let mut curr_block: usize = main_fn.ok_or(InterpError::NoMainFunction)?;
     let mut vars: HashMap<String, BrilValue> = HashMap::new();
@@ -107,6 +119,8 @@ pub fn execute(prog: BBProgram) -> Result<(), InterpError> {
         let curr_block_obj = &blocks[curr_block];
         let curr_instrs = &curr_block_obj.instrs;
         for operation in curr_instrs.clone() {
+            debug!("{:?}", &operation);
+            debug!("{}", vars.iter().map(|(k,v)| format!("{} => {}", k, v)).collect::<Vec<_>>().join(","));
             match operation {
                 Const { dest, typ, value } => {
                     vars.insert(dest, BrilValue::new(typ, value)?);
@@ -207,14 +221,22 @@ pub fn execute(prog: BBProgram) -> Result<(), InterpError> {
                     vars.insert(dest, src);
                 }
                 Print { args } => {
-                    println!("{}", args.into_iter().map(|a| format!("{:?}", vars[&a])).collect::<Vec<_>>().join(", "));
+                    write!(out, "{}", args.into_iter().map(|a| format!("{}", vars[&a])).collect::<Vec<_>>().join(", "))
+                        .map_err(|e| InterpError::IoError(Box::new(e)))?;
                 },
                 Nop => {},
-            }
-        }
+            } // end match operatoin
 
-        // we have fallen off the end of the basic block without going anywhere
-        // we could also fall through to the next basic block? almost certain that's an error, though
-        return Ok(());
-    }
+            // if there's only one exit block, go there
+        } // end for operation in curr_block.instrs
+
+        if curr_block_obj.exit.len() == 1 {
+            curr_block = curr_block_obj.exit[0];
+        } else {
+
+            // we have fallen off the end of the basic block without going anywhere
+            // we could also fall through to the next basic block? almost certain that's an error, though
+            return Ok(());
+        }
+    } // end loop
 }
