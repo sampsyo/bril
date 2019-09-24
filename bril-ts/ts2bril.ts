@@ -94,20 +94,22 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       } else {
         // Recursively translate arguments
         let values = call.arguments.map(emitExpr);
-        if (call.parent.kind === ts.SyntaxKind.VariableDeclaration) {
-          let decl = call.parent as ts.VariableDeclaration;
-          let type = brilType(decl, checker);
-          return builder.buildValueCallOperation('call', 
-            call.expression.getText(), 
-            values.map(v => v.dest), 
-            decl.name.getText(), 
-            type);
 
-        } else {
+        // Check if effect statement, i.e., a call that is not a subexpression
+        if (call.parent.kind === ts.SyntaxKind.ExpressionStatement) {
           builder.buildEffectCallOperation('call', call.expression.getText(), 
             values.map(v => v.dest));
           return builder.buildInt(0);  // Expressions must produce values
-        }
+        } else {
+          let decl = call.parent as ts.VariableDeclaration;
+          let type = brilType(decl, checker);
+          let name = (decl.name != undefined) ? decl.name.getText() : undefined;
+          return builder.buildValueCallOperation('call', 
+            call.expression.getText(), 
+            values.map(v => v.dest), 
+            type, 
+            name);
+        } 
       }
     default:
       throw `unsupported expression kind: ${expr.getText()}`;

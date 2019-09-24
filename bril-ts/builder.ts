@@ -53,7 +53,8 @@ export class Builder {
    * Build a call operation that does write to a destination.
    */
   buildValueCallOperation(op: bril.CallOpCode, name : string, args: string[],
-                     dest: string, type: bril.Type) : bril.ValueCallOperation {
+                     type: bril.Type, dest?: string) : bril.ValueCallOperation {
+    dest = dest || this.freshVar();
     let instr : bril.ValueCallOperation = { op, name, args, dest, type };
     this.insert(instr);
     return instr;
