@@ -8,8 +8,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   sub: 2,
   div: 2,
   id: 1,
-  a2v: 1,
-  v2a: 1,
+  a2v: 2,
+  v2a: 2,
   lt: 2,
   le: 2,
   gt: 2,
@@ -96,7 +96,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   case "init": {
     for (let i = 0; i < instr.value; i++) {
-	env.set(instr.dest + "[" + i + "]", 7);
+	env.set(instr.dest + "[" + i + "]", 0);
     }
     return NEXT;
   }
@@ -108,14 +108,17 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "a2v": {
-    let val = get(env, instr.args[0]);
+    let arr = get(env, instr.args[0]);
+    let idx = get(env, instr.args[1]);
+    let val = get(env, arr + "[" + idx + "]");
     env.set(instr.dest, val);
     return NEXT;
   }
 
   case "v2a": {
     let val = get(env, instr.args[0]);
-    env.set(instr.dest, val);
+    let idx = get(env, instr.args[1]);
+    env.set(instr.dest + "[" + idx + "]", val);
     return NEXT;
   }
 
