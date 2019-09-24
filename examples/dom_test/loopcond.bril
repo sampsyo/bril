@@ -1,14 +1,15 @@
 main {
+entry:
   x: int = const 0;
   i: int = const 0;
   one: int = const 1;
 
-for.cond:
+loop:
   max: int = const 10;
   cond: bool = lt i max;
-  br cond for.body for.end;
+  br cond body exit;
 
-for.body:
+body:
   mid: int = const 5;
   cond: bool = lt i mid;
   br cond then endif;
@@ -22,8 +23,8 @@ endif:
   x: int = mul x factor;
 
   i: int = add i one;
-  jmp for.cond;
+  jmp loop;
 
-for.end:
+exit:
   print x;
 }
