@@ -1,8 +1,8 @@
 mod basic_block;
 mod cfg;
+mod interp;
 mod ir_types;
 mod parse;
-mod interp;
 
 #[macro_use]
 extern crate log;
@@ -23,7 +23,7 @@ pub fn run_input<T: std::io::Write>(input: Box<dyn std::io::Read>, out: T) {
       dbg!(&label_index);
       match interp::execute((main_idx, blocks, label_index), out) {
         Ok(()) => (),
-        Err(e) => println!("{:?}", e),
+        Err(e) => error!("{:?}", e),
       }
     }
     Err(e) => error!("{}", e),
