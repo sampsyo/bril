@@ -225,12 +225,12 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
 function evalFunc(func: bril.Function) {
   let env: Env = new Map();
-  let count = 0;
+  let inscount = 0;
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
       let action = evalInstr(line, env);
-      count = count + 1;
+      inscount = inscount + 1;
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -244,22 +244,22 @@ function evalFunc(func: bril.Function) {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return;
+        return inscount;
       }
     }
   }
-  console.log(count);
+  return inscount;
 }
 
 function evalProg(prog: bril.Program) {
   let count = 0;
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func);
-      //count = count + incr;
-      //console.log(func.name);
+      let incr = evalFunc(func);
+      count = count + incr;
     }
   }
+  console.log(count);
 }
 
 async function main() {
