@@ -12,10 +12,10 @@ vvadd_loop:
   bi: int = add b i;
   ci: int = add c i;
 
-  va: vector = vload ai;
-  vb: vector = vload bi;
-  vc: vector = vadd va vb;
-  vstore vc ci;
+  va: vector = _svload ai;
+  vb: vector = _svload bi;
+  vc: vector = _svadd va vb;
+  _svstore vc ci;
 
   i: int = add i vecSize;
   done: bool = ge i size;

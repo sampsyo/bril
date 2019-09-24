@@ -29,7 +29,10 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   vstore: 2,
   _vadd: 2,
   _vload: 1,
-  _vstore: 2
+  _vstore: 2,
+  _svadd: 2,
+  _svload: 1,
+  _svstore: 2
 };
 
 // this represents an infinite size register file
@@ -40,7 +43,7 @@ type Env = Map<bril.Ident, bril.Value>;
  * Locations of memory dictated by software and freed if ever change stack frame/function
  * The freeing isn't supported yet because there is only one function
  */
-let stackSize: number = 3072;
+let stackSize: number = 24576;
 let stack = new Int32Array(stackSize);
 
 /*
@@ -295,7 +298,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
     // serialized version
     let addr = getInt(instr, env, 0);
-    let vec = new Int32Array(4);
+    let vec = new Int32Array(fixedVecSize);
     for (let i = 0; i < fixedVecSize; i++) {
       vec[i] = getMem(addr + i);
     }
@@ -329,7 +332,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "_vload": {
 
     let addr = getInt(instr, env, 0);
-    let vec = new Int32Array(4);
+    let vec = new Int32Array(fixedVecSize);
     lib.SIMD.vecLoad(stack, vec, addr);
     env.set(instr.dest, vec);
     return NEXT;
@@ -340,6 +343,35 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let val = getVec(instr, env, 0);
     let addr = getInt(instr, env, 1);
     lib.SIMD.vecStore(stack, val, addr);
+
+    return NEXT;
+  }
+
+  case "_svadd": {
+    // if end up doing big vectors, then need to compare serial c impl as well
+    let vecA = getVec(instr, env, 0);
+    let vecB = getVec(instr, env, 1);
+    let vecC = new Int32Array(fixedVecSize);
+    lib.SIMD.vecAdd_serial(vecA, vecB, vecC);
+    env.set(instr.dest, vecC);
+
+    return NEXT;
+  }
+
+  case "_svload": {
+
+    let addr = getInt(instr, env, 0);
+    let vec = new Int32Array(fixedVecSize);
+    lib.SIMD.vecLoad_serial(stack, vec, addr);
+    env.set(instr.dest, vec);
+    return NEXT;
+  }
+
+  case "_svstore": {
+    
+    let val = getVec(instr, env, 0);
+    let addr = getInt(instr, env, 1);
+    lib.SIMD.vecStore_serial(stack, val, addr);
 
     return NEXT;
   }
