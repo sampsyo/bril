@@ -1,0 +1,7 @@
+main{
+
+    a: int  = const 1;
+    b: bool = const 5;
+    c: int = add a 5;
+    print c;
+}
