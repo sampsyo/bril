@@ -22,11 +22,14 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   ret: 0,
   nop: 0,
   call: null, // don't allow passing of arguments for now
+  handle: 2,
+  throw: 1,
 };
 
 type Env = Map<bril.Ident, bril.Value>;
+type HandlerEnv = Map<bril.Ident, bril.Label>;
 type PCIndex = number;
-type StackFrame = [bril.Function, Env, PCIndex]; // function name, locals, PC function index
+type StackFrame = [bril.Function, Env, HandlerEnv, PCIndex]; // function name, locals, PC function index
 type ProgramStack = Array<StackFrame>;
 
 function get(env: Env, ident: bril.Ident) {
@@ -71,9 +74,25 @@ type Action =
   {"label": bril.Ident} |
   {"next": true} |
   {"call": bril.Ident, "args": bril.Ident[]} | // call a function
+  {"handle": bril.Ident, "handlerLabel": bril.Label} | // install an exception handler
+  {"throw": bril.Ident} | // throw an exception
   {"end": true};
 let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
+
+/**
+ * Get pc index of label in a function.
+ */
+function getLabelIndex(func: bril.Function, lab: bril.Label): number|undefined {
+  for (let i = 0; i < func.instrs.length; i++) {
+    let sLine = func.instrs[i];
+    if ('label' in sLine && sLine.label === lab.label) {
+      return i;
+    }
+  }
+
+  return undefined;
+}
 
 /**
  * Interpret an instruction in a given environment, possibly updating the
@@ -205,6 +224,14 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "call": {
     return {"call": instr.args[0], "args": instr.args.slice(1)};
   }
+
+  case "handle": {
+    return {"handle": instr.args[0], "handlerLabel": {label: instr.args[1]}};
+  }
+
+  case "throw": {
+    return {"throw": instr.args[0]};
+  }
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
@@ -216,13 +243,16 @@ function isCorrectType(val: number|boolean, type: bril.Type) {
 }
 
 function evalFunc(prog: bril.Program, stack:ProgramStack,
-    beginFunc: bril.Function, beginEnv: Env, beginPc: PCIndex)
+    beginFunc: bril.Function, beginEnv: Env, beginHandlerEnv: HandlerEnv, beginPc: PCIndex)
 {
   let func = beginFunc;
   let env = beginEnv;
+  let handlerEnv = beginHandlerEnv;
   let pc = beginPc;
   while (pc < func.instrs.length) {
     let line = func.instrs[pc];
+
+    // instruction
     if ('op' in line) {
       let action = evalInstr(line, env);
 
@@ -231,18 +261,12 @@ function evalFunc(prog: bril.Program, stack:ProgramStack,
 
       } else if ('label' in action) {
         // Search for the label and transfer control.
-        let labelFound = false;
+        let labelIndex = getLabelIndex(func, {label: action.label});
 
-        for (let i = 0; i < func.instrs.length; ++i) {
-          let sLine = func.instrs[i];
-          if ('label' in sLine && sLine.label === action.label) {
-            pc = i;
-            labelFound = true;
-            break;
-          }
-        }
+        if (labelIndex != undefined) {
+          pc = labelIndex;
 
-        if (!labelFound) {
+        } else {
           throw `label ${action.label} not found`;
         }
 
@@ -252,7 +276,7 @@ function evalFunc(prog: bril.Program, stack:ProgramStack,
         for (let callee of prog.functions) {
           if (callee.name === action.call) {
             // push current activation record into stack frame
-            stack.push([func, env, pc+1]);
+            stack.push([func, env, handlerEnv, pc+1]);
             func = callee;
 
             if (func.args.length === action.args.length) {
@@ -275,6 +299,7 @@ function evalFunc(prog: bril.Program, stack:ProgramStack,
               }
 
               env = calleeEnv;
+              handlerEnv = new Map();
               pc = 0;
               calleeFound = true;
               break;
@@ -289,19 +314,61 @@ function evalFunc(prog: bril.Program, stack:ProgramStack,
           throw `function ${action.call} not found`;
         }
 
+      } else if ('handle' in action) {
+        handlerEnv.set(action.handle, action.handlerLabel);
+        pc++;
+
+      } else if ('throw' in action) {
+        let handler = handlerEnv.get(action.throw);
+
+        // unwind stack!
+        while (handler === undefined) {
+          let frame = stack.pop();
+          if (frame != undefined) {
+            let [frameFunc, frameEnv, frameHandlerEnv, framePc] = frame;
+            func = frameFunc;
+            env = frameEnv;
+            handlerEnv = frameHandlerEnv;
+            pc = framePc;
+            handler = frameHandlerEnv.get(action.throw);
+
+          } else {
+            break;
+          }
+        }
+
+        if (handler != undefined) {
+          // Search for the label and transfer control.
+          let handlerLabelIndex = getLabelIndex(func, handler);
+
+          if (handlerLabelIndex != undefined) {
+            pc = handlerLabelIndex;
+
+          } else {
+            throw `label ${handler.label} not found`;
+          }
+
+        } else {
+          throw `exception ${action.throw} not handled`;
+        }
+
       } else if ('end' in action) {
         // restore the activation record at the top of the stack
         let oldFrame = stack.pop();
         if (oldFrame != undefined) {
-          let [oldFunc, oldEnv, oldPc] = oldFrame;
+          let [oldFunc, oldEnv, oldHandlerEnv, oldPc] = oldFrame;
           func = oldFunc;
           env = oldEnv;
+          handlerEnv = oldHandlerEnv;
           pc = oldPc;
 
         } else {
           return;
         }
       }
+
+    } else { // label; advance program counter
+      pc++;
     }
   }
 }
@@ -309,7 +376,7 @@ function evalFunc(prog: bril.Program, stack:ProgramStack,
 function evalProg(prog: bril.Program) {
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(prog, [], func, new Map(), 0);
+      evalFunc(prog, [], func, new Map(), new Map(), 0);
     }
   }
 }

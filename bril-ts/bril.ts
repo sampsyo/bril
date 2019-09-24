@@ -16,7 +16,7 @@ export type Type = "int" | "bool";
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret" | "call";
+  op: "br" | "jmp" | "print" | "ret" | "call" | "handle" | "throw";
   args: Ident[];
 }
 
