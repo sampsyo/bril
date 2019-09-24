@@ -28,8 +28,6 @@ struct SIMD {
   static void vecAdd(
     // std::array or std::vector supported here
     // also can use nbind buffer which requires no memcpy
-    //std::array<int,4> a,
-    //std::array<int,4> b
     nbind::Buffer aBuf,
     nbind::Buffer bBuf,
     nbind::Buffer cBuf
@@ -47,8 +45,6 @@ struct SIMD {
 
     // going to lose performance here
     _mm_storeu_si128((__m128i*)c, vecC);
-    //cBuf.commit(); // only needed for emscripten apparently?
-
   }
 
   static void vecLoad(
@@ -62,7 +58,6 @@ struct SIMD {
     // loadu -> 32 bit(?), si -> signed int, 128 -> 128 bits
     __m128i vec = _mm_loadu_si128((__m128i*)&(mem[addr]));
     _mm_storeu_si128((__m128i*)reg, vec);
-    //destReg.commit();
   }
 
   static void vecStore(
@@ -74,7 +69,47 @@ struct SIMD {
     unsigned char *reg = srcReg.data();
     __m128i src = _mm_loadu_si128((__m128i*)reg);
     _mm_storeu_si128((__m128i*)&(mem[addr]), src);
-    //tsMem.commit();
+  }
+
+  static void vecAdd_serial(
+    // std::array or std::vector supported here
+    // also can use nbind buffer which requires no memcpy?? is it faster in typescript?
+    nbind::Buffer aBuf,
+    nbind::Buffer bBuf,
+    nbind::Buffer cBuf
+  ) {
+
+    int *a = (int*)aBuf.data();
+    int *b = (int*)bBuf.data();
+    int *c = (int*)cBuf.data();
+
+    for (int i = 0; i < 4; i++) {
+      c[i] = a[i] + b[i];
+    }
+  }
+
+  static void vecLoad_serial(
+    nbind::Buffer tsMem,
+    nbind::Buffer destReg,
+    int addr
+  ) {
+    int *mem = (int*)tsMem.data();
+    int *reg = (int*)destReg.data();
+    for (int i = 0; i < 4; i++) {
+      reg[i] = mem[addr + i];
+    }
+  }
+
+  static void vecStore_serial(
+    nbind::Buffer tsMem,
+    nbind::Buffer srcReg,
+    int addr
+  ) {
+    int *mem = (int*)tsMem.data();
+    int *reg = (int*)srcReg.data();
+    for (int i = 0; i < 4; i++) {
+      mem[addr + i] = reg[i];
+    }
   }
 };
 
@@ -84,4 +119,7 @@ NBIND_CLASS(SIMD) {
     method(vecAdd);
     method(vecLoad);
     method(vecStore);
+    method(vecAdd_serial);
+    method(vecLoad_serial);
+    method(vecStore_serial);
 }
