@@ -1,0 +1,10 @@
+#To test if eq works.
+main { 
+  v0: int = const 9;
+  v1: int = const -20;
+  res0: bool = eq v0 v1;
+  print res0;
+  v1: int = const 9;
+  res1: bool = eq v0 v1;
+  print res1;
+}

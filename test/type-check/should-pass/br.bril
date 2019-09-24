@@ -1,0 +1,10 @@
+#To test if branch to somewhere works.
+main {
+  v: int = const 5;
+  b: bool = const true;
+  br b label1 label2;
+label1:
+  v: int = const 2;
+label2:
+  print v;
+}

@@ -1,0 +1,13 @@
+#label not present in code
+main{
+
+    v0: int = const 1;
+    v1: int = const 3;
+    v3: int = add v1 v2;
+    jmp itsatrap;
+    v4: int = const 4;
+    print v4;
+    check: bool = eq v3 v4;
+    print check;
+    
+}

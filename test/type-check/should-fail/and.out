@@ -1,0 +1,2 @@
+line 3: assign non-bool value to bool var
+const error!

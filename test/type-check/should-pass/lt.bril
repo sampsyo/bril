@@ -1,0 +1,13 @@
+#To test if lt works.
+main { 
+  v0: int = const 9;
+  v1: int = const -20;
+  res0: bool = lt v0 v1;
+  print res0;
+  v1: int = const 10;
+  res1: bool = lt v0 v1;
+  print res1;
+  v1: int = const 9;
+  res2: bool = lt v0 v1;
+  print res2;
+}

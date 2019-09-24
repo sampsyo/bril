@@ -60,6 +60,18 @@ They also take input on stdin and produce output on stdout.
 
 [flit]: https://flit.readthedocs.io/
 
+### Type Checker
+
+The static type checker need to be installed by  [Flit][], go to the `type-check` directory and use Flit to install symlinks to the tools:
+
+```
+$ flit install --symlink --user
+```
+
+The tool is called `typecheck`.
+It also take input on stdin and produce output on stdout.
+
+[flit]: https://flit.readthedocs.io/
 
 Tests
 -----
