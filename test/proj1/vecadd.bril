@@ -21,8 +21,6 @@ sw_loop:
   done: bool = eq i size;
   br done sw_done sw_loop;
 sw_done:
-  # calculate how many vector adds to do
-  vadds: int = div size vecSize;
   i: int = const 0;
 vvadd_loop:
   ai: int = add a i;
