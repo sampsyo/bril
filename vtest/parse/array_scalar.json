@@ -33,168 +33,236 @@
           "value": 0
         },
         {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[0]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[1]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[2]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[3]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[4]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[5]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[6]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[7]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[8]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
-          "args": [
-            "zero"
-          ],
-          "dest": "arr1[9]",
-          "op": "v2a",
-          "type": "int"
-        },
-        {
           "dest": "one",
           "op": "const",
           "type": "int",
           "value": 1
         },
         {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "three",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "dest": "four",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "dest": "five",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "dest": "six",
+          "op": "const",
+          "type": "int",
+          "value": 6
+        },
+        {
+          "dest": "seven",
+          "op": "const",
+          "type": "int",
+          "value": 7
+        },
+        {
+          "dest": "eight",
+          "op": "const",
+          "type": "int",
+          "value": 8
+        },
+        {
+          "dest": "nine",
+          "op": "const",
+          "type": "int",
+          "value": 9
+        },
+        {
           "args": [
-            "one"
+            "zero",
+            "zero"
           ],
-          "dest": "arr2[0]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
+            "zero",
             "one"
           ],
-          "dest": "arr2[1]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "one"
+            "zero",
+            "two"
           ],
-          "dest": "arr2[2]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "one"
+            "zero",
+            "three"
           ],
-          "dest": "arr2[3]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "one"
+            "zero",
+            "four"
           ],
-          "dest": "arr2[4]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "one"
+            "zero",
+            "five"
           ],
-          "dest": "arr2[5]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "one"
+            "zero",
+            "six"
           ],
-          "dest": "arr2[6]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "one"
+            "zero",
+            "seven"
           ],
-          "dest": "arr2[7]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "one"
+            "zero",
+            "eight"
           ],
-          "dest": "arr2[8]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
+            "zero",
+            "nine"
+          ],
+          "dest": "arr1",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "zero"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
             "one"
           ],
-          "dest": "arr2[9]",
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "two"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "three"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "four"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "five"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "six"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "seven"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "eight"
+          ],
+          "dest": "arr2",
+          "op": "v2a",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one",
+            "nine"
+          ],
+          "dest": "arr2",
           "op": "v2a",
           "type": "int"
         },
@@ -226,7 +294,8 @@
         },
         {
           "args": [
-            "arr1[i]"
+            "arr1",
+            "i"
           ],
           "dest": "id1",
           "op": "a2v",
@@ -234,7 +303,8 @@
         },
         {
           "args": [
-            "arr2[i]"
+            "arr2",
+            "i"
           ],
           "dest": "id2",
           "op": "a2v",
@@ -251,9 +321,10 @@
         },
         {
           "args": [
-            "id3"
+            "id3",
+            "i"
           ],
-          "dest": "arr3[i]",
+          "dest": "arr3",
           "op": "v2a",
           "type": "int"
         },
@@ -288,7 +359,8 @@
         },
         {
           "args": [
-            "arr3[0]"
+            "arr3",
+            "zero"
           ],
           "dest": "o",
           "op": "a2v",
