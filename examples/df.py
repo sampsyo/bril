@@ -127,8 +127,7 @@ def cprop_merge(vals_list):
     for vals in vals_list:
         for name, val in vals.items():
             if val == '?':
-                if name not in out_vals:
-                    out_vals[name] = val
+                out_vals[name] = '?'
             else:
                 if name in out_vals:
                     if out_vals[name] != val:

@@ -18,7 +18,7 @@ These things are written in TypeScript:
 
 And there is also a parser and dumper for a human-readable and -writable text format, written in Python, under `bril-txt`.
 
-[langref]: https://github.com/sampsyo/bril/blob/master/langref.md
+[langref]: https://capra.cs.cornell.edu/bril/langref.html
 [brilts]: https://github.com/sampsyo/bril/blob/master/bril-ts/bril.ts
 
 
