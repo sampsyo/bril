@@ -22,7 +22,7 @@ start: func*
 func: "def" CNAME arg* "{" instr* "}" | "def" CNAME arg* ":" type "{" instr* "}"
   | CNAME arg* "{" instr* "}" | CNAME arg* ":" type "{" instr* "}"
 
-?instr: const | vop | eop | label 
+?instr: func | const | vop | eop | label 
 
 const.4: IDENT ":" type "=" "const" lit ";"
 vop.3: IDENT ":" type "=" CNAME IDENT* ";"
