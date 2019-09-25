@@ -5,6 +5,8 @@ extern crate clap;
 extern crate log;
 extern crate simplelog;
 
+extern crate twox_hash;
+
 use std::fs::File;
 
 use simplelog::{Config, LevelFilter, TermLogger, TerminalMode};
