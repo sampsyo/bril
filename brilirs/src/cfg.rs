@@ -20,7 +20,7 @@ pub fn build_cfg(mut blocks: Vec<BasicBlock>, labels: &HashMap<String, usize>) -
           }
         }
         Operation::Br { params } => {
-          for arg in params.args.iter().skip(1) {
+          for arg in params.dests.iter() {
             block.exit.push(labels[arg]);
           }
         }
