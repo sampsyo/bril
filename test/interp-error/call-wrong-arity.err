@@ -1,5 +1,1 @@
-
-/Users/gyauney/Documents/cornell/2019-fall/cs6120/bril/bril-ts/build/brili.js:347
-process.on('unhandledRejection', e => { throw e; });
-                                        ^
-function expected 2 arguments, got 3
+Brili interpreter error: function expected 2 arguments, got 3
