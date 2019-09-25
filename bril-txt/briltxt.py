@@ -61,9 +61,7 @@ class JSONTransformer(lark.Transformer):
         return data
 
     def imp(self, items):
-        name = items.pop(0)
-        data = {'import': str(name)}
-        return data
+        return {'import': items.pop(0)}
 
     def func(self, items):
         name = items.pop(0)
