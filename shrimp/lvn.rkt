@@ -99,7 +99,7 @@
                           (match-let ([(dest-instr dest type _) instr])
                             (set! num idx)
                             (set! res-instr
-                                  (id dest type canon)))])]
+                                  (id dest type (list canon))))])]
 
                    ;; value is not in the table
                    [(dest-instr? instr)
