@@ -6,6 +6,7 @@
          racket/pretty
          graph
          threading
+         "helpers.rkt"
          "external.rkt"
          "ast.rkt"
          "cfg.rkt"
@@ -64,7 +65,7 @@
   (when (output-blocks)
     (for-each (match-lambda
                 [(cons blocks _)
-                 (pretty-print blocks)])
+                 (pr blocks)])
               cfgs))
 
   (when (show-cfg)
@@ -73,11 +74,9 @@
                  (show-graph (graphviz graph))])
               cfgs))
 
-  ;; XXX(rachit): THIS IS WRONG. interpret block works for basic blocks.
+  ;; XXX(rachit): Hook up the interpreter
   (when (run-interpreter)
-    (println "not hooked up")
-    ;; (pretty-print (interpret-block cfgs-p))
-    )
+    (println "not hooked up"))
 
   (when (run-verify)
     (define-values (compare-ast compare-cfgs compare-contexts) (process-file (run-verify)))
@@ -119,7 +118,7 @@
                  [run-interpreter #f]
                  [output-blocks #f]
                  [show-cfg #f]
-                 [do-lvn #t]
-                 ;; [run-verify "../test/ts/loopfact.out"]
+                 [do-lvn #f]
+                 [run-verify "../test/ts/loopfact.out"]
                  )
     (main "../test/ts/loopfact.out")))
