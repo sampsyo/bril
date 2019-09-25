@@ -23,8 +23,9 @@ func: CNAME "{" instr* "}"
 
 ?instr: const | vop | eop | label
 
-const.4: IDENT ":" type "=" "const" lit ";"
-vop.3: IDENT ":" type "=" CNAME IDENT* ";"
+type_decl.5: ":" type
+const.4: IDENT [type_decl] "=" "const" lit ";"
+vop.3: IDENT [type_decl] "=" CNAME IDENT* ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
@@ -56,25 +57,31 @@ class JSONTransformer(lark.Transformer):
 
     def const(self, items):
         dest = items.pop(0)
-        type = items.pop(0)
+        type = items.pop(0).children[0] \
+               if isinstance(items[0], lark.tree.Tree) else None
         val = items.pop(0)
-        return {
+        res = {
             'op': 'const',
             'dest': str(dest),
-            'type': type,
             'value': val,
         }
+        if type is not None:
+            res['type'] = type
+        return res
 
     def vop(self, items):
         dest = items.pop(0)
-        type = items.pop(0)
+        type = items.pop(0).children[0] \
+               if isinstance(items[0], lark.tree.Tree) else None
         op = items.pop(0)
-        return {
+        res = {
             'op': str(op),
             'dest': str(dest),
-            'type': type,
             'args': [str(t) for t in items],
-         }
+        }
+        if type is not None:
+            res['type'] = type
+        return res
 
     def eop(self, items):
         op = items.pop(0)
