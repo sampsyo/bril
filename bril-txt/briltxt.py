@@ -65,7 +65,6 @@ class JSONTransformer(lark.Transformer):
         instr_list = items.pop(0)
         return {
             'name': str(name),
-            'type': 'void',
             'args': [],
             'instrs': instr_list,
         }
