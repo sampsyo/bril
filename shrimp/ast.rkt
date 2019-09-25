@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require json
+         racket/contract
          racket/match
          racket/format
          racket/system
@@ -24,7 +25,9 @@
 (struct function (name instrs) #:transparent)
 (struct label (name) #:transparent)
 
-(struct dest-instr (dest type vals) #:transparent)
+(define-struct/contract dest-instr ([dest string?]
+                                    [type (or/c int? bool?)]
+                                    [vals (listof string?)]) #:transparent)
 (struct binop dest-instr () #:transparent)
 
 ;; math
