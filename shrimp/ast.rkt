@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require json
-         racket/contract
          racket/match
          racket/format
          racket/system
@@ -25,9 +24,20 @@
 (struct function (name instrs) #:transparent)
 (struct label (name) #:transparent)
 
-(define-struct/contract dest-instr ([dest string?]
-                                    [type (or/c int? bool?)]
-                                    [vals (listof string?)]) #:transparent)
+(struct dest-instr (dest type vals)
+  #:transparent
+  #:guard (lambda (dest type vals _)
+            (unless (string? dest)
+              (error 'dest-instr (~a "dest: " dest " is not a string")))
+            (unless (list? vals)
+              (error 'dest-instr (~a "vals: " vals " is not a list")))
+            (for-each
+              (lambda (val)
+                (when (not (or (string? val) (number? val)))
+                  (error 'dest-instr (~a val " is not a string"))))
+              vals)
+            (values dest type vals)))
+
 (struct binop dest-instr () #:transparent)
 
 ;; math
