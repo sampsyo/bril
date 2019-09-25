@@ -21,8 +21,9 @@ start: func*
 
 func: CNAME "{" instr* "}"
 
-?instr: const | vop | eop | label
+?instr: new | const | vop | eop | label
 
+new.5: IDENT ":" type "=" "new" type ";"
 const.4: IDENT ":" type "=" "const" lit ";"
 vop.3: IDENT ":" type "=" CNAME IDENT* ";"
 eop.2: CNAME IDENT* ";"
@@ -31,7 +32,7 @@ label.1: IDENT ":"
 lit: SIGNED_INT  -> int
   | BOOL     -> bool
 
-type: CNAME
+type: CNAME | (CNAME) ("[") (DIGIT) ("]")
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -45,7 +46,6 @@ COMMENT: /#.*/
 %ignore COMMENT
 """.strip()
 
-
 class JSONTransformer(lark.Transformer):
     def start(self, items):
         return {'functions': items}
@@ -53,6 +53,17 @@ class JSONTransformer(lark.Transformer):
     def func(self, items):
         name = items.pop(0)
         return {'name': str(name), 'instrs': items}
+
+    def new(self, items):
+        dest = items.pop(0)
+        type_op = items.pop(0)
+        type_exp = items.pop(0)
+        return {
+            'op': 'new',
+            'dest': str(dest),
+            'type': type_op,
+            'type_exp': type_exp,
+        }
 
     def const(self, items):
         dest = items.pop(0)
@@ -99,7 +110,13 @@ class JSONTransformer(lark.Transformer):
             return False
 
     def type(self, items):
-        return str(items[0])
+        if len(items) == 1:
+            return str(items[0])
+        else: #Array
+            return {
+                'base' : str(items[0]),
+                'size'   : int(str(items[1]))
+            }
 
 
 def parse_bril(txt):

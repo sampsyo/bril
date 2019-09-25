@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
+import { timingSafeEqual } from 'crypto';
+import { tokenToString } from 'typescript';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -16,14 +18,18 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   not: 1,
   and: 2,
   or: 2,
+  index: 2,
   print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
+  set: 3,
   ret: 0,
   nop: 0,
 };
 
-type Value = boolean | BigInt;
+type Value = boolean | BigInt | ValueArray;
+// https://stackoverflow.com/questions/36966444/how-to-create-a-circularly-referenced-type-in-typescript
+class ValueArray extends Array<Value> { }
 type Env = Map<bril.Ident, Value>;
 
 function get(env: Env, ident: bril.Ident) {
@@ -60,6 +66,14 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
   return val;
 }
 
+function getArr(instr: bril.Operation, env: Env, index: number) : ValueArray {
+  let val = get(env, instr.args[index]);
+  if (!(val instanceof ValueArray)) {
+    throw `${instr.op} argument ${index} must be an array`;
+  } 
+  return val;
+}
+
 /**
  * The thing to do after interpreting an instruction: either transfer
  * control to a label, go to the next instruction, or end thefunction.
@@ -79,7 +93,7 @@ let END: Action = {"end": true};
  */
 function evalInstr(instr: bril.Instruction, env: Env): Action {
   // Check that we have the right number of arguments.
-  if (instr.op !== "const") {
+  if (instr.op !== "const" && instr.op !== "new") {
     let count = argCounts[instr.op];
     if (count === undefined) {
       throw "unknown opcode " + instr.op;
@@ -99,6 +113,25 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     }
 
     env.set(instr.dest, value);
+    return NEXT;
+  case "new":
+    // Ensure that JSON ints get represented appropriately.
+    function buildArray(t: bril.Type) {
+      var val : Value;
+      if (t === "int")
+        val = BigInt(0);
+      else if (t === "bool")
+        val = false;
+      else {
+        var i;
+        val = new ValueArray();
+        for (i = BigInt(0); i < t.size; i++) {
+          val.push(buildArray(t.base));
+        }
+      }
+      return val;
+    }
+    env.set(instr.dest, buildArray(instr.type_exp));
     return NEXT;
 
   case "id": {
@@ -179,6 +212,13 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     return NEXT;
   }
 
+  case "index": {
+    let arr = getArr(instr, env, 0);
+    let index = Number(getInt(instr, env, 1));
+    env.set(instr.dest, arr[index]);
+    return NEXT;
+  }
+
   case "print": {
     let values = instr.args.map(i => get(env, i).toString());
     console.log(...values);
@@ -196,6 +236,15 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     } else {
       return {"label": instr.args[2]};
     }
+  }
+
+  case "set": {
+    let arr = getArr(instr, env, 0);
+    let index = Number(getInt(instr, env, 1));
+    let value = get(env, instr.args[2]);
+    // JS allows us to just update the internal value directly...
+    arr[index] = value;
+    return NEXT;
   }
   
   case "ret": {

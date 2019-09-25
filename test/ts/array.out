@@ -1,0 +1,20 @@
+main {
+  v0: int = const 5;
+  value: int = id v0;
+  v2: int = id value;
+  v3: int = const 3;
+  v4: int = add v2 v3;
+  v5: int = const 6;
+  v6: bool = lt v4 v5;
+  br v6 then.1 else.1;
+then.1:
+  v7: int = const 1;
+  print v7;
+  v8: int = const 0;
+  jmp endif.1;
+else.1:
+  v9: int = const 2;
+  print v9;
+  v10: int = const 0;
+endif.1:
+}

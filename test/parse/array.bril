@@ -1,0 +1,7 @@
+main {
+  v0: int[3] = new int[3];
+  v1: int = const 5;
+  v2: int = const 0;
+  set v0 v2 v1;
+  v4: int = index v2 v0;
+}

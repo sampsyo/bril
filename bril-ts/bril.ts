@@ -10,13 +10,18 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type BaseType = "int" | "bool";
+export type ArrayType = {
+  base: Type;
+  size: BigInt;
+}
+export type Type = ArrayType | BaseType;
 
 /**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret";
+  op: "br" | "jmp" | "set" | "print" | "ret";
   args: Ident[];
 }
 
@@ -27,7 +32,8 @@ export interface EffectOperation {
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
-      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
+      "index";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -37,6 +43,16 @@ export interface ValueOperation {
  * The type of Bril values that may appear in constants.
  */
 export type Value = number | boolean;
+
+/**
+ * An instruction that creates a new array.
+ */
+export interface New {
+  op: "new";
+  type_exp: Type;
+  dest: Ident;
+  type: Type;
+}
 
 /**
  * An instruction that places a literal value into a variable.
@@ -57,7 +73,7 @@ export type Operation = EffectOperation | ValueOperation;
  * Instructions can be operations (which have arguments) or constants (which
  * don't). Both produce a value in a destination variable.
  */
-export type Instruction = Operation | Constant;
+export type Instruction = Operation | Constant | New;
 
 /**
  * Both constants and value operations produce results.

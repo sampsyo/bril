@@ -1,0 +1,12 @@
+main {
+  v0: int[3] = new int[3];
+  print v0;
+
+  v1: int = const 5;
+  v2: int = const 0;
+  set v0 v2 v1;
+  print v0;
+
+  v3: int = index v0 v2;
+  print v3;
+}
