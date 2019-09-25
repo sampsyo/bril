@@ -1,0 +1,7 @@
+main {
+     a: int = const 4;
+     b: int = id a;
+     jmp test;
+   test:
+     sum1: int = add a a;
+}

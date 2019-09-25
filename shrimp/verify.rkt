@@ -67,6 +67,7 @@
   (unless (unsat? sol)
     (define-values (conc1 conc2)
       (values (evaluate lives1 sol) (evaluate lives2 sol)))
+    (displayln "Counter-example found!")
     (displayln "===============================")
     (display-interp (make-hash conc1) block1)
     (displayln "-------------------------------")
