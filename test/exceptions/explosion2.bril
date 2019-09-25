@@ -1,0 +1,25 @@
+# test overriding exception handlers
+main {
+  v: int = const 4;
+  v2: int = const 5;
+  v3: int = const 10;
+  v4: int = const 11;
+  handle explosion explosionLabel;
+  handle explosion explosionLabel2;
+  call func1 v;
+  call func1 v2;
+  ret;
+explosionLabel:
+  print v3;
+  ret;
+explosionLabel2:
+  print v4;
+  ret;
+}
+
+func1 x:int {
+  v: int = const 1;
+  throw explosion;
+  print x;
+  ret;
+}

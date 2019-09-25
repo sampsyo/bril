@@ -1,0 +1,26 @@
+# test unwinding deep stacks
+main {
+  x: int = const 10;
+  handle explosion explosionLabel;
+  call func1 x;
+  call func1 x;
+explosionLabel:  
+  v: int = const 99;
+  print v;
+  ret;
+}
+
+func1 x:int {
+  zero: int = const 0;
+  b: bool = le x zero;
+  br b stop recur;
+recur:
+  one: int = const 1;
+  x2: int = sub x one;
+  call func1 x2;
+  ret;
+stop:
+  throw explosion;
+  print x;
+  ret;
+}

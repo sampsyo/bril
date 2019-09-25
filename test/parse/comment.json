@@ -1,6 +1,7 @@
 {
   "functions": [
     {
+      "args": [],
       "instrs": [
         {
           "dest": "v",
@@ -9,7 +10,6 @@
           "value": 42
         }
       ],
-      "args": [],
       "name": "main"
     }
   ]

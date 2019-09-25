@@ -1,0 +1,19 @@
+# test unhandled exception
+main {
+  v: int = const 4;
+  v2: int = const 5;
+  v3: int = const 10;
+  call func1 v;
+  call func1 v2;
+  ret;
+explosionLabel:
+  print v3;
+  ret;
+}
+
+func1 x:int {
+  v: int = const 1;
+  throw explosion;
+  print x;
+  ret;
+}

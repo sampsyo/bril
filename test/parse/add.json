@@ -1,6 +1,7 @@
 {
   "functions": [
     {
+      "args": [],
       "instrs": [
         {
           "dest": "v0",
@@ -30,7 +31,6 @@
           "op": "print"
         }
       ],
-      "args": [],
       "name": "main"
     }
   ]

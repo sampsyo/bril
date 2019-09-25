@@ -1,0 +1,16 @@
+# test exception handling with no stack unwinding
+main {
+  v: int = const 99;
+  v2: int = const 49;
+  v3: int = const 59;
+  handle crying cryingLabel;
+  print v;
+  throw crying;
+  print v;
+cryingLabel:
+  print v2;
+  ret;
+nothing:
+  print v3;
+  ret;
+}

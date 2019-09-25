@@ -21,7 +21,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
-  call: null, // don't allow passing of arguments for now
+  call: null,
   handle: 2,
   throw: 1,
 };
@@ -382,8 +382,12 @@ function evalProg(prog: bril.Program) {
 }
 
 async function main() {
-  let prog = JSON.parse(await readStdin()) as bril.Program;
-  evalProg(prog);
+  try {
+    let prog = JSON.parse(await readStdin()) as bril.Program;
+    evalProg(prog);
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 // Make unhandled promise rejections terminate.
