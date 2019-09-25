@@ -21,20 +21,25 @@
 (define run-interpreter (make-parameter #f))
 (define run-verify (make-parameter #f))
 (define do-lvn (make-parameter #f))
+(define optimize-both (make-parameter #f))
 
 (define ((apply-when f predicate) val)
   (if predicate
       (f val)
       val))
 
-(define (cfg-passes ast)
-  (~> ast
-      (map function-instrs _)
-      (map cfg _)
-      (map (apply-when lvn (do-lvn)) _)
-      ))
+(define (cfg-passes ast opts)
+  (define minimal
+    (~> ast
+        (map function-instrs _)
+        (map cfg _)))
 
-(define (process-file filename)
+  (if opts
+      (~> minimal
+          (map (apply-when lvn (do-lvn)) _))
+      minimal))
+
+(define (process-file filename [opts #t])
   ;; check to make sure file exists
   (when (not (file-exists? filename))
     (raise-argument-error 'main
@@ -54,7 +59,7 @@
       (typecheck (function-instrs func))))
 
   ;; do cfg passes
-  (define cfg (cfg-passes ast))
+  (define cfg (cfg-passes ast opts))
 
   (values ast cfg type-contexts))
 
@@ -79,7 +84,9 @@
     (println "not hooked up"))
 
   (when (run-verify)
-    (define-values (compare-ast compare-cfgs compare-contexts) (process-file (run-verify)))
+    (define-values (compare-ast compare-cfgs compare-contexts)
+      (process-file (run-verify)
+                    (optimize-both)))
     (for ([cfg cfgs]
           [compare-cfg compare-cfgs]
           [context contexts]
@@ -90,7 +97,8 @@
                   (hash-ref (car compare-cfg) block-lbl)))
         (unless context
           (error 'verify "Verification requires the typechecker to be run"))
-        (verify-block block context compare-block compare-context)))))
+        (verify-block block context compare-block compare-context)
+        ))))
 
 (module+ main
   (command-line
@@ -108,6 +116,8 @@
                       ("Verify that <filename> and <compare-file> are functionally equivalent."
                        "Assumes that <filename> and <compare-file> are in the same format")
                       (run-verify compare-file)]
+   [("-B" "--both") "Optimize both <filename> and <compare-file>"
+                    (optimize-both #f)]
    [("--lvn") "Enable lvn optimizations"
               (do-lvn #t)]
    #:args (filename)
@@ -118,7 +128,10 @@
                  [run-interpreter #f]
                  [output-blocks #f]
                  [show-cfg #f]
-                 [do-lvn #f]
-                 [run-verify "../test/ts/loopfact.out"]
+
+                 [do-lvn #t]
+                 [optimize-both #t]
+                 [debug? #t]
+                 [run-verify "examples/lvn.bril"]
                  )
-    (main "../test/ts/loopfact.out")))
+    (main "examples/lvn.bril")))

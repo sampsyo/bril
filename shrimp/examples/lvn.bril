@@ -1,8 +1,12 @@
 main {
      a: int = const 4;
      b: int = const 2;
+     prod: int = const 0;
+     jmp test;
+   test:
      sum1: int = add a b;
+     # a: int = const 7;
      sum2: int = add a b;
+     # print prod;
      prod: int = mul sum1 sum2;
-     print prod;
 }

@@ -51,6 +51,10 @@
                 (make-immutable-hash lives2)
                 #:combine (lambda (v1 v2) (cons v1 v2))))
 
+  (pr block1)
+  (pr block2)
+  (pr common-lives)
+
   (define-values (sol _)
     (with-asserts
       (begin
@@ -60,7 +64,9 @@
                            (assert (equal? (car v) (cdr v))))))
 
         (verify (same-block? block1 lives1 block2 lives2)))))
-  (pr sol)
+  (unless (unsat? sol)
+    (pr sol)
+    (error 'verify-block "Found a counter-example!"))
   sol)
 
 (define (verify-prog) (void))

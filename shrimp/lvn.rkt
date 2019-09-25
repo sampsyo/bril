@@ -2,6 +2,9 @@
 
 (require "cfg.rkt"
          "ast.rkt"
+         "helpers.rkt"
+         racket/format
+         racket/list
          racket/pretty
          racket/match)
 
@@ -36,21 +39,46 @@
 
 ;; set up table things
 (struct row (idx value canon) #:transparent)
-(define (lookup table value)
+(define (lookup table tar-value)
   (findf (match-lambda
-           [(row _ val _)
-            (equal? val value)])
+           [(row _ (dest-instr _ type val) _)
+            (and (equal? type (dest-instr-type tar-value))
+                 (equal? val (dest-instr-vals tar-value)))]
+           [(row _ (branch c _ _) _)
+            (equal? c (branch-con tar-value))])
          table))
+
+;; XXX(sam) ensure that this is actually fresh
+(define var-store (make-hash))
+(define (fresh-var var)
+  (define i (hash-ref var-store var 0))
+  (define new-var (~a var "-c" i))
+  (hash-set! var-store var (add1 i))
+  new-var)
+
+
+(define (will-be-overridden? instrs idx dest)
+  (define-values (_ rst)
+    (split-at instrs (add1 idx)))
+
+  (ormap (lambda (instr)
+           (cond [(dest-instr? instr)
+                  (equal? dest (dest-instr-dest instr))]
+                 [else #f]))
+         rst))
 
 ;; does local value numbering on a single block
 (define (local-value-numbering block)
+
+  (match-define (basic-block label instrs) block)
 
   ;; set up data structures
   (define var2num (make-hash))
   (define table (list))
 
-  (define block-p
-    (for/list ([instr (basic-block-instrs block)])
+  (define instrs-p
+    (for/list ([instr instrs]
+               [instr-idx (in-range (length instrs))])
       (cond [;; instruction with values
              (or (dest-instr? instr)
                  (branch? instr))
@@ -74,11 +102,14 @@
                                   (id dest type canon)))])]
 
                    ;; value is not in the table
-                   [else
+                   [(dest-instr? instr)
                     ;; XXX(sam) change dest is the instr will be overridden later
-                    (define dest (if (dest-instr? instr)
-                                     (dest-instr-dest instr)
-                                     #f))
+
+                    (define dest
+                      (if (will-be-overridden? instrs instr-idx
+                                              (dest-instr-dest instr))
+                          (fresh-var (dest-instr-dest instr))
+                          (dest-instr-dest instr)))
 
                     (set! num (length table))
 
@@ -86,7 +117,10 @@
                     ;; XXX(sam) list is not best for this
                     (set! table
                           (append table
-                                (list (row (length table) value dest))))
+                                  (list (row (length table) value dest))))
+
+                    (match-define (dest-instr _ type vals) instr)
+                    (define instr-p ((instr-constr instr) dest type vals))
 
                     ;; replace instr args with canonical variables for the values
                     (set! res-instr
@@ -95,7 +129,7 @@
                                          (if idx
                                              (row-canon (list-ref table idx))
                                              v))
-                                       instr))])
+                                       instr-p))])
 
              (when (dest-instr? instr)
                (hash-set! var2num (dest-instr-dest instr) num))
@@ -104,14 +138,15 @@
             ;; else, instruction has no values
             [else instr])))
 
-  (println "-----")
-  (pretty-print table)
-  (pretty-print var2num)
-  (pretty-print block-p)
-  (println "-----")
+  ;; (pr "-----")
+  ;; (pr table)
+  ;; (pr var2num)
+  ;; (pr instrs)
+  ;; (pr instrs-p)
+  ;; (pr "-----")
 
   ;; (pretty-print block)
-  block-p)
+  (basic-block label instrs-p))
 
 (define (lvn cfg)
   (match-define (cons blocks graph) cfg)
@@ -119,5 +154,4 @@
     (hash-map blocks
               (lambda (k v)
                 (cons k (local-value-numbering v)))))
-  ;; use apply hash to make immutable hash
-  (cons (apply hash blocks-p) graph))
+  (cons (make-immutable-hash blocks-p) graph))
