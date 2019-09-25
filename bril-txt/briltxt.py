@@ -173,16 +173,16 @@ def unroll_imports(txt, modules):
     stage_one = parse_helper(txt)
 
     imports = {}
-    for statement in stage_one['imports']:
+    for statement in stage_one.get('imports', list()):
         if "import" in statement.keys():
             imports[statement['import']] = statement['functionids']
 
-    for imp in stage_one['imports']:
+    for imp in stage_one.get('imports', list()):
         try:
             with open(modules['{}.bril'.format(imp['import'])], 'r') as mod:
                 mod_code = mod.read()
         except KeyError:
-            print("Couldn't open module: {}".format(imp['import']))
+            print("Couldn't open module: {}".format(imp['import']), file=sys.stderr)
             return
         mod_data = unroll_imports(mod_code, modules)
 
@@ -205,7 +205,7 @@ def modules_parse_bril(main_module, module_paths):
         with open(main_module, 'r') as main:
             program_txt = main.read()
     except EnvironmentError:
-        print("Couldn't open main module")
+        print("Couldn't open main module", file=sys.stderr)
         return
 
     for path in module_paths:
