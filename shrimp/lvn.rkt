@@ -9,9 +9,13 @@
          racket/match)
 
 (provide lvn
-         use-bug-overridden)
+         use-bug-overridden
+         use-bug-assoc
+         use-bug-lookup)
 
 (define use-bug-overridden (make-parameter #f))
+(define use-bug-assoc (make-parameter #f))
+(define use-bug-lookup (make-parameter #f))
 
 (define (apply-instr f instr)
   (cond [(dest-instr? instr)
@@ -26,30 +30,28 @@
                       [v (f (print-val-v instr))])]
         [else instr]))
 
-;; (cond [(dest-instr? instr)
-;;        (struct-copy
-;;         dest-instr instr
-;;         ;; look up vals in var2num table, if it doesn't exist, keep the var
-;;         ;; XXX(sam) canonicalization
-;;         [vals (map (lambda (x) (hash-ref var2num x x))
-;;                          (dest-instr-vals instr))])]
-;;       [(branch? instr)
-;;        (let ([con (branch-con instr)])
-;;          (struct-copy
-;;           branch instr
-;;           [con (hash-ref var2num con con)]))]
-;;       [else instr])
-
 ;; set up table things
+;; XXX(sam) change the instruction type
 (struct row (idx value canon) #:transparent)
 (define (lookup table tar-value)
-  (findf (match-lambda
-           [(row _ (dest-instr _ type val) _)
-            (and (equal? type (dest-instr-type tar-value))
-                 (equal? val (dest-instr-vals tar-value)))]
-           [(row _ (branch c _ _) _)
-            (equal? c (branch-con tar-value))])
-         table))
+  (if (use-bug-lookup)
+      (findf (match-lambda
+               [(row _ (dest-instr _ type val) _)
+                (and (equal? type (dest-instr-type tar-value))
+                     (equal? val (dest-instr-vals tar-value)))]
+               [(row _ (branch c _ _) _)
+                (equal? c (branch-con tar-value))])
+             table)
+      (findf (lambda (row)
+               (define instr (row-value row))
+               (match instr
+                 [(dest-instr _ type val)
+                  (match-define (dest-instr _ t-type t-val) tar-value)
+                  (equal? ((instr-constr instr) "" type val)
+                          ((instr-constr tar-value) "" t-type t-val))]
+                 [(branch c _ _)
+                  (equal? c (branch-con tar-value))]))
+             table)))
 
 ;; XXX(sam) ensure that this is actually fresh
 (define var-store (make-hash))
@@ -70,6 +72,26 @@
                  [else #f]))
          rst))
 
+(define (associative? instr)
+  (ormap (lambda (f) (f instr))
+         (list add?
+               mul?
+               ieq?
+               land?
+               lor?)))
+
+(define (canonicalize instr)
+  (cond [(dest-instr? instr)
+         (match-define (dest-instr dest type vals) instr)
+         (if (use-bug-assoc)
+             (if (andmap string? vals)
+                 ((instr-constr instr) dest type (sort vals string<?))
+                 instr)
+             (if (and (andmap string? vals) (associative? instr))
+                 ((instr-constr instr) dest type (sort vals string<?))
+                 instr))]
+        [else instr]))
+
 ;; does local value numbering on a single block
 (define (local-value-numbering block)
 
@@ -88,8 +110,9 @@
 
              ;; replace variables in instr with value numbers
              (define value
-               (apply-instr (lambda (x) (hash-ref var2num x x))
-                            instr))
+               (canonicalize
+                (apply-instr (lambda (x) (hash-ref var2num x x))
+                             instr)))
 
              (define res-instr instr)
              (define num #f)

@@ -1,0 +1,10 @@
+main {
+     a: int = const 4;
+     b: int = const 2;
+     jmp test;
+   test:
+     sub1: int = sub a b;
+     sub1: int = add a b;
+     sub2: int = sub b a;
+     prod: int = mul sub1 sub2;
+}

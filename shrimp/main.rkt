@@ -124,6 +124,7 @@
    (main filename)))
 
 (module+ test
+  (define fn "examples/assoc.bril")
   (parameterize ([convert-bril #t]
                  [run-interpreter #f]
                  [output-blocks #f]
@@ -131,9 +132,11 @@
 
                  [do-lvn #t]
                  [optimize-both #f]
-                 [debug? #t]
-                 [run-verify "examples/lvn.bril"]
+                 [debug? #f]
+                 [run-verify fn]
 
                  [use-bug-overridden #f]
+                 [use-bug-assoc #f]
+                 [use-bug-lookup #t]
                  )
-    (main "examples/lvn.bril")))
+    (main fn)))
