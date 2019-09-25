@@ -1,7 +1,6 @@
-use std::collections::HashMap;
 use std::fmt;
 
-use serde::de::{Deserialize, DeserializeSeed, Deserializer, Error, SeqAccess, Visitor};
+use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 
 // IR JSON Types
 macro_rules! define_types {
@@ -22,18 +21,18 @@ macro_rules! define_types {
 
 define_types!(Int: i64, Bool: bool,);
 
-#[derive(Debug)]
-pub struct Identifier(pub usize);
+#[derive(Debug, Deserialize)]
+pub struct Identifier<T>(pub T);
 
 #[derive(Debug, Deserialize)]
-pub struct Program {
-  pub functions: Vec<Function>,
+pub struct Program<T> {
+  pub functions: Vec<Function<T>>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Function {
+pub struct Function<T> {
   pub name: String,
-  pub instrs: Vec<Instruction>,
+  pub instrs: Vec<Instruction<T>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -42,11 +41,11 @@ pub struct Label {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ValueOp {
-  pub dest: Identifier,
+pub struct ValueOp<T> {
+  pub dest: Identifier<T>,
   #[serde(rename = "type")]
   pub typ: BrilType,
-  pub args: Vec<Identifier>,
+  pub args: Vec<Identifier<T>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,67 +55,67 @@ pub struct EffectOp {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-pub enum Instruction {
+pub enum Instruction<T> {
   Label(Label),
-  Operation(Operation),
+  Operation(Operation<T>),
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "op", rename_all = "lowercase")]
-pub enum Operation {
+pub enum Operation<T> {
   Const {
-    dest: Identifier,
+    dest: Identifier<T>,
     #[serde(rename = "type")]
     typ: BrilType,
     value: BrilValue,
   },
   Add {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Mul {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Sub {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Div {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Eq {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Lt {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Gt {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Le {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Ge {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Not {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   And {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Or {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Jmp {
     #[serde(flatten)]
@@ -132,55 +131,24 @@ pub enum Operation {
   },
   Id {
     #[serde(flatten)]
-    params: ValueOp,
+    params: ValueOp<T>,
   },
   Print {
-    args: Vec<Identifier>,
+    args: Vec<Identifier<T>>,
   },
   Nop,
 }
 
-// NOTE: This is a terrible, ugly hack. I'm still trying to figure out how to use
-// serde::DeserializeSeed, and will remove it when I get that working. That seems like it'll take
-// some more restructuring, though
-pub static mut next_id: usize = 0;
-pub static mut id_map: HashMap<String, usize> = HashMap::new();
-
-impl<'de> Deserialize<'de> for Identifier {
-  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-  where
-    D: Deserializer<'de>,
-  {
-    deserializer.deserialize_string(IdentifierVisitor)
-  }
-}
-
-struct IdentifierVisitor;
-
-impl<'de> Visitor<'de> for IdentifierVisitor {
-  type Value = Identifier;
-  fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-    write!(formatter, "an identifier string")
-  }
-
-  fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
-  where
-    E: Error,
-  {
-    if id_map.contains_key(&v) {
-      Ok(Identifier(*id_map.get(&v).unwrap()))
-    } else {
-      id_map.insert(v, next_id);
-      next_id += 1;
-      Ok(Identifier(next_id - 1))
-    }
-  }
-}
-
 #[derive(Debug)]
-pub struct BrArgs {
-  pub test_var: Identifier,
-  pub dests: Vec<String>,
+pub enum BrArgs {
+  StringArgs {
+    test_var: Identifier<String>,
+    dests: Vec<String>,
+  },
+  IdArgs {
+    test_var: Identifier<usize>,
+    dests: Vec<String>,
+  },
 }
 
 impl<'de> Deserialize<'de> for BrArgs {
@@ -195,7 +163,7 @@ impl<'de> Deserialize<'de> for BrArgs {
         write!(formatter, "an array of strings")
       }
 
-      fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
+      fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
       where
         A: SeqAccess<'de>,
       {
@@ -204,14 +172,14 @@ impl<'de> Deserialize<'de> for BrArgs {
         // NOTE/TODO: Technically this will allow more than 3 args
         while let Some(elem) = seq.next_element()? {
           if ident.is_none() {
-            ident = Some((IdentifierVisitor).visit_string(elem)?);
+            ident = Some(Identifier::<String>(elem));
             continue;
           }
 
           labels.push(elem);
         }
 
-        Ok(BrArgs {
+        Ok(BrArgs::StringArgs {
           test_var: ident.unwrap(),
           dests: labels,
         })
