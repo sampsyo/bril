@@ -43,7 +43,7 @@ loop:
   alias: int = add i one;
   lvl: int = sub length alias;
   vl: int = setvl lvl;
-  arr3: array = vadd arr1 arr2;
+  arr3: array = vadd arr1 arr2 i;
   i: int = add i inc;
   cond: bool = gt length i;
   br cond loop end;
