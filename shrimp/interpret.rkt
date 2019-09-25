@@ -4,6 +4,8 @@
          racket/function
          racket/hash
          graph
+         racket/trace
+         "helpers.rkt"
          "ast.rkt"
          "analysis.rkt"
          "cfg.rkt")
@@ -13,8 +15,15 @@
 ; Extract this out into a separate file
 (define (empty-state) (make-hash))
 (define state-key? string?)
+(define state-has-key? hash-has-key?)
+
 (define (state-ref state key)
+  (when (not (state-has-key? state key))
+    (raise-argument-error 'state-ref
+                          "Variable in state"
+                          (~a state " does not have " key)))
   (if (state-key? key) (hash-ref state key) key))
+
 (define (state-store state key val)
   (hash-set! state key val))
 (define (state-merge! s1 s2)
