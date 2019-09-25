@@ -1,0 +1,6 @@
+import mod (func);
+import mod (func2 as f);
+main {
+  v0: int = call func;
+  print v0;
+}

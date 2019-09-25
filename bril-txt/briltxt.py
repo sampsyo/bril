@@ -73,11 +73,12 @@ class JSONTransformer(lark.Transformer):
     def func(self, items):
         name = items.pop(0)
         args = []
-        while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
+        while len(items) and type(items[0]) == lark.tree.Tree and \
             items[0].data == "arg":
             arg = items.pop(0).children
             args.append(
                 dict(name=arg[0], type=arg[1] if len(arg) > 1 else None))
+        
         function_type = items.pop(0) if type(items[0]) == str else None
         data = {'name': str(name), 'instrs': items}
         if len(args):
