@@ -24,6 +24,8 @@ Requires [Haskell Stack][stack].
 
 `breakpoint LOCATION [EXPR]`: set a breakpoint at the given location (label or line number) with a condition for when it triggers (default is true)
 
+`list`: print the instructions of the current function being executed
+
 ## Breakpoint Condition Syntax
 
 Breakpoints can be conditioned on arbitrary expressions which are represented as nestable Bril instructions. For example, to break at label `foo` when `x < y < z` holds, issue the command: `breakpoint foo (and (lt x y) (lt y z))`.

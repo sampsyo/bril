@@ -6,7 +6,7 @@ import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State
 import Data.Aeson
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.List (intercalate)
 import Lens
 import System.Environment (getArgs)
@@ -39,7 +39,7 @@ debugLoop :: StateT DebugState IO ()
 debugLoop = do
     liftIO $ putStr "(brildb) "
     cmd <- liftIO getLine
-    case parseCommand cmd of
+    when (not $ null cmd) $ case parseCommand cmd of
         Right c -> executeCommand c
         Left err -> liftIO $ putStrLn err
     debugLoop
@@ -64,7 +64,7 @@ setBreakpoint (Left l) e = do
         Nothing -> liftIO $ putStrLn $ "unknown label: " ++ l
         Just i -> setBreakpoint (Right i) e
 setBreakpoint (Right i) e = modify $
-    set (_program . ix "main" . _body . ix i . _breakCondition) e
+    set (_program . ix "main" . _body . ix (pred i) . _breakCondition) e
 
 printVar :: String -> StateT DebugState IO ()
 printVar x = checkTerminated $ do
@@ -80,8 +80,18 @@ printScope = checkTerminated $ do
 
 listCmd :: StateT DebugState IO ()
 listCmd = checkTerminated $ do
-    func <- gets currentFunction
-    liftIO $ print func
+    Function n b _ <- gets currentFunction
+    pos <- gets $ position . head . callStack
+    let numLength = length $ show $ Seq.length b
+    let aux n i =
+            (if pos == n then "-> " else "   ") ++
+            rightAlign numLength (show $ succ n) ++
+            (if isJust (label i) then "  " else "      ") ++
+            show i ++ "\n"
+    let funcString = concat [n, " {\n", Seq.foldMapWithIndex aux b, "}"]
+    liftIO $ putStrLn funcString
+  where
+    rightAlign len s = replicate (len - length s) ' ' ++ s
 
 -- requires n non-negative
 run :: Maybe Int -> StateT DebugState IO ()
@@ -90,8 +100,9 @@ run n = checkTerminated $ do
     step False
     done <- gets terminated
     break <- atBreakpoint
+    st <- get
     if not done && break then
-        liftIO $ putStrLn "breakpoint"
+        liftIO $ print $ nextInstruction st
     else
         run $ fmap pred n
 
@@ -102,29 +113,37 @@ atBreakpoint :: StateT DebugState IO Bool
 atBreakpoint = do
     cond <- gets $ breakCondition . nextInstruction
     vars <- gets $ variables . head . callStack
-    return $ evalBool vars cond
+    case evalBool vars cond of
+        Left s -> liftIO (putStrLn s) >> return True
+        Right b -> return b
 
-evalBool :: Map.Map String BrilValue -> BoolExpr -> Bool
+evalBool :: Map.Map String BrilValue -> BoolExpr -> Either String Bool
 evalBool m e = case e of
-    BoolVar x -> assertBool $ m Map.! x
-    BoolConst b -> b
-    EqOp e1 e2 -> evalInt m e1 == evalInt m e2
-    LtOp e1 e2 -> evalInt m e1 < evalInt m e2
-    GtOp e1 e2 -> evalInt m e1 > evalInt m e2
-    LeOp e1 e2 -> evalInt m e1 <= evalInt m e2
-    GeOp e1 e2 -> evalInt m e1 >= evalInt m e2
-    NotOp e -> not (evalBool m e)
-    AndOp e1 e2 -> evalBool m e1 && evalBool m e2
-    OrOp e1 e2 -> evalBool m e1 || evalBool m e2
+    BoolVar x -> case Map.lookup x m of
+        Nothing -> Left $ "unbound variable: " ++ x
+        Just (BrilInt _) -> Left $ "expected bool but got int: " ++ x
+        Just (BrilBool b) -> Right b
+    BoolConst b -> Right b
+    EqOp e1 e2 -> (==) <$> evalInt m e1 <*> evalInt m e2
+    LtOp e1 e2 -> (<) <$> evalInt m e1 <*> evalInt m e2
+    GtOp e1 e2 -> (>) <$> evalInt m e1 <*> evalInt m e2
+    LeOp e1 e2 -> (<=) <$> evalInt m e1 <*> evalInt m e2
+    GeOp e1 e2 -> (>=) <$> evalInt m e1 <*> evalInt m e2
+    NotOp e -> not <$> evalBool m e
+    AndOp e1 e2 -> (&&) <$> evalBool m e1 <*> evalBool m e2
+    OrOp e1 e2 -> (||) <$> evalBool m e1 <*> evalBool m e2
 
-evalInt :: Map.Map String BrilValue -> IntExpr -> Int
+evalInt :: Map.Map String BrilValue -> IntExpr -> Either String Int
 evalInt m e = case e of
-    IntVar x -> assertInt $ m Map.! x
-    IntConst i -> i
-    AddOp e1 e2 -> evalInt m e1 + evalInt m e2
-    MulOp e1 e2 -> evalInt m e1 * evalInt m e2
-    SubOp e1 e2 -> evalInt m e1 - evalInt m e2
-    DivOp e1 e2 -> evalInt m e1 `div` evalInt m e2
+    IntVar x -> case Map.lookup x m of
+        Nothing -> Left $ "unbound variable: " ++ x
+        Just (BrilBool _) -> Left $ "expected int but got bool: " ++ x
+        Just (BrilInt i) -> Right i
+    IntConst i -> Right i
+    AddOp e1 e2 -> (+) <$> evalInt m e1 <*> evalInt m e2
+    MulOp e1 e2 -> (*) <$> evalInt m e1 <*> evalInt m e2
+    SubOp e1 e2 -> (-) <$> evalInt m e1 <*> evalInt m e2
+    DivOp e1 e2 -> div <$> evalInt m e1 <*> evalInt m e2
 
 checkTerminated :: StateT DebugState IO () -> StateT DebugState IO ()
 checkTerminated st = do

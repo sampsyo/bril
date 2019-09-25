@@ -60,7 +60,21 @@ data Instruction = Instruction {
 }
 
 instance Show Instruction where
-    show = show . classify
+    show inst = show (classify inst) ++ showBP (breakCondition inst)
+      where
+        showBP (BoolConst False) = ""
+        showBP (BoolConst True) = " (B)"
+        showBP e = " (B: " ++ show e ++ ")"
+
+instance FromJSON Instruction where
+    parseJSON = withObject "Instruction" $ \v -> Instruction (BoolConst False)
+        <$> v .:? "label"
+        <*> v .:? "op"
+        <*> v .:? "dest"
+        <*> v .:? "type"
+        <*> v .:? "value"
+        <*> (fromMaybe [] <$> v .:? "args")
+
 
 _breakCondition :: Lens' Instruction BoolExpr
 _breakCondition = lens breakCondition $ \i c -> i { breakCondition = c }
@@ -90,16 +104,6 @@ classify (Instruction b l o d t v a) =
         ValueOp (fromJust d) (fromJust t) (fromJust o) a
     else
         EffectOp (fromJust o) a
-
-instance FromJSON Instruction where
-    parseJSON = withObject "Instruction" $ \v -> Instruction (BoolConst False)
-        <$> v .:? "label"
-        <*> v .:? "op"
-        <*> v .:? "dest"
-        <*> v .:? "type"
-        <*> v .:? "value"
-        <*> (fromMaybe [] <$> v .:? "args")
-
 data BrilValue = BrilInt Int | BrilBool Bool
 
 instance Show BrilValue where
@@ -168,7 +172,25 @@ data BoolExpr =
   | NotOp BoolExpr
   | AndOp BoolExpr BoolExpr
   | OrOp BoolExpr BoolExpr
-    deriving Show
+
+instance Show BoolExpr where
+    showsPrec p e = case e of
+        BoolVar v -> showString v
+        BoolConst b -> showString $ map toLower $ show b
+        EqOp e1 e2 -> showBinop "eq " e1 e2
+        LtOp e1 e2 -> showBinop "lt " e1 e2
+        GtOp e1 e2 -> showBinop "gt " e1 e2
+        LeOp e1 e2 -> showBinop "le " e1 e2
+        GeOp e1 e2 -> showBinop "ge " e1 e2
+        NotOp e1 -> showUnop "not " e1
+        AndOp e1 e2 -> showBinop "and " e1 e2
+        OrOp e1 e2 -> showBinop "or " e1 e2
+      where
+        showBinop op e1 e2 = showParen (p > 10) $
+            showString op . showsPrec 11 e1 .
+            showString " " . showsPrec 11 e2
+        showUnop op e1 = showParen (p > 10) $
+            showString op . showsPrec 11 e1
 
 data IntExpr =
     IntVar String
@@ -177,5 +199,16 @@ data IntExpr =
   | MulOp IntExpr IntExpr
   | SubOp IntExpr IntExpr
   | DivOp IntExpr IntExpr
-    deriving Show
 
+instance Show IntExpr where
+    showsPrec p e = case e of
+        IntVar v -> showString v
+        IntConst i -> showString (show i)
+        AddOp e1 e2 -> showBinop "add " e1 e2
+        SubOp e1 e2 -> showBinop "sub " e1 e2
+        MulOp e1 e2 -> showBinop "mul " e1 e2
+        DivOp e1 e2 -> showBinop "div " e1 e2
+      where
+        showBinop op e1 e2 = showParen (p > 10) $
+            showString op . showsPrec 11 e1 .
+            showString " " . showsPrec 11 e2
