@@ -5,7 +5,7 @@ use std::collections::HashMap;
 // (BB index of main program, list of BBs, mapping of label -> BB index)
 pub type BBProgram = (Option<usize>, Vec<BasicBlock>, HashMap<String, usize>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BasicBlock {
   pub instrs: Vec<Operation>,
   pub exit: Vec<usize>,

@@ -7,23 +7,21 @@ use serde_json::Value;
 use crate::basic_block::BBProgram;
 use crate::ir_types::{EffectOp, Operation, Type, ValueOp};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 enum BrilValue {
   Int(i64),
   Bool(bool),
 }
 
 impl BrilValue {
-  fn new(typ: Type, value: Value) -> Result<BrilValue, InterpError> {
+  fn new(typ: &Type, value: &Value) -> Result<BrilValue, InterpError> {
     match typ {
-      Type::Int => match value.as_i64() {
-        Some(i) => Ok(BrilValue::Int(i)),
-        _ => Err(InterpError::BadJsonInt),
-      },
-      Type::Bool => match value.as_bool() {
-        Some(b) => Ok(BrilValue::Bool(b)),
-        _ => Err(InterpError::BadJsonBool),
-      },
+      Type::Int => value
+        .as_i64()
+        .map_or_else(|| Err(InterpError::BadJsonInt), |v| Ok(BrilValue::Int(v))),
+      Type::Bool => value
+        .as_bool()
+        .map_or_else(|| Err(InterpError::BadJsonBool), |v| Ok(BrilValue::Bool(v))),
     }
   }
 
@@ -92,9 +90,9 @@ fn check_asmt_type(expected: Type, actual: Type) -> Result<(), InterpError> {
 }
 
 fn get_args<T>(
-  vars: &HashMap<String, BrilValue>,
+  vars: &HashMap<&str, BrilValue>,
   arity: usize,
-  args: Vec<String>,
+  args: Vec<&str>,
 ) -> Result<Vec<T>, InterpError>
 where
   T: TryFrom<BrilValue>,
@@ -109,7 +107,7 @@ where
   for arg in args {
     let arg_bril_val = vars
       .get(&arg)
-      .ok_or_else(|| InterpError::VarNotFound(arg.clone()))?;
+      .ok_or_else(|| InterpError::VarNotFound(arg.to_owned()))?;
     arg_vals.push(T::try_from(arg_bril_val.clone())?);
   }
   Ok(arg_vals)
@@ -117,25 +115,16 @@ where
 
 pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), InterpError> {
   let (main_fn, blocks, labels) = prog;
-  let mut curr_block: usize = main_fn.ok_or(InterpError::NoMainFunction)?;
-  let mut vars: HashMap<String, BrilValue> = HashMap::new();
+  let mut curr_block_idx: usize = main_fn.ok_or(InterpError::NoMainFunction)?;
+  let mut vars: HashMap<&str, BrilValue> = HashMap::new();
 
-  use BrilValue::*;
   use Operation::*;
+  use BrilValue::*;
 
   'outer: loop {
-    let curr_block_obj = &blocks[curr_block];
-    let curr_instrs = &curr_block_obj.instrs;
-    for operation in curr_instrs.clone() {
-      debug!("{:?}", &operation);
-      debug!(
-        "{}",
-        vars
-          .iter()
-          .map(|(k, v)| format!("{} => {}", k, v))
-          .collect::<Vec<_>>()
-          .join(",")
-      );
+    let curr_block = &blocks[curr_block_idx];
+    let curr_instrs = &curr_block.instrs;
+    for operation in curr_instrs.iter() {
       match operation {
         Const { dest, typ, value } => {
           vars.insert(dest, BrilValue::new(typ, value)?);
@@ -230,7 +219,7 @@ pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), Int
           if args.len() != 1 {
             return Err(InterpError::BadNumArgs(1, args.len()));
           }
-          curr_block = *(labels
+          curr_block_idx = *(labels
             .get(&args[0])
             .ok_or_else(|| InterpError::LabelNotFound(args[0].clone()))?);
           continue 'outer;
@@ -247,7 +236,7 @@ pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), Int
           } else {
             2
           };
-          curr_block = *(labels
+          curr_block_idx = *(labels
             .get(&args[arg_idx])
             .ok_or_else(|| InterpError::LabelNotFound(args[arg_idx].clone()))?);
           continue 'outer;
@@ -283,8 +272,8 @@ pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), Int
       // if there's only one exit block, go there
     } // end for operation in curr_block.instrs
 
-    if curr_block_obj.exit.len() == 1 {
-      curr_block = curr_block_obj.exit[0];
+    if curr_block.exit.len() == 1 {
+      curr_block_idx = curr_block.exit[0];
     } else {
       // we have fallen off the end of the basic block without going anywhere
       // we could also fall through to the next basic block? almost certain that's an error, though

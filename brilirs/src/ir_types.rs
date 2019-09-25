@@ -2,7 +2,7 @@ use serde_json;
 use serde_json::Value;
 
 // IR JSON Types
-#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Type {
   Int,
@@ -25,7 +25,7 @@ pub struct Label {
   pub label: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 pub struct ValueOp {
   pub dest: String,
   #[serde(rename = "type")]
@@ -33,7 +33,7 @@ pub struct ValueOp {
   pub args: Vec<String>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 pub struct EffectOp {
   pub args: Vec<String>,
 }
@@ -45,7 +45,7 @@ pub enum Instruction {
   Operation(Operation),
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 #[serde(tag = "op", rename_all = "lowercase")]
 pub enum Operation {
   Const {
