@@ -7,7 +7,7 @@ pub type BBProgram = (Option<usize>, Vec<BasicBlock>, HashMap<String, usize>);
 
 #[derive(Debug)]
 pub struct BasicBlock {
-  pub instrs: Vec<Operation>,
+  pub instrs: Vec<Operation<usize>>,
   pub exit: Vec<usize>,
 }
 
@@ -20,12 +20,12 @@ impl BasicBlock {
   }
 }
 
-pub fn find_basic_blocks(prog: Program) -> BBProgram {
+pub fn find_basic_blocks(prog: Program<usize>) -> BBProgram {
   let mut main_fn = None;
   let mut blocks = Vec::new();
   let mut labels = HashMap::new();
 
-  let mut bb_helper = |func: Function| -> usize {
+  let mut bb_helper = |func: Function<usize>| -> usize {
     let mut curr_block = BasicBlock::new();
     let root_block = blocks.len();
     let mut label = None;

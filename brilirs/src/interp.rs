@@ -9,6 +9,7 @@ impl BrilValue {
     match self {
       BrilValue::Int(..) => BrilType::Int,
       BrilValue::Bool(..) => BrilType::Bool,
+      BrilValue::Nil => BrilType::Nil,
     }
   }
 }
@@ -19,6 +20,7 @@ impl fmt::Display for BrilValue {
     match self {
       Int(i) => write!(f, "{}", i),
       Bool(b) => write!(f, "{}", b),
+      Nil => write!(f, "nil"),
     }
   }
 }
@@ -67,7 +69,7 @@ fn check_asmt_type(expected: &BrilType, actual: &BrilType) -> Result<(), InterpE
 fn get_args<'a, T>(
   vars: &'a Vec<BrilValue>,
   arity: usize,
-  args: &Vec<Identifier>,
+  args: &Vec<Identifier<usize>>,
 ) -> Result<Vec<T>, InterpError>
 where
   T: TryFrom<&'a BrilValue>,
@@ -91,10 +93,14 @@ where
   Ok(arg_vals)
 }
 
-pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), InterpError> {
+pub fn execute<T: std::io::Write>(
+  prog: BBProgram,
+  num_vars: usize,
+  mut out: T,
+) -> Result<(), InterpError> {
   let (main_fn, blocks, _labels) = prog;
   let mut curr_block_idx: usize = main_fn.ok_or(InterpError::NoMainFunction)?;
-  let mut store: Vec<BrilValue> = vec![BrilValue::Nil; crate::ir_types::next_id - 1];
+  let mut store: Vec<BrilValue> = vec![BrilValue::Nil; num_vars];
 
   use BrilValue::*;
   use Operation::*;
@@ -208,7 +214,7 @@ pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), Int
           next_block_idx = Some(curr_block.exit[0]);
         }
         Br {
-          params: BrArgs { test_var, dests },
+          params: BrArgs::IdArgs { test_var, dests },
         } => {
           if dests.len() != 2 {
             return Err(InterpError::BadNumArgs(3, dests.len()));
@@ -250,6 +256,7 @@ pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), Int
           .map_err(|e| InterpError::IoError(Box::new(e)))?;
         }
         Nop => {}
+        _ => unreachable!(),
       }
     }
 
