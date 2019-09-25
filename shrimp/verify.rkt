@@ -62,7 +62,6 @@
                        (lambda (_ v)
                          (when (pair? v)
                            (assert (equal? (car v) (cdr v))))))
-
         (verify (same-block? block1 lives1 block2 lives2)))))
   (unless (unsat? sol)
     (pr sol)

@@ -8,7 +8,10 @@
          racket/pretty
          racket/match)
 
-(provide lvn)
+(provide lvn
+         use-bug-overridden)
+
+(define use-bug-overridden (make-parameter #f))
 
 (define (apply-instr f instr)
   (cond [(dest-instr? instr)
@@ -106,10 +109,12 @@
                     ;; XXX(sam) change dest is the instr will be overridden later
 
                     (define dest
-                      (if (will-be-overridden? instrs instr-idx
-                                              (dest-instr-dest instr))
-                          (fresh-var (dest-instr-dest instr))
-                          (dest-instr-dest instr)))
+                      (if (use-bug-overridden)
+                          (dest-instr-dest instr)
+                          (if (will-be-overridden? instrs instr-idx
+                                                   (dest-instr-dest instr))
+                              (fresh-var (dest-instr-dest instr))
+                              (dest-instr-dest instr))))
 
                     (set! num (length table))
 

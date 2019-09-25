@@ -130,8 +130,10 @@
                  [show-cfg #f]
 
                  [do-lvn #t]
-                 [optimize-both #t]
+                 [optimize-both #f]
                  [debug? #t]
                  [run-verify "examples/lvn.bril"]
+
+                 [use-bug-overridden #f]
                  )
     (main "examples/lvn.bril")))
