@@ -1,0 +1,16 @@
+main {
+  jmp l2;
+l1:
+  a: int = id b;
+  b: int = id c;
+  c: int = id d;
+  d: int = id e;
+  e: int = id f;
+  f: int = id g;
+  g: int = id h;
+  h: int = id z;
+  ret ;
+l2:
+  z: int = const 0;
+  jmp l1;
+}

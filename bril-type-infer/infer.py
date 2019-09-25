@@ -19,6 +19,19 @@ def type_var(gamma, var, expected_type, i):
     gamma[var] = expected_type
 
 
+# Runtime is O(n^2) where n is the number of instructions, because of
+# main {
+#   jmp l2;
+# l1:
+#   a = id b;
+#   b = id c;
+#   c = id d;
+#   ...
+#   y = id z;
+#   ret;
+# l2:
+#   z = const 0;
+# }
 def infer_types_func(func):
     gamma = {}
     typed_func = func.copy()
@@ -37,7 +50,7 @@ def infer_types_func(func):
 
             # Handle constants
             if instr["op"] == "const":
-                if instr["value"] == True or instr["value"] == False:
+                if instr["value"] is True or instr["value"] is False:
                     type_var(gamma, instr["dest"], "bool", i)
                 else:
                     type_var(gamma, instr["dest"], "int", i)
