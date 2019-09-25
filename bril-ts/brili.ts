@@ -10,6 +10,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   id: 1,
   a2v: 2,
   v2a: 2,
+  setvl: 1,
   lt: 2,
   le: 2,
   gt: 2,
@@ -26,6 +27,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
 };
 
 type Env = Map<bril.Ident, bril.Value>;
+
+const maxvl = 65536;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -105,6 +108,16 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "init": {
     for (let i = 0; i < instr.value; i++) {
 	env.set(instr.dest + "[" + i + "]", 0);
+    }
+    return NEXT;
+  }
+
+  case "setvl": {
+    let vl = getInt(instr, env, 0);
+    if (vl <= maxvl) {
+	env.set(instr.dest, vl);
+    } else {
+	env.set(instr.dest, maxvl);
     }
     return NEXT;
   }
