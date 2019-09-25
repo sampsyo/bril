@@ -21,6 +21,9 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   jmp: 1,
   ret: 0,
   nop: 0,
+  // PROB
+  flip: 0,
+  obv: 1
 };
 
 type Value = boolean | BigInt;
@@ -67,17 +70,18 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 type Action =
   {"label": bril.Ident} |
   {"next": true} |
-  {"end": true};
+  {"end": true} |
+  {"restart" : true};
 let NEXT: Action = {"next": true};
 let END: Action = {"end": true};
-
+let RESTART: Action = {"restart": true};
 /**
  * Interpret an instruction in a given environment, possibly updating the
  * environment. If the instruction branches to a new label, return that label;
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env): Action {
+function evalInstr(instr: bril.Instruction, env: Env, buffer: any[][]): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -181,7 +185,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   case "print": {
     let values = instr.args.map(i => get(env, i).toString());
-    console.log(...values);
+    buffer.push(values);
     return NEXT;
   }
 
@@ -205,17 +209,31 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "nop": {
     return NEXT;
   }
+  
+  case "flip": {
+    env.set(instr.dest, Math.random() < 0.5);
+    return NEXT;
+  }
+  
+  case "obv": {
+    let cond = getBool(instr, env, 0);
+    if(cond) {
+      return NEXT;
+    } else {
+      return RESTART;
+    }
+  }
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function) {
+function evalFunc(func: bril.Function, buffer: any[][] ) {
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env);
+      let action = evalInstr(line, env, buffer);
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -230,16 +248,37 @@ function evalFunc(func: bril.Function) {
         }
       } else if ('end' in action) {
         return;
+      } else if ('restart' in action) {
+        throw new EvalError("that never happened");
       }
     }
   }
-}
 
+}
 function evalProg(prog: bril.Program) {
-  for (let func of prog.functions) {
-    if (func.name === "main") {
-      evalFunc(func);
+  let good_flag = false;
+  let buffer : any[][] = [];
+  
+  while(good_flag == false) {
+    good_flag = true;
+    buffer = [];
+    
+    for (let func of prog.functions) {
+      if (func.name === "main") {
+        try {
+          evalFunc(func, buffer);
+        } catch (e) {
+          switch (e.constructor) {
+            case EvalError: good_flag = false; 
+          }
+        }
+      }
     }
+  }
+  
+  // print buffer
+  for(let i = 0; i < buffer.length; i++) {
+    console.log(...buffer[i]);
   }
 }
 
