@@ -1,4 +1,6 @@
-quad (a: int): int {
+import math;
+
+double (a: int): int {
     v0: int = const 2;
     v1: int = mul v0 a;
     ret v1;

@@ -1,7 +1,0 @@
-import math (oct);
-
-main {
-    v0: int = const 9;
-    v1: int = call oct v0;
-    print v1;
-}

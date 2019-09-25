@@ -1,7 +1,0 @@
-import math2;
-
-quad (a: int): int {
-    v0: int = call double a;
-    v1: int = call double v0;
-    ret v1;
-}
