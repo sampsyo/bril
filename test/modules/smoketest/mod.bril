@@ -1,9 +1,0 @@
-func {
-  a: int = const 69;
-  ret a;
-}
-
-func2 {
-  b: int = const 420;
-  ret b;
-}
