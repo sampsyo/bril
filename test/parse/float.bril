@@ -3,4 +3,5 @@ main {
   v1: double = const .02;
   v2: float = const 0.3f;
   v3: double = fadd v0 v1;
+  v4: float = fmult v2 v2;
 }

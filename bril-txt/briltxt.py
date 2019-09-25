@@ -103,7 +103,7 @@ class JSONTransformer(lark.Transformer):
             return False
 
     def bril_float(self, items):
-        return float(str(items[0][:-1]))
+        return str(items[0][:-1]) + "f"
 
     def double(self, items):
         return float(str(items[0]))
