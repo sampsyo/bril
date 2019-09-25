@@ -35,6 +35,14 @@ function get(env: Env, ident: bril.Ident) {
   return val;
 }
 
+function getArr(env: Env, ident: bril.Ident, idx: number) {
+  let val = env.get(ident + "[" + idx + "]");
+  if (typeof val === 'undefined') {
+    throw `undefined variable ${ident}`;
+  }
+  return val;
+}
+
 /**
  * Ensure that the instruction has exactly `count` arguments,
  * throwing an exception otherwise.
@@ -108,9 +116,8 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "a2v": {
-    let arr = get(env, instr.args[0]);
-    let idx = get(env, instr.args[1]);
-    let val = get(env, arr + "[" + idx + "]");
+    let idx = getInt(instr, env, 1);
+    let val = getArr(env, instr.args[0], idx);
     env.set(instr.dest, val);
     return NEXT;
   }
