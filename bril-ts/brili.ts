@@ -127,9 +127,15 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let idx = getInt(instr, env, 2);
     for (let i = idx; i < idx + maxvl - 1; i++) {
         let val1 = getArr(env, instr.args[0], i);
+        if (typeof val1 !== 'number') {
+            throw `${instr.op} argument ${instr.args[0]} must be a number`;
+        }
         let val2 = getArr(env, instr.args[1], i);
+        if (typeof val2 !== 'number') {
+            throw `${instr.op} argument ${instr.args[1]} must be a number`;
+        }
         let res  = val1 + val2;
-	env.set(instr.dest + "[" + i + "]", res);
+	    env.set(instr.dest + "[" + i + "]", res);
     }
     return NEXT;
   }
@@ -141,7 +147,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "a2v": {
-    let idx = getInt(instr, env, 1);
+    let idx = getInt(instr, env, instr.args[1]);
     let val = getArr(env, instr.args[0], idx);
     env.set(instr.dest, val);
     return NEXT;
