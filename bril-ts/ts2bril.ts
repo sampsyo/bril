@@ -21,6 +21,8 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
   if (tsType.flags === ts.TypeFlags.Number) {
     return "double";
+  } else if (tsType.flags == ts.TypeFlags.BigInt) {
+    return "int";
   } else if (tsType.flags === ts.TypeFlags.Boolean) {
     return "bool";
   } else {
@@ -60,6 +62,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
       let kind = bin.operatorToken.kind;
+      console.log(expr);
 
       // Handle assignments.
       switch (kind) {

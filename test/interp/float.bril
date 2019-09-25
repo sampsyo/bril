@@ -3,8 +3,15 @@ main {
   v1: double = const -20;
   res: double = fdiv v0 v1;
   print res;
-  v2: float = const .1f;
-  v3: float = const 0.1f;
-  res2: float = fadd v2 v3;
-  print res2;
+
+  v2: double = const .1;
+  v3: double = const 0.1;
+  add1: double = fadd v2 v3;
+  dres: double = fadd add1 v2;
+  print dres;
+
+  v4: float = const .1;
+  add2: float = fadd v4 v4;
+  fres: float = fadd add2 v4;
+  print fres;
 }
