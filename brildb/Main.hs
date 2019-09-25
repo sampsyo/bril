@@ -1,6 +1,7 @@
 module Main where
 
 import BrilTypes
+import CommandParser
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State
@@ -10,6 +11,7 @@ import Data.List (intercalate)
 import Lens
 import System.Environment (getArgs)
 import System.IO
+import Text.Read (readMaybe)
 
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Map.Lazy as Map
@@ -20,10 +22,10 @@ main = do
     args <- getArgs
     jsonString <- case args of
         [x] -> BS.readFile x
-        _   -> error "usage: brildb <filename>"
+        _   -> errorWithoutStackTrace "usage: brildb <filename>"
     let program = case eitherDecode jsonString of
                   Right p -> p
-                  Left e  -> error e
+                  Left e  -> errorWithoutStackTrace "invalid Bril file"
     hSetBuffering stdout NoBuffering
     evalStateT debugLoop $ initialState program
 
@@ -37,43 +39,92 @@ debugLoop :: StateT DebugState IO ()
 debugLoop = do
     liftIO $ putStr "(brildb) "
     cmd <- liftIO getLine
-    executeCommand cmd
+    case parseCommand cmd of
+        Right c -> executeCommand c
+        Left err -> liftIO $ putStrLn err
     debugLoop
 
-executeCommand :: String -> StateT DebugState IO ()
-executeCommand s = case words s of
-    ["run"] -> run
-    ["step"] -> step True
-    ["restart"] -> modify (initialState . Program . program)
-    ["print", x] -> printVar x
-    ["scope"] -> printScope
-    _ -> return ()
+executeCommand :: Command -> StateT DebugState IO ()
+executeCommand c = case c of
+    Run -> run Nothing
+    Step 1 -> step True
+    Step n -> run $ Just n
+    Restart -> modify $ initialState . Program . program
+    Print x -> printVar x
+    Scope -> printScope
+    Assign x v -> checkTerminated $ setVariable x v
+    Breakpoint p e -> setBreakpoint p e
+    List -> listCmd
+    UnknownCommand c -> liftIO $ putStrLn $ "unknown command: " ++ c
+
+setBreakpoint :: Either String Int -> BoolExpr -> StateT DebugState IO ()
+setBreakpoint (Left l) e = do
+    pos <- gets $ Map.lookup l . labels . (Map.! "main") . program
+    case pos of
+        Nothing -> liftIO $ putStrLn $ "unknown label: " ++ l
+        Just i -> setBreakpoint (Right i) e
+setBreakpoint (Right i) e = modify $
+    set (_program . ix "main" . _body . ix i . _breakCondition) e
 
 printVar :: String -> StateT DebugState IO ()
 printVar x = checkTerminated $ do
     val <- getVariable x
     case val of
         Just v -> liftIO $ putStrLn $ x ++ " = " ++ show v
-        Nothing -> liftIO $ putStrLn "not in scope"
+        Nothing -> liftIO $ putStrLn $ "not in scope: " ++ x
 
 printScope :: StateT DebugState IO ()
 printScope = checkTerminated $ do
     assoc <- gets $ Map.toList . variables . head . callStack
     mapM_ (\(k, v) -> liftIO $ putStrLn $ k ++ " = " ++ show v) assoc
 
+listCmd :: StateT DebugState IO ()
+listCmd = checkTerminated $ do
+    func <- gets currentFunction
+    liftIO $ print func
 
-run :: StateT DebugState IO ()
-run = checkTerminated $ do
+-- requires n non-negative
+run :: Maybe Int -> StateT DebugState IO ()
+run (Just 0) = return ()
+run n = checkTerminated $ do
     step False
     done <- gets terminated
-    atBreakpoint <- gets ((Yes ==) . breakpoint . nextInstruction)
-    if not done && atBreakpoint then
+    break <- atBreakpoint
+    if not done && break then
         liftIO $ putStrLn "breakpoint"
     else
-        run
+        run $ fmap pred n
 
 terminated :: DebugState -> Bool
 terminated = null . callStack
+
+atBreakpoint :: StateT DebugState IO Bool
+atBreakpoint = do
+    cond <- gets $ breakCondition . nextInstruction
+    vars <- gets $ variables . head . callStack
+    return $ evalBool vars cond
+
+evalBool :: Map.Map String BrilValue -> BoolExpr -> Bool
+evalBool m e = case e of
+    BoolVar x -> assertBool $ m Map.! x
+    BoolConst b -> b
+    EqOp e1 e2 -> evalInt m e1 == evalInt m e2
+    LtOp e1 e2 -> evalInt m e1 < evalInt m e2
+    GtOp e1 e2 -> evalInt m e1 > evalInt m e2
+    LeOp e1 e2 -> evalInt m e1 <= evalInt m e2
+    GeOp e1 e2 -> evalInt m e1 >= evalInt m e2
+    NotOp e -> not (evalBool m e)
+    AndOp e1 e2 -> evalBool m e1 && evalBool m e2
+    OrOp e1 e2 -> evalBool m e1 || evalBool m e2
+
+evalInt :: Map.Map String BrilValue -> IntExpr -> Int
+evalInt m e = case e of
+    IntVar x -> assertInt $ m Map.! x
+    IntConst i -> i
+    AddOp e1 e2 -> evalInt m e1 + evalInt m e2
+    MulOp e1 e2 -> evalInt m e1 * evalInt m e2
+    SubOp e1 e2 -> evalInt m e1 - evalInt m e2
+    DivOp e1 e2 -> evalInt m e1 `div` evalInt m e2
 
 checkTerminated :: StateT DebugState IO () -> StateT DebugState IO ()
 checkTerminated st = do

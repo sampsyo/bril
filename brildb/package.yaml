@@ -12,6 +12,7 @@ dependencies:
 - aeson
 - bytestring
 - containers
+- parsec
 - transformers
 
 executables:

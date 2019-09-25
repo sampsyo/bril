@@ -24,7 +24,16 @@ data Function = Function {
     name :: String,
     body :: Seq.Seq Instruction,
     labels :: Map.Map String Int
-}   deriving Show
+}
+
+instance Show Function where
+    show (Function n b _) = n ++ " {\n" ++
+        foldr (\i s ->
+            if isJust (label i) then
+                show i ++ "\n" ++ s
+            else
+                "  " ++ show i ++ "\n" ++ s
+        ) "}" b
 
 instance FromJSON Function where
     parseJSON = withObject "Function" $ \v -> do
@@ -37,8 +46,11 @@ instance FromJSON Function where
                 zip (toList insts) [0 ..]
         return $ Function n insts labelMap
 
+_body :: Lens' Function (Seq.Seq Instruction)
+_body = lens body $ \f b -> f { body = b }
+
 data Instruction = Instruction {
-    breakpoint :: Breakpoint,
+    breakCondition :: BoolExpr,
     label :: Maybe String,
     op :: Maybe String,
     dest :: Maybe String,
@@ -49,6 +61,9 @@ data Instruction = Instruction {
 
 instance Show Instruction where
     show = show . classify
+
+_breakCondition :: Lens' Instruction BoolExpr
+_breakCondition = lens breakCondition $ \i c -> i { breakCondition = c }
 
 data ClassifiedInst =
     Label String
@@ -77,7 +92,7 @@ classify (Instruction b l o d t v a) =
         EffectOp (fromJust o) a
 
 instance FromJSON Instruction where
-    parseJSON = withObject "Instruction" $ \v -> Instruction No
+    parseJSON = withObject "Instruction" $ \v -> Instruction (BoolConst False)
         <$> v .:? "label"
         <*> v .:? "op"
         <*> v .:? "dest"
@@ -113,6 +128,9 @@ data DebugState = DebugState {
     callStack :: [FunctionState]
 }
 
+_program :: Lens' DebugState (Map.Map String Function)
+_program = lens program $ \d p -> d { program = p }
+
 _callStack :: Lens' DebugState [FunctionState]
 _callStack = lens callStack $ \d c -> d { callStack = c }
 
@@ -128,7 +146,36 @@ _variables = lens variables $ \f v -> f { variables = v }
 _position :: Lens' FunctionState Int
 _position = lens position $ \f p -> f { position = p }
 
-data Breakpoint = No | Yes
-    deriving (Eq, Show)
+data Command =
+    Run
+  | Step Int
+  | Restart
+  | Print String
+  | Scope
+  | Assign String BrilValue
+  | Breakpoint (Either String Int) BoolExpr
+  | List
+  | UnknownCommand String
 
-data Command
+data BoolExpr =
+    BoolVar String
+  | BoolConst Bool
+  | EqOp IntExpr IntExpr
+  | LtOp IntExpr IntExpr
+  | GtOp IntExpr IntExpr
+  | LeOp IntExpr IntExpr
+  | GeOp IntExpr IntExpr
+  | NotOp BoolExpr
+  | AndOp BoolExpr BoolExpr
+  | OrOp BoolExpr BoolExpr
+    deriving Show
+
+data IntExpr =
+    IntVar String
+  | IntConst Int
+  | AddOp IntExpr IntExpr
+  | MulOp IntExpr IntExpr
+  | SubOp IntExpr IntExpr
+  | DivOp IntExpr IntExpr
+    deriving Show
+
