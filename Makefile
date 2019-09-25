@@ -1,6 +1,5 @@
 TESTS := \
 	test/ts/*.ts \
-	test/cli/*.bril \
 	test/func/*.bril \
     test/parse/*.bril \
 	test/interp/*.bril \

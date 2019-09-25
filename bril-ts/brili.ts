@@ -210,7 +210,7 @@ function evalInstr(
     if (functionMap.has(name) || localMap.has(name)) {
       let newEnv = new Map();
       let func = (functionMap.has(name)) ? functionMap.get(name) as
-        bril.Function : localMap.get(name) as bril.Function
+        bril.Function : localMap.get(name) as bril.Function;
       let args = instr.args.slice(1);
       if (func.args === undefined && args.length > 0
         || args.length > 0 && func.args.length !== args.length) {
