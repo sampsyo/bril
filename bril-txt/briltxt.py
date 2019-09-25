@@ -52,15 +52,10 @@ COMMENT: /#.*/
 
 class JSONTransformer(lark.Transformer):
     def start(self, items):
-        data = {'functions': []}
         imports = []
-        for item in items:
-            if 'import' in item:
-                imports.append(item)
-            elif 'name' in item:
-                data['functions'].append(item)
-            else:
-                raise Exception('Unknown statement')
+        while len(items) > 0 and 'import' in items[0]:
+            imports.append(items.pop(0))
+        data = {'functions': items}
         if len(imports) > 0:
             data['imports'] = imports
         return data
