@@ -11,6 +11,7 @@ import lark
 import sys
 import json
 import ntpath
+import argparse
 
 __version__ = '0.0.1'
 
@@ -70,7 +71,7 @@ class JSONTransformer(lark.Transformer):
         data = {'import': str(name), 'functionids': []}
 
         while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
-            items[0].data == "modfunc":
+            items[0].data == "mod":
             func = items.pop(0).children
             if len(func) == 2:
                 data['functionids'].append({'name': func[0], 'alias': func[1]})
@@ -175,11 +176,6 @@ def func_walk(imports, functions):
 def unroll_imports(txt, modules):
     stage_one = parse_helper(txt)
 
-    imports = {}
-    for statement in stage_one.get('imports', list()):
-        if "import" in statement.keys():
-            imports[statement['import']] = statement['functionids']
-
     for imp in stage_one.get('imports', list()):
         try:
             with open(modules['{}.bril'.format(imp['import'])], 'r') as mod:
@@ -188,33 +184,27 @@ def unroll_imports(txt, modules):
             print("Couldn't open module: {}".format(imp['import']), file=sys.stderr)
             return
         mod_data = unroll_imports(mod_code, modules)
-
         if len(imp['functionids']) == 0:
             stage_one['functions'] = stage_one['functions'] + mod_data['functions']
         else:
             dependencies = func_walk(imp['functionids'], mod_data['functions'])
             stage_one['functions'] = stage_one['functions'] + dependencies
-    
-    stage_one.pop('imports')
+
+    if 'imports' in stage_one:
+        stage_one.pop('imports')
     return stage_one
 
-def parse_bril(txt):
-    data = parse_helper(txt)
-    return json.dumps(data, indent=2, sort_keys=True)
+# def parse_bril(txt):
+#     modules = {}
+#     data = parse_helper(txt)
+#     return json.dumps(data, indent=2, sort_keys=True)
 
-def modules_parse_bril(main_module, module_paths):
+def parse_bril(txt, module_paths):
     modules = {}
-    try:
-        with open(main_module, 'r') as main:
-            program_txt = main.read()
-    except EnvironmentError:
-        print("Couldn't open main module", file=sys.stderr)
-        return
-
     for path in module_paths:
         head, tail = ntpath.split(path)
         modules[tail or ntpath.basename(head)] = path
-    stage_two = unroll_imports(program_txt, modules)
+    stage_two = unroll_imports(txt, modules)
     if stage_two:
         return json.dumps(stage_two, indent=2, sort_keys=True)
     else:
@@ -271,13 +261,21 @@ def print_prog(prog):
 def linkbril():
     main_module = sys.argv[1]
     module_paths = sys.argv[2:]
-    json = modules_parse_bril(main_module, module_paths)
+    try:
+        with open(main_module, 'r') as main:
+            program_txt = main.read()
+    except EnvironmentError:
+        print("Couldn't open main module", file=sys.stderr)
+        return
+
+    json = parse_bril(program_txt, module_paths)
     if json:
         print(json)
 
 def bril2json():
-    json = parse_bril(sys.stdin.read())
-    if json and json != 'null':
+    module_paths = sys.argv[1:]
+    json = parse_bril(sys.stdin.read(), module_paths)
+    if json:
         print(json)
 
 def bril2txt():
