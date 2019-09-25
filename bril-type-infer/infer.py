@@ -10,7 +10,7 @@ LOGIC_OPS = ["not", "and", "or"]
 def type_var(gamma, var, expected_type, i):
     if var in gamma and gamma[var] != expected_type:
         raise Exception(
-            '(stmt {}) Expected "{}" to have type "{}" but found "{}"'.format(
+            '(stmt {i+1}) Expected "{}" to have type "{}" but found "{}"'.format(
                 i,
                 var,
                 expected_type,
@@ -65,7 +65,12 @@ def infer_types_func(func):
                     type_var(gamma, arg, "int", i)
                 type_var(gamma, instr["dest"], "int", i)
 
-            elif instr["op"] in COMPARISON_OPS or instr["op"] in LOGIC_OPS:
+            elif instr["op"] in COMPARISON_OPS:
+                for arg in instr["args"]:
+                    type_var(gamma, arg, "int", i)
+                type_var(gamma, instr["dest"], "bool", i)
+
+            elif instr["op"] in LOGIC_OPS:
                 for arg in instr["args"]:
                     type_var(gamma, arg, "bool", i)
                 type_var(gamma, instr["dest"], "bool", i)
