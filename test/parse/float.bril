@@ -1,5 +1,6 @@
 main {
-  v0: float = const 1.1;
-  v1: float = const .02;
-  v2: float = fadd v0 v1;
+  v0: double = const 1.1;
+  v1: double = const .02;
+  v2: float = const 0.3f;
+  v3: double = fadd v0 v1;
 }

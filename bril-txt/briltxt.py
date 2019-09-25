@@ -30,10 +30,12 @@ label.1: IDENT ":"
 
 lit: SIGNED_INT  -> int
   | BOOL     -> bool
-  | DECIMAL  -> float
+  | DECIMAL  -> double
+  | FLOAT  -> bril_float
 
 type: CNAME
 BOOL: "true" | "false"
+FLOAT: DECIMAL "f"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
 
@@ -100,7 +102,10 @@ class JSONTransformer(lark.Transformer):
         else:
             return False
 
-    def float(self, items):
+    def bril_float(self, items):
+        return float(str(items[0][:-1]))
+
+    def double(self, items):
         return float(str(items[0]))
 
     def type(self, items):

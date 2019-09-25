@@ -5,10 +5,10 @@ import {Builder} from './builder';
 import {readStdin} from './util';
 
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
-  [ts.SyntaxKind.PlusToken,               ["fadd", "float"]],
-  [ts.SyntaxKind.AsteriskToken,           ["fmul", "float"]],
-  [ts.SyntaxKind.MinusToken,              ["fsub", "float"]],
-  [ts.SyntaxKind.SlashToken,              ["fdiv", "float"]],
+  [ts.SyntaxKind.PlusToken,               ["fadd", "double"]],
+  [ts.SyntaxKind.AsteriskToken,           ["fmul", "double"]],
+  [ts.SyntaxKind.MinusToken,              ["fsub", "double"]],
+  [ts.SyntaxKind.SlashToken,              ["fdiv", "double"]],
   [ts.SyntaxKind.LessThanToken,           ["flt",  "bool"]],
   [ts.SyntaxKind.LessThanEqualsToken,     ["fle",  "bool"]],
   [ts.SyntaxKind.GreaterThanToken,        ["fgt",  "bool"]],
@@ -20,7 +20,7 @@ const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
   if (tsType.flags === ts.TypeFlags.Number) {
-    return "float";
+    return "double";
   } else if (tsType.flags === ts.TypeFlags.Boolean) {
     return "bool";
   } else {
@@ -40,7 +40,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
       let val = parseFloat(lit.text);
-      return builder.buildFloat(val);
+      return builder.buildDouble(val);
     }
 
     case ts.SyntaxKind.TrueKeyword: {

@@ -71,8 +71,8 @@ export class Builder {
   /**
    * Build a constant floating-point value.
    */
-  buildFloat(value: number, dest?: string) {
-    return this.buildConst(value, "float", dest);
+  buildDouble(value: number, dest?: string) {
+    return this.buildConst(value, "double", dest);
   }
 
   /**
