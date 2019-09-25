@@ -10,6 +10,7 @@ macro_rules! define_types {
   #[serde(rename_all = "lowercase")]
   pub enum BrilType {
     $($name,)*
+    Nil
   }
 
   #[derive(Debug, Deserialize, Clone)]
