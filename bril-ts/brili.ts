@@ -11,6 +11,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   a2v: 2,
   v2a: 2,
   setvl: 1,
+  vadd: 3,
   lt: 2,
   le: 2,
   gt: 2,
@@ -118,6 +119,17 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 	env.set(instr.dest, vl);
     } else {
 	env.set(instr.dest, maxvl);
+    }
+    return NEXT;
+  }
+
+  case "vadd": {
+    let idx = getInt(instr, env, 2);
+    for (let i = idx; i < idx + maxvl - 1; i++) {
+        let val1 = getArr(env, instr.args[0], i);
+        let val2 = getArr(env, instr.args[1], i);
+        let res  = val1 + val2;
+	env.set(instr.dest + "[" + i + "]", res);
     }
     return NEXT;
   }
