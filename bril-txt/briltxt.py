@@ -12,15 +12,15 @@ import sys
 import json
 import ntpath
 
-__version__ = '0.0.2'
+__version__ = '0.0.1'
 
 
 # Text format parser.
 
 GRAMMAR = """
-start: (func | imp)*
+start: imp* func*
 
-imp: "import" CNAME modfunc* ";"
+imp: "import" CNAME mod* ";"
 func: CNAME arg* "{" instr* "}" | CNAME arg* ":" type "{" instr* "}"
 
 ?instr: const | vop | eop | label
@@ -35,7 +35,7 @@ lit: SIGNED_INT  -> int
 
 type: CNAME
 arg: IDENT | "(" IDENT ":" type ")"
-modfunc: CNAME | "(" CNAME ")" | "(" CNAME "as" CNAME ")"
+mod: "(" CNAME ")" | "(" CNAME "as" CNAME ")"
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -52,25 +52,29 @@ COMMENT: /#.*/
 
 class JSONTransformer(lark.Transformer):
     def start(self, items):
-        return {'functions': items}
+        print(items)
+        data = {'imports': [], 'functions': []}
+        for item in items:
+            if 'import' in item:
+                data['imports'].append(item)
+            elif 'name' in item:
+                data['functions'].append(item)
+            else:
+                raise Exception('Unknown statement')
+        return data
 
     def imp(self, items):
         name = items.pop(0)
-        functions = []
+        data = {'import': str(name), 'functionids': []}
 
         while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
             items[0].data == "modfunc":
             func = items.pop(0).children
             if len(func) == 2:
-                functions.append({'name': func[0], 'alias': func[1]})
+                data['functionids'].append({'name': func[0], 'alias': func[1]})
             elif len(func) == 1:
-                functions.append({'name': func[0], 'alias': func[0]})
+                data['functionids'].append({'name': func[0], 'alias': func[0]})
 
-        data = {'import': str(name)}
-        if len(functions):
-            data['functionids'] = functions
-        else:
-            data['functionids'] = []
         return data
 
     def func(self, items):
@@ -144,53 +148,50 @@ def parse_helper(txt):
 
 # Import dependencies of imported functions as well
 
-def func_walk(imports, statements):
+def func_walk(imports, functions):
     dependencies = imports
     imported = []
     data = []
-    while(dependencies):
+    while(len(dependencies) > 0):
         dependency = dependencies.pop(0)
-        statement_pointer = 0
-
-        while (statement_pointer != len(statements)):
-            statement = statements[statement_pointer]
-            if 'instrs' in statement and \
-             dependency['name'] == statement['name'] and \
-             dependency['alias'] not in imported:
-                statement['name'] = dependency['alias']
-                imported.append(statement['name'])
-                data.append(statement)
-                for instr in statement['instrs']:
+        function_index = 0
+        while (function_index != len(functions)):
+            function = functions[function_index]
+            if dependency['name'] == function['name'] and \
+                dependency['alias'] not in imported:
+                function['name'] = dependency['alias']
+                imported.append(function['name'])
+                data.append(function)
+                for instr in function['instrs']:
                     if instr['op'] == 'call':
                         dependencies.append({'name': instr['args'][0], 'alias': instr['args'][0]})
-                statement_pointer = len(statements)
+                function_index = len(functions)
             else:
-                statement_pointer += 1
+                function_index += 1
     return data
 
 def unroll_imports(txt, modules):
     stage_one = parse_helper(txt)
 
     imports = {}
-    for statement in stage_one['functions']:
+    for statement in stage_one['imports']:
         if "import" in statement.keys():
             imports[statement['import']] = statement['functionids']
 
-    for imp in imports.keys():
-        stage_one['functions'].pop(0)
+    for imp in stage_one['imports']:
         try:
-            with open(modules['{}.bril'.format(imp)], 'r') as mod:
+            with open(modules['{}.bril'.format(imp['import'])], 'r') as mod:
                 mod_code = mod.read()
         except KeyError:
-            print("Couldn't open module: {}".format(imp))
+            print("Couldn't open module: {}".format(imp['import']))
             return
         mod_data = unroll_imports(mod_code, modules)
 
-        if imports[imp] != []:
-            dependencies = func_walk(imports[imp], mod_data['functions'])
-            stage_one['functions'] = stage_one['functions'] + dependencies
-        else:
+        if len(imp['functionids']) == 0:
             stage_one['functions'] = stage_one['functions'] + mod_data['functions']
+        else:
+            dependencies = func_walk(imp['functionids'], mod_data['functions'])
+            stage_one['functions'] = stage_one['functions'] + dependencies
     
     return stage_one
 
@@ -198,7 +199,7 @@ def parse_bril(txt):
     data = parse_helper(txt)
     return json.dumps(data, indent=2, sort_keys=True)
 
-def link_bril(main_module, module_paths):
+def modules_parse_bril(main_module, module_paths):
     modules = {}
     try:
         with open(main_module, 'r') as main:
@@ -211,7 +212,10 @@ def link_bril(main_module, module_paths):
         head, tail = ntpath.split(path)
         modules[tail or ntpath.basename(head)] = path
     stage_two = unroll_imports(program_txt, modules)
-    return json.dumps(stage_two, indent=2, sort_keys=True)
+    if stage_two:
+        return json.dumps(stage_two, indent=2, sort_keys=True)
+    else:
+        return None
 
 # Text format pretty-printer.
 
@@ -264,8 +268,8 @@ def print_prog(prog):
 def linkbril():
     main_module = sys.argv[1]
     module_paths = sys.argv[2:]
-    json = link_bril(main_module, module_paths)
-    if json and json != 'null':
+    json = modules_parse_bril(main_module, module_paths)
+    if json:
         print(json)
 
 def bril2json():

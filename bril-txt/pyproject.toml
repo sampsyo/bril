@@ -15,3 +15,4 @@ requires = [
 [tool.flit.scripts]
 bril2txt = "briltxt:bril2txt"
 bril2json = "briltxt:bril2json"
+linkbril = "briltxt:linkbril"
