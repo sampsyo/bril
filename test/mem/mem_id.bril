@@ -1,0 +1,10 @@
+main {
+  v: int = const 4;
+  bp: ptr<bool> = alloc v;
+  bp2: ptr<bool> = id bp;
+  b: bool = const true;
+  store bp2 b;
+  b: bool = load bp2;
+  print b;
+  free bp;
+}
