@@ -28,12 +28,11 @@
     (match lst
       [(cons (cons a _) tl)
        (cons (cons hd #f) (cons (cons a hd) tl))]))
-  (~>
-   (foldl add-duplicate
-          (list (cons (car l) #f)) ;; start list with head and empty
-          (cdr l))
-   cdr
-   reverse))
+
+  (for/fold ([accum (list (cons (car l) #f))]  ;; init accum
+             #:result (reverse (cdr accum)))   ;; return reverse of tail when done
+            ([hd (cdr l)])
+    (add-duplicate hd accum)))
 
 (define (extract-and-accumulate instr acc)
   (match instr
@@ -41,7 +40,8 @@
      (cons (basic-block name '()) acc)]
 
     [(or (jump _)
-         (branch _ _ _))
+         (branch _ _ _)
+         (return))
      (let ([unique (unique-label "hang")])
        (match acc
          [(cons (basic-block lbl instrs) tl)
@@ -74,7 +74,8 @@
   ;; construct edges, using pairs to add fall through edges
   (for ([block-pair (pairs blocks)])
     (match block-pair
-      [(cons (basic-block from instrs) bl1)
+      [(cons (basic-block from instrs)
+             (basic-block fallthrough _))
        (match (car instrs)
          [(jump to)
           (add-directed-edge! g from to)]
@@ -82,7 +83,9 @@
           (begin
             (add-directed-edge! g from tbr)
             (add-directed-edge! g from fbr))]
-         [_ (add-directed-edge! g from (basic-block-label bl1))])]))
+         [(return) (void)] ;; XXX(sam) sometimes add a return block
+         ;; fall through edge
+         [_ (add-directed-edge! g from fallthrough)])]))
 
   ;; reverse the instruction lists in the basic blocks
   (define blocks-hash

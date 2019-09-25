@@ -9,12 +9,6 @@
 (provide verify-block
          verify-prog)
 
-;; (define (make-symbolic-unknown-type name)
-;;   (define-symbolic* is-bool? boolean?)
-;;   (define-symbolic* b boolean?)
-;;   (define-symbolic* i integer?)
-;;   (if is-bool? b i))
-
 ; Create symbolic variables for live-in variables and interpret them.
 ; Return the resulting state
 (define (symbolic-interpret context block)
@@ -42,9 +36,6 @@
   ;; merge state2 into state1
   (hash-union! state1 state2
                #:combine (lambda (v1 v2) (cons v1 v2)))
-
-  ;; (println (basic-block-label block1))
-  ;; (pretty-print state1)
 
   (verify
    (for ([val (hash-values state1)])

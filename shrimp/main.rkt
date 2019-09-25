@@ -19,7 +19,7 @@
 (define output-blocks (make-parameter #f))
 (define run-interpreter (make-parameter #f))
 (define run-verify (make-parameter #f))
-(define lvn (make-parameter #f))
+(define do-lvn (make-parameter #f))
 
 (define ((apply-when f predicate) val)
   (if predicate
@@ -30,7 +30,7 @@
   (~> ast
       (map function-instrs _)
       (map cfg _)
-      (map (apply-when local-value-numbering (lvn)) _)
+      (map (apply-when lvn (do-lvn)) _)
       ))
 
 (define (process-file filename)
@@ -106,11 +106,11 @@
    [("-i" "--interpret") "Interpret the given files"
                        (run-interpreter #t)]
    [("-v" "--verify") compare-file ; verify takes in an argument
-                      "Verify that <filename> and <compare-file> are functionally equivalent."
-                      "Assumes that they are in the same format"
+                      ("Verify that <filename> and <compare-file> are functionally equivalent."
+                       "Assumes that <filename> and <compare-file> are in the same format")
                       (run-verify compare-file)]
    [("--lvn") "Enable lvn optimizations"
-              (lvn #t)]
+              (do-lvn #t)]
    #:args (filename)
    (main filename)))
 
@@ -118,6 +118,8 @@
   (parameterize ([convert-bril #t]
                  [run-interpreter #f]
                  [output-blocks #f]
-                 [run-verify "../test/ts/loopfact.out"]
+                 [show-cfg #f]
+                 [do-lvn #t]
+                 ;; [run-verify "../test/ts/loopfact.out"]
                  )
     (main "../test/ts/loopfact.out")))

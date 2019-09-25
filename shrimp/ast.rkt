@@ -122,3 +122,27 @@
        [_ (error 'json-instr-map->ast "Don't have a case for ~v" instr-map)])]
     [else
      (error 'json-instr-map->ast "Don't have a case for ~v" instr-map)]))
+
+(define (instr-constr instr)
+  (cond [(function? instr) function]
+        [(label? instr) label]
+        [(add? instr) add]
+        [(sub? instr) sub]
+        [(mul? instr) mul]
+        [(div? instr) div]
+        [(ieq? instr) ieq]
+        [(lt? instr) lt]
+        [(gt? instr) gt]
+        [(le? instr) le]
+        [(ge? instr) ge]
+        [(lnot? instr) lnot]
+        [(land? instr) land]
+        [(lor? instr) lor]
+        [(constant? instr) constant]
+        [(id? instr) id]
+        [(jump? instr) jump]
+        [(branch? instr) branch]
+        [(return? instr) return]
+        [(print-val? instr) print-val]
+        [(nop? instr) nop])
+  )
