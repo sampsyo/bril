@@ -1,0 +1,18 @@
+# RETURN: 1
+#
+main {
+  jmp l2;
+l1:
+  a: bool = id b;
+  b = id c;
+  c = id d;
+  d = id e;
+  e = id f;
+  f = id g;
+  g = id h;
+  h = id z;
+  ret;
+l2:
+  z = const 0;
+  jmp l1;
+}

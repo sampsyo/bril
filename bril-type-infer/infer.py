@@ -2,6 +2,7 @@
 """
 import json
 import sys
+import copy
 
 ARITHMETIC_OPS = ["add", "mul", "sub", "div"]
 COMPARISON_OPS = ["eq", "lt", "gt", "le", "ge"]
@@ -10,7 +11,7 @@ LOGIC_OPS = ["not", "and", "or"]
 def type_var(gamma, var, expected_type, i):
     if var in gamma and gamma[var] != expected_type:
         raise Exception(
-            '(stmt {i+1}) Expected "{}" to have type "{}" but found "{}"'.format(
+            '(stmt {}) Expected "{}" to have type "{}" but found "{}"'.format(
                 i,
                 var,
                 expected_type,
@@ -34,7 +35,7 @@ def type_var(gamma, var, expected_type, i):
 # }
 def infer_types_func(func):
     gamma = {}
-    typed_func = func.copy()
+    typed_func = copy.deepcopy(func)
     # Keep track of whether or not any type was inferred.
     # If so, then we need to try type checking again, because for `id` ops,
     # e.g. "x = id y", we need to know the type of `y` first, which may not
@@ -98,7 +99,55 @@ def infer_types(bril):
         typed_bril["functions"].append(typed_function)
     return typed_bril
 
+def analyze_vars(typed_func):
+    labels = set()
+    gamma = dict()
+    for instr in typed_func["instrs"]:
+        if "label" in instr:
+            labels.add(instr["label"])
+        else:
+            if "dest" in instr and "type" in instr:
+                gamma[instr["dest"]] = instr["type"]
+    return gamma, labels
+
+def typecheck_label(label, gamma):
+    if label in gamma:
+        raise Exception(
+            'Expected "{}" to be a label, but it was a'
+            ' variable of type "{}"'
+            .format(label, gamma[label])
+        )
+
+def typecheck_func(original_func, typed_func):
+    gamma, labels = analyze_vars(typed_func)
+    for instr in original_func["instrs"]:
+        if "label" in instr and instr["label"] in gamma:
+            raise Exception(
+                'Expected "{}" to be a label, but it was a'
+                ' variable of type "{}"'
+                .format(instr["label"], gamma[instr["label"]])
+            )
+
+        if "op" in instr:
+            if "dest" in instr and "type" in instr and instr["type"] != gamma[instr["dest"]]:
+                raise Exception(
+                    'Expected "{}" to have type, but it was explicitly'
+                    ' typed as "{}"'
+                    .format(gamma[instr["dest"]], instr["type"])
+                )
+            elif instr["op"] == "jmp":
+                typecheck_label(instr["args"][0], gamma)
+            elif instr["op"] == "br":
+                typecheck_label(instr["args"][1], gamma)
+                typecheck_label(instr["args"][2], gamma)
+
+def typecheck(original_bril, typed_bril):
+    for i in range(len(original_bril["functions"])):
+        typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
     typed_bril = infer_types(bril)
+    if '-t' in sys.argv:
+        typecheck(bril, typed_bril)
     json.dump(typed_bril, sys.stdout, indent=2, sort_keys=True)

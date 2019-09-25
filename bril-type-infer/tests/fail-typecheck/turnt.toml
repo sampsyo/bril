@@ -1,0 +1,1 @@
+command = "cat {filename} | bril2json | python ../../infer.py -t"

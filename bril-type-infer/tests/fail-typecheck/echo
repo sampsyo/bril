@@ -1,0 +1,114 @@
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "bool" to have type, but it was explicitly typed as "int"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "bool" to have type, but it was explicitly typed as "int"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "bool" to have type, but it was explicitly typed as "int"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 136, in typecheck_func
+    .format(gamma[instr["dest"]], instr["type"])
+Exception: Expected "int" to have type, but it was explicitly typed as "bool"
+Traceback (most recent call last):
+  File "../../infer.py", line 152, in <module>
+    typecheck(bril, typed_bril)
+  File "../../infer.py", line 146, in typecheck
+    typecheck_func(original_bril["functions"][i], typed_bril["functions"][i])
+  File "../../infer.py", line 139, in typecheck_func
+    typecheck_label(instr["args"][0], gamma)
+  File "../../infer.py", line 118, in typecheck_label
+    .format(expected_label, gamma[expected_label])
+Exception: Expected "x" to be a label, but it was a variable of type "int"
