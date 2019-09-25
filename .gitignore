@@ -2,3 +2,5 @@ build/
 book/
 node_modules/
 yarn.lock
+.gitignore
+**/package-lock.json
