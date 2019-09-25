@@ -247,7 +247,6 @@ def print_prog(prog):
     for func in prog['functions']:
         print_func(func)
 
-
 # Command-line entry points.
 
 def bril2json():

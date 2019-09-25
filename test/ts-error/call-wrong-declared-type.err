@@ -1,5 +1,1 @@
-
-/Users/gyauney/Documents/cornell/2019-fall/cs6120/bril/bril-ts/build/brili.js:347
-process.on('unhandledRejection', e => { throw e; });
-                                        ^
-type of value returned by function does not match declaration
+Brili interpreter error: type of value returned by function does not match declaration
