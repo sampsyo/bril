@@ -150,7 +150,7 @@ def unroll_imports(txt, modules, imported):
                     mod_code = mod.read()
                     imported.append(imp['import'])
             except:
-                print("Couldn't open module: {}".format(imp['import']), file=sys.stderr)
+                print("Couldn't find module: {}".format(imp['import']), file=sys.stderr)
                 sys.stderr.flush()
                 sys.exit(1)
             mod_data = unroll_imports(mod_code, modules, imported)
