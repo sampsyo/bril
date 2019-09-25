@@ -1,0 +1,11 @@
+main {
+  a: int = const 21;
+  type height = {h: int};
+  type person = {age : int; height: height};
+  c: height = record {h: a};
+  henry : person = record {age : a; height : c};
+  b : int = id henry . age;
+  d : height = id henry . height;
+  e : int = id d . h;
+  print e;
+}

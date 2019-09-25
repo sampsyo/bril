@@ -1,0 +1,3 @@
+main {
+  type myType = {ident1 : int; ident2 : int};
+}

@@ -1,0 +1,17 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "fields": {
+            "ident1": "int",
+            "ident2": "int"
+          },
+          "op": "recorddef",
+          "recordname": "myType"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

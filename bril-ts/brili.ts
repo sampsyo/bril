@@ -16,17 +16,25 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   not: 1,
   and: 2,
   or: 2,
-  print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
   ret: 0,
   nop: 0,
+  access: 2,
+  print: null,
 };
 
-type Value = boolean | BigInt;
+type Value = boolean | BigInt | Record;
+type RecordBindings = {[index: string]: Value};
 type Env = Map<bril.Ident, Value>;
+type TypeEnv = Map<bril.Ident, bril.RecordType>;
 
-function get(env: Env, ident: bril.Ident) {
+interface Record {
+  name: string;
+  bindings: RecordBindings;
+}
+
+function get<T>(env: Map<bril.Ident, T>, ident: bril.Ident) : T {
   let val = env.get(ident);
   if (typeof val === 'undefined') {
     throw `undefined variable ${ident}`;
@@ -46,18 +54,76 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getInt(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
-  if (typeof val !== 'bigint') {
-    throw `${instr.op} argument ${index} must be a number`;
+  return checkIntVal(val, env, index, instr.op)
+}
+
+function getBool(instr: bril.Operation, env: Env, index: number) : boolean {
+  let val = get(env, instr.args[index]);
+  return checkBoolVal(val, env, index, instr.op)
+}
+
+function checkBoolVal(val: Value, env: Env, index: number | string, op: string) : boolean {
+  if (typeof val !== 'boolean') {
+    throw `${op} argument ${index} must be a boolean`;
   }
   return val;
 }
 
-function getBool(instr: bril.Operation, env: Env, index: number) {
-  let val = get(env, instr.args[index]);
-  if (typeof val !== 'boolean') {
-    throw `${instr.op} argument ${index} must be a boolean`;
+function checkIntVal(val: Value, env: Env, index: number | string, op: string) {
+  if (typeof val !== 'bigint') {
+    throw `${op} argument ${index} must be a number`;
   }
   return val;
+}
+
+/**
+ * Creates a new record given record bindings and a name;
+ * @param o RecordBindings to copy
+ * @param name Name of new record
+ */
+function copy(o: RecordBindings, name: string) {
+  var output : Record, v, key;
+  output = {name: name, bindings: {}};
+  for (key in o) {
+      v = o[key];
+      if (typeof v === "boolean" || typeof v === 'bigint') {
+        output.bindings[key] = v;
+      } else {
+        output.bindings[key] = copy((v as Record).bindings, (v as Record).name)
+      }
+  }
+  return output;
+}
+
+/**
+ * Creates a record given. Used for opcodes 'recordinst' and 'with'
+ * @param init Optional field initialization for new record.
+ *             Used for 'with' syntax.
+ */
+function createRecord(instr: bril.RecordOperation, env: Env, typeEnv: TypeEnv, init?: Record) : Record {
+  let record = get(typeEnv, instr.type);
+  let fieldList = instr.fields;
+  let rec : Record = {name: instr.type, bindings: {}};
+  if (!init) { 
+    fieldList = record;
+  } else {
+    rec = copy(init.bindings, instr.type);
+  }
+  for (let field in fieldList) {
+    let declared_type : bril.Type = record[field];
+    var val : Value = get(env, instr.fields[field]);
+    if (declared_type === "boolean") {
+      val = checkBoolVal(val , env, field, instr.op);
+    } else if (declared_type === "int") {
+      val = checkIntVal(val, env, field, instr.op);
+    } else {
+      if ((val as Record).name != declared_type) {
+        throw `${instr.op} argument ${field} must be a ${declared_type}`;
+      } 
+    }
+    rec.bindings[field] = val;
+  }
+  return rec;
 }
 
 /**
@@ -77,9 +143,10 @@ let END: Action = {"end": true};
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env): Action {
+function evalInstr(instr: bril.Instruction, env: Env, typeEnv: TypeEnv): Action {
   // Check that we have the right number of arguments.
-  if (instr.op !== "const") {
+  if (!(instr.op === "const" || instr.op === "recordinst" ||
+    instr.op === "recorddef" || instr.op === "recordwith")) {
     let count = argCounts[instr.op];
     if (count === undefined) {
       throw "unknown opcode " + instr.op;
@@ -87,9 +154,8 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
       checkArgs(instr, count);
     }
   }
-
   switch (instr.op) {
-  case "const":
+  case "const": {
     // Ensure that JSON ints get represented appropriately.
     let value: Value;
     if (typeof instr.value === "number") {
@@ -100,9 +166,35 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
     env.set(instr.dest, value);
     return NEXT;
+  }
+  
+  case "recorddef": {
+    typeEnv.set(instr.recordname, instr.fields);
+    return NEXT;
+  }
+
+  case "recordinst": {
+    let val = createRecord(instr, env, typeEnv);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "recordwith": {
+    let src_record = get(env, instr.src) as Record; 
+    let val = createRecord(instr, env, typeEnv, src_record);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
 
   case "id": {
     let val = get(env, instr.args[0]);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "access": {
+    let record = get(env, instr.args[0]);
+    let val = (record as Record).bindings[instr.args[1]];
     env.set(instr.dest, val);
     return NEXT;
   }
@@ -212,10 +304,11 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
 function evalFunc(func: bril.Function) {
   let env: Env = new Map();
+  let typeEnv: TypeEnv = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env);
+      let action = evalInstr(line, env, typeEnv);
 
       if ('label' in action) {
         // Search for the label and transfer control.

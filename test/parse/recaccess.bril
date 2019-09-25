@@ -1,0 +1,7 @@
+main {
+  type myType = {ident1 : int; ident2 : int};
+  a: int = const 1;
+  b: int = const 2;
+  typeinst : myType = record {ident1: a; ident2: b};
+  c: int = id typeinst.ident1;
+}

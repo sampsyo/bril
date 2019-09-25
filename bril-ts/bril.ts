@@ -10,7 +10,7 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | Ident;
 
 /**
  * An instruction that does not produce any result.
@@ -21,14 +21,32 @@ export interface EffectOperation {
 }
 
 /**
+ * Record types.
+ */
+export interface RecordType {
+  [field:string] : Type;
+}
+
+/**
  * An operation that produces a value and places its result in the
  * destination variable.
  */
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
-      "id" | "nop" |
+      "id" | "nop" | "access" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
+  dest: Ident;
+  type: Type;
+}
+
+/**
+ * An operation that produces a record value and places its result in the
+ * destination variable.
+ */
+export interface RecordValue {
+  op: "recordinst";
+  fields: {[index: string]: Ident};
   dest: Ident;
   type: Type;
 }
@@ -49,15 +67,43 @@ export interface Constant {
 }
 
 /**
+ * An instruction that instantiates a record and places it into a variable.
+ */
+export interface RecordDef {
+  op: "recorddef";
+  recordname: Ident;
+  fields: RecordType;
+}
+
+/**
+ * An operation that produces a record value from an existing record and
+ * places its result in the destination variable.
+ */
+export interface RecordWith {
+  op: "recordwith";
+  src: Ident;
+  fields: {[index: string]: Ident};
+  dest: Ident;
+  type: Type;
+}
+
+/**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
 export type Operation = EffectOperation | ValueOperation;
 
 /**
- * Instructions can be operations (which have arguments) or constants (which
- * don't). Both produce a value in a destination variable.
+ * RecordOperations take arguments, which come from previously-assigned
+ * identifiers, and initializes a record with them.
  */
-export type Instruction = Operation | Constant;
+export type RecordOperation = RecordValue | RecordWith;
+
+/**
+ * Instructions can be operations, record values (which have arguments), or
+ * constants, record definitions (which don't).
+ * Both produce a value in a destination variable.
+ */
+export type Instruction = Operation | Constant | RecordDef | RecordOperation;
 
 /**
  * Both constants and value operations produce results.
