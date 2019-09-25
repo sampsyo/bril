@@ -52,7 +52,6 @@ COMMENT: /#.*/
 
 class JSONTransformer(lark.Transformer):
     def start(self, items):
-        print(items)
         data = {'imports': [], 'functions': []}
         for item in items:
             if 'import' in item:
@@ -193,6 +192,7 @@ def unroll_imports(txt, modules):
             dependencies = func_walk(imp['functionids'], mod_data['functions'])
             stage_one['functions'] = stage_one['functions'] + dependencies
     
+    stage_one.pop('imports')
     return stage_one
 
 def parse_bril(txt):
