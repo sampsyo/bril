@@ -45,6 +45,12 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       return builder.buildDouble(val);
     }
 
+    case ts.SyntaxKind.BigIntLiteral: {
+      let lit = expr as ts.NumericLiteral;
+      let val = parseFloat(lit.text);
+      return builder.buildInt(val);
+    }
+
     case ts.SyntaxKind.TrueKeyword: {
       return builder.buildBool(true);
     }
@@ -62,7 +68,6 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
       let kind = bin.operatorToken.kind;
-      console.log(expr);
 
       // Handle assignments.
       switch (kind) {

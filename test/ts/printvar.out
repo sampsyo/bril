@@ -1,7 +1,7 @@
 main {
-  v0: int = const 5;
-  x: int = id v0;
-  v1: int = id x;
+  v0: double = const 5;
+  x: double = id v0;
+  v1: double = id x;
   print v1;
   v2: int = const 0;
 }
