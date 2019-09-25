@@ -226,7 +226,7 @@ def linkbril():
         with open(main_module, 'r') as main:
             program_txt = main.read()
     except EnvironmentError:
-        print("Couldn't open main module", file=sys.stderr)
+        print("Couldn't find main module", file=sys.stderr)
         return
 
     json = parse_bril(program_txt, module_paths)
