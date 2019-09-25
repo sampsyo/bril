@@ -120,15 +120,15 @@ def parse_bril(txt):
 
 def instr_to_string(instr):
     if instr['op'] == 'const':
-        return '{}: {} = const {}'.format(
+        return '{}{} = const {}'.format(
             instr['dest'],
-            instr['type'],
+            ': {}'.format(instr['type']) if 'type' in instr else '',
             str(instr['value']).lower(),
         )
     elif 'dest' in instr:
-        return '{}: {} = {} {}'.format(
+        return '{}{} = {} {}'.format(
             instr['dest'],
-            instr['type'],
+            ': {}'.format(instr['type']) if 'type' in instr else '',
             instr['op'],
             ' '.join(instr['args']),
         )
