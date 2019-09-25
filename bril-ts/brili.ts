@@ -250,15 +250,15 @@ function evalInstr(
 }
 
 function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
-  let localfuns: FunctionMap = new Map();
+  let localFunctionMap: FunctionMap = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     // Update local function map with functions in nested scope
     if ('name' in line) {
-      localfuns.set(line['name'], line);
+      localFunctionMap.set(line['name'], line);
     }
     if ('op' in line) {
-      let action = evalInstr(line, env, functionMap, localfuns);
+      let action = evalInstr(line, env, functionMap, localFunctionMap);
       if ('label' in action) {
         // Search for the label and transfer control.
         for (i = 0; i < func.instrs.length; ++i) {
