@@ -1,0 +1,23 @@
+void main() {
+  v0: int = const 1;
+  x: int = id v0;
+  v1: int = const 2;
+  y: int = id v1;
+  v2: int = const 3;
+  z: int = id v2;
+  v3: int = id x;
+  v4: int = id y;
+  call addthree(v3, v4);
+  v5: int = const 0;
+}
+void addthree(x : int, y : int, z : int) {
+  v0: int = id x;
+  v1: int = id y;
+  v2: int = add v0 v1;
+  v3: int = id z;
+  v4: int = add v2 v3;
+  w: int = id v4;
+  v5: int = id w;
+  print v5;
+  v6: int = const 0;
+}

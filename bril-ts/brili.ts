@@ -144,7 +144,7 @@ function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[])
       throw `function call must include a destination if it has a type`;  
     }
     if (retVal === null) {
-      throw `nothing returned from non-void function`;
+      throw `non-void function (type: ${func.type}) doesn't return anything`;
     }
     if (brilTypeToDynamicType[valueCall.type] !== typeof retVal) {
       throw `type of value returned by function does not match destination type`;

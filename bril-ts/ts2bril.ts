@@ -228,7 +228,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
         // The type checker gives a full function type;
         // we want only the return type.
-        if (funcDef.type) {
+        if (funcDef.type && funcDef.type.getText() !== 'void') {
           let retType : bril.Type;
           if (funcDef.type.getText() === 'number') {
             retType = "int";
