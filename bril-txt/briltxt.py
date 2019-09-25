@@ -82,7 +82,7 @@ class JSONTransformer(lark.Transformer):
             arg = items.pop(0).children
             args.append(
                 dict(name=arg[0], type=arg[1] if len(arg) > 1 else None))
-        print(args)
+        
         function_type = items.pop(0) if type(items[0]) == str else None
         data = {'name': str(name), 'instrs': items}
         if len(args):
