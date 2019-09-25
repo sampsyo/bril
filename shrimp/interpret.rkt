@@ -10,7 +10,8 @@
          "analysis.rkt"
          "cfg.rkt")
 
-(provide interpret-block)
+(provide interpret-block
+         display-interp)
 
 ; Extract this out into a separate file
 (define (empty-state) (make-hash))
@@ -68,3 +69,11 @@
     (instr-to-func instr))
 
   state)
+
+(define (display-interp state block)
+  (displayln "Running: ")
+  (pretty-print block)
+  (displayln "with: ")
+  (pretty-print state)
+  (displayln "gives the final state: ")
+  (pretty-print (interpret-block state block)))

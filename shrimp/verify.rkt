@@ -63,9 +63,14 @@
                          (when (pair? v)
                            (assert (equal? (car v) (cdr v))))))
         (verify (same-block? block1 lives1 block2 lives2)))))
+
   (unless (unsat? sol)
-    (pr sol)
-    (error 'verify-block "Found a counter-example!"))
-  sol)
+    (define-values (conc1 conc2)
+      (values (evaluate lives1 sol) (evaluate lives2 sol)))
+    (displayln "===============================")
+    (display-interp (make-hash conc1) block1)
+    (displayln "-------------------------------")
+    (display-interp (make-hash conc2) block2)
+    (displayln "===============================")))
 
 (define (verify-prog) (void))
