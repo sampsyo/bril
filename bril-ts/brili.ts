@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import { Heap } from './heap';
+import { Heap, Key } from './heap';
 import {readStdin, unreachable} from './util';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
@@ -29,7 +29,12 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   ptradd: 2
 };
 
-type Value = boolean | bril.Pointer | BigInt;
+type Pointer = {
+  loc: Key;
+  type: bril.Type;
+}
+
+type Value = boolean | Pointer | BigInt;
 type Env = Map<bril.Ident, Value>;
 
 function get(env: Env, ident: bril.Ident) {
@@ -40,7 +45,7 @@ function get(env: Env, ident: bril.Ident) {
   return val;
 }
 
-function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): bril.Pointer {
+function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): Pointer {
   if (typeof ptrType != 'object') {
     throw `unspecified pointer type ${ptrType}`
   } else if (amt <= 0) {
@@ -68,7 +73,7 @@ function checkArgs(instr: bril.Operation, count: number) {
   }
 }
 
-function getPtr(instr: bril.Operation, env: Env, index: number): bril.Pointer {
+function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
   let val = get(env, instr.args[index]);
   if (typeof val !== 'object' || val instanceof BigInt) {
     throw `${instr.op} argument ${index} must be a Pointer`;
