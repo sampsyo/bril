@@ -20,8 +20,9 @@ GRAMMAR = """
 start: func*
 
 func: CNAME arg* "{" instr* "}" | CNAME arg* ":" type "{" instr* "}"
+def_func: "def" func
 
-?instr: const | vop | eop | label
+?instr: def_func | const | vop | eop | label 
 
 const.4: IDENT ":" type "=" "const" lit ";"
 vop.3: IDENT ":" type "=" CNAME IDENT* ";"
@@ -66,6 +67,9 @@ class JSONTransformer(lark.Transformer):
         if function_type is not None:
             data['type'] = function_type
         return data
+
+    def def_func(self, items):
+        return items.pop(0)
 
     def const(self, items):
         dest = items.pop(0)

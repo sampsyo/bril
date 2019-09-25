@@ -5,7 +5,7 @@ main {
   print v2;
 }
 
-two {
+two : int{
   v3: int = const 2;
   ret v3;
 }
