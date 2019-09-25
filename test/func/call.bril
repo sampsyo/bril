@@ -1,6 +1,5 @@
 main {
   v0: int = call hello;
-  call world v0;
   print v0;
 }
 
@@ -9,11 +8,4 @@ hello: int {
   v1: int = const 2;
   v2: int = add v0 v1;
   ret v2;
-}
-
-world (arg0: int) {
-  v0: int = const 4;
-  v1: int = add v0 arg0;
-  print v1;
-  ret;
 }

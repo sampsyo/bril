@@ -1,0 +1,11 @@
+main {
+  v0: int = const 4;
+  v1: int = call double v0;
+  print v1;
+}
+
+double a : int {
+  v2: int = const 2;
+  v3: int = mul a v2;
+  ret v3;
+}

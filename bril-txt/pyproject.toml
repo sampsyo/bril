@@ -9,7 +9,7 @@ author-email = "asampson@cs.cornell.edu"
 home-page = "https://github.com/sampsyo/bril"
 requires-python = ">=3.4"
 requires = [
-    "lark-parser",
+    "lark-parser >=0.7.4",
 ]
 
 [tool.flit.scripts]

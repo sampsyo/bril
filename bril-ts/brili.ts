@@ -13,7 +13,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   gt: 2,
   ge: 2,
   eq: 2,
-  not: 2,
+  not: 1,
   and: 2,
   or: 2,
   print: null,  // Any number of arguments.
@@ -24,7 +24,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   call: null,
 };
 
-type Env = Map<bril.Ident, bril.Value>;
+type Value = boolean | BigInt;
+type Env = Map<bril.Ident, Value>;
 type FunctionMap = Map<bril.Ident, bril.Function>;
 const returnVar = "_ret";
 
@@ -48,7 +49,7 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getInt(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
-  if (typeof val !== 'number') {
+  if (typeof val !== 'bigint') {
     throw `${instr.op} argument ${index} must be a number`;
   }
   return val;
@@ -82,7 +83,8 @@ let END: Action = {"end": true};
 function evalInstr(
   instr: bril.Instruction,
   env: Env,
-  functionMap: FunctionMap): Action {
+  functionMap: FunctionMap,
+  localMap: FunctionMap): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -95,7 +97,15 @@ function evalInstr(
 
   switch (instr.op) {
   case "const":
-    env.set(instr.dest, instr.value);
+    // Ensure that JSON ints get represented appropriately.
+    let value: Value;
+    if (typeof instr.value === "number") {
+      value = BigInt(instr.value);
+    } else {
+      value = instr.value;
+    }
+
+    env.set(instr.dest, value);
     return NEXT;
 
   case "id": {
@@ -177,7 +187,7 @@ function evalInstr(
   }
 
   case "print": {
-    let values = instr.args.map(i => get(env, i));
+    let values = instr.args.map(i => get(env, i).toString());
     console.log(...values);
     return NEXT;
   }
@@ -197,9 +207,10 @@ function evalInstr(
 
   case "call": {
     let name = instr.args[0];
-    if (functionMap.has(name)) {
+    if (functionMap.has(name) || localMap.has(name)) {
       let newEnv = new Map();
-      let func = functionMap.get(name) as bril.Function;
+      let func = (localMap.has(name)) ? localMap.get(name) as
+        bril.Function : functionMap.get(name) as bril.Function;
       let args = instr.args.slice(1);
       if (func.args === undefined && args.length > 0
         || args.length > 0 && func.args.length !== args.length) {
@@ -239,11 +250,15 @@ function evalInstr(
 }
 
 function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
+  let localFunctionMap: FunctionMap = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
+    // Update local function map with functions in nested scope
+    if ('name' in line) {
+      localFunctionMap.set(line['name'], line);
+    }
     if ('op' in line) {
-      let action = evalInstr(line, env, functionMap);
-
+      let action = evalInstr(line, env, functionMap, localFunctionMap);
       if ('label' in action) {
         // Search for the label and transfer control.
         for (i = 0; i < func.instrs.length; ++i) {
@@ -285,6 +300,7 @@ function evalProg(prog: bril.Program, cliArgs: (Number | Boolean)[]) {
     }
     evalFunc(functionMap.get("main"), env, functionMap);
   } else {
+    throw `main function expected, none found. `
   }
 }
 

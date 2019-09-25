@@ -1,0 +1,13 @@
+main {
+  def func: int {
+    v2: int = const 20;
+    ret v2;
+  }
+  v0: int = call func;
+  print v0;
+}
+
+func: int {
+  a: int = const 10;
+  ret a;
+}

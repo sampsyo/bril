@@ -1,6 +1,5 @@
 # Bril Language Reference
 
-Bril is a instruction-oriented programming language with an emphasis on minimality and regularity.
 Bril programs are JSON objects that directly represent abstract syntax.
 
 This language reference has two sections:

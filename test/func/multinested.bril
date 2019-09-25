@@ -1,0 +1,31 @@
+main {
+  v0: int = call hello;
+  print v0;
+}
+
+hello : int {
+  v0: int = const 1;
+  v1: int = const 2;
+  v2: int = add v0 v1;
+
+  def world (a:int) : int {
+    print a;
+    v9: int = const 1;
+    print v9;
+  
+    def inception : int {
+      v0: int = const 100;
+      ret v0;
+    }
+    
+    v8: int = const 2;
+    v10: int = call inception;
+    print v10;
+    ret v8;
+  }
+
+  v3: int = const 0;
+  v11: int = call world v3;
+  print v11;
+  ret v2;
+}
