@@ -11,7 +11,6 @@ import lark
 import sys
 import json
 import ntpath
-import argparse
 
 __version__ = '0.0.1'
 
