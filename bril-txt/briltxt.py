@@ -68,25 +68,21 @@ class JSONTransformer(lark.Transformer):
     def imp(self, items):
         name = items.pop(0)
         data = {'import': str(name), 'functionids': []}
-
-        while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
-            items[0].data == "modfunc":
+        while len(items):
             func = items.pop(0).children
-            if len(func) == 2:
-                data['functionids'].append({'name': func[0], 'alias': func[1]})
-            elif len(func) == 1:
-                data['functionids'].append({'name': func[0], 'alias': func[0]})
-
+            data['functionids'].append({'name': func[0].value, 
+                'alias': func[1].value if len(func) == 2 else func[0].value })
         return data
 
     def func(self, items):
         name = items.pop(0)
         args = []
-        while len(items) > 0 and type(items[0]) == lark.tree.Tree and \
+        while len(items) and type(items[0]) == lark.tree.Tree and \
             items[0].data == "arg":
             arg = items.pop(0).children
             args.append(
                 dict(name=arg[0], type=arg[1] if len(arg) > 1 else None))
+        print(args)
         function_type = items.pop(0) if type(items[0]) == str else None
         data = {'name': str(name), 'instrs': items}
         if len(args):
