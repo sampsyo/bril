@@ -10,7 +10,7 @@ format and emits the ordinary JSON representation.
 import lark
 import sys
 import json
-import ntpath
+import copy
 
 __version__ = '0.0.1'
 
@@ -66,12 +66,11 @@ class JSONTransformer(lark.Transformer):
     def func(self, items):
         name = items.pop(0)
         args = []
-        while len(items) and type(items[0]) == lark.tree.Tree and \
-            items[0].data == "arg":
+        while (len(items) > 0 and type(items[0]) == lark.tree.Tree and
+            items[0].data == "arg"):
             arg = items.pop(0).children
             args.append(
                 dict(name=arg[0], type=arg[1] if len(arg) > 1 else None))
-        
         function_type = items.pop(0) if type(items[0]) == str else None
         data = {'name': str(name), 'instrs': items}
         if len(args):
@@ -130,42 +129,40 @@ class JSONTransformer(lark.Transformer):
     def type(self, items):
         return str(items[0])
 
-def parse_helper(txt):
+
+def parse_bril(txt):
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
-    return data
+    function_names = [f['name'] for f in data['functions']]
+    unique = set()
+    dups = [f for f in function_names if f in unique and not unique.add(f)]
+    if len(dups) > 0:
+        raise RuntimeError(
+            'Function(s) defined twice: {}'.format(', '.join(dups)))
+    return json.dumps(data, indent=2, sort_keys=True)
 
-def unroll_imports(txt, modules, imported):
-    stage_one = parse_helper(txt)
 
+def unroll_imports(prog, imported=None):
+    stage_one = copy.deepcopy(prog)
+    imported = imported or []
     for imp in stage_one.get('imports', list()):
         if imp['import'] not in imported:
             try:
-                with open(modules['{}.bril'.format(imp['import'])], 'r') as mod:
+                with open('{}.bril'.format(imp['import']), 'r') as mod:
                     mod_code = mod.read()
                     imported.append(imp['import'])
-            except:
+            except IOError:
                 print("Couldn't find module: {}".format(imp['import']), file=sys.stderr)
                 sys.stderr.flush()
                 sys.exit(1)
-            mod_data = unroll_imports(mod_code, modules, imported)
+            mod_data = unroll_imports(json.loads(parse_bril(mod_code)), imported=imported)
             stage_one['functions'] = stage_one['functions'] + mod_data['functions']
 
     if 'imports' in stage_one:
         stage_one.pop('imports')
     return stage_one
 
-def parse_bril(txt, module_paths):
-    modules = {}
-    for path in module_paths:
-        head, tail = ntpath.split(path)
-        modules[tail or ntpath.basename(head)] = path
-    stage_two = unroll_imports(txt, modules, [])
-    if stage_two:
-        return json.dumps(stage_two, indent=2, sort_keys=True)
-    else:
-        return None
 
 # Text format pretty-printer.
 
@@ -215,25 +212,13 @@ def print_prog(prog):
 
 # Command-line entry points.
 
-def linkbril():
-    main_module = sys.argv[1]
-    module_paths = sys.argv[2:]
-    try:
-        with open(main_module, 'r') as main:
-            program_txt = main.read()
-    except EnvironmentError:
-        print("Couldn't open main module", file=sys.stderr)
-        return
-
-    json = parse_bril(program_txt, module_paths)
-    if json:
-        print(json)
-
 def bril2json():
-    module_paths = sys.argv[1:]
-    json = parse_bril(sys.stdin.read(), module_paths)
-    if json:
-        print(json)
+    print(parse_bril(sys.stdin.read()))
+
 
 def bril2txt():
     print_prog(json.load(sys.stdin))
+
+
+def linkbril():
+    print(json.dumps(unroll_imports(json.load(sys.stdin)), indent=2, sort_keys=True))
