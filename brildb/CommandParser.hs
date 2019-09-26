@@ -62,7 +62,7 @@ intOp = (identifier >>=) $ \s -> case s of
     "sub" -> SubOp <$> intExpr <*> intExpr
     "div" -> DivOp <$> intExpr <*> intExpr
 
-brilValue = BrilInt <$> natural
+brilValue = BrilInt <$> integer
     <|> BrilBool <$> boolConst
 
 boolConst = string "true" *> return True
