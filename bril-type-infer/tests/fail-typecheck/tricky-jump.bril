@@ -1,3 +1,4 @@
+# RETURN: 1
 main {
   jmp x;
 earlier:
