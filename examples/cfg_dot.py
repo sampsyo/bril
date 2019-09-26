@@ -2,65 +2,10 @@
 emit a GraphViz file.
 """
 
-from form_blocks import form_blocks, TERMINATORS
+from form_blocks import form_blocks
 import json
 import sys
-from collections import OrderedDict
-
-
-def fresh(seed, names):
-    """Generate a new name that is not in `names` starting with `seed`.
-    """
-    i = 1
-    while True:
-        name = seed + str(i)
-        if name not in names:
-            return name
-        i += 1
-
-
-def block_map(blocks):
-    """Given a sequence of basic blocks, which are lists of instructions,
-    produce a `OrderedDict` mapping names to blocks.
-
-    The name of the block comes from the label it starts with, if any.
-    Anonymous blocks, which don't start with a label, get an
-    automatically generated name. Blocks in the mapping have their
-    labels removed.
-    """
-    by_name = OrderedDict()
-
-    for block in blocks:
-        # Generate a name for the block.
-        if 'label' in block[0]:
-            # The block has a label. Remove the label but use it for the
-            # block's name.
-            name = block[0]['label']
-            block = block[1:]
-        else:
-            # Make up a new name for this anonymous block.
-            name = fresh('b', by_name)
-
-        # Add the block to the mapping.
-        by_name[name] = block
-
-    return by_name
-
-
-def successors(instr):
-    """Get the list of jump target labels for an instruction.
-
-    Raises a ValueError if the instruction is not a terminator (jump,
-    branch, or return).
-    """
-    if instr['op'] == 'jmp':
-        return instr['args']  # Just one destination.
-    elif instr['op'] == 'br':
-        return instr['args'][1:]  # The first argument is the condition.
-    elif instr['op'] == 'ret':
-        return []  # No successors to an exit block.
-    else:
-        raise ValueError('{} is not a terminator'.format(instr['op']))
+from cfg import block_map, successors, add_terminators
 
 
 def cfg_dot(bril, verbose):
@@ -75,15 +20,7 @@ def cfg_dot(bril, verbose):
         blocks = block_map(form_blocks(func['instrs']))
 
         # Insert terminators into blocks that don't have them.
-        for i, block in enumerate(blocks.values()):
-            if block[-1]['op'] not in TERMINATORS:
-                if i == len(blocks) - 1:
-                    # In the last block, return.
-                    block.append({'op': 'ret', 'args': []})
-                else:
-                    # Otherwise, jump to the next block.
-                    dest = list(blocks.keys())[i + 1]
-                    block.append({'op': 'jmp', 'args': [dest]})
+        add_terminators(blocks)
 
         # Add the vertices.
         for name, block in blocks.items():

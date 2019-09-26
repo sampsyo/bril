@@ -150,7 +150,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         // Statement chunks.
         builder.buildLabel(thenLab);
         emit(if_.thenStatement);
-        builder.buildEffect("jmp", ["endif"]);
+        builder.buildEffect("jmp", [endLab]);
         builder.buildLabel(elseLab);
         if (if_.elseStatement) {
           emit(if_.elseStatement);
