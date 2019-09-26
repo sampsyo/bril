@@ -220,5 +220,5 @@ def bril2txt():
     print_prog(json.load(sys.stdin))
 
 
-def linkbril():
+def loadbril():
     print(json.dumps(unroll_imports(json.load(sys.stdin)), indent=2, sort_keys=True))
