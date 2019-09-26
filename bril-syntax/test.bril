@@ -1,0 +1,113 @@
+# Test for all base bril language features
+
+# The organizing primitive for syntax highlighting is the 'syntax group'
+# Vim comes with several predefined syntax groups, and it is possible to define your own
+# User-defined syntax groups can be linked to the predefined ones, creating a DAG syntax hierarchy
+# A colorscheme can target the most specific syntax group, and if not, vim travel up the syntax hierarchy to use its defaults
+
+# To debug, I used the following mapping over the syntax API:
+# map -H :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
+# \ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+# \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
+# By pressing -H, this map displays the syntax hierarchy to which the character under the cursor belongs 
+# (from 'hi' to 'low' precedence, passing through 'transparent' layers)
+
+# :noremap -h <esc>:echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')<cr>  
+# It was important to realize that old bindings linger around:
+# if you changed a variable name, but didn't change the usages, they would not trigger a runtime error
+
+
+main {
+  x: int = const 42;
+  x: int = id x;
+  x: int = add x x;
+  x: int = mul x x;
+  x: int = sub x x;
+  x: int = div x x;
+  x: int = eq x x;
+  x: int = lt x x;
+  x: int = gt x x;
+  x: int = le x x;
+  x: int = ge  x x;
+  x: int = not x x;
+  x: int = and x x;
+  x: int = or x x;
+
+  b : bool = const true;
+  b : bool = const false;
+
+  label:
+    br b b1 b2;
+    jmp x;
+
+  alpha_num_name1 : int = id x;
+  print x;   
+  nop;
+  ret x;
+
+  # Labels are surprisingly difficult! There are two problems:
+  # 1) I need to match a label, but highlight it, minus the semicolon
+  # 2) I need to disambiguate between labels and variables
+
+  # My solution to both problems is short, but has a flaw regarding the second point. 
+  # I use a special regexp operation '\ze', which matches the regexp on the left (a label), as long as it matches on the right (a semicolon, spaces, and the line end).
+  b0: same_line_works : int = const 42;
+
+  b1:
+    works_ok : int = const 42;
+
+  b2:
+    #empty branch
+
+  # "feature" of current implementation: op names won't be highlighted until a semicolon is added
+  # This is due to an interaction between 'syntax regions' and 'contained syntax groups':
+  # I defined ops to occur only within an 'instruction' region, which is a line that starts with an identifier,type pair and ends with a semicolon.
+  # Since each line lacks a semicolon, vim doesn't recognize them as 'instructions', and so they cannot be ops
+  jmp
+  br
+  const
+  id
+  add
+  mul
+  sub
+  div
+  eq
+  lt
+  gt
+  le
+  not
+  and
+  or
+
+  # This 'one line' detail means splitting bril commands won't work well, which is ok for base bril
+  # This is probably fine: there isn't yet a reason for multiline bril commands, afaik
+  x : int =
+  const 4;
+
+  # A more sophisticated implementation would differentiate between value and effect instructions
+  # Specifically, it would define regions specific to each instruction type, so that: 
+  # - only value ops are detected in value instructions
+  # - only effect ops are detected in value instructions
+  # - branch instructions could be also isolated as a special control flow region, to color the conditional argument differently
+
+  # Such an implementation is inherently cumbersome in vimscript, since it requires either:
+  # A) Regexp duplication to both identify where regions start, and those entities themselves that start the regions themselves
+  # B) Factoring out shared regexps and carefully splicing them into a region-defining vimscript string that is then fed into an 'execute' command
+  #   - This is surprisingly complex, given the nature of vim strings vs string literals.
+  #     - Semantically, a string consists of a list of characters and escaped characters. ("/" is an invalid string)
+  #     - On the other hand, a literal string consists of the literal characters in the string.
+  #     - The vimscript command that defines a syntax group/region operates on regexps as strings or string literals.
+  #     - If we factor out a regexp string into a string var for reuse, any escaped characters will be 'escaped' when stored
+  #       - If we splice such a faulty regexp into a program string, the program will contain escaped characters, rather than their representations
+  #       - We can solve this by escaping each 'escaping' backslash with a backslash, except for those that escape backlashes (backslash hell!!)
+  #     - Alternatively, we can store regexps as literal strings, which never escape characters, and splice them in later
+  #     - Program fragments containing single-use, hard-coded regexps are considerably easier to express with literal strings:
+  #       - Since the containing program fragment is a string literal, the regexp must be written as a string to avoid cutting the string prematurely
+  #         - However, since it's not a real string, we need not fear any premature escaping when writing it: just write vimscript
+  #       - If the containing program fragment was instead a string, the regexp would need to be written as a string literal instead for the same reason as before
+  #         - However, this 'string literal' would be fake since it's inside a string: escaping would be necessary inside of it.
+  #           - It would be like writing vimscript, but needing to escape everything everywhere
+  #     
+
+}
+
