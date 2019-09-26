@@ -1,0 +1,5 @@
+# This is an awesome program!
+main {
+  v: int = const 42;  # More comments!
+  # v2: whatever = const 47;
+}

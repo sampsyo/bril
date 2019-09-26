@@ -28,19 +28,21 @@ vop.3: IDENT ":" type "=" CNAME IDENT* ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
-lit: NUMBER  -> int
+lit: SIGNED_INT  -> int
   | BOOL     -> bool
 
 type: CNAME
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
+COMMENT: /#.*/
 
-%import common.NUMBER
+%import common.SIGNED_INT
 %import common.WS
 %import common.CNAME
 %import common.LETTER
 %import common.DIGIT
 %ignore WS
+%ignore COMMENT
 """.strip()
 
 
@@ -114,7 +116,7 @@ def instr_to_string(instr):
         return '{}: {} = const {}'.format(
             instr['dest'],
             instr['type'],
-            instr['value'],
+            str(instr['value']).lower(),
         )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(
