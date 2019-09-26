@@ -31,8 +31,7 @@
           "op": "print"
         }
       ],
-      "name": "main",
-      "type": "void"
+      "name": "main"
     }
   ]
 }
