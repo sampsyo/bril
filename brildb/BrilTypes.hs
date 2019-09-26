@@ -75,7 +75,6 @@ instance FromJSON Instruction where
         <*> v .:? "value"
         <*> (fromMaybe [] <$> v .:? "args")
 
-
 _breakCondition :: Lens' Instruction BoolExpr
 _breakCondition = lens breakCondition $ \i c -> i { breakCondition = c }
 

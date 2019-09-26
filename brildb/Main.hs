@@ -111,11 +111,15 @@ terminated = null . callStack
 
 atBreakpoint :: StateT DebugState IO Bool
 atBreakpoint = do
-    cond <- gets $ breakCondition . nextInstruction
-    vars <- gets $ variables . head . callStack
-    case evalBool vars cond of
-        Left s -> liftIO (putStrLn s) >> return True
-        Right b -> return b
+    done <- gets terminated
+    if done then
+        return False
+    else do
+        cond <- gets $ breakCondition . nextInstruction
+        vars <- gets $ variables . head . callStack
+        case evalBool vars cond of
+            Left s -> liftIO (putStrLn s) >> return True
+            Right b -> return b
 
 evalBool :: Map.Map String BrilValue -> BoolExpr -> Either String Bool
 evalBool m e = case e of
@@ -240,8 +244,7 @@ branchOp inst = do
         gotoLabel lblFalse
 
 returnOp :: StateT DebugState IO ()
-returnOp = do
-    modify (over _callStack tail)
+returnOp = modify (over _callStack tail)
 
 printOp :: Instruction -> StateT DebugState IO ()
 printOp inst = do
