@@ -1,11 +1,11 @@
 {
-  "name": "vril",
+  "name": "bril",
   "version": "1.0.0",
   "license": "MIT",
   "private": true,
   "bin": {
     "ts2bril": "build/ts2bril.js",
-    "vrili": "build/brili.js"
+    "brili": "build/brili.js"
   },
   "scripts": {
     "build": "tsc && chmod a+x build/ts2bril.js build/brili.js"

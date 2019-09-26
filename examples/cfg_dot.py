@@ -25,7 +25,7 @@ def cfg_dot(bril, verbose):
         # Add the vertices.
         for name, block in blocks.items():
             if verbose:
-                import vriltxt
+                import briltxt
                 print(r'  {} [shape=box, xlabel="{}", label="{}\l"];'.format(
                     name,
                     name,

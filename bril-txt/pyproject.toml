@@ -3,15 +3,15 @@ requires = ["flit"]
 build-backend = "flit.buildapi"
 
 [tool.flit.metadata]
-module = "vriltxt"
-author = "Adrian Sampson, HCP, SA and TT"
+module = "briltxt"
+author = "Adrian Sampson"
 author-email = "asampson@cs.cornell.edu"
-home-page = "https://github.com/sampsyo/bril and https://github.com/sampsyo/vril"
+home-page = "https://github.com/sampsyo/bril"
 requires-python = ">=3.4"
 requires = [
     "lark-parser",
 ]
 
 [tool.flit.scripts]
-vril2txt = "vriltxt:vril2txt"
-vril2json = "vriltxt:vril2json"
+bril2txt = "briltxt:bril2txt"
+bril2json = "briltxt:bril2json"

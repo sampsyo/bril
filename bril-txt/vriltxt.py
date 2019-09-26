@@ -2,8 +2,8 @@
 
 This module defines both a parser and a pretty-printer for a
 human-editable representation of Bril programs. There are two commands:
-`vril2txt`, which takes a Bril program in its (canonical) JSON format and
-pretty-prints it in the text format, and `vril2json`, which parses the
+`bril2txt`, which takes a Bril program in its (canonical) JSON format and
+pretty-prints it in the text format, and `bril2json`, which parses the
 format and emits the ordinary JSON representation.
 """
 
@@ -15,23 +15,6 @@ __version__ = '0.0.1'
 
 
 # Text format parser.
-
-# in case we need to add an array lit it's - array: "[" [SIGNED_INT ("," SIGNED_INT)*] "] from https://github.com/lark-parser/lark/blob/master/docs/json_tutorial.md#conclusion"
-
-# CNAME is CNAME: ("_"|LETTER) ("_"|LETTER|DIGIT)* from https://github.com/lark-parser/lark/blob/master/lark/grammars/common.lark
-
-# Currently this spec should allow
-# name: array = init number;
-# name[number]: int = v2a name;
-# name: int = a2v name[number]
-
-# To start with AELEM and array names are separate
-# Also AELEM can have arbitrary sequences of [ and ] not one and only [INT]
-
-#a2v.7: IDENT ":" type "=" "a2v" AELEM ";"
-# The order might matter! aop sent down to 3
-# If we want to constraint how arrays are written
-# AELEM: IDENT "[" INT "]"
 
 GRAMMAR = """
 start: func*
@@ -205,9 +188,9 @@ def print_prog(prog):
 
 # Command-line entry points.
 
-def vril2json():
+def bril2json():
     print(parse_bril(sys.stdin.read()))
 
 
-def vril2txt():
+def bril2txt():
     print_prog(json.load(sys.stdin))
