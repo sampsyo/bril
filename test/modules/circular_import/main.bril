@@ -1,0 +1,7 @@
+import math;
+
+main {
+    v0: int = const 9;
+    v1: int = call quad v0;
+    print v1;
+}
