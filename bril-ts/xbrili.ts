@@ -348,6 +348,8 @@ function evalFunc(func: bril.Function, buffer: any[][] ) {
       i++;
     }
     
+    //if ( probs.has([i,env]) )
+    
     if ( paths[pathidx].hist.has([i,env]) ) {
       let factor = 1 / (1 - pr / paths[pathidx].hist.get([i,env])![1]);
       console.log('head: ', paths[pathidx].head[0], '[i,env]: ', [i,env],  paths[pathidx].hist.has(paths[pathidx].head[0]));
