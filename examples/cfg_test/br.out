@@ -1,8 +1,0 @@
-digraph main {
-  b1;
-  here;
-  there;
-  b1 -> there;
-  b1 -> here;
-  here -> there;
-}
