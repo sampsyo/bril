@@ -13,6 +13,7 @@ macro_rules! define_types {
   }
 
   #[derive(Debug, Deserialize, Clone)]
+  #[serde(untagged)]
   pub enum BrilValue {
     $($name($val),)*
     Nil
@@ -45,7 +46,6 @@ pub struct ValueOp<T> {
   pub dest: Identifier<T>,
   #[serde(rename = "type")]
   pub typ: BrilType,
-
   pub args: Vec<Identifier<T>>,
 }
 
