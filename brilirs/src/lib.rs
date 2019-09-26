@@ -16,7 +16,7 @@ extern crate serde_json;
 pub fn run_input<T: std::io::Write>(input: Box<dyn std::io::Read>, out: T) {
   match parse::load(input)
     .map(parse::convert_identifiers)
-    .map(|(prog, num_vars)| (basic_block::find_basic_blocks(prog), num_vars - 1))
+    .map(|(prog, num_vars)| (basic_block::find_basic_blocks(prog), num_vars))
     .map(|((main_idx, blocks, label_index), num_vars)| {
       (
         main_idx,
