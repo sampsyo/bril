@@ -1,0 +1,6 @@
+import adrian;
+
+main {
+    v0: int = const 9;
+    print v0;
+}

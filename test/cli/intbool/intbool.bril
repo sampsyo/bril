@@ -1,0 +1,10 @@
+main (val: int) (cond: bool) {
+    br cond retval retzero;
+retval:
+    print val;
+    ret;
+retzero:
+    v0: int = const 0;
+    print v0;
+    ret;
+}

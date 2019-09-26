@@ -155,7 +155,7 @@ def unroll_imports(prog):
             with open('{}.bril'.format(module_name)) as f:
                 loaded_prog = json.loads(parse_bril(f.read()))
         except IOError:
-            sys.stderr.write('Failed to load {}.bril'.format(module_name))
+            sys.stderr.write('Failed to load {}.bril\n'.format(module_name))
             sys.stderr.flush()
             sys.exit(1)
         imports = set(loaded_prog.get('imports', []))
