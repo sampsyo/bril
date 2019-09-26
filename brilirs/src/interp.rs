@@ -229,6 +229,7 @@ pub fn execute<T: std::io::Write>(
           next_block_idx = Some(curr_block.exit[exit_idx]);
         }
         Ret { .. } => {
+          out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
           // NOTE: This only works so long as `main` is the only function
           return Ok(());
         }
@@ -263,6 +264,7 @@ pub fn execute<T: std::io::Write>(
     if let Some(idx) = next_block_idx {
       curr_block_idx = idx;
     } else {
+      out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
       return Ok(());
     }
   }
