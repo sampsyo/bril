@@ -13,7 +13,7 @@ export type Ident = string;
 export type BaseType = "int" | "bool";
 export type ArrayType = {
   base: Type;
-  size: BigInt;
+  size: number;
 }
 export type Type = ArrayType | BaseType;
 

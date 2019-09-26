@@ -17,23 +17,43 @@ const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.EqualsEqualsEqualsToken, ["eq",  "bool"]],
 ]);
 
-function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
-  let tsType = checker.getTypeAtLocation(node);
+function brilTypeInternal(tsType: ts.Type): bril.Type | undefined {
   if (tsType.flags === ts.TypeFlags.Number) {
-    throw "unimplemented type " + checker.typeToString(tsType); 
-    // return "int";
+    return "int";
   } else if (tsType.flags === ts.TypeFlags.Boolean) {
     return "bool";
-  } else if (tsType.flags === ts.TypeFlags.Object) {
-    // let obj = tsType as ts.TypeObject;
-    let obj = tsType as ts.TypeReference;
-    if (!obj)  // We only support type references for arrays
-      throw "unimplemented type " + checker.typeToString(tsType);
-    console.log(obj.typeArguments);
-    throw obj.typeArguments;
-  } else {
-    throw "unimplemented type " + checker.typeToString(tsType);
   }
+}
+
+function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
+  let tsType = checker.getTypeAtLocation(node);
+  let toReturn = brilTypeInternal(tsType);
+  if (toReturn)
+    return toReturn
+  else if (tsType.flags === ts.TypeFlags.Object)  // Mechanism to 'carry over' array lengths in the type
+    return {base: "int", size: -1}
+  else
+    throw "unimplemented type " + checker.typeToString(tsType);
+}
+
+function brilArrayInternal(tsType: ts.Type, sizes: number[]): bril.Type | undefined {
+  if (sizes.length == 0)
+    return brilTypeInternal(tsType)
+  let obj = tsType as ts.TypeReference;
+  if (!obj.typeArguments)  // We only support type references for arrays
+    return
+  let base = brilArrayInternal(obj.typeArguments[0], sizes.slice(1))
+  if (base)
+    return {base: base, size: sizes[0]}
+}
+
+function brilArray(node: ts.Node, checker: ts.TypeChecker, sizes: number[]): bril.Type {
+  let tsType = checker.getTypeAtLocation(node);
+  let toReturn = brilArrayInternal(tsType, sizes);
+  if (toReturn)
+    return toReturn
+  else
+    throw "unimplemented type " + checker.typeToString(tsType);
 }
 
 /**
@@ -44,7 +64,6 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   builder.buildFunction("main");
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
-    console.log(expr.kind);
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
@@ -62,9 +81,23 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
     case ts.SyntaxKind.ArrayLiteralExpression: {
       let lit = expr as ts.ArrayLiteralExpression;
-      let type = brilType(lit, checker);
+      let sizes = [lit.elements.length];
+      let temp = lit;
+      while (temp.elements.length > 0 &&
+          temp.elements[0].kind === ts.SyntaxKind.ArrayLiteralExpression) {
+            sizes.push(temp.elements.length);
+        temp = temp.elements[0] as ts.ArrayLiteralExpression;
+      }
+      let type = brilArray(lit, checker, sizes);
       return builder.buildNew(type, type);
-      // throw new Error("unimplemented")
+    }
+
+    case ts.SyntaxKind.ElementAccessExpression: {
+      let arr = expr as ts.ElementAccessExpression;
+      let argExpr = emitExpr(arr.argumentExpression);
+      let varExpr = emitExpr(arr.expression);
+      let arrtype = varExpr.type as bril.ArrayType; // Safe by JS's typechecker
+      return builder.buildValue("index", [varExpr.dest, argExpr.dest], arrtype.base)
     }
 
     case ts.SyntaxKind.Identifier: {
@@ -80,13 +113,22 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       // Handle assignments.
       switch (kind) {
       case ts.SyntaxKind.EqualsToken:
-        if (!ts.isIdentifier(bin.left)) {
-          throw "assignment to non-variables unsupported";
-        }
-        let dest = bin.left as ts.Identifier;
         let rhs = emitExpr(bin.right);
-        let type = brilType(dest, checker);
-        return builder.buildValue("id", [rhs.dest], type, dest.text);
+        if (ts.isIdentifier(bin.left)) {
+          let dest = bin.left as ts.Identifier;
+          let type = brilType(dest, checker);
+          return builder.buildValue("id", [rhs.dest], type, dest.text);
+          
+        }
+        else if (ts.isElementAccessExpression(bin.left)) {
+          let dest = bin.left as ts.ElementAccessExpression;
+          let argExpr = emitExpr(dest.argumentExpression);
+          let varExpr = emitExpr(dest.expression);
+          builder.buildEffect("set", [varExpr.dest, argExpr.dest, rhs.dest]);
+          return builder.buildInt(0);
+        }
+        else
+          throw "assignment to non-variables unsupported";
       }
 
       // Handle "normal" value operators.

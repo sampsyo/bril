@@ -115,7 +115,7 @@ class JSONTransformer(lark.Transformer):
         else: #Array
             return {
                 'base' : str(items[0]),
-                'size'   : int(str(items[1]))
+                'size' : int(str(items[1]))
             }
 
 
@@ -128,17 +128,32 @@ def parse_bril(txt):
 
 # Text format pretty-printer.
 
+def type_to_string(t):
+    if isinstance(t, str):
+        return t
+    else:
+        return '{}[{}]'.format (
+            type_to_string(t['base']),
+            t['size']
+        )
+
 def instr_to_string(instr):
+    if instr['op'] == 'new':
+        return '{}: {} = const {}'.format(
+            instr['dest'],
+            type_to_string(instr['type']),
+            type_to_string(instr['type_exp']),
+        )
     if instr['op'] == 'const':
         return '{}: {} = const {}'.format(
             instr['dest'],
-            instr['type'],
+            type_to_string(instr['type']),
             str(instr['value']).lower(),
         )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(
             instr['dest'],
-            instr['type'],
+            type_to_string(instr['type']),
             instr['op'],
             ' '.join(instr['args']),
         )
