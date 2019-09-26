@@ -21,8 +21,26 @@ macro_rules! define_types {
 
 define_types!(Int: i64, Bool: bool,);
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct Identifier<T>(pub T);
+fn de_ident<'de, D, T>(deserializer: D) -> Result<Identifier<T>, D::Error>
+where
+  D: Deserializer<'de>,
+  T: Deserialize<'de>,
+{
+  let s = <_>::deserialize(deserializer)?;
+  Ok(Identifier(s))
+}
+
+fn de_idents<'de, D, T>(deserializer: D) -> Result<Vec<Identifier<T>>, D::Error>
+where
+  D: Deserializer<'de>,
+  T: Deserialize<'de>,
+{
+  let ids = <_>::deserialize(deserializer)
+    .map(|vals: Vec<T>| vals.into_iter().map(Identifier).collect())?;
+  Ok(ids)
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Program<T> {
@@ -42,9 +60,12 @@ pub struct Label {
 
 #[derive(Debug, Deserialize)]
 pub struct ValueOp<T> {
+  #[serde(deserialize_with = "de_ident")]
   pub dest: Identifier<T>,
   #[serde(rename = "type")]
   pub typ: BrilType,
+
+  #[serde(deserialize_with = "de_idents")]
   pub args: Vec<Identifier<T>>,
 }
 
@@ -64,6 +85,7 @@ pub enum Instruction<T> {
 #[serde(tag = "op", rename_all = "lowercase")]
 pub enum Operation<T> {
   Const {
+    #[serde(deserialize_with = "de_ident")]
     dest: Identifier<T>,
     #[serde(rename = "type")]
     typ: BrilType,
