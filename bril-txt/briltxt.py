@@ -10,7 +10,6 @@ format and emits the ordinary JSON representation.
 import lark
 import sys
 import json
-import copy
 
 __version__ = '0.0.1'
 
@@ -53,7 +52,7 @@ COMMENT: /#.*/
 class JSONTransformer(lark.Transformer):
     def start(self, items):
         imports = []
-        while len(items) > 0 and 'import' in items[0]:
+        while len(items) > 0 and type(items[0]) == lark.lexer.Token:
             imports.append(items.pop(0))
         data = {'functions': items}
         if len(imports) > 0:
@@ -61,7 +60,7 @@ class JSONTransformer(lark.Transformer):
         return data
 
     def imp(self, items):
-        return {'import': items.pop(0)}
+        return items.pop(0)  # The module name
 
     def func(self, items):
         name = items.pop(0)
@@ -143,25 +142,34 @@ def parse_bril(txt):
     return json.dumps(data, indent=2, sort_keys=True)
 
 
-def unroll_imports(prog, imported=None):
-    stage_one = copy.deepcopy(prog)
-    imported = imported or []
-    for imp in stage_one.get('imports', list()):
-        if imp['import'] not in imported:
-            try:
-                with open('{}.bril'.format(imp['import']), 'r') as mod:
-                    mod_code = mod.read()
-                    imported.append(imp['import'])
-            except IOError:
-                print("Couldn't find module: {}".format(imp['import']), file=sys.stderr)
-                sys.stderr.flush()
-                sys.exit(1)
-            mod_data = unroll_imports(json.loads(parse_bril(mod_code)), imported=imported)
-            stage_one['functions'] = stage_one['functions'] + mod_data['functions']
-
-    if 'imports' in stage_one:
-        stage_one.pop('imports')
-    return stage_one
+def unroll_imports(prog):
+    if 'imports' not in prog:
+        return json.dumps(prog, indent=2, sort_keys=True)
+    to_import = set(prog['imports'])
+    all_functions_map = {f['name']: f for f in prog['functions']}
+    imported = set()
+    while len(to_import) > 0:
+        module_name = to_import.pop()
+        imported.add(module_name)
+        try:
+            with open('{}.bril'.format(module_name)) as f:
+                loaded_prog = json.loads(parse_bril(f.read()))
+        except IOError:
+            sys.stderr.write('Failed to load {}.bril'.format(module_name))
+            sys.stderr.flush()
+            sys.exit(1)
+        imports = set(loaded_prog.get('imports', []))
+        to_import.update(imports.difference(imported))
+        dups = {f['name'] for f in loaded_prog['functions']}
+        dups.intersection_update(all_functions_map.keys())
+        if len(dups) > 0:
+            raise RuntimeError(
+                'Function(s) defined twice: {}'.format(', '.join(dups)))
+        all_functions_map.update({f['name']: f for f in loaded_prog['functions']})
+    return json.dumps(
+        dict(functions=list(all_functions_map.values())),
+        indent=2,
+        sort_keys=True)
 
 
 # Text format pretty-printer.
@@ -221,4 +229,4 @@ def bril2txt():
 
 
 def linkbril():
-    print(json.dumps(unroll_imports(json.load(sys.stdin)), indent=2, sort_keys=True))
+    print(unroll_imports(json.load(sys.stdin)))
