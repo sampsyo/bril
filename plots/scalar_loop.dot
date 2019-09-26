@@ -1,0 +1,9 @@
+digraph main {
+  b1 [shape=box, xlabel="b1", label="inc: int = const 1\llength: int = const 10\larr1: int = const 5\larr2: int = const 1\li: int = const 0\lcond: bool = gt length i\lbr cond loop end\l"];
+  loop [shape=box, xlabel="loop", label="arr3: int = add arr1 arr2\li: int = add i inc\lcond: bool = gt length i\lbr cond loop end\l"];
+  end [shape=box, xlabel="end", label="print arr3\lret \l"];
+  b1 -> loop;
+  b1 -> end;
+  loop -> loop;
+  loop -> end;
+}
