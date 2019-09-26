@@ -26,10 +26,10 @@ pub fn run_input<T: std::io::Write>(input: Box<dyn std::io::Read>, out: T) {
       )
     }) {
     Ok((main_idx, blocks, label_index, num_vars)) => {
-      dbg!(&main_idx);
-      dbg!(&blocks);
-      dbg!(&label_index);
-      dbg!(num_vars);
+      // dbg!(&main_idx);
+      // dbg!(&blocks);
+      // dbg!(&label_index);
+      // dbg!(num_vars);
       match interp::execute((main_idx, blocks, label_index), num_vars, out) {
         Ok(()) => (),
         Err(e) => error!("{:?}", e),
