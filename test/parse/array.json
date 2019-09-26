@@ -4,30 +4,44 @@
       "instrs": [
         {
           "dest": "v0",
-          "op": "const",
-          "type": "int",
-          "value": 1
+          "op": "new",
+          "type": {
+            "base": "int",
+            "size": 3
+          },
+          "type_exp": {
+            "base": "int",
+            "size": 3
+          }
         },
         {
           "dest": "v1",
           "op": "const",
           "type": "int",
-          "value": 2
+          "value": 5
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 0
         },
         {
           "args": [
             "v0",
+            "v2",
             "v1"
           ],
-          "dest": "v2",
-          "op": "add",
-          "type": "int"
+          "op": "set"
         },
         {
           "args": [
-            "v2"
+            "v2",
+            "v0"
           ],
-          "op": "print"
+          "dest": "v4",
+          "op": "index",
+          "type": "int"
         }
       ],
       "name": "main"

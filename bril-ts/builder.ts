@@ -47,6 +47,16 @@ export class Builder {
   /**
    * Build a constant instruction. As above, the destination name is optional.
    */
+  buildNew(type_exp: bril.Type, type: bril.Type, dest?: string) {
+    dest = dest || this.freshVar();
+    let instr: bril.New = { op: "new", type_exp, dest, type };
+    this.insert(instr);
+    return instr;
+  }
+
+  /**
+   * Build a constant instruction. As above, the destination name is optional.
+   */
   buildConst(value: bril.Value, type: bril.Type, dest?: string) {
     dest = dest || this.freshVar();
     let instr: bril.Constant = { op: "const", value, dest, type };
@@ -66,6 +76,10 @@ export class Builder {
    */
   buildBool(value: boolean, dest?: string) {
     return this.buildConst(value, "bool", dest);
+  }
+
+  buildArr<T>(value: Array<T>, dest?: string) {
+    value
   }
 
   /**

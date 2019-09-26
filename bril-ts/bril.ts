@@ -78,7 +78,7 @@ export type Instruction = Operation | Constant | New;
 /**
  * Both constants and value operations produce results.
  */
-export type ValueInstruction = Constant | ValueOperation;
+export type ValueInstruction = Constant | ValueOperation | New;
 
 /**
  * The valid opcodes for value-producing instructions.

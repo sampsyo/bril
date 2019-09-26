@@ -20,9 +20,17 @@ const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
   if (tsType.flags === ts.TypeFlags.Number) {
-    return "int";
+    throw "unimplemented type " + checker.typeToString(tsType); 
+    // return "int";
   } else if (tsType.flags === ts.TypeFlags.Boolean) {
     return "bool";
+  } else if (tsType.flags === ts.TypeFlags.Object) {
+    // let obj = tsType as ts.TypeObject;
+    let obj = tsType as ts.TypeReference;
+    if (!obj)  // We only support type references for arrays
+      throw "unimplemented type " + checker.typeToString(tsType);
+    console.log(obj.typeArguments);
+    throw obj.typeArguments;
   } else {
     throw "unimplemented type " + checker.typeToString(tsType);
   }
@@ -36,6 +44,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   builder.buildFunction("main");
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
+    console.log(expr.kind);
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
@@ -49,6 +58,13 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
     case ts.SyntaxKind.FalseKeyword: {
       return builder.buildBool(false);
+    }
+
+    case ts.SyntaxKind.ArrayLiteralExpression: {
+      let lit = expr as ts.ArrayLiteralExpression;
+      let type = brilType(lit, checker);
+      return builder.buildNew(type, type);
+      // throw new Error("unimplemented")
     }
 
     case ts.SyntaxKind.Identifier: {
