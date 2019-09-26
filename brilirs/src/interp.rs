@@ -247,7 +247,9 @@ pub fn execute<T: std::io::Write>(
         Print { args } => {
           write!(
             out,
-            "{}",
+            // NOTE: The Bril spec implies print should just output its arguments, with no newline.
+            // However, brili uses console.log, which does add a newline, so we will too
+            "{}\n",
             args
               .iter()
               .map(|a| format!("{}", store[a.0]))
