@@ -6,5 +6,4 @@ main {
   a3: bool = or a1 a2;
   obv a3;
   print a3;
-  a3;
 }
