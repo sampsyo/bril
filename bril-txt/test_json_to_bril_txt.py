@@ -108,7 +108,7 @@ def bril_instr(draw):
 @composite
 def bril_instr_or_label(draw):
     return draw(sampled_from([
-        draw(names),
+        {"label" : draw(names)},
         draw(bril_instr()),
         ]))
 
