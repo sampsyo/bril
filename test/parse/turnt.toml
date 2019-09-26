@@ -1,2 +1,2 @@
-command = "vril2json < {filename}"
+command = "bril2json < {filename}"
 output.json = "-"

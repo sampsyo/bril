@@ -29,7 +29,7 @@ def cfg_dot(bril, verbose):
                 print(r'  {} [shape=box, xlabel="{}", label="{}\l"];'.format(
                     name,
                     name,
-                    r'\l'.join(vriltxt.instr_to_string(i) for i in block),
+                    r'\l'.join(briltxt.instr_to_string(i) for i in block),
                 ))
             else:
                 print('  {};'.format(name))

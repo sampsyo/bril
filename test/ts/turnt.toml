@@ -1,1 +1,1 @@
-command = "ts2bril {filename} | vril2txt"
+command = "ts2bril {filename} | bril2txt"
