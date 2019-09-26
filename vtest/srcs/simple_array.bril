@@ -1,9 +1,11 @@
 main {
   arr1: array = init 10;
   i: int = const 5;
-  o: int = a2v arr1[0];
+  zero: int = const 0;
+  five: int = const 5;
+  o: int = a2v arr1 zero;
   print o;
-  arr1[5]: int = v2a i;
-  o: int = a2v arr1[5];
+  arr1: int = v2a i five;
+  o: int = a2v arr1 five;
   print o;
 }

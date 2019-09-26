@@ -15,8 +15,21 @@
           "value": 5
         },
         {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "five",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
           "args": [
-            "arr1[0]"
+            "arr1",
+            "zero"
           ],
           "dest": "o",
           "op": "a2v",
@@ -30,15 +43,17 @@
         },
         {
           "args": [
-            "i"
+            "i",
+            "five"
           ],
-          "dest": "arr1[5]",
+          "dest": "arr1",
           "op": "v2a",
           "type": "int"
         },
         {
           "args": [
-            "arr1[5]"
+            "arr1",
+            "five"
           ],
           "dest": "o",
           "op": "a2v",
