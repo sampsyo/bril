@@ -17,7 +17,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   gt: 2,
   ge: 2,
   eq: 2,
-  not: 2,
+  not: 1,
   and: 2,
   or: 2,
   print: null,  // Any number of arguments.
@@ -27,7 +27,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   nop: 0,
 };
 
-type Env = Map<bril.Ident, bril.Value>;
+type Value = boolean | BigInt;
+type Env = Map<bril.Ident, Value>;
 
 const maxvl = 65536;
 
@@ -62,7 +63,7 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getInt(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
-  if (typeof val !== 'number') {
+  if (typeof val !== 'bigint') {
     throw `${instr.op} argument ${index} must be a number`;
   }
   return val;
@@ -106,7 +107,15 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   switch (instr.op) {
   case "const":
-    env.set(instr.dest, instr.value);
+    // Ensure that JSON ints get represented appropriately.
+    let value: Value;
+    if (typeof instr.value === "number") {
+      value = BigInt(instr.value);
+    } else {
+      value = instr.value;
+    }
+
+    env.set(instr.dest, value);
     return NEXT;
 
   case "init": {
@@ -234,7 +243,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "print": {
-    let values = instr.args.map(i => get(env, i));
+    let values = instr.args.map(i => get(env, i).toString());
     console.log(...values);
     return NEXT;
   }

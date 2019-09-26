@@ -1,3 +1,5 @@
+# ARGS: live
+
 main {
   a: int = const 47;
   b: int = const 42;

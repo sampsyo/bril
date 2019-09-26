@@ -1,0 +1,10 @@
+[book]
+title = "Bril: A Compiler Intermediate Representation for Learning"
+authors = ["Adrian Sampson"]
+src = "docs"
+language = "en"
+
+[output.html]
+default-theme = "ayu"
+curly-quotes = true
+git-repository-url = "https://github.com/sampsyo/bril"
