@@ -1,25 +1,38 @@
-from hypothesis import *
-from hypothesis.strategies import *
+"""An automated property-based tester for Bril programs. 
+
+This module uses the Hypothesis framework to define strategies for generating 
+Bril JSON programs. It runs two flavors of tests: (1) checking that Bril text to
+JSON is invertible, and (2) checking that Bril programs cause the interpreter to
+only fail with  known errors, rather than exceptions in the implementation 
+details.
+"""
 
 from briltxt import *
-
+from contextlib import redirect_stdout
+from hypothesis import *
+from hypothesis.strategies import *
 import io
 import subprocess
-from contextlib import redirect_stdout
 
-# names = text(alphabet=characters(min_codepoint=97, max_codepoint=122), 
-#              min_size=1,
-#              max_size=1)
 
-names = text(alphabet=characters(min_codepoint=97, max_codepoint=100), 
+"""
+Strategies for compositionally generating test Bril programs in JSON.
+"""
+
+names = text(alphabet=characters(min_codepoint=97, max_codepoint=122), 
              min_size=1,
              max_size=1)
 
 types = sampled_from(["int", "bool"])
 
 @composite
-def opcodes(draw):
-    return draw(sampled_from(["print", draw(names)]))
+def effect_opcodes(draw):
+    return draw(sampled_from(["br", "jmp", "print", "ret"]))
+
+@composite
+def value_opcodes(draw):
+    return draw(sampled_from(["add", "mul", "sub", "div", "id", "nop", "eq",
+                              "lt", "gt", "ge", "le", "not", "and", "or"]))
 
 @composite 
 def function_type(draw):
@@ -27,9 +40,9 @@ def function_type(draw):
 
 @composite
 def bril_effect_instr(draw):
-    opcode = draw(opcodes())
+    opcode = draw(effect_opcodes())
     if (opcode == "print"):
-        args = draw(names)
+        args = [draw(names)]
     else:
         args = draw(lists(names, min_size=1, max_size=3))
     return {
@@ -38,7 +51,7 @@ def bril_effect_instr(draw):
 
 @composite
 def bril_value_instr(draw):
-    opcode = draw(names)
+    opcode = draw(value_opcodes())
     args = draw(lists(names, max_size=3))
     dest = draw(names)
     typ = draw(types)
@@ -93,6 +106,13 @@ def bril_instr(draw):
         ]))
 
 @composite
+def bril_instr_or_label(draw):
+    return draw(sampled_from([
+        draw(names),
+        draw(bril_instr()),
+        ]))
+
+@composite
 def bril_arg(draw):
     name = draw(names)    
     typ = draw(types)
@@ -105,17 +125,17 @@ def bril_arg(draw):
 def bril_function(draw):
     name = draw(names)
     args = draw(lists(bril_arg(), max_size=3))
-    instrs = draw(lists(bril_instr(), max_size=5))
+    instrs = draw(lists(bril_instr_or_label(), max_size=10))
     typ = draw(function_type())
     if (typ != "void"):
-        return  {
+        return {
           "name": name,
           "instrs": instrs,
           "args": args,
           "type": typ,
         }
     else:
-        return  {
+        return {
           "name": name,
           "instrs": instrs,
           "args": args,
@@ -126,11 +146,50 @@ def bril_program(draw):
     main = draw(bril_function())
     main["name"] = "main"
 
-    all_funs = [main] + draw(lists(bril_function(), max_size=2))
+    all_funs = [main] + draw(lists(bril_function(), max_size=10))
 
     return {
       "functions": all_funs,
     }
+
+@composite
+def bril_structued_function(draw):
+    constants = draw(lists(bril_constant_instr(), min_size=2, max_size=2))
+    values = draw(lists(bril_value_instr(), min_size=1, max_size=2))
+    effects = draw(lists(bril_effect_instr(), min_size=1, max_size=2))
+    instrs = constants + values + effects
+
+    name = draw(names)
+    args = draw(lists(bril_arg(), max_size=3))
+    typ = draw(function_type())
+    if (typ != "void"):
+        return {
+          "name": name,
+          "instrs": instrs,
+          "args": args,
+          "type": typ,
+        }
+    else:
+        return {
+          "name": name,
+          "instrs": instrs,
+          "args": args,
+        }
+
+@composite
+def bril_structued_program(draw):
+    main = draw(bril_structued_function())
+    main["name"] = "main"
+
+    all_funs = [main] + draw(lists(bril_structued_function(), max_size=10))
+
+    return {
+      "functions": all_funs,
+    }
+
+"""
+Example test program
+"""
 
 add_prog = {
     "functions": [
@@ -148,62 +207,37 @@ add_prog = {
       ]
     }
 
-test_prog_no_dest = {
-    "functions": [
-        {
-            "args": [],
-            "instrs": [
-                { "args": [], "dest": "aaa", "name": "aaa", "type": "int"}
-            ],
-            "name": "main",
-            "type": "int"
-        }
-      ]
-    }
+"""
+Test for invertibility of JSON-to-Bril text.
+"""
+@example(prog=add_prog)
+@given(bril_program())
+@settings(verbosity=Verbosity.debug, max_examples=300)
+def test_json_to_bril_txt(prog):
+    with open("hypothesis_json_programs", "a") as f:
+        f.write(json.dumps(prog, indent=4))
+        f.write("\n")
 
-test_prog = {'functions': [{'args': [],
-   'instrs': [{'dest': 'v0', 'op': 'const', 'type': 'int', 'value': 1},
-    {'dest': 'v1', 'op': 'const', 'type': 'int', 'value': 2},
-    {'args': ['v0', 'v1'], 'dest': 'v2', 'op': 'add', 'type': 'int'},
-    {'args': ['v2'], 'op': 'print'}],
-   'name': 'main'}]}
+    f = io.StringIO()
+    with redirect_stdout(f):
+        print_prog(prog)
+    print_prog_output = f.getvalue()
 
-# # @example(prog=add_prog)
-# @given(bril_program())
-# @settings(verbosity=Verbosity.debug, max_examples=200)
-# def test_json_to_bril_txt(prog):
-# # def test_json_to_bril_txt():
-# #     prog = test_prog
+    with open("hypothesis_bril_programs", "a") as f:
+        f.write(print_prog_output)
+        f.write("\n")
 
-#     with open("progs", "a") as f:
-#         f.write(json.dumps(prog, indent=4))
-#         f.write("\n")
+    json_output = json.loads(parse_bril(print_prog_output))
+    assert json_output == prog
 
-#     f = io.StringIO()
-#     with redirect_stdout(f):
-#         print_prog(prog)
-#     print_prog_output = f.getvalue()
-
-#     with open("bril_progs", "a") as f:
-#         f.write(print_prog_output)
-#         f.write("\n")
-
-#     json_output = json.loads(parse_bril(print_prog_output))
-#     assert json_output == prog
-
-fail_prog = {'functions': [{'args': [],
-   'instrs': [{'args': 'a', 'op': 'print'}],
-   'name': 'main',
-   'type': 'int'}]}
-
-# @given(bril_program())
-# def test_interpreter(prog):
-def test_interpreter():
-    prog = fail_prog
-
-    # TODO: feed main args?
-
-    with open("interp_progs", "a") as f:
+"""
+Test for Brili interpreter failing with only known errors.
+"""
+@example(prog=add_prog)
+@given(bril_structued_program())
+@settings(verbosity=Verbosity.debug, max_examples=300)
+def test_interpreter(prog):
+    with open("hypothesis_interp_programs", "a") as f:
         f.write(json.dumps(prog, indent=4))
         f.write("\n")
 
@@ -211,10 +245,8 @@ def test_interpreter():
         output = subprocess.check_output("brili",
                                          input=json.dumps(prog).encode(),
                                          shell=True)
-        with open("outputs", "a") as f:
+        with open("hypothesis_interp_outputs", "a") as f:
             f.write(str(output))
             f.write("\n")
     except subprocess.CalledProcessError as e:
         assert(e.returncode == 2)
-
-test_interpreter()

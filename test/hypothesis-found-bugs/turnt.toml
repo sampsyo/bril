@@ -1,0 +1,3 @@
+command = "cat {filename} | bril2json | brili"
+return_code = 2
+output.err = "2"

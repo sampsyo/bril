@@ -54,17 +54,22 @@ function get(env: Env, ident: bril.Ident) {
 }
 
 function findFunc(func : bril.Ident, funcs: bril.Function[]) {
-  for (let f of funcs) {
-    if (f.name === func) {
-      return f;
-    }
+  let matches = funcs.filter(function (f: bril.Function) {
+    return f.name === func;
+  });
+
+  if (matches.length == 0) {
+    throw new BriliError(`no function of name ${func} found`);
+  } else if (matches.length > 1) {
+    throw new BriliError(`multiple functions of name ${func} found`);
   }
-  return null;
+
+  return matches[0];
 }
 
 /**
  * Ensure that the instruction has exactly `count` arguments,
- * throwiBriliError(ng an exception otherwise.
+ * throw an exception otherwise.
  */
 function checkArgs(instr: bril.Operation, count: number) {
   if (instr.args.length != count) {
