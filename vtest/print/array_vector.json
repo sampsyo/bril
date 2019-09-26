@@ -3,26 +3,6 @@
     {
       "instrs": [
         {
-          "dest": "VL",
-          "op": "const",
-          "type": "int",
-          "value": 5
-        },
-        {
-          "dest": "one",
-          "op": "const",
-          "type": "int",
-          "value": 1
-        },
-        {
-          "args": [
-            "VL"
-          ],
-          "dest": "inc",
-          "op": "id",
-          "type": "int"
-        },
-        {
           "dest": "length",
           "op": "const",
           "type": "int",
@@ -191,12 +171,6 @@
           "type": "int"
         },
         {
-          "dest": "one",
-          "op": "const",
-          "type": "int",
-          "value": 1
-        },
-        {
           "args": [
             "one",
             "zero"
@@ -314,17 +288,8 @@
         },
         {
           "args": [
-            "i",
-            "one"
-          ],
-          "dest": "alias",
-          "op": "add",
-          "type": "int"
-        },
-        {
-          "args": [
             "length",
-            "alias"
+            "i"
           ],
           "dest": "lvl",
           "op": "sub",
@@ -351,7 +316,7 @@
         {
           "args": [
             "i",
-            "inc"
+            "vl"
           ],
           "dest": "i",
           "op": "add",
@@ -379,7 +344,8 @@
         },
         {
           "args": [
-            "arr3[0]"
+            "arr3",
+            "zero"
           ],
           "dest": "o",
           "op": "a2v",

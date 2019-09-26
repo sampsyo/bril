@@ -132,7 +132,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     if (typeof vlt !== 'number') {
       throw `${instr.op} vl must be a number`;
     }
-    for (let i = idx; i < vlt; i++) {
+    for (let i = idx; i < idx + vlt; i++) {
     let val1 = getArr(env, instr.args[0], i);
     let val2 = getArr(env, instr.args[1], i);
     let res  = val1 + val2;
