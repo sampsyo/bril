@@ -1,7 +1,5 @@
 main {
-  VL: int = const 5;
-  one: int = const 1;
-  inc: int = id VL;
+  vl: int = const 5;
   length: int = const 10;
   arr1: array = init 10;
   arr2: array = init 10;
@@ -25,7 +23,6 @@ main {
   arr1: int = v2a zero seven;
   arr1: int = v2a zero eight;
   arr1: int = v2a zero nine;
-  one: int = const 1;
   arr2: int = v2a one zero;
   arr2: int = v2a one one;
   arr2: int = v2a one two;
@@ -41,13 +38,13 @@ main {
   br cond loop end;
 loop:
   alias: int = add i one;
-  lvl: int = sub length alias;
+  lvl: int = sub length i;
   vl: int = setvl lvl;
   arr3: array = vadd arr1 arr2 i;
-  i: int = add i inc;
+  i: int = add i vl;
   cond: bool = gt length i;
   br cond loop end;
 end:
-  o: int = a2v arr3[0];
+  o: int = a2v arr3 zero;
   print o;
 }
