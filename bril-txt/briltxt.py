@@ -139,7 +139,7 @@ def type_to_string(t):
 
 def instr_to_string(instr):
     if instr['op'] == 'new':
-        return '{}: {} = const {}'.format(
+        return '{}: {} = new {}'.format(
             instr['dest'],
             type_to_string(instr['type']),
             type_to_string(instr['type_exp']),

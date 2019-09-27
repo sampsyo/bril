@@ -1,14 +1,23 @@
 main {
-  v0: int[3] = const int[3];
-  arr: int[-1] = id v0;
-  v1: int = const 5;
-  v2: int = const 2;
-  v3: int[-1] = id arr;
-  set v3 v2 v1;
-  v4: int = const 0;
-  v5: int = const 1;
-  v6: int[-1] = id arr;
-  v7: int = index v6 v5;
-  print v7;
-  v8: int = const 0;
+  v0: int[3] = new int[3];
+  v1: int = const 0;
+  v2: int = const 3;
+  set v0 v1 v2;
+  v3: int = const 1;
+  v4: int = const 2;
+  set v0 v3 v4;
+  v5: int = const 2;
+  v6: int = const 1;
+  set v0 v5 v6;
+  arr: int[0] = id v0;
+  v7: int = const 5;
+  v8: int = const 2;
+  v9: int[0] = id arr;
+  set v9 v8 v7;
+  v10: int = const 0;
+  v11: int = const 1;
+  v12: int[0] = id arr;
+  v13: int = index v12 v11;
+  print v13;
+  v14: int = const 0;
 }

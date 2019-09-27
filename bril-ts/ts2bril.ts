@@ -22,7 +22,7 @@ function brilTypeInternal(tsType: ts.Type): bril.Type | undefined {
     return "int";
   } else if (tsType.flags === ts.TypeFlags.Boolean) {
     return "bool";
-  }
+  } 
 }
 
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
@@ -31,7 +31,7 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   if (toReturn)
     return toReturn
   else if (tsType.flags === ts.TypeFlags.Object)  // Mechanism to 'carry over' array lengths in the type
-    return {base: "int", size: -1}
+    return {base: "int", size: 0}
   else
     throw "unimplemented type " + checker.typeToString(tsType);
 }
@@ -89,7 +89,14 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         temp = temp.elements[0] as ts.ArrayLiteralExpression;
       }
       let type = brilArray(lit, checker, sizes);
-      return builder.buildNew(type, type);
+      let toReturn = builder.buildNew(type, type);
+      var i;
+      for (i = 0; i < lit.elements.length; i++) {
+        let index = builder.buildInt(i);
+        let value = emitExpr(lit.elements[i]);
+        builder.buildEffect("set", [toReturn.dest, index.dest, value.dest]);
+      }
+      return toReturn;
     }
 
     case ts.SyntaxKind.ElementAccessExpression: {
