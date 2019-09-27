@@ -1,0 +1,16 @@
+main {
+  v0: bool = const true;
+  x: bool = id v0;
+  v2: bool = id x;
+  br v2 then.1 else.1;
+then.1:
+  v3: int = const 1;
+  print v3;
+  v4: int = const 0;
+  jmp endif.1;
+else.1:
+  v5: int = const 2;
+  print v5;
+  v6: int = const 0;
+endif.1:
+}
