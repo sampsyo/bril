@@ -1,3 +1,5 @@
-var value = 1n;
+var value = 9n
+var result = value / 20n
+console.log(result)
+console.log(9 / 20)
 // Floats are unsupported at the moment
-// Also there seems to be no way for the TS parser to interpret BigInt operations as such, so that's out for now

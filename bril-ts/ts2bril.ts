@@ -17,6 +17,24 @@ const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.EqualsEqualsEqualsToken, ["feq",  "bool"]],
 ]);
 
+// Translates floating point operations to integer operations if appropriate
+function overloadInt(op: bril.ValueOpCode, reference: bril.Type) : bril.ValueOpCode {
+  if (reference === "int") {
+    switch (op) {
+      case "fadd":  return "add"
+      case "fmul":  return "mul"
+      case "fsub":  return "sub"
+      case "fdiv":  return "div"
+      case "flt":   return "lt"
+      case "fle":   return "le"
+      case "fgt":   return "gt"
+      case "fge":   return "ge"
+      case "feq":   return "eq"
+    }
+  }
+  return op
+}
+
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
   if (tsType.flags === ts.TypeFlags.Number) {
@@ -90,6 +108,10 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
       let lhs = emitExpr(bin.left);
       let rhs = emitExpr(bin.right);
+      op = overloadInt(op, lhs.type);
+      // Also update the type reflect operation overloading
+      if (lhs.type === "int" && (type === "float" || type === "double"))
+        type = "int"
       return builder.buildValue(op, [lhs.dest, rhs.dest], type);
 
     // Support call instructions---but only for printing, for now.

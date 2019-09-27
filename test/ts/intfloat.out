@@ -1,4 +1,16 @@
 main {
-  v0: int = const 1;
+  v0: int = const 9;
   value: int = id v0;
+  v1: int = id value;
+  v2: int = const 20;
+  v3: int = div v1 v2;
+  result: int = id v3;
+  v4: int = id result;
+  print v4;
+  v5: int = const 0;
+  v6: double = const 9;
+  v7: double = const 20;
+  v8: double = fdiv v6 v7;
+  print v8;
+  v9: int = const 0;
 }
