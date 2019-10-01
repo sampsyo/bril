@@ -2,204 +2,234 @@
 
 import json
 import sys
+import re
 
 sys.path.insert(1, './bril-txt')
-import briltxt
-
+from briltxt import parse_bril
 OP_ARITHMETIC = ['add', 'mul', 'sub', 'div']
 OP_COMP = ['eq', 'lt', 'gt', 'le', 'ge']
 OP_LOGIC = ['not', 'and', 'or']
 
-
-def check_a(instr, index, a_context=[]):
-	if index == 0:	# const
-		if type(instr['value']) == int:
-			return True
-	elif index == 1:	# arithmetic add/mul/sub/div
-		if len(instr['args']) != 2:
-			print('\tinsufficient #op')
+def other_type(t):
+	if t == 'int':
+		return 'bool'
+	else:
+		return 'int'
+#all operations
+def check_length(instr, l, line):
+	if 'args' in instr:
+		if l == -1: return True
+		if len(instr['args']) != l:
+			print('line %d: incorrect number of arguments'%line)
 			return False
-		elif instr['args'][0] not in a_context or instr['args'][1] not in a_context:
-			print('\targs undefined properly')
-			return False
-		return True
-	# elif index == 2:	# print values
-	# 	for var in instr['args']:
-	# 		if var not in a_context:
-	# 			print('\tInt var %s not defined' % var)
-	# 			return False
-	# 	return True
-	elif index == 3:
-		if len(instr['args']) == 1 and instr['args'][0] in a_context:
+	else:
+		if l == 0:
 			return True
-
-	return False
-
-
-def check_b(instr, index, context=[]):
-	if index == 0:	# const
-		if type(instr['value']) == bool:
-			return True
-	elif index == 1:	# comparison eq/lt/gt/le/ge
-		if len(instr['args']) == 2 and instr['args'][0] in context and instr['args'][1] in context:
-			return True
-	elif index == 2:	# logic not/and/or
-		if instr['op'] == 'not':
-			if len(instr['args']) == 1 and instr['args'][0] in context:
-				return True
 		else:
-			if len(instr['args']) == 2 and instr['args'][0] in context and instr['args'][1] in context:
-				return True
-	elif index == 3:
-		if len(instr['args']) == 1 and instr['args'][0] in context:
-			return True
+			print('line %d: incorrect number of arguments'%line)
+	return True
+#all operations other than print
+def check_lhs(instr, line, op):
+	lhs = instr['type']
+	if lhs != 'int' and lhs!='bool':
+		print('line %d: lhs type %s does not exist' % (line, lhs))
+		return False
+	if op == 'const': return True
+	if lhs == 'bool' and op == 'a':
+		print('line %d: assigning arithmetic operation result to boolean' % line)
+		print('arithmetic op error!')
+		return False
+	if lhs == 'int' and op == 'b':
+		print('line %d: assigning logic operation result to integer' % line)
+		print('logic op error!')
+		return False
+	if lhs == 'int' and op == 'c':
+		print('line %d: assigning comparison operation result to integer' % line)
+		print('comparison op error!')
+		return False
+	return True
+#const
+def check_const(instr, line):
+	try:
+		rhs = type(instr['value']).__name__
+	except:
+		print('line %d: rhs type %s does not exist' % (line, rhs))
+	rhs = type(instr['value']).__name__
+	if rhs != 'int' and rhs!= 'bool':
+		print('line %d: rhs type %s does not exist' % (line, rhs))
+		return False
+	rhs = type(instr['value']).__name__
+	lhs = instr['type']
+	if lhs != rhs:
+		print('line %d: assigning %s value to %s variable' % (line,rhs,lhs) )
+		return False
+	return True	
 
-	return False
+#all operations that takes in variable
+def check_if_arg_exist(instr, line, context, branch=False):
+	for v in instr['args']:
+		if v not in context:
+			print('line %d: args %s undefined' % (line, v) )
+			return False
+		if branch:
+			break
+	return True
+
+def check_arg_type(instr, line, context, t, branch=False):
+	for v in instr['args']:
+		if v not in context:
+			print('line %d: args %s is not expected type %s' % (line, v, t) )
+			return False
+		if branch:
+			break
+	return True
+#id
+def check_id_equal(instr, line, context):
+	rhs = instr['args'][0]
+	rhs = 'int' if rhs in context['int'] else 'bool'
+	lhs = instr['type']
+	if lhs != rhs:
+		print('line %d: assigning %s value to %s variable' % (line,rhs,lhs) )
+		return False
+	return True	
+#all operations that takes in variable
+def check_redefined(instr, line, context):
+	if instr['dest'] in context:
+		print('line %d: re-assigning %s value to existing %s variable' % (line,
+			other_type(instr['type']),instr['type'] ))
+		return False
+	return True
 
 
-def check_c(instr, index, labels, b_context=[]):
+def check_branch(instr, line, index, labels):
 	if index == 0:	# jmp
-		if len(instr['args']) == 1 and instr['args'][0] in labels:
+		if instr['args'][0] in labels:
 			return True
 	elif index == 1:	# branch
-		if len(instr['args']) == 3:
-			if instr['args'][0] not in b_context:
-				print('\tbranch cond undefined properly')
-				return False
-			elif instr['args'][1] not in labels or instr['args'][2] not in labels:
-				print('\tbranch labels undefined')
-				return False
-			return True
-
+		if instr['args'][1] not in labels or instr['args'][2] not in labels:
+			print('\tbranch labels undefined')
+			return False
+		return True
 	return False
 
-
-def instr_check(instrs, labels):
+def instr_check(instrs, labels, ignored):
 	'''Check instrs one after another
 	'''
 
 	i = 1 # line number
-	context = {'a':[], 'b':[]}	# 'a': arithmetic var; 'b': boolean var
+	context = {'int':[], 'bool':[],'all':[]}	# 'int': integer var; 'boolean': boolean var
 	for instr in instrs:
-		i += 1
-		# print(i, instr)
-
+		if i in ignored:
+			i+=1
 		if 'op' in instr:
 			# Const arithmetic
 			if instr['op'] == 'const':
-				if instr['type'] == 'int':
-					if not check_a(instr, 0):
-						print('line %d: assign non-int value to int var' % i)
-						print('const error!')
-						return False
-					if instr['dest'] in context['b']:
-						print('line %d: assign int value to existing bool var' % i)
-						print('redefine const error!')
-						return False
-					if instr['dest'] not in context['a']:
-						context['a'].append(instr['dest'])
-				elif instr['type'] == 'bool':
-					if not check_b(instr, 0):
-						print('line %d: assign non-bool value to bool var' % i)
-						print('const error!')
-						return False
-					if instr['dest'] in context['a']:
-						print('line %d: assign bool value to existing int var' % i)
-						print('redefine const error!')
-						return False
-					if instr['dest'] not in context['b']:
-						context['b'].append(instr['dest'])
-				else:
-					print('line %d: assign non-int/bool types' % i)
+				if not check_length(instr,0,i): 
+					return False
+				if not check_lhs(instr,i,'const'):
+					return False
+				if not check_const(instr,i):
 					print('const error!')
 					return False
-
+				if not check_redefined(instr, i, context[other_type(instr['type']) ]):
+					print('const error!')
+					return False
+				context[instr['type']].append(instr['dest'])
+				context['all'].append(instr['dest'])
 
 			# arithmetic op
-			elif instr['op'] in OP_ARITHMETIC:	
-				if instr['type'] == 'int':
-					if not check_a(instr, 1, context['a']):
-						print('line %d:' % i)
-						print('arithmetic op error!')
-						return False
-					context['a'].append(instr['dest'])
-				else:
-					print('line %d:' % i)
+			elif instr['op'] in OP_ARITHMETIC:
+				if not check_length(instr,2,i): 
+					return False
+				if not check_lhs(instr,i,'a'):
+					return False
+				if not check_if_arg_exist(instr,i,context['all']):
+					return False
+				if not check_arg_type(instr,i, context['int'],'int'):
 					print('arithmetic op error!')
 					return False
 
+				if not check_redefined(instr, i, context[other_type(instr['type']) ]):
+					print('arithmetic op error!')
+					return False
+				context[instr['type']].append(instr['dest'])
+				context['all'].append(instr['dest'])
+
 			# comparison op
 			elif instr['op'] in OP_COMP:
-				if instr['type'] == 'bool':
-					if not check_b(instr, 1, context['a']):
-						print('line %d: assign non-bool values to bool var' % i)
-						print('comparison op error!')
-						return False
-					context['b'].append(instr['dest'])
-				else:
-					print('line %d: assign bool values to non-bool var' % i)
+				if not check_length(instr,2,i): 
+					return False
+				if not check_lhs(instr,i,'c'):
+					return False
+				if not check_if_arg_exist(instr,i,context['all']):
+					return False
+				if not check_arg_type(instr,i, context['int'],'int'):
 					print('comparison op error!')
 					return False
+				if not check_redefined(instr, i, context[other_type(instr['type']) ]):
+					print('comparison op error!')
+					return False
+				context[instr['type']].append(instr['dest'])
+				context['all'].append(instr['dest'])
 
 			# logic op
 			elif instr['op'] in OP_LOGIC:
-				if instr['type'] == 'bool':
-					if not check_b(instr, 2, context['b']):
-						print('line %d: assign non-bool values to bool var' % i)
-						print('logic op error!')
-						return False
-					context['b'].append(instr['dest'])
-				else:
-					print('line %d: assign bool values to non-bool var' % i)
+				length = 1 if instr['op'] == 'not' else 2
+				if not check_length(instr,length,i): 
+					return False
+				if not check_lhs(instr,i,'b'):
+					return False
+				if not check_if_arg_exist(instr,i,context['all']):
+					return False
+				if not check_arg_type(instr,i, context['bool'],'bool'):
+					print('logic op error!')
+					return False
+				if not check_redefined(instr, i, context[other_type(instr['type']) ]):
 					print('logic op error!')
 					return False
 
 			# id
 			elif instr['op'] == 'id':
-				if instr['type'] == 'int':
-					if not check_a(instr, 3, context['a']):
-						print('line %d: id non-int var to int var' % i)
-						print('id int error!')
-						return False
-					if instr['dest'] in context['b']:
-						print('line %d: id int value to existing bool var' % i)
-						print('redefine var error!')
-						return False
-					if instr['dest'] not in context['a']:
-						context['a'].append(instr['dest'])
-				elif instr['type'] == 'bool':
-					if not check_b(instr, 3, context['b']):
-						print('line %d: id non-bool var to bool var' % i)
-						print('id bool error!')
-						return False
-					if instr['dest'] in context['a']:
-						print('line %d: id bool value to existing int var' % i)
-						print('redefine var error!')
-						return False
-					if instr['dest'] not in context['b']:
-						context['b'].append(instr['dest'])
+				if not check_length(instr,1,i): 
+					return False
+				if not check_if_arg_exist(instr,i,context['all']):
+					return False
+				if not check_id_equal(instr,i,context):
+					print('id op error!')
+					return False
+				if not check_redefined(instr, i, context[other_type(instr['type']) ]):
+					print('id op error!')
+					return False
 
 			# print values
 			elif instr['op'] == 'print':
-				for var in instr['args']:
-					if var not in context['a'] and var not in context['b']:
-						print('\tVar %s not defined' % var)
-						print('line %d: print undefined vars' % i)
-						print('print error!')
-						return False
+				if not check_length(instr,-1,i): 
+					return False
+				if not check_if_arg_exist(instr,i,context['all']):
+					print('print error!')
+					return False
 
 			# jmp
 			elif instr['op'] == 'jmp':
-				if not check_c(instr, 0, labels):
+				if not check_length(instr, 1,i):
+					return False
+				if not check_branch(instr, i, 0, labels):
 					print('line %d: jump to undefined label %s' % (i, instr['args'][0]))
-					print('jmp error!')
+					print('jmp op error!')
 					return False
 
 			# branch
 			elif instr['op'] == 'br':
-				if not check_c(instr, 1, labels, context['b']):
+				if not check_length(instr, 3,i):
+					return False
+				if not check_if_arg_exist(instr,i,context['all'],branch=True):
+					return False
+				if not check_arg_type(instr,i, context['bool'],'bool',branch=True):
+					print('br op error!')
+					return False
+				if not check_branch(instr, i, 1, labels):
 					print('line %d: branch args undefined' % i)
-					print('br error!')
+					print('br op error!')
 					return False
 
 			# return
@@ -208,6 +238,7 @@ def instr_check(instrs, labels):
 					print('line %d: return with arguments' % i)
 					print('ret error!')
 					return False
+				return True
 
 			# nop
 			elif instr['op'] == 'nop':
@@ -215,45 +246,68 @@ def instr_check(instrs, labels):
 					print('line %d: nop with arguments' % i)
 					print('nop error!')
 					return False
-
+		i+=1
 	return True
 
 
 
 
-def label_pass(instrs):
+def label_pass(instrs, ignored):
 	'''A first pass for the Bril program to collect all the labels in 'label'.
 	Return error if any label show up more than once.
 	'''
 	labels = []
 	i = 1 # line number
 	for instr in instrs:
-		i += 1 
+		if i in ignored:
+			i+=1
 		if 'label' in instr:
 			if instr['label'] in labels:
 				print('line %d: label %s show up twice' % (i, instr['label']))
 				return False
 			labels.append(instr['label'])
+		i += 1 
 
 	return labels
 
 
-def typecheck(bril):
+def typecheck(bril, ignored):
 	'''Given a Bril program, print out the #lines have type check errors
 	or type check successfully.
 	'''
 	func = bril['functions'][0]
-	labels = label_pass(func['instrs'])
+	labels = label_pass(func['instrs'], ignored)
 	if labels == False:
 		print('label error!')
 		return
-	if not instr_check(func['instrs'], labels):
+	if not instr_check(func['instrs'], labels, ignored):
 		return
 	print('Type checking passed')
 	return
 
-
+#if the expression is ignored in parse_bril
+def if_ignored(line,i,ignored):
+	comment = line.find('#')
+	if comment == 0:
+		line = ''
+	elif comment!=-1:
+		line = line[comment-1]
+	if all(x == '\n' or x=='\t' or x=='\0' or x==' ' for x in line):
+		ignored.append(i)
+	return ignored
 
 #if __name__ == '__main__':
 def typecheck_main():
-	typecheck(json.load(sys.stdin))
+	line = sys.stdin.readline()
+	inputs = line
+	ignored = []
+	i = 1
+	ignored = if_ignored(line,i,ignored)
+	while(line):
+		line = sys.stdin.readline()
+		inputs+=line
+		i+=1
+		ignored = if_ignored(line,i,ignored)
+	instrs = parse_bril(inputs)
+	typecheck(json.loads(instrs), ignored)
+	#typecheck(json.load(sys.stdin))

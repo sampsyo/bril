@@ -1,2 +1,2 @@
-line 2: assign non-int value to int var
+line 1: assigning bool value to int variable
 const error!

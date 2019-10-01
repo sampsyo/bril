@@ -1,3 +1,2 @@
-	branch cond undefined properly
-line 7: branch args undefined
-br error!
+line 7: args v4 is not expected type bool
+br op error!

@@ -1,2 +1,2 @@
-line 8: jump to undefined label l3
-jmp error!
+line 9: jump to undefined label l3
+jmp op error!

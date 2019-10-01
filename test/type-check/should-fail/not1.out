@@ -1,2 +1,2 @@
-line 3: assign non-bool values to bool var
+line 4: args v1 is not expected type bool
 logic op error!
