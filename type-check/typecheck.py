@@ -99,8 +99,7 @@ def check_redefined(instr, line, context):
 			other_type(instr['type']),instr['type'] ))
 		return False
 	return True
-
-
+#check if branch get;s wrong label
 def check_branch(instr, line, index, labels):
 	if index == 0:	# jmp
 		if instr['args'][0] in labels:
@@ -119,7 +118,7 @@ def instr_check(instrs, labels, ignored):
 	i = 1 # line number
 	context = {'int':[], 'bool':[],'all':[]}	# 'int': integer var; 'boolean': boolean var
 	for instr in instrs:
-		if i in ignored:
+		while i in ignored:
 			i+=1
 		if 'op' in instr:
 			# Const arithmetic
@@ -187,6 +186,8 @@ def instr_check(instrs, labels, ignored):
 				if not check_redefined(instr, i, context[other_type(instr['type']) ]):
 					print('logic op error!')
 					return False
+				context[instr['type']].append(instr['dest'])
+				context['all'].append(instr['dest'])
 
 			# id
 			elif instr['op'] == 'id':
@@ -200,6 +201,8 @@ def instr_check(instrs, labels, ignored):
 				if not check_redefined(instr, i, context[other_type(instr['type']) ]):
 					print('id op error!')
 					return False
+				context[instr['type']].append(instr['dest'])
+				context['all'].append(instr['dest'])
 
 			# print values
 			elif instr['op'] == 'print':
@@ -294,6 +297,11 @@ def if_ignored(line,i,ignored):
 		line = line[comment-1]
 	if all(x == '\n' or x=='\t' or x=='\0' or x==' ' for x in line):
 		ignored.append(i)
+	if 'main' in line:
+		ignored.append(i)
+	if '}' in line:
+		ignored.append(i)
+
 	return ignored
 
 #if __name__ == '__main__':
