@@ -1,7 +1,0 @@
-main{
-
-    a: int  = const 1;
-    b: bool = const true;
-    c: int = add a 5;
-    print c;
-}
