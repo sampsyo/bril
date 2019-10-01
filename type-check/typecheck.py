@@ -262,7 +262,7 @@ def label_pass(instrs, ignored):
 	labels = []
 	i = 1 # line number
 	for instr in instrs:
-		if i in ignored:
+		while i in ignored:
 			i+=1
 		if 'label' in instr:
 			if instr['label'] in labels:
