@@ -69,7 +69,7 @@ $ flit install --symlink --user
 ```
 
 The tool is called `typecheck`.
-It also take input on stdin and produce output on stdout.
+It also takes input on stdin and produces output on stdout.
 
 [flit]: https://flit.readthedocs.io/
 
