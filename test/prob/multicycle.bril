@@ -1,3 +1,10 @@
 main {
+  one : int = const 1;
+  y : int = const 0;
+reflip:
   x : bool = flip;
+  y : int = add y one;
+  br x reflip end;
+end:
+  ret;
 }

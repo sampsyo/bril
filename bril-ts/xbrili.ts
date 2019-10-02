@@ -347,7 +347,9 @@ function makeTransFn(func: bril.Function, iobuf : any[][]) {
 }
 
 
-function evalFunc(func: bril.Function, buffer: any[][] ) {
+function evalFunc(func: bril.Function, buffer: any[][], 
+      maxQLen: number = 0,  tol : number = 0) 
+{
   let best : PtMap<PtMap<number>> = new PtMap();
   let finished = new Set<string>(); // stringifiied points. 
                   // Don't want to override this as well.
@@ -407,7 +409,7 @@ function evalFunc(func: bril.Function, buffer: any[][] ) {
       }
       
       if(twohop.get(current_pt)! < 1) {
-        twohop.set(current_pt, 0);
+        twohop.delete(current_pt);
       }
     }
 
@@ -428,13 +430,20 @@ function evalFunc(func: bril.Function, buffer: any[][] ) {
       finished.add(pt2str(current_pt));
     } 
     else {
-      best.set(current_pt, twohop);
-      for (let k of twohop.keys() ) {
-        if ( !queue.has( k ) ) {
-          queue.set(k,CONTAINS);
+      if ( (!maxQLen || (queue.size() < maxQLen-1)) &&
+            ( tol <= 0 || !best.has(START) ||
+              (best.get(START)!.getOr(current_pt, 1) > tol ))
+      ) {
+        best.set(current_pt, twohop);
+        for (let k of twohop.keys() ) {
+          if ( !queue.has( k ) ) {
+              queue.set(k,CONTAINS);
+          }
         }
+        queue.set(current_pt, CONTAINS);
       }
-      queue.set(current_pt, CONTAINS);
+      // console.log(best.get(START), current_pt, (best.get(START)!.getOr(current_pt, 1)));
+
     }
     
     
@@ -465,14 +474,16 @@ function evalFunc(func: bril.Function, buffer: any[][] ) {
   // console.log('paths', paths);
   // console.log('finished');
   // finished.forEach( (p, e) =>  console.log(e, 'prob = ', p) );
-  console.log(best.get(START)!);
+  
+  let finalDist = best.get(START)!;
+  finalDist.keyList().forEach( k => console.log('   ', k, finalDist.get(k)))
 }
 function evalProg(prog: bril.Program) {
   let buffer : any[][] = [];
   
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func, buffer);
+      evalFunc(func, buffer, 0, 0.01);
     }
   }
   
