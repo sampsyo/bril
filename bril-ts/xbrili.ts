@@ -84,7 +84,7 @@ let PC_NEXT: PCAction = {"next": true};
 let PC_END: PCAction = {"end": true};
 let PC_RESTART: PCAction = {"restart": true};
 
-type SplitAction = 
+type SplitAction =
   { det : true } | { "newenvs" : [Env, number][] };
 
 let ALONE: SplitAction = { det : true}
@@ -221,7 +221,7 @@ function evalInstr(instr: bril.Instruction, env: Env, buffer: any[][]): Action {
       return {"label": instr.args[2], ...ALONE};
     }
   }
-  
+
   case "ret": {
     return END;
   }
@@ -229,15 +229,15 @@ function evalInstr(instr: bril.Instruction, env: Env, buffer: any[][]): Action {
   case "nop": {
     return NEXT;
   }
-  
+
   case "flip": {
     let newE1 = new Map(env); // clone env, do both.
     let newE2 = new Map(env); // clone env, do both.
     newE1.set(instr.dest, true);
-    newE2.set(instr.dest, false); 
+    newE2.set(instr.dest, false);
     return { newenvs : [[newE1, 0.5], [newE2, 0.5]], ...NEXT};
   }
-  
+
   case "obv": {
     let cond = getBool(instr, env, 0);
     return cond ? NEXT : BYE;
@@ -268,7 +268,7 @@ function pt2str(pt : ProgPt) : string {
 /**
 * Extend the linked list with a point
 */
-// function extend(path : PointedPath, pt : ProgPt, p : number) { 
+// function extend(path : PointedPath, pt : ProgPt, p : number) {
 //   let prev_head = path.head;
 //   path.hist.set( pt, prev_head )
 //   path.head = [pt, p * prev_head[1] /* multiply probability */ ];
@@ -280,16 +280,16 @@ function pt2str(pt : ProgPt) : string {
 function makeTransFn(func: bril.Function, iobuf : any[][]) {
   function transition(pt : ProgPt) : PtMap<number> {
     let [i, old_env] = pt;
-    if( i == "done") { 
+    if( i == "done") {
       return new PtMap([[[i,old_env], 1]]);
     }
-    
+
     let line = func.instrs[i];
     let env = new Map(old_env);
-    
+
     if ('op' in line) {
       let action = evalInstr(line, env, iobuf);
-      
+
       // handle motion form PCActions
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -299,7 +299,7 @@ function makeTransFn(func: bril.Function, iobuf : any[][]) {
             break;
           }
         }
-                
+
         if (i === func.instrs.length) {
           throw `label ${action.label} not found`;
         }
@@ -307,13 +307,13 @@ function makeTransFn(func: bril.Function, iobuf : any[][]) {
         i = "done";
       } else if ('next' in action) {
         i++;
-        if (i == func.instrs.length) { 
+        if (i == func.instrs.length) {
           // pathidx ++;
           // finished.set(env, (finished.get(env) || 0) + pr)
           i = "done";
         }
       }
-      
+
       //handle world splitting and env copying
       if ( 'newenvs' in action ) {
         let totalp = 0;
@@ -323,74 +323,70 @@ function makeTransFn(func: bril.Function, iobuf : any[][]) {
           totalp += p;
           newDist.set([i,e], p);
         }
-        
+
         if(totalp > 1){
           console.warn("No convergence guarantees if positive weighting can occur.")
         } else {
           // TODO: missing probability should be updated globally.
           //missing_prob += pr * (1-totalp);
         }
-        
+
         return newDist;
       }
-      
+
     } else { // this is a label. Copy environment.
       // env = new Map(env);
       i++;
     }
-    
+
     // TODO: optimize this by reusing map.
     // now return the distribution over next instructions
-    return new PtMap([[[i,env], 1]]);   
+    return new PtMap([[[i,env], 1]]);
   }
   return transition;
 }
 
 
-function evalFunc(func: bril.Function, buffer: any[][], 
-      maxQLen: number = 0,  tol : number = 0) 
+function evalFunc(func: bril.Function, buffer: any[][],
+      maxQLen: number = 0,  tol : number = 0)
 {
   let best : PtMap<PtMap<number>> = new PtMap();
-  let finished = new Set<string>(); // stringifiied points. 
-                  // Don't want to override this as well.
-  
-  // let cur_pt : ProgPt = [0, new Map()];
+  let finished = new Set<string>(); // stringifiied points.
+  // Don't want to re-define equality here as well, so this is not type safe.
+
   // let paths : PointedPath[] = [
   //   { head : [cur_pt, 1], hist : new Path([[cur_pt, [undefined, 1]]]) } ];
-  // 
-  // let probs : Map<ProgPt, number> = new Map();
-  // // also, shift.  
-  // let finished : Map<Env, number> = new Map();
+
+  let probs : PtMap<number> = new PtMap();
   let missing_prob = 0;
-  //let transition : Map< ProgPt, Map<ProgPt, number>> = new Map();
 
   // let n_instrs_at_once = 1;
-  
+
   // TODO: make this a priority queue
-  type CONTAINS = "yes";  
+  type CONTAINS = "yes";
   let CONTAINS : CONTAINS = "yes";
   let START : ProgPt = [0, new Map()];
-  
+
   let queue : PtMap<CONTAINS> = new PtMap([[START, "yes"]]);
   let transition = makeTransFn(func,buffer);
-  
+
   while(queue.size() > 0) {
     // console.log(queue.size(), queue.keys());
     // console.log(queue.keyList().map<number|undefined>( q => ( best.get(START) || transition(START)).getOr(q, -1) ) );
-    
-    // TODO: find run with highest mass?     
+
+    // TODO: find run with highest mass?
     let current_pt = queue.pop_first()![0];
-        
+
     // let env = new Map(penv);
     // let cpr = 1; // conditional probability of next instruction given current one.
-    
+
     //for (let i = 0; i < func.instrs.length; ++i) {
-    
+
     let dist = best.get(current_pt) || transition(current_pt);
-    
+
     let twohop : PtMap<number> = new PtMap();
     // let p, q : ProgPt;
-    
+
     // do monad multiplication!
     for ( let p of dist.keys() ) {
       let pdist = best.get(p) || transition(p);
@@ -398,7 +394,12 @@ function evalFunc(func: bril.Function, buffer: any[][],
         twohop.set(q, (twohop.get(q) || 0) + dist.get(p)! * pdist.get(q)! );
       }
     }
-    
+
+    // update probs
+    for ( let p of twohop.keys() ) {
+        probs.set(p, Math.min(probs.getOr(p, 1), twohop.get(p)!));
+    }
+
     // limit computation!
     if( twohop.has(current_pt) ) {
       let factor = 1 / (1 - twohop.get(current_pt)!);
@@ -407,13 +408,13 @@ function evalFunc(func: bril.Function, buffer: any[][],
           twohop.set(pt, twohop.get(pt)! * factor)
         }
       }
-      
+
       if(twohop.get(current_pt)! < 1) {
         twohop.delete(current_pt);
       }
     }
 
-    // book-keeping: update best. 
+    // book-keeping: update best.
     let is_same = best.has(current_pt) &&
         ( twohop.size() == best.get(current_pt)!.size() );
     if( is_same ) {
@@ -425,14 +426,13 @@ function evalFunc(func: bril.Function, buffer: any[][],
         }
       }
     }
-    
+
     if (is_same) {
       finished.add(pt2str(current_pt));
-    } 
+    }
     else {
       if ( (!maxQLen || (queue.size() < maxQLen-1)) &&
-            ( tol <= 0 || !best.has(START) ||
-              (best.get(START)!.getOr(current_pt, 1) > tol ))
+            ( tol <= 0 || (probs.getOr(current_pt, 1) > tol ))
       ) {
         best.set(current_pt, twohop);
         for (let k of twohop.keys() ) {
@@ -445,48 +445,48 @@ function evalFunc(func: bril.Function, buffer: any[][],
       // console.log(best.get(START), current_pt, (best.get(START)!.getOr(current_pt, 1)));
 
     }
-    
-    
+
+
     // now add arguments, then self to queue.
-    
+
     //if ( probs.has([i,env]) )
-    
+
     // if ( paths[pathidx].hist.has([i,env]) ) {
     //   let factor = 1 / (1 - pr / paths[pathidx].hist.get([i,env])![1]);
     //   console.log('head: ', paths[pathidx].head[0], '[i,env]: ', [i,env],  paths[pathidx].hist.has(paths[pathidx].head[0]));
     //   let [pt, pro] = paths[pathidx].hist.get(paths[pathidx].head[0])!;
-    // 
+    //
     //   while( pt !== undefined && pt2str(pt) != pt2str([i,env]) ){
     //     [pt, pro] = paths[pathidx].hist.get(pt)!;
     //   }
-    // 
+    //
     //   pathidx ++;
     //   continue;
     //   //console.log(`shows up in paths[${pathidx}]`, paths[pathidx].hist)
     // } else {
     //   extend(paths[pathidx], [i,env], cpr);
     // }
-    
+
     //}
   }
   // finished.forEach( (p,e) => finished.set(e, p / (1-missing_prob)))
-  
+
   // console.log('paths', paths);
   // console.log('finished');
   // finished.forEach( (p, e) =>  console.log(e, 'prob = ', p) );
-  
+
   let finalDist = best.get(START)!;
   finalDist.keyList().forEach( k => console.log('   ', k, finalDist.get(k)))
 }
 function evalProg(prog: bril.Program) {
   let buffer : any[][] = [];
-  
+
   for (let func of prog.functions) {
     if (func.name === "main") {
       evalFunc(func, buffer, 0, 0.01);
     }
   }
-  
+
   // print buffer
   for(let i = 0; i < buffer.length; i++) {
     console.log(...buffer[i]);
