@@ -28,6 +28,7 @@ export abstract class StringifyingMap<K, V> {
     private map : Map<string, V> = new Map<string, V>();
     private keyMap : Map<string, K> = new Map<string, K>();
     
+    constructor()
     constructor( array : Array<[K,V]> )
     constructor(exiting : StringifyingMap<K,V>)
     constructor( arrayORexisting?: StringifyingMap<K,V> | Array<[K,V]>) {
@@ -47,15 +48,31 @@ export abstract class StringifyingMap<K, V> {
         let keyString = this.stringifyKey(key);
         return this.map.has(keyString);
     }
-    get(key: K, defau?: V): V | undefined {
+    
+    get(key : K) : V | undefined {
+      return this.map.get(this.stringifyKey(key));
+    }
+    getOr<VV extends V>(key: K, defau: VV): VV | V {
         let keyString = this.stringifyKey(key);
-        return this.map.has(keyString) ? this.map.get(keyString) : defau;
+        return this.map.has(keyString) ? this.map.get(keyString)! : defau;
     }
     set(key: K, value: V): StringifyingMap<K, V> {
         let keyString = this.stringifyKey(key);
         this.map.set(keyString, value);
         this.keyMap.set(keyString, key);
         return this;
+    }
+    pop_first() : [K, V] | undefined {
+      if(this.size() == 0) {
+        return undefined;
+      } else {
+        let k : K = this.keyMap.values().next().value;
+        let v : V = this.map.values().next().value;
+        
+        this.delete(k);
+        
+        return [k, v];
+      }
     }
 
     /**

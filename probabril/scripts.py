@@ -10,5 +10,5 @@ def sample(A):
     return state
 
 np.around(np.linalg.matrix_power(A, 100).T @ np.array([1,0,0, 0,0,0, 0,0,0]), 3)
-S = [sample(A) for i in range(1000)  ]
+# S = [sample(A) for i in range(1000)  ]
 np.unique(S, return_counts=True)
