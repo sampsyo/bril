@@ -19,9 +19,10 @@ const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
 
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
-  if (tsType.flags === ts.TypeFlags.Number) {
+  if (tsType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral)) {
     return "int";
-  } else if (tsType.flags === ts.TypeFlags.Boolean) {
+  } else if (tsType.flags &
+             (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral)) {
     return "bool";
   } else {
     throw "unimplemented type " + checker.typeToString(tsType);
