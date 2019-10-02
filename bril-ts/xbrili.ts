@@ -355,27 +355,39 @@ function evalFunc(func: bril.Function, buffer: any[][],
   // Don't want to re-define equality here as well, so this is not type safe.
 
   // let paths : PointedPath[] = [
-  //   { head : [cur_pt, 1], hist : new Path([[cur_pt, [undefined, 1]]]) } ];
+  //   { head : [cur_pt, 1], hist : new Pathbest.get(START) || transition(START)).getOr(q, -1)([[cur_pt, [undefined, 1]]]) } ];
 
   let probs : PtMap<number> = new PtMap();
   let missing_prob = 0;
+  
+  function nodenumber(n : ProgPt) {
+    return probs.keyList().findIndex(pt => pt2str(pt) == pt2str(n));
+  }
 
   // let n_instrs_at_once = 1;
 
   // TODO: make this a priority queue
-  type CONTAINS = "yes";
-  let CONTAINS : CONTAINS = "yes";
+  type Task = "explore" | "merge";
+  let NEW : Task = "explore";
   let START : ProgPt = [0, new Map()];
 
-  let queue : PtMap<CONTAINS> = new PtMap([[START, "yes"]]);
+  let queue : PtMap<Task> = new PtMap([[START, NEW]]);
+  probs.set(START, 1);
   let transition = makeTransFn(func,buffer);
 
   while(queue.size() > 0) {
     // console.log(queue.size(), queue.keys());
-    // console.log(queue.keyList().map<number|undefined>( q => ( best.get(START) || transition(START)).getOr(q, -1) ) );
+    // console.log('\nQueue Size: ', queue.size());
+    // queue.keyList().forEach( q =>  console.log('  pt ', nodenumber(q), ' \t ', q, probs.get(q), queue.get(q))  );
 
     // TODO: find run with highest mass?
-    let current_pt = queue.pop_first()![0];
+    let [current_pt, task] = queue.pop_first()!;
+    
+    if( finished.has(pt2str(current_pt)) ||
+      probs.getOr(current_pt,1) < tol && tol > 0) {
+      // console.log("Nope!\n");
+      continue;
+    }
 
     // let env = new Map(penv);
     // let cpr = 1; // conditional probability of next instruction given current one.
@@ -435,12 +447,32 @@ function evalFunc(func: bril.Function, buffer: any[][],
             ( tol <= 0 || (probs.getOr(current_pt, 1) > tol ))
       ) {
         best.set(current_pt, twohop);
+        let children_enqueued = false;
+        
         for (let k of twohop.keys() ) {
-          if ( !queue.has( k ) ) {
-              queue.set(k,CONTAINS);
+          let estp = Math.min(probs.getOr(k, 1) ,
+                        probs.getOr(current_pt, 1) * twohop.get(k)!);
+          probs.set(k, estp);
+          
+          
+          if ( tol <= 0 || (estp > tol) && !finished.has(pt2str(k))) {
+            // console.log(`${queue.has( k )? "Re-a" : "A"}dding child!` , k, ':\t ', nodenumber(k), probs.get(k));
+            children_enqueued  = true;
+            if ( !queue.has( k ) ) {
+              queue.set(k, NEW);
+            }
           }
         }
-        queue.set(current_pt, CONTAINS);
+        
+        if (children_enqueued) {
+          queue.set(current_pt, children_enqueued ? NEW : "merge");
+        }
+        else {
+          finished.add(pt2str(current_pt));
+        }
+      }
+      else {
+        console.log(`skipped!\t queue size: ${queue.size()}\t maxQLen: ${maxQLen} \t p: ${probs.get(current_pt)}\t tol: ${tol}`);
       }
       // console.log(best.get(START), current_pt, (best.get(START)!.getOr(current_pt, 1)));
 
@@ -475,15 +507,17 @@ function evalFunc(func: bril.Function, buffer: any[][],
   // console.log('finished');
   // finished.forEach( (p, e) =>  console.log(e, 'prob = ', p) );
 
+  console.log('****************************************');
   let finalDist = best.get(START)!;
   finalDist.keyList().forEach( k => console.log('   ', k, finalDist.get(k)))
+  // console.log(best);
 }
 function evalProg(prog: bril.Program) {
   let buffer : any[][] = [];
 
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func, buffer, 0, 0.01);
+      evalFunc(func, buffer, 0, 0.0000001);
     }
   }
 
