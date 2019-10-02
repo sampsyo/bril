@@ -89,11 +89,14 @@ Once we had the rules setup for all types of instructions, we check each instruc
 
 ## Hardest parts during the implementation
 
-The type checker implementation though straightforward had a few challenges. 
+The type checker implementation, though straightforward, had a few challenges. 
 
-1. Type check rules had to be designed specifically for each instruction. While implementing these rules, we had to carefully partition all the cases and link them to appropriate arithmetic/boolean/control checks.
-2. Keeping track of the line number and error message to return when encountered with an error.
-3. Mantaning modularity to help future developments like checking expressions recursively.
+1. The typing rules need to be designed carefully for each operation, ranging from arithmetic, boolean to control instructions. Take the branch instruction as an example, say we have "br b left right". The type checker needs to go through all the existing boolean variables to ensure that b is predefined and left and right are valid labels in the code snippet. Also, though not currently supported in bril, the instructions could be nested. Thus, it is important to maintain modularity of arithmetic/boolean and control flow checking so that future updates could be made easily to support recursive checking.
+
+2. To ensure that the type checker works properly with labels, a first pass of the labels is designed. Through the first pass, all existing labels are saved and no duplicate ones are allowed to avoid conflicts. Though this almost doubles the type checking overhead, it further ensures the correctness of the program by static analysis.
+
+3. Keeping track of the line number and returning proper error message when encountered with an type checking error. When scanning through the code line by line after the first pass, a line number is maintained during type checking to help the programmer debug. In order to maintain the line number with blank lines and comments, we take in the original code snippet and ignore these lines while updating it during type checking.
+
 
 
 
