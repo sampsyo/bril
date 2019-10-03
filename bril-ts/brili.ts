@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import {readStdin, unreachable} from './util';
+import {readStdin, unreachable, Env, Value, env2str} from './util';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -26,8 +26,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   obv: 1
 };
 
-type Value = boolean | BigInt;
-type Env = Map<bril.Ident, Value>;
+// type Value = boolean | BigInt;
+// type Env = Map<bril.Ident, Value>;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -228,7 +228,7 @@ function evalInstr(instr: bril.Instruction, env: Env, buffer: any[][]): Action {
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function, buffer: any[][] ) {
+function evalFunc(func: bril.Function, buffer: any[][] ) : Env {
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
@@ -247,15 +247,16 @@ function evalFunc(func: bril.Function, buffer: any[][] ) {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return;
+        return env;
       } else if ('restart' in action) {
         throw new EvalError("that never happened");
       }
     }
   }
-
+  return env;
 }
-function evalProg(prog: bril.Program) {
+
+function evalProg(prog: bril.Program, args : Args) {
   let good_flag = false;
   let buffer : any[][] = [];
   
@@ -266,7 +267,10 @@ function evalProg(prog: bril.Program) {
     for (let func of prog.functions) {
       if (func.name === "main") {
         try {
-          evalFunc(func, buffer);
+          let mainenv = evalFunc(func, buffer);
+          if(args.envdump) {
+            console.log(env2str (mainenv) )
+          }
         } catch (e) {
           switch (e.constructor) {
             case EvalError: good_flag = false; 
@@ -277,17 +281,43 @@ function evalProg(prog: bril.Program) {
   }
   
   // print buffer
-  for(let i = 0; i < buffer.length; i++) {
-    console.log(...buffer[i]);
+  if(!args.noprint){
+    for(let i = 0; i < buffer.length; i++) {
+      console.log(...buffer[i]);
+    }
   }
 }
 
-async function main() {
+
+async function main(args :  Args) {
   let prog = JSON.parse(await readStdin()) as bril.Program;
-  evalProg(prog);
+  evalProg(prog, args);
 }
 
 // Make unhandled promise rejections terminate.
 process.on('unhandledRejection', e => { throw e });
 
-main();
+type Args = { 'envdump' : boolean, 'noprint' : boolean }
+let argu : {[k: string]: any}  = { 'envdump' : false, 'noprint' : false };
+
+process.argv.forEach((val, index) => {
+  if(index > 1 && val.startsWith('--')) {
+    let parts : string[] = val.substr(2).split('=');
+    
+    if( parts.length == 1 ) {
+      argu[parts[0]] = true;
+    }
+
+    // switch(parts[0]) {
+    //   case "print-env": {
+    //     argu['vret'] = true;
+    //     break;
+    //   }
+    //   case "disable": {
+    //     argu["disable-print"] = true 
+    //     break;
+    //   }
+    // }
+  }
+});
+main(argu as Args);

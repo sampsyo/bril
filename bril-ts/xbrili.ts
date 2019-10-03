@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import {readStdin, unreachable, StringifyingMap} from './util';
+import {readStdin, unreachable, StringifyingMap, Env, Value, env2str} from './util';
 //require('ts-priority-queue');
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
@@ -28,13 +28,12 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
 };
 
 
-type Value = boolean | BigInt;
-type Env = Map<bril.Ident, Value>;
-class EnvMap<T> extends StringifyingMap<Env, T> {
-  protected stringifyKey(key : Env): string  {
-    return JSON.stringify( Array.from(key).sort() );
-  }
-}
+// 
+// class EnvMap<T> extends StringifyingMap<Env, T> {
+//   protected stringifyKey(key : Env): string  {
+//     return JSON.stringify( Array.from(key).sort() );
+//   }
+// }
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -257,13 +256,7 @@ class PtMap<V> extends StringifyingMap<ProgPt, V> {
 // PointedPath hist includes the head.
 
 function pt2str(pt : ProgPt) : string {
-  return JSON.stringify( [pt[0], Array.from(pt[1]).sort()], (key, value) => {
-  	if (typeof value === 'bigint') {
-  		return value.toString() + 'n';
-  	} else {
-  		return value;
-  	}
-  });
+  return pt[0].toString() + ';'+ env2str(pt[1]);
 }
 /**
 * Extend the linked list with a point
@@ -534,8 +527,9 @@ async function main() {
 
 // Make unhandled promise rejections terminate.
 process.on('unhandledRejection', e => { throw e });
-// process.argv.forEach((val, index) => {
-//   console.log(`${index}: ${val}`);
-// });
+process.argv.forEach((val, index) => {
+  console.log(`${index}: ${val}`);
+});
+console.log("hi", process.argv)
 
 main();

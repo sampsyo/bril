@@ -1,3 +1,5 @@
+import {Ident} from './bril';
+
 /**
  * Read all the data from stdin as a string.
  */
@@ -16,6 +18,20 @@ export function unreachable(x: never) {
   throw "impossible case reached";
 }
 
+
+export type Value = boolean | BigInt;
+export type Env = Map<Ident, Value>;
+
+export function env2str( x : Env ) : string {
+  // TODO: does sort actually work for envs? probably not. 
+  return JSON.stringify( Array.from( x ).sort(), (key, value) => {
+  	if (typeof value === 'bigint') {
+  		return value.toString() + 'n';
+  	} else {
+  		return value;
+  	}
+  });
+}
 
 
 /**

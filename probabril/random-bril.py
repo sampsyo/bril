@@ -160,8 +160,7 @@ if __name__ == '__main__':
             if instr['op'] is 'jmp':
                 instr['args'] = [  random.choice([*labels]) ]
             if instr['op'] is 'br':
-                instr['args'] = [  random.choice([*labels]), mainfunc['instrs'][i+1]['label'] ]
-                random.shuffle(instr['args'])
+                instr['args'][1:] = random.sample([  random.choice([*labels]), mainfunc['instrs'][i+1]['label'] ], 2)
 
 
 
