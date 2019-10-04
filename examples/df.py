@@ -69,13 +69,13 @@ def fmt(val):
         if val:
             return ', '.join(v for v in sorted(val))
         else:
-            return '∅'
+            return 'empty'
     elif isinstance(val, dict):
         if val:
             return ', '.join('{}: {}'.format(k, v)
                              for k, v in sorted(val.items()))
         else:
-            return '∅'
+            return 'empty'
     else:
         return str(val)
 
@@ -136,6 +136,41 @@ def cprop_merge(vals_list):
                     out_vals[name] = val
     return out_vals
 
+def list_dedup(lst):
+  seen = set()
+  new_lst = []
+  for d in lst:
+    t = tuple(d.items())
+    if t not in seen:
+      seen.add(t)
+      new_lst.append(d)
+
+  return new_lst
+
+def reaching_def_transfer(block, in_set):
+  var = set()
+  defs = []
+
+  for instr in block:
+    # look for value ops
+    if "op" in instr and "dest" in instr:
+      var.add(instr["dest"])
+      defs.append(instr)
+
+  # filter out other defs of variables in inSet
+  out_set = filter(lambda in_def: in_def["dest"] not in var, in_set)
+  out_set += defs
+
+  return list_dedup(out_set)
+
+
+def list_union(lists):
+  lst = []
+  for l in lists:
+    lst += l
+
+  return list_dedup(lst)
+
 
 ANALYSES = {
     # A really really basic analysis that just accumulates all the
@@ -163,6 +198,14 @@ ANALYSES = {
         merge=cprop_merge,
         transfer=cprop_transfer,
     ),
+
+    # reaching definitions
+    'rdef': Analysis(
+        True,
+        init=set(),
+        merge=list_union,
+        transfer=reaching_def_transfer
+    )
 }
 
 if __name__ == '__main__':
