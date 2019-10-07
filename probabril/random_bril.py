@@ -37,7 +37,7 @@ def freshL(prefix, names):
             return name
         i += 1
 
-if __name__ == '__main__':
+def gencode():
     probsndecay = dict(recombine = (5,0.5),
         const = (5, 0.3),
         flip = (4, 0.5),
@@ -104,6 +104,7 @@ if __name__ == '__main__':
             dest = newv('c')
 
             instruction = dict(op='const', value=val, type=typ.__name__, dest=dest)
+
             variables[dest] = typ;
 
         elif instr_type == 'flip':
@@ -162,6 +163,8 @@ if __name__ == '__main__':
             if instr['op'] is 'br':
                 instr['args'][1:] = random.sample([  random.choice([*labels]), mainfunc['instrs'][i+1]['label'] ], 2)
 
+    return {'functions' : [ mainfunc ]}
 
 
-    json.dump({'functions' : [ mainfunc ]}, sys.stdout, indent=2, sort_keys=True)
+if __name__ == '__main__':
+    json.dump(gencode(), sys.stdout, indent=2, sort_keys=True)

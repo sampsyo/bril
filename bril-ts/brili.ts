@@ -269,7 +269,7 @@ function evalProg(prog: bril.Program, args : Args) {
         try {
           let mainenv = evalFunc(func, buffer);
           if(args.envdump) {
-            console.log(env2str (mainenv) )
+            console.log( mainenv )
           }
         } catch (e) {
           switch (e.constructor) {

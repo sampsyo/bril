@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable, StringifyingMap, Env, Value, env2str} from './util';
-//require('ts-priority-queue');
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -28,12 +27,6 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
 };
 
 
-// 
-// class EnvMap<T> extends StringifyingMap<Env, T> {
-//   protected stringifyKey(key : Env): string  {
-//     return JSON.stringify( Array.from(key).sort() );
-//   }
-// }
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -251,29 +244,16 @@ type ProgPt = [Loc, Env]; // program counter, environment
 class PtMap<V> extends StringifyingMap<ProgPt, V> {
   protected stringifyKey(key : ProgPt): string { return pt2str(key); }
 }
-// singlely linked list going backwards in time
-// type PointedPath = { head : [ProgPt, number], hist : Path }
-// PointedPath hist includes the head.
 
 function pt2str(pt : ProgPt) : string {
   return pt[0].toString() + ';'+ env2str(pt[1]);
 }
-/**
-* Extend the linked list with a point
-*/
-// function extend(path : PointedPath, pt : ProgPt, p : number) {
-//   let prev_head = path.head;
-//   path.hist.set( pt, prev_head )
-//   path.head = [pt, p * prev_head[1] /* multiply probability */ ];
-// }
-// function path_copy(path: PointedPath ) {
-//   return { head : path.head, hist : new Path(path.hist) };
-// }
+
 
 function makeTransFn(func: bril.Function, iobuf : any[][]) {
   function transition(pt : ProgPt) : PtMap<number> {
     let [i, old_env] = pt;
-    if( i == "done") {
+    if( i == "done" || i >= func.instrs.length ) {
       return new PtMap([[[i,old_env], 1]]);
     }
 
@@ -327,8 +307,7 @@ function makeTransFn(func: bril.Function, iobuf : any[][]) {
         return newDist;
       }
 
-    } else { // this is a label. Copy environment.
-      // env = new Map(env);
+    } else { // this is a label. 
       i++;
     }
 
@@ -345,19 +324,12 @@ function evalFunc(func: bril.Function, buffer: any[][],
 {
   let best : PtMap<PtMap<number>> = new PtMap();
   let finished = new Set<string>(); // stringifiied points.
-  // Don't want to re-define equality here as well, so this is not type safe.
-
-  // let paths : PointedPath[] = [
-  //   { head : [cur_pt, 1], hist : new Pathbest.get(START) || transition(START)).getOr(q, -1)([[cur_pt, [undefined, 1]]]) } ];
-
   let probs : PtMap<number> = new PtMap();
   let missing_prob = 0;
   
   function nodenumber(n : ProgPt) {
     return probs.keyList().findIndex(pt => pt2str(pt) == pt2str(n));
   }
-
-  // let n_instrs_at_once = 1;
 
   // TODO: make this a priority queue
   type Task = "explore" | "merge";
@@ -373,24 +345,18 @@ function evalFunc(func: bril.Function, buffer: any[][],
     // console.log('\nQueue Size: ', queue.size());
     // queue.keyList().forEach( q =>  console.log('  pt ', nodenumber(q), ' \t ', q, probs.get(q), queue.get(q))  );
 
-    // TODO: find run with highest mass?
+    // TODO: potential optimization: find run with highest mass?
     let [current_pt, task] = queue.pop_first()!;
     
     if( finished.has(pt2str(current_pt)) ||
       probs.getOr(current_pt,1) < tol && tol > 0) {
-      // console.log("Nope!\n");
       continue;
     }
 
-    // let env = new Map(penv);
-    // let cpr = 1; // conditional probability of next instruction given current one.
-
-    //for (let i = 0; i < func.instrs.length; ++i) {
 
     let dist = best.get(current_pt) || transition(current_pt);
 
     let twohop : PtMap<number> = new PtMap();
-    // let p, q : ProgPt;
 
     // do monad multiplication!
     for ( let p of dist.keys() ) {
@@ -465,42 +431,14 @@ function evalFunc(func: bril.Function, buffer: any[][],
         }
       }
       else {
-        console.log(`skipped!\t queue size: ${queue.size()}\t maxQLen: ${maxQLen} \t p: ${probs.get(current_pt)}\t tol: ${tol}`);
+        // console.log(`skipped!\t queue size: ${queue.size()}\t maxQLen: ${maxQLen} \t p: ${probs.get(current_pt)}\t tol: ${tol}`);
       }
       // console.log(best.get(START), current_pt, (best.get(START)!.getOr(current_pt, 1)));
 
     }
-
-
-    // now add arguments, then self to queue.
-
-    //if ( probs.has([i,env]) )
-
-    // if ( paths[pathidx].hist.has([i,env]) ) {
-    //   let factor = 1 / (1 - pr / paths[pathidx].hist.get([i,env])![1]);
-    //   console.log('head: ', paths[pathidx].head[0], '[i,env]: ', [i,env],  paths[pathidx].hist.has(paths[pathidx].head[0]));
-    //   let [pt, pro] = paths[pathidx].hist.get(paths[pathidx].head[0])!;
-    //
-    //   while( pt !== undefined && pt2str(pt) != pt2str([i,env]) ){
-    //     [pt, pro] = paths[pathidx].hist.get(pt)!;
-    //   }
-    //
-    //   pathidx ++;
-    //   continue;
-    //   //console.log(`shows up in paths[${pathidx}]`, paths[pathidx].hist)
-    // } else {
-    //   extend(paths[pathidx], [i,env], cpr);
-    // }
-
-    //}
   }
-  // finished.forEach( (p,e) => finished.set(e, p / (1-missing_prob)))
 
-  // console.log('paths', paths);
-  // console.log('finished');
-  // finished.forEach( (p, e) =>  console.log(e, 'prob = ', p) );
-
-  console.log('****************************************');
+  // console.log('****************************************');
   let finalDist = best.get(START)!;
   finalDist.keyList().forEach( k => console.log('   ', k, finalDist.get(k)))
   // console.log(best);
@@ -527,9 +465,9 @@ async function main() {
 
 // Make unhandled promise rejections terminate.
 process.on('unhandledRejection', e => { throw e });
-process.argv.forEach((val, index) => {
-  console.log(`${index}: ${val}`);
-});
-console.log("hi", process.argv)
+// process.argv.forEach((val, index) => {
+  // console.log(`${index}: ${val}`);
+// });
+// console.log("hi", process.argv)
 
 main();
