@@ -46,6 +46,13 @@ def successors(instr):
     else:
         raise ValueError('{} is not a terminator'.format(instr['op']))
 
+def block_successors(block):
+    """Get the list of jump target labels for the end of a block.
+
+    Raises a ValueError if the instruction is not a terminator (jump,
+    branch, or return).
+    """
+    return successors(block[-1])
 
 def add_terminators(blocks):
     """Given an ordered block map, modify the blocks to add terminators
