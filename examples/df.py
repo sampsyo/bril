@@ -80,18 +80,14 @@ def fmt(val):
         return str(val)
 
 
-def run_df(bril, analysis):
-    for func in bril['functions']:
-        # Form the CFG.
-        blocks = cfg.block_map(form_blocks(func['instrs']))
-        cfg.add_terminators(blocks)
+def run_df(func_instrs, analysis):
+    # Form the CFG.
+    blocks = cfg.block_map(form_blocks(func_instrs))
+    cfg.add_terminators(blocks)
 
-        in_, out = df_worklist(blocks, analysis)
-        for block in blocks:
-            print('{}:'.format(block))
-            print('  in: ', fmt(in_[block]))
-            print('  out:', fmt(out[block]))
+    in_, out = df_worklist(blocks, analysis)
 
+    return in_, out
 
 def gen(block):
     """Variables that are written in the block.

@@ -6,7 +6,7 @@ import sys
 from cfg import *
 from form_blocks import *
 from dom import *
-
+from df import *
 
 ### detect back-edges
 def backedge(successors,domtree):
@@ -36,8 +36,15 @@ def loopsy(source,sink,predecessors):
     return loop
 
 ### mark stuff as loop invariant
-#def invloop(naturaloopblocks,napfromnamestoblocks):
-#    return listofinstructions, theirvariance
+def invloop(ins,outs,natloops,blockmap):
+    for
+
+
+def natblocks(#list of blocks and names
+    blocks = block_map(form_blocks(func_instrs))
+    add_terminators(blocks)
+    ins, outs = df_worklist(blocks, ANALYSIS["rdefs"])
+    return ins, outs
 
 ### move stuff
 
