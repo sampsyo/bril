@@ -16,7 +16,7 @@ def union(dicts):
             if k not in out:
                 out.update({k:v})
             else:
-                out[k]+v
+                out[k] = out[k]+v
     return out
 
 def gen(blocks,node):
