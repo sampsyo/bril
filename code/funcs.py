@@ -16,7 +16,7 @@ def union(dicts):
             if k not in out:
                 out.update({k:v})
             else:
-                out[k] = out[k]+v
+                out[k] = list(set(out[k])|set(v))
     return out
 
 def gen(blocks,node):
@@ -32,8 +32,9 @@ def transfer(blocks,node,inval):
     ''' Add new variable definitions to the invalue
     Also, rewrite common definitions using update function
     '''
-    inval.update(gen(blocks,node))
-    return inval
+    out =  inval.copy()
+    out.update(gen(blocks,node))
+    return out
 
 def reach_defs (blocks, succs, preds):
 
@@ -119,7 +120,7 @@ def loop_king(bril):
         print(natural_loops)
 
         reaching_in,reaching_out = reach_defs (blocks, succ, pred)
-        print( reaching_in)
+        print(reaching_in)
         print(reaching_out)
 
 if __name__ == '__main__':
