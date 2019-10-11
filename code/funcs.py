@@ -105,6 +105,22 @@ def find_loops(back_edges,pred):
 
 
 def loop_king(bril):
+    ''' This function returns:
+    back_edges: A list of pairs of [tail,header] where the header dominates the
+    tail and there is an edge from tail -> header
+    
+    natural_loops: A list of lists of blocks. Each element of the list
+    represents blocks present in a natural loop corresponding to the backedge in
+    the previous list. So natural_loops[i] is the list of blocks in the loop
+    represented by the backedge[i] edge
+
+    reaching_in and reaching out: These contain a dictionary of dictionary. Each
+    key represents a block. For each block we have a dictionary of {variables:
+    [reaching def block numbers]}. So to check if a variable has all the
+    reaching definition before the loop, just check the variable in the reaching
+    in def and see if the block number(s) listed is not in natural_loops list
+    for that loop.
+    '''
     for func in bril['functions']:
         blocks = block_map(form_blocks(func['instrs']))
         add_terminators(blocks)
@@ -112,16 +128,12 @@ def loop_king(bril):
         pred = get_pred(succ)
         dom = get_dom(succ, list(blocks.keys())[0])
 
-        print(succ)
-        print(pred)
         back_edges = get_backedges (succ,dom) 
-        print(back_edges)
         natural_loops = find_loops(back_edges,pred)
-        print(natural_loops)
 
         reaching_in,reaching_out = reach_defs (blocks, succ, pred)
-        print(reaching_in)
-        print(reaching_out)
+
+        return back_edges, natural_loops, reaching_in, reaching_out
 
 if __name__ == '__main__':
    loop_king(json.load(sys.stdin))
