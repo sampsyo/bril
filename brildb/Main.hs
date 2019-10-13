@@ -62,7 +62,7 @@ setBreakpoint (Left l) e = do
     pos <- gets $ Map.lookup l . labels . (Map.! "main") . program
     case pos of
         Nothing -> liftIO $ putStrLn $ "unknown label: " ++ l
-        Just i -> setBreakpoint (Right i) e
+        Just i -> setBreakpoint (Right $ succ i) e
 setBreakpoint (Right i) e = modify $
     set (_program . ix "main" . _body . ix (pred i) . _breakCondition) e
 
