@@ -3,13 +3,22 @@
 import * as bril from "./bril";
 import {readStdin} from "./util";
 
+interface PhiOperation {
+    op: "phi";
+    args: bril.Ident[];
+    dest: bril.Ident;
+    type: bril.Type;
+}
+
+type SSAInstruction = bril.Instruction | PhiOperation;
+
 class BasicBlock {
     constructor(label: string | null, insts: bril.Instruction[]) {
         this.label = label;
         this.instructions = insts;
     }
     label: string | null;
-    instructions: bril.Instruction[];
+    instructions: SSAInstruction[];
     successors: BasicBlock[] = [];
     predecessors: BasicBlock[] = [];
     parent: BasicBlock | null = null;
@@ -22,7 +31,7 @@ function isLabel(inst: bril.Label | bril.Instruction): inst is bril.Label {
     return "label" in inst;
 }
 
-function isTerminator(inst: bril.Instruction): boolean {
+function isTerminator(inst: SSAInstruction): boolean {
     return ["br", "jmp", "ret"].includes(inst.op);
 }
 
@@ -211,6 +220,10 @@ function dom(m: BasicBlock, n: BasicBlock): boolean {
     return m == n || n.parent != null && dom(m, n.parent);
 }
 
+function strictDom(m: BasicBlock, n: BasicBlock): boolean {
+    return m != n && dom(m, n);
+}
+
 // The dominance frontier of a basic block. Memoized.
 function dominanceFrontier(block: BasicBlock): Set<BasicBlock> {
     if (block.frontier != null)
@@ -218,19 +231,52 @@ function dominanceFrontier(block: BasicBlock): Set<BasicBlock> {
     let frontier: Set<BasicBlock> = new Set()
     for (let c of block.children)
         for (let n of dominanceFrontier(c))
-            if (!dom(block, n))
+            if (!strictDom(block, n))
                 frontier.add(n);
     for (let s of block.successors)
-        if (!dom(block, s))
+        if (!strictDom(block, s))
             frontier.add(s);
     block.frontier = frontier;
     return frontier;
+}
+
+// Inserts phi functions where needed for SSA.
+function insertPhis(blocks: BasicBlock[]) {
+    let defs = new Map<string, Set<BasicBlock>>();
+    for (let block of blocks)
+        for (let inst of block.instructions)
+            if ("dest" in inst) {
+                let set = defs.get(inst.dest)
+                if (set == undefined)
+                    defs.set(inst.dest, new Set([block]));
+                else
+                    set.add(block);
+            }
+    for (let v of defs.keys()) {
+        let visited = new Set<BasicBlock>();
+        let vDefs = [...defs.get(v) as Set<BasicBlock>];
+        while (vDefs.length != 0) {
+            let block = vDefs.shift() as BasicBlock;
+            if (visited.has(block))
+                continue;
+            visited.add(block);
+            for (let fBlock of dominanceFrontier(block)) {
+                let insts = fBlock.instructions;
+                if (insts.length == 0 || insts[0].op != "phi" || insts[0].dest != v) {
+                    insts.unshift({op: "phi", args: [], dest: v, type: "int"});
+                    vDefs.push(fBlock);
+                }
+            }
+        }
+    }
 }
 
 async function main() {
     let prog: bril.Program = JSON.parse(await readStdin());
     let blocks = cfg(basicBlocks(prog.functions[0]));
     dominatorTree(blocks);
+    insertPhis(blocks);
+    console.log(blocks.map(b => b.instructions));
 }
 
 process.on('unhandledRejection', e => { throw e });
