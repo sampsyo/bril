@@ -12,8 +12,9 @@ class BasicBlock {
     instructions: bril.Instruction[];
     successors: BasicBlock[] = [];
     predecessors: BasicBlock[] = [];
-    parent: BasicBlock = this;
+    parent: BasicBlock | null = null;
     children: BasicBlock[] = [];
+    frontier: Set<BasicBlock> | null= null
     id: number = 0;
 }
 
@@ -25,6 +26,7 @@ function isTerminator(inst: bril.Instruction): boolean {
     return ["br", "jmp", "ret"].includes(inst.op);
 }
 
+// Separates instructions into an array of basic blocks.
 function basicBlocks(func: bril.Function): BasicBlock[] {
     let out: BasicBlock[] = [];
     let block: BasicBlock = new BasicBlock(null, []);
@@ -45,6 +47,8 @@ function basicBlocks(func: bril.Function): BasicBlock[] {
     return out;
 }
 
+// Sets the .predecessors and .successors properties of blocks to
+// represent the control-flow graph.
 function cfg(blocks: BasicBlock[]): BasicBlock[] {
     let labelDict: { [label: string]: number } = {};
     let inCFG = new Set<number>();
@@ -91,20 +95,22 @@ function cfg(blocks: BasicBlock[]): BasicBlock[] {
     return out;
 }
 
+// Sets .parent and .children properties of blocks to the immediate
+// dominator and the immediately dominated blocks respectively.
+// Lengauer-Tarjan algorithm. 
 function dominatorTree(blocks: BasicBlock[]) {
-    let n: number = blocks.length;
     const r = 1;
-    let dom = new Array<number>(n + 1);
-    let parent = new Array<number>(n + 1);
-    let ancestor = new Array<number>(n + 1);
-    let child = new Array<number>(n + 1);
-    let vertex = new Array<number>(n + 1);
-    let label = new Array<number>(n + 1);
-    let semi = new Array<number>(n + 1);
-    let size = new Array<number>(n + 1);
-    let pred = new Array<Set<number>>(n + 1);
-    let bucket = new Array<Set<number>>(n + 1);
-    let u: number, v: number, x: number;
+    let n = blocks.length + 1;
+    let dom = new Array<number>(n);
+    let parent = new Array<number>(n);
+    let ancestor = new Array<number>(n);
+    let child = new Array<number>(n);
+    let vertex = new Array<number>(n);
+    let label = new Array<number>(n);
+    let semi = new Array<number>(n);
+    let size = new Array<number>(n);
+    let pred = new Array<Set<number>>(n);
+    let bucket = new Array<Set<number>>(n);
     
     function dfs(v: number) {
         semi[v] = ++n;
@@ -155,11 +161,8 @@ function dominatorTree(blocks: BasicBlock[]) {
         }
         label[s] = label[w];
         size[v] = size[v] + size[w];
-        if (size[v] < 2 * size[w]) {
-            let temp = s;
-            s = child[v];
-            child[v] = temp;
-        }
+        if (size[v] < 2 * size[w])
+            [s, child[v]] = [child[v], s];
         while (s != 0) {
             ancestor[s] = v;
             s = child[s];
@@ -176,16 +179,16 @@ function dominatorTree(blocks: BasicBlock[]) {
     size[0] = label[0] = semi[0] = 0;
     for (let i = n; i >= 2; i--) {
         let w = vertex[i];
-        for (v of pred[w]) {
-            u = evalFunc(v);
+        for (let v of pred[w]) {
+            let u = evalFunc(v);
             if (semi[u] < semi[w])
                 semi[w] = semi[u];
         }
         bucket[vertex[semi[w]]].add(w);
         link(parent[w], w);
-        for (v of bucket[parent[w]]) {
+        for (let v of bucket[parent[w]]) {
             bucket[parent[w]].delete(v);
-            u = evalFunc(v);
+            let u = evalFunc(v);
             dom[v] = semi[u] < semi[v] ? u : parent[w];
         }
     }
@@ -194,7 +197,6 @@ function dominatorTree(blocks: BasicBlock[]) {
         if (dom[w] != vertex[semi[w]])
             dom[w] = dom[dom[w]];
     }
-    dom[r] = 0;
 
     dom.forEach( (p: number, c: number) => {
         if (2 <= c) {
@@ -204,11 +206,31 @@ function dominatorTree(blocks: BasicBlock[]) {
     });
 }
 
+// m dom n
+function dom(m: BasicBlock, n: BasicBlock): boolean {
+    return m == n || n.parent != null && dom(m, n.parent);
+}
+
+// The dominance frontier of a basic block. Memoized.
+function dominanceFrontier(block: BasicBlock): Set<BasicBlock> {
+    if (block.frontier != null)
+        return block.frontier;
+    let frontier: Set<BasicBlock> = new Set()
+    for (let c of block.children)
+        for (let n of dominanceFrontier(c))
+            if (!dom(block, n))
+                frontier.add(n);
+    for (let s of block.successors)
+        if (!dom(block, s))
+            frontier.add(s);
+    block.frontier = frontier;
+    return frontier;
+}
+
 async function main() {
     let prog: bril.Program = JSON.parse(await readStdin());
     let blocks = cfg(basicBlocks(prog.functions[0]));
     dominatorTree(blocks);
-    blocks.forEach( b => console.log(b.label + " : " + b.parent.label) );
 }
 
 process.on('unhandledRejection', e => { throw e });
