@@ -37,20 +37,26 @@
   (if (use-bug-lookup)
       (findf (match-lambda
                [(row _ (dest-instr _ type val) _)
-                (and (equal? type (dest-instr-type tar-value))
+                (and (dest-instr? tar-value)
+                     (equal? type (dest-instr-type tar-value))
                      (equal? val (dest-instr-vals tar-value)))]
                [(row _ (branch c _ _) _)
-                (equal? c (branch-con tar-value))])
+                (and (branch? tar-value)
+                     (equal? c (branch-con tar-value)))])
              table)
       (findf (lambda (row)
                (define instr (row-value row))
                (match instr
                  [(dest-instr _ type val)
-                  (match-define (dest-instr _ t-type t-val) tar-value)
-                  (equal? ((instr-constr instr) "" type val)
-                          ((instr-constr tar-value) "" t-type t-val))]
+                  (cond [(dest-instr? tar-value)
+                         (match-define (dest-instr _ t-type t-val) tar-value)
+                         (equal? ((instr-constr instr) "" type val)
+                                 ((instr-constr tar-value) "" t-type t-val))]
+                        [else #f])]
                  [(branch c _ _)
-                  (equal? c (branch-con tar-value))]))
+                  (if (branch? tar-value)
+                      (equal? c (branch-con tar-value))
+                      #f)]))
              table)))
 
 ;; XXX(sam) ensure that this is actually fresh

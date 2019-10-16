@@ -33,7 +33,7 @@
               (error 'dest-instr (~a "vals: " vals " is not a list")))
             (for-each
               (lambda (val)
-                (when (not (or (string? val) (number? val)))
+                (when (not (or (string? val) (number? val) (boolean? val)))
                   (error 'dest-instr (~a val " is not a string"))))
               vals)
             (values dest type vals)))
@@ -72,6 +72,7 @@
 (struct nop () #:transparent)
 
 (define (input-json filename)
+
   (with-input-from-file filename
     (lambda () (read-json))))
 
