@@ -59,7 +59,7 @@ function basicBlocks(func: bril.Function): BasicBlock[] {
 // Sets the .predecessors and .successors properties of blocks to
 // represent the control-flow graph.
 function cfg(blocks: BasicBlock[]): BasicBlock[] {
-    let labelDict: { [label: string]: number } = {};
+    let labelMap = new Map<string, number>();
     let inCFG = new Set<number>();
     let queue = [0];
     let out: BasicBlock[] = [];
@@ -73,9 +73,9 @@ function cfg(blocks: BasicBlock[]): BasicBlock[] {
             queue.push(i);
     }
 
-    blocks.forEach( (b: BasicBlock, i: number) => {
+    blocks.forEach((b: BasicBlock, i: number) => {
         if (b.label != null)
-            labelDict[b.label] = i;
+            labelMap.set(b.label, i);
     });
 
     while (queue.length) {
@@ -92,11 +92,11 @@ function cfg(blocks: BasicBlock[]): BasicBlock[] {
                 addEdge(block, i + 1);
         } else switch (last.op) {
             case "br":
-                addEdge(block, labelDict[last.args[1]]);
-                addEdge(block, labelDict[last.args[2]]);
+                addEdge(block, labelMap.get(last.args[1]) as number);
+                addEdge(block, labelMap.get(last.args[2]) as number);
                 break;
             case "jmp":
-                addEdge(block, labelDict[last.args[0]]);
+                addEdge(block, labelMap.get(last.args[0]) as number);
                 break;
         }
     }
@@ -207,7 +207,7 @@ function dominatorTree(blocks: BasicBlock[]) {
             dom[w] = dom[dom[w]];
     }
 
-    dom.forEach( (p: number, c: number) => {
+    dom.forEach((p: number, c: number) => {
         if (2 <= c) {
             blocks[c - 1].parent = blocks[p - 1];
             blocks[p - 1].children.push(blocks[c - 1]);
@@ -263,7 +263,12 @@ function insertPhis(blocks: BasicBlock[]) {
             for (let fBlock of dominanceFrontier(block)) {
                 let insts = fBlock.instructions;
                 if (insts.length == 0 || insts[0].op != "phi" || insts[0].dest != v) {
-                    insts.unshift({op: "phi", args: [], dest: v, type: "int"});
+                    insts.unshift({
+                        op: "phi",
+                        args: new Array(fBlock.predecessors.length).fill(v),
+                        dest: v,
+                        type: "int" // TODO type?
+                    });
                     vDefs.push(fBlock);
                 }
             }
@@ -271,12 +276,75 @@ function insertPhis(blocks: BasicBlock[]) {
     }
 }
 
+// Renames all variables such that each definition is to a unique variable.
+function renameVariables(blocks: BasicBlock[]) {
+    let stacks = new Map<string, string[]>();
+    let defCounts = new Map<string, number>();
+
+
+    function getStack(x: string): string[] {
+        if (stacks.has(x))
+            return stacks.get(x) as string[];
+        let s: string[] = [];
+        stacks.set(x, s);
+        return s;
+    }
+
+    function rename(block: BasicBlock) {
+        let pushCounts = new Map<string, number>()
+
+        for (let inst of block.instructions) {
+            if ("args" in inst)
+                switch (inst.op) {
+                    case "phi":
+                    case "jmp":
+                        break;
+                    case "br":
+                        let s = getStack(inst.args[0]);
+                        inst.args[0] = s[s.length - 1];
+                        break;
+                    default:
+                        inst.args.forEach((arg, i, args) => {
+                            let s = getStack(arg);
+                            args[i] = s[s.length - 1];
+                        });
+                }
+            if ("dest" in inst) {
+                let dest = inst.dest;
+                let defs = (defCounts.has(dest) ? defCounts.get(dest) : 0) as number;
+                let pushes = (pushCounts.has(dest) ? pushCounts.get(dest) : 0) as number;
+                let newDest = dest + "_" + defs;
+                defCounts.set(dest, defs + 1);
+                pushCounts.set(dest, pushes + 1);
+                getStack(dest).push(newDest);
+                inst.dest = newDest;
+            }
+        }
+        for (let succ of block.successors) {
+            let pred = -1;
+            while (block != succ.predecessors[++pred]);
+            for (let inst of succ.instructions) {
+                if (inst.op != "phi")
+                    break;
+                let s = getStack(inst.args[pred]);
+                inst.args[pred] = s[s.length - 1];
+            }
+        }
+        for (let child of block.children)
+            rename(child)
+        pushCounts.forEach((c, x) => getStack(x).splice(-c, c));
+    }
+
+    rename(blocks[0]);
+}
+
 async function main() {
     let prog: bril.Program = JSON.parse(await readStdin());
     let blocks = cfg(basicBlocks(prog.functions[0]));
     dominatorTree(blocks);
     insertPhis(blocks);
-    console.log(blocks.map(b => b.instructions));
+    renameVariables(blocks);
+    console.log(JSON.stringify(blocks.map(b => b.instructions), undefined, 2));
 }
 
 process.on('unhandledRejection', e => { throw e });
