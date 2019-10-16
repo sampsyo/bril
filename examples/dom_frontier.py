@@ -5,7 +5,6 @@ from cfg import block_map, block_successors, add_terminators
 from dom import get_dom
 from form_blocks import form_blocks
 
-
 # Takes in a block and its dominated blocks, returns blocks on the frontier (not
 # dominated, but almost!)
 def get_frontiers(blocks, dom):
