@@ -111,7 +111,15 @@ def find_exits(succ, loops):
     return exits
 
 def loop_king(func):
-    ''' This function returns:
+    ''' 
+    This function returns:
+    exits: A dictionary of exits of loops. 
+    The key is the tuple of (tail,header) where the header dominates the tail and 
+    there is an edge from tail -> header.
+    The value is list of exit blocks.
+    
+    live_var: live variables.
+    
     dom: A dictionary that maps each block with blocks that dominating it.
     
     original blocks: A list of blocks that non teminator is added. This is to 
@@ -120,10 +128,13 @@ def loop_king(func):
     back_edges: A list of pairs of [tail,header] where the header dominates the
     tail and there is an edge from tail -> header
     
-    natural_loops: A list of lists of blocks. Each element of the list
+    natural_loops: A dictionary of loops. 
+    The key is the tuple of (tail,header) where the header dominates the tail and 
+    there is an edge from tail -> header.
+    The value is the list of lists of blocks. Each element of the list
     represents blocks present in a natural loop corresponding to the backedge in
     the previous list. So natural_loops[i] is the list of blocks in the loop
-    represented by the backedge[i] edge
+    represented by the backedge[i] edge.
 
     reaching_in and reaching out: These contain a dictionary of dictionary. Each
     key represents a block. For each block we have a dictionary of {variables:
@@ -149,8 +160,11 @@ def loop_king(func):
     return exits, live_var, dom, original_blocks, natural_loops, reaching_in, reaching_out
 
 def find_LI(blocks, loops, reach_def):
-    ''' This function returns:
-    loop_invariants: a dictionary of tuple(loop blocks), loop invariant inside the block.
+    ''' 
+    This function returns:
+    loop_invariants: a dictionary of loop invaraient. 
+    The key is tuple(tail, head) of a loop backedge. 
+    The value is loop invariants inside the loop.
     '''
     loop_invariants = {}
     for loop in loops.keys():
@@ -162,8 +176,8 @@ def find_LI(blocks, loops, reach_def):
                     # constant
                         loop_invariants[loop].append(instr['dest'])
                     else:
-                    # the instr takes some variables and all variables
-                    # has reaching defintion outside the loop
+                    # the instr takes some variables ,
+                    # and all variables has reaching defintion outside the loop
                     # has one reaching definition that is L.I.
                         var = instr['args']
                         defs = [x in loop or x in loop_invariants[loop] 
@@ -176,9 +190,16 @@ def find_LI(blocks, loops, reach_def):
 
     
 def create_preheaders(blocks, loops):
+    '''
+    This function returns:
+    pre_header: A dictionary of blocks matching to its prehdeader block.
+    
+    new_blocks: Compared to the blocks as input of the function,
+    the new_blocks have empty block at the predecessor block of 
+    loop header block.
+    '''
     new_blocks = OrderedDict()
     b_names = list(blocks.keys())
-    #add pre header
     pre_header = {}
     for i, k in enumerate(b_names):
         new_blocks[k] = blocks[k]
@@ -192,6 +213,11 @@ def create_preheaders(blocks, loops):
     return pre_header, new_blocks
     
 def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
+    '''
+    This function returns:
+    blocks: It's a modification to the blocks - input the function. It move 
+    quantlified loop invariants to the preheader blocks of loops.
+    '''
     b_names = list(blocks.keys())
     for back_edge in loops:
         for b_name in loops[back_edge]:
@@ -214,6 +240,17 @@ def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
     return blocks
     
 def blocks_to_func(blocks, func):
+    '''
+    This function returns:
+    new_func: The same ordered dictionary type as func. Func is unmodified input, 
+    while new_func is the modified version. It is generated according to blocks. 
+    Because blocks has some label block (pre headers) that func does not have, 
+    and these blocks has sequential execution order, it's fine to just remove 
+    the labels.
+    This is because we want to make the program unchanged except for loop invariant 
+    code motion and strength reduction. Newly added labels shouldn't be in 
+    the program.
+    '''
     new_instrs = []
     label_name = []
     for instr in func['instrs']:
