@@ -167,7 +167,7 @@ def list_union(lists):
   return list_dedup(lst)
 
 
-ANALYSES = {
+ANALYSIS = {
     # A really really basic analysis that just accumulates all the
     # currently-defined variables.
     'defined': Analysis(
