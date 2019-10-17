@@ -177,12 +177,13 @@ def find_LI(blocks, loops, reach_def):
                         loop_invariants[loop].append(instr['dest'])
                     else:
                     # the instr takes some variables ,
-                    # and all variables has reaching defintion outside the loop
-                    # has one reaching definition that is L.I.
+                    # all variables has reaching defintion outside the loop
+                    # or has one reaching definition that is L.I.
                         var = instr['args']
-                        defs = [x in loop or x in loop_invariants[loop] 
-                                and len(reach_def[block][x]) == 1
-                                for x in var]
+                        defs = [ (y not in loops[loop] for y in reach_def[block][x])
+                                or (x in loop_invariants[loop] 
+                                and len(reach_def[block][x]) == 1)
+                                for x in var ]
                         if all(defs):
                             loop_invariants[loop].append(instr['dest'])
     return loop_invariants
