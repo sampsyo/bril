@@ -73,20 +73,50 @@ def natblocks(bril):#list of blocks and names
 #                run_df(instr, analysis)
 #    
 #
-def 
 
-### move stuff
-def codemot(bril):
-#    ins, outs = invar(bril)
-    
+def reachers(blocks):
+    rins, routs = df_worklist(blocks, ANALYSIS["rdefs"])
 
+    return rins,routs
+
+# detect LI instructions for a single natural loop
+def invloop(blocks,rins,routs,natloop):
+    boolmap = {}
+    worklist = []
+    for blockname in natloop:
+        boolmap[blockname] = {False for i in range(len(blocks[blockname]))} 
+        worklist.append(blockname)
+
+    while len(worklist)>0:
+        block = worklist.pop()
+        
+        
+        for instr in block:
+            
+            
+            boolmap= 0 
     # is it loop invariant 
     # does it dominate all uses
     # no other definitions of same variable
     # dominates all loop exits
-    # move block
+    return boolmap
+
+### move stuff
+def codemot(bril):
+    for func in bril['functions']:
+        blocks = block_map(form_blocks(func['instrs']))
+        add_terminators(blocks)
+        rins, routs = reachers(blocks) # what is reaching
+        for natloop in natloops(blocks):
+            boolmap = invloop(blocks,rins,routs,natloop) 
+    
     return new
 
+def natloops(blocks): #input backedge
+    pred,succ = edges(blocks)
+    dom = get_dom(succ,list(blocks.keys())[0])
+    for source,sink in backedge(succ,dom):
+        yield loopsy(source,sink,pred) # natloops
 
 def printstuffs(bril):
     for func in bril['functions']:
