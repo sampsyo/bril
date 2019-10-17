@@ -45,7 +45,7 @@ reaching_defs = {blocks:[list of variables]}
 
 The reaching definition problem can be solved using the worklist algorithm after defining merge and the transfer function:
 
-<img src="reaching_defs.png" alt="reaching definition lecture" style="zoom:80%;" />
+<img src="reaching_defs.png" alt="reaching definition lecture" style="zoom:60%;" />
 
 The union function for our data structure is more nuanced than a simple union of sets of variables. In case of multiple definitions of a variable from predecessor blocks we union the list of block numbers associated with the variable. So if block 1 and block 2 are the inputs for the current block we merge (take union) the lists corresponding to each variable in these blocks. This way we keep track of the block numbers of definitions of each variable.
 
