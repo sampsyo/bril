@@ -79,7 +79,6 @@ def fmt(val):
     else:
         return str(val)
 
-
 def run_df(func_instrs, analysis):
     # Form the CFG.
     blocks = cfg.block_map(form_blocks(func_instrs))

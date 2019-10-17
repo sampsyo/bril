@@ -18,7 +18,6 @@ def backedge(successors,domtree):
 
     return backedges
 
-
 ### get natural loops
 def loopsy(source,sink,predecessors):
     worklist = [source]
@@ -37,9 +36,12 @@ def loopsy(source,sink,predecessors):
 
 ### mark stuff as loop invariant
 def invloop(ins,outs,natloops,blockmap):
-    for
+    for loop in natloops:
+        for instr in loop:
+            run_df(instr, analysis)
 
 
+### natural blocks
 def natblocks(#list of blocks and names
     blocks = block_map(form_blocks(func_instrs))
     add_terminators(blocks)
@@ -47,6 +49,13 @@ def natblocks(#list of blocks and names
     return ins, outs
 
 ### move stuff
+def codemot(blocks):
+    # is it loop invariant 
+    # does it dominate all uses
+    # no other definitions of same variable
+    # dominates all loop exits
+    # move block
+    return new
 
 ###
 
