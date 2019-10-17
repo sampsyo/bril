@@ -49,7 +49,7 @@ def df_worklist(blocks, analysis):
         inval = analysis.merge(out[n] for n in in_edges[node])
         in_[node] = inval
 
-        outval = analysis.transfer(blocks[node], inval)
+        outval = analysis.transfer(blocks, node, inval)
 
         if outval != out[node]:
             out[node] = outval
@@ -106,15 +106,26 @@ def use(block):
     return used
 
 
-def cprop_transfer(block, in_vals):
-    out_vals = dict(in_vals)
-    for instr in block:
-        if 'dest' in instr:
-            if instr['op'] == 'const':
-                out_vals[instr['dest']] = instr['value']
-            else:
-                out_vals[instr['dest']] = '?'
-    return out_vals
+def defined_transfer(blocks, name, in_):
+  return in_.union(gen(blocks[name]))
+
+
+def live_transfer(blocks, name, out):
+  block = blocks[name]
+  return use(block).union(out - gen(block))
+
+
+def cprop_transfer(blocks, name, in_vals):
+  block = blocks[name]
+  out_vals = dict(in_vals)
+  for instr in block:
+    if 'dest' in instr:
+      if instr['op'] == 'const':
+        out_vals[instr['dest']] = instr['value']
+      else:
+        out_vals[instr['dest']] = '?'
+
+  return out_vals
 
 
 def cprop_merge(vals_list):
@@ -142,21 +153,23 @@ def list_dedup(lst):
 
   return new_lst
 
-def reaching_def_transfer(block, in_set):
-  var = set()
-  defs = []
 
-  for instr in block:
+def reaching_def_transfer(blocks, name, in_set):
+  block = blocks[name]
+  var = set()
+  defs = set()
+
+  for i,instr in enumerate(block):
     # look for value ops
     if "op" in instr and "dest" in instr:
       var.add(instr["dest"])
-      defs.append(instr)
+      defs.add((name,i))
 
-  # filter out other defs of variables in inSet
-  out_set = filter(lambda in_def: in_def["dest"] not in var, in_set)
+  # filter out other defs of variables in in_set
+  out_set = filter(lambda (name,i): blocks[name][i]["dest"] not in var, in_set)
   out_set += defs
 
-  return list_dedup(out_set)
+  return out_set
 
 
 def list_union(lists):
@@ -174,7 +187,7 @@ ANALYSIS = {
         True,
         init=set(),
         merge=union,
-        transfer=lambda block, in_: in_.union(gen(block)),
+        transfer=defined_transfer
     ),
 
     # Live variable analysis: the variables that are both defined at a
@@ -183,7 +196,7 @@ ANALYSIS = {
         False,
         init=set(),
         merge=union,
-        transfer=lambda block, out: use(block).union(out - gen(block)),
+        transfer=live_transfer
     ),
 
     # A simple constant propagation pass.
@@ -198,11 +211,14 @@ ANALYSIS = {
     'rdef': Analysis(
         True,
         init=set(),
-        merge=list_union,
+        merge=union,
         transfer=reaching_def_transfer
     )
 }
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
-    run_df(bril, ANALYSES[sys.argv[1]])
+    in_, out = run_df(bril["functions"][0]["instrs"], ANALYSES[sys.argv[1]])
+    print(in_)
+    print(out)
+
