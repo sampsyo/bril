@@ -164,28 +164,33 @@ def find_LI(blocks, loops, reach_def):
     This function returns:
     loop_invariants: a dictionary of loop invaraient. 
     The key is tuple(tail, head) of a loop backedge. 
-    The value is loop invariants inside the loop.
+    The value a dictionary taking block name as key and 
+    loop invariant as value.
     '''
     loop_invariants = {}
     for loop in loops.keys():
-        loop_invariants[loop] = []  
+        loop_invariants[loop] = {}
         for block in loops[loop]:
+            loop_invariants[loop][block] = []
             for instr in blocks[block]: 
                 if 'dest' in instr.keys():
                     if instr['op']=='const':
                     # constant
-                        loop_invariants[loop].append(instr['dest'])
+                        loop_invariants[loop][block].append(instr)
                     else:
                     # the instr takes some variables ,
-                    # all variables has reaching defintion outside the loop
-                    # or has one reaching definition that is L.I.
-                        var = instr['args']
-                        defs = [ (y not in loops[loop] for y in reach_def[block][x])
-                                or (x in loop_invariants[loop] 
-                                and len(reach_def[block][x]) == 1)
-                                for x in var ]
-                        if all(defs):
-                            loop_invariants[loop].append(instr['dest'])
+                    # all variables has reaching defintion outside the loop or
+                    # all variables has one reaching definition that is L.I.
+                        defs = True
+                        for var in instr['args']:
+                            rd = reach_def[block][var] #var is defined at rd block
+                            c1 = all([x not in loops[loop] for x in rd ])
+                            li = loop_invariants[loop].get(rd[0]) #None or li codes
+                            li = [] if li is None else li
+                            c2 = len(rd)==1 and any([var == i['dest'] for i in li])
+                            defs = (c1 or c2) and defs
+                        if defs:
+                            loop_invariants[loop][block].append(instr)
     return loop_invariants
 
 
@@ -219,31 +224,34 @@ def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
     blocks: It's a modification to the blocks - input the function. It move 
     quantlified loop invariants to the preheader blocks of loops.
     '''
+    
     b_names = list(blocks.keys())
-    for back_edge in loops:
-        for b_name in loops[back_edge]:
-            for instr in blocks[b_name]:
-                if 'dest' in instr and instr['dest'] in loop_invariants[back_edge]:
-                    #exist block of dest where dest is live out 
-                    edest = [e for e in exits[back_edge] 
-                            if instr['dest'] in live_var[1][e]]
-                    #predecessor block of pre header
-                    ind = b_names.index(pre_header[b_name])- 1 
-                    # 1. there is only one definition of dest in the loop
-                    # 2. dest's block dominates all loop exists where dest is live out
-                    # 3. dest is not live out of pre-header
-                    if ( loop_invariants[back_edge].count(instr['dest'])==1 and
-                         all([b_name in dom[e]  for e in edest]) and
-                         ind >= 0 and instr['dest'] not in live_var[1][b_names[ind]]
-                        ):
-                        blocks[b_name].remove(instr)
-                        blocks[pre_header[b_name]].append(instr)
+    for back_edge in loop_invariants:
+        #definitions inside the loop (1)
+        defs = [ins.get('dest') for b in loops[back_edge]
+                for ins in blocks[b] if ins.get('dest')]
+        for b_name in loop_invariants[back_edge]:
+            #predecessor block of pre-header (pre-header is empty block) (2)
+            ind = b_names.index(pre_header[b_name]) - 1
+            for instr in loop_invariants[back_edge][b_name]:
+                #exit blocks of dest where dest is live out (3)
+                edest = [e for e in exits[back_edge] if instr['dest'] 
+                        in live_var[1][e]]
+                # 1. there is only one definition of dest in the loop
+                # 2. dest is not live out of pre-header
+                # 3. dest's block dominates all loop exits where dest is live out
+                if ( defs.count(instr['dest']) == 1 and ind >= 0 and 
+                    instr['dest'] not in live_var[1][b_names[ind]] and 
+                    all([b_name in dom[e] for e in edest])
+                ):
+                    blocks[b_name].remove(instr)
+                    blocks[pre_header[b_name]].append(instr)
     return blocks
     
 def blocks_to_func(blocks, func):
     '''
     This function returns:
-    new_func: The same ordered dictionary type as func. Func is unmodified input, 
+    new_func: The same dictionary of instrs as func. Func is unmodified input, 
     while new_func is the modified version. It is generated according to blocks. 
     Because blocks has some label block (pre headers) that func does not have, 
     and these blocks has sequential execution order, it's fine to just remove 
@@ -267,6 +275,7 @@ def blocks_to_func(blocks, func):
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
     for func in bril['functions']:
+        print(func)
         exits, live_var, dom, oblocks, loops, reach_def, _ = loop_king(func)
         loop_invariants = find_LI(oblocks, loops, reach_def)
         pre_header, new_blocks = create_preheaders(oblocks, loops)
