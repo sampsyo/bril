@@ -4,4 +4,6 @@
   (libraries
     core
     ocamlgraph
-    lcm))
+    yojson
+    lcm)
+  (preprocess (pps ppx_jane)))
