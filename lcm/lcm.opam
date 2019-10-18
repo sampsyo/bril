@@ -1,0 +1,22 @@
+opam-version: "2.0"
+version: "0.1.1"
+synopsis: "Lazy code motion for the Bril intermediate language"
+maintainer: "rhd89@cornell.edu"
+authors: ["Ryan Doenges <rhd89@cornell.edu>"]
+homepage: "https://github.com/hackedy/bril"
+dev-repo: "git+https://github.com/hackedy/bril/"
+bug-reports: "https://github.com/hackedy/bril/issues"
+license: "MIT"
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+]
+depends: [
+  "ocaml" {>= "4.05" & < "4.09"}
+  "dune" {build}
+  "core"
+  "yojson"
+  "ocamlgraph"
+]
+

@@ -1,0 +1,7 @@
+(executable
+  (public_name lcm)
+  (name main)
+  (libraries
+    core
+    ocamlgraph
+    lcm))
