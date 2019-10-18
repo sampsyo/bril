@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
+import { createNumericLiteral } from 'typescript';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -28,6 +29,24 @@ type Value = boolean | BigInt;
 type Env = Map<bril.Ident, Value>;
 type FunctionMap = Map<bril.Ident, bril.Function>;
 const returnVar = "_ret";
+type WeightedCallGraph = Map<string, number>; // Map from A::B edges to weights
+let weighted_call_graph: WeightedCallGraph = new Map();
+const edge_sep = " -> ";
+
+function getEdge(from: string, to: string): string {
+  return from + edge_sep + to;
+}
+
+function getVerticesFromEdge(edge: string): string[] {
+  return edge.split(edge_sep);
+}
+
+function incrementEdge(from: string, to: string) {
+  let edge = getEdge(from, to);
+  let curr = weighted_call_graph.get(edge);
+  curr = curr === undefined ? 0 : curr;
+  weighted_call_graph.set(edge, curr + 1);
+}
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -81,6 +100,7 @@ let END: Action = {"end": true};
  * instruction or "end" to terminate the function.
  */
 function evalInstr(
+  functionName: string,
   instr: bril.Instruction,
   env: Env,
   functionMap: FunctionMap,
@@ -206,7 +226,7 @@ function evalInstr(
   }
 
   case "call": {
-    let name = instr.args[0];
+    let name: string = instr.args[0];
     if (functionMap.has(name) || localMap.has(name)) {
       let newEnv = new Map();
       let func = (localMap.has(name)) ? localMap.get(name) as
@@ -220,6 +240,7 @@ function evalInstr(
       for (let i = 0; i < args.length; i++) {
         newEnv.set(func.args[i].name, env.get(args[i]));
       }
+      incrementEdge(functionName, name);
       evalFunc(func, newEnv, functionMap);
       if (func.type !== undefined) {
         let returnVal = newEnv.get(returnVar);
@@ -258,7 +279,7 @@ function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
       localFunctionMap.set(line['name'], line);
     }
     if ('op' in line) {
-      let action = evalInstr(line, env, functionMap, localFunctionMap);
+      let action = evalInstr(func.name, line, env, functionMap, localFunctionMap);
       if ('label' in action) {
         // Search for the label and transfer control.
         for (i = 0; i < func.instrs.length; ++i) {
@@ -323,6 +344,7 @@ async function main() {
       }
   }
   evalProg(prog, cliArgs);
+  // console.log(weighted_call_graph);
 }
 
 // Make unhandled promise rejections terminate.
