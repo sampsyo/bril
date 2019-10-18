@@ -9,3 +9,12 @@ let fn_of_string s = s
 let cmp_var = String.compare
 let cmp_lbl = String.compare
 let cmp_fn = String.compare
+
+let fresh_ref = ref 0
+
+let get_fresh () =
+  let v = !fresh_ref in
+  fresh_ref := v + 1;
+  string_of_int v
+
+let fresh_lbl base = base ^ get_fresh ()

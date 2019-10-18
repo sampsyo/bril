@@ -7,3 +7,4 @@ val fn_of_string : string -> fn
 val cmp_var : var -> var -> int
 val cmp_lbl : lbl -> lbl -> int
 val cmp_fn : fn -> fn -> int
+val fresh_lbl : string -> lbl
