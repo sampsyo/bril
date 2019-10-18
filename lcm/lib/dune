@@ -1,4 +1,8 @@
 (library
   (public_name lcm)
   (name lcm)
-   (libraries core))
+  (libraries
+    core
+    ocamlgraph
+    yojson)
+  (preprocess (pps ppx_jane)))
