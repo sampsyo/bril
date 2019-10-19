@@ -87,6 +87,4 @@ def print_blocks(bril):
 
 
 if __name__ == '__main__':
-    f = open('../test/interp/unroll.json')
-    print_blocks(json.load(f))
-    # print_blocks(json.load(sys.stdin))
+    print_blocks(json.load(sys.stdin))

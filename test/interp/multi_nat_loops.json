@@ -1,0 +1,189 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "dest": "b",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "dest": "outside",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "max",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "c",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loopstart"
+        },
+        {
+          "args": [
+            "c"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "b",
+            "if",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if"
+        },
+        {
+          "args": [
+            "outside",
+            "v"
+          ],
+          "dest": "outside",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "outside",
+            "v"
+          ],
+          "dest": "outside",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "c",
+            "i"
+          ],
+          "dest": "c",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "c",
+            "max"
+          ],
+          "dest": "b",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b",
+            "loopstart",
+            "there"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "there"
+        },
+        {
+          "args": [
+            "v"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "b2",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "b2",
+            "one",
+            "two"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "one"
+        },
+        {
+          "args": [
+            "finish"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "two"
+        },
+        {
+          "args": [
+            "max"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "b2",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "args": [
+            "there"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "finish"
+        },
+        {
+          "args": [
+            "b2"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

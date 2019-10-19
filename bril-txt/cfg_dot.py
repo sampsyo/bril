@@ -107,5 +107,4 @@ def cfg_dot(bril, verbose):
 
 
 if __name__ == '__main__':
-    f = open('../test/interp/unroll.json')
-    cfg_dot(json.load(f), '-v' in sys.argv[1:])
+    cfg_dot(json.load(sys.stdin), '-v' in sys.argv[1:])

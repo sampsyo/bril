@@ -50,6 +50,7 @@ def find_backedges(cfg_edges, dom_dict):
         head, tail = e
         if tail in dom_dic[head]:
             back_edges.append(e)
+    print(back_edges)
     return back_edges
 
 def loop_finder(bril, cfg_edges, dom_dic):
