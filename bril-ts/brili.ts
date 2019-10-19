@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import * as bril from './bril';
+import * as callgraph from './call-graph';
 import {readStdin, unreachable} from './util';
-import { createNumericLiteral } from 'typescript';
+import * as fs from 'fs';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -29,24 +30,7 @@ type Value = boolean | BigInt;
 type Env = Map<bril.Ident, Value>;
 type FunctionMap = Map<bril.Ident, bril.Function>;
 const returnVar = "_ret";
-type WeightedCallGraph = Map<string, number>; // Map from A::B edges to weights
-let weighted_call_graph: WeightedCallGraph = new Map();
-const edge_sep = " -> ";
-
-function getEdge(from: string, to: string): string {
-  return from + edge_sep + to;
-}
-
-function getVerticesFromEdge(edge: string): string[] {
-  return edge.split(edge_sep);
-}
-
-function incrementEdge(from: string, to: string) {
-  let edge = getEdge(from, to);
-  let curr = weighted_call_graph.get(edge);
-  curr = curr === undefined ? 0 : curr;
-  weighted_call_graph.set(edge, curr + 1);
-}
+export let weighted_call_graph = new Map();
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -69,7 +53,7 @@ function checkArgs(instr: bril.Operation, count: number) {
 function getInt(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
   if (typeof val !== 'bigint') {
-    throw `${instr.op} argument ${index} must be a number`;
+    throw `${instr.op} argument ${index} must be a number, was ${typeof val}`;
   }
   return val;
 }
@@ -240,7 +224,7 @@ function evalInstr(
       for (let i = 0; i < args.length; i++) {
         newEnv.set(func.args[i].name, env.get(args[i]));
       }
-      incrementEdge(functionName, name);
+      callgraph.incrementEdge(weighted_call_graph, functionName, name);
       evalFunc(func, newEnv, functionMap);
       if (func.type !== undefined) {
         let returnVal = newEnv.get(returnVar);
@@ -298,7 +282,7 @@ function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
   }
 }
 
-function evalProg(prog: bril.Program, cliArgs: (Number | Boolean)[]) {
+export function evalProg(prog: bril.Program, cliArgs: (BigInt | Boolean)[]) {
   let functionMap = new Map();
   for (let func of prog.functions) {
     if (functionMap.has(func.name)) {
@@ -325,7 +309,7 @@ function evalProg(prog: bril.Program, cliArgs: (Number | Boolean)[]) {
   }
 }
 
-function isNumeric(value: string) {
+export function isNumeric(value: string) {
     return /^\d+$/.test(value);
 }
 
@@ -333,10 +317,10 @@ async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
   // First two arguments of process.argv are node and brili binary paths.
   let rawArgs = process.argv.slice(2);
-  let cliArgs = [] as (Number | Boolean)[];
+  let cliArgs = [] as (BigInt | Boolean)[];
   for (let arg of rawArgs) {
       if (isNumeric(arg)) {
-          cliArgs.push(parseInt(arg));
+          cliArgs.push(BigInt(parseInt(arg)));
       } else if (arg === "true" || arg === "false") {
           cliArgs.push(arg === "true");
       } else {
@@ -344,10 +328,34 @@ async function main() {
       }
   }
   evalProg(prog, cliArgs);
-  // console.log(weighted_call_graph);
+  console.log(weighted_call_graph);
+}
+
+async function profile() {
+  let prog = JSON.parse(await readStdin()) as bril.Program;
+  const profile_filename = process.argv[2];
+  const profile_data = fs.readFileSync(profile_filename, 'utf8');
+  const inputs = profile_data.split('\n');
+  for (let input of inputs) {
+    const args = input.split(/(\s+)/).filter((e: string) => e.trim().length > 0);
+    let cliArgs = [] as (BigInt | Boolean)[];
+    for (let arg of args) {
+        if (isNumeric(arg)) {
+            cliArgs.push(BigInt(parseInt(arg)));
+        } else if (arg === "true" || arg === "false") {
+            cliArgs.push(arg === "true");
+        } else {
+            throw `Argument ${arg} is not of type int or bool; exiting.`;
+        }
+    }
+    evalProg(prog, cliArgs);
+  }
+  console.log(weighted_call_graph);
 }
 
 // Make unhandled promise rejections terminate.
 process.on('unhandledRejection', e => { throw e });
 
-main();
+if (!module.parent) {
+  main();
+}
