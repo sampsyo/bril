@@ -24,9 +24,10 @@ def get_variable_definitions(blocks):
 def insert_phi_nodes(blocks, frontiers):
     var_defns = get_variable_definitions(blocks)
 
-    to_add = defaultdict(set) #todo, check this
+    queue = [(k, v) for k, v in var_defns.items()]
 
-    for var, defn_blocks in var_defns.items():
+    while len(queue):
+        var, defn_blocks = queue.pop(0)
         for defn_block in defn_blocks:
             for frontier_block in frontiers[defn_block]:
                 instrs = blocks[frontier_block]
@@ -41,7 +42,7 @@ def insert_phi_nodes(blocks, frontiers):
                 blocks[frontier_block] = [phi] + instrs
 
                 if frontier_block not in var_defns[var]:
-                    to_add[var].add(frontier_block)
+                    queue.append((var, [frontier_block]))
 
     return blocks
 
