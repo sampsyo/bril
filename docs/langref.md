@@ -1,6 +1,5 @@
 # Bril Language Reference
 
-Bril is a instruction-oriented programming language with an emphasis on minimality and regularity.
 Bril programs are JSON objects that directly represent abstract syntax.
 
 This language reference has two sections:
@@ -78,7 +77,8 @@ There are three kinds of instructions: constants, value operations, and effect o
 
 #### Constant
 
-    { "op": "const", "dest": "<string>", "type": <Type>, value: ... }
+    { "op": "const", "dest": "<string>", "type": <Type>,
+      "value": ... }
 
 A Constant is an instruction that produces a literal value.
 Its `op` field must be the string `"const"`.
