@@ -27,12 +27,6 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   vadd: 2,
   vload: 1,
   vstore: 2,
-  _vadd: 2,
-  _vload: 1,
-  _vstore: 2,
-  _svadd: 2,
-  _svload: 1,
-  _svstore: 2
 };
 
 // this represents an infinite size register file
@@ -55,9 +49,6 @@ let fixedVecSize: number = 4;
 /*
  * Initialize the binding
  */
-
-let nbind = require('nbind');
-let lib = nbind.init().lib;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -317,66 +308,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
     return NEXT;
   }
-
-  case "_vadd": {
-    // if end up doing big vectors, then need to compare serial c impl as well
-    let vecA = getVec(instr, env, 0);
-    let vecB = getVec(instr, env, 1);
-    let vecC = new Int32Array(fixedVecSize);
-    lib.SIMD.vecAdd(vecA, vecB, vecC);
-    env.set(instr.dest, vecC);
-
-    return NEXT;
-  }
-
-  case "_vload": {
-
-    let addr = getInt(instr, env, 0);
-    let vec = new Int32Array(fixedVecSize);
-    lib.SIMD.vecLoad(stack, vec, addr);
-    env.set(instr.dest, vec);
-    return NEXT;
-  }
-
-  case "_vstore": {
-    
-    let val = getVec(instr, env, 0);
-    let addr = getInt(instr, env, 1);
-    lib.SIMD.vecStore(stack, val, addr);
-
-    return NEXT;
-  }
-
-  case "_svadd": {
-    // if end up doing big vectors, then need to compare serial c impl as well
-    let vecA = getVec(instr, env, 0);
-    let vecB = getVec(instr, env, 1);
-    let vecC = new Int32Array(fixedVecSize);
-    lib.SIMD.vecAdd_serial(vecA, vecB, vecC);
-    env.set(instr.dest, vecC);
-
-    return NEXT;
-  }
-
-  case "_svload": {
-
-    let addr = getInt(instr, env, 0);
-    let vec = new Int32Array(fixedVecSize);
-    lib.SIMD.vecLoad_serial(stack, vec, addr);
-    env.set(instr.dest, vec);
-    return NEXT;
-  }
-
-  case "_svstore": {
-    
-    let val = getVec(instr, env, 0);
-    let addr = getInt(instr, env, 1);
-    lib.SIMD.vecStore_serial(stack, val, addr);
-
-    return NEXT;
-  }
-
-
+ 
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
@@ -419,11 +351,11 @@ async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
 
   // time the execution here, b/c file io is picked up by python
-  console.time("brili");
+  //console.time("brili");
 
   evalProg(prog);
 
-  console.timeEnd('brili');
+  //console.timeEnd('brili');
 }
 
 // Make unhandled promise rejections terminate.
