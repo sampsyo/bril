@@ -1,8 +1,9 @@
 import json
 import copy
 from collections import OrderedDict
-import sys
-sys.path.insert(0, "examples/")
+import sys, os
+pn = os.path.join(os.path.dirname(__file__), "examples/")
+sys.path.insert(0, "/home/zl679/Desktop/bril/examples")
 from cfg import block_map, successors, add_terminators
 from form_blocks import form_blocks
 from dom import get_dom, get_pred
@@ -214,7 +215,7 @@ def create_preheaders(blocks, loops):
                 if b_names[i+1] in edge[1]:
                     name = fresh('b', new_blocks)
                     new_blocks[name] = []
-                    pre_header = {x:name for x in loops[edge]}
+                    pre_header.update({x:name for x in loops[edge]})
                     break
     return pre_header, new_blocks
     
@@ -245,6 +246,7 @@ def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
                     all([b_name in dom[e] for e in edest])
                 ):
                     blocks[b_name].remove(instr)
+                    instr['comment'] = 'code motion'
                     blocks[pre_header[b_name]].append(instr)
     return blocks
     
@@ -271,16 +273,19 @@ def blocks_to_func(blocks, func):
     new_func = copy.deepcopy(func)
     new_func['instrs'] = new_instrs
     return new_func
-    
-if __name__ == '__main__':
+def loopReduce():
     bril = json.load(sys.stdin)
-    for func in bril['functions']:
-        print(func)
+    
+    for i, func in enumerate(bril['functions']):
         exits, live_var, dom, oblocks, loops, reach_def, _ = loop_king(func)
         loop_invariants = find_LI(oblocks, loops, reach_def)
         pre_header, new_blocks = create_preheaders(oblocks, loops)
         code_motion = move_LI(new_blocks, pre_header, loop_invariants, loops, dom, live_var, exits)
-        blocks_to_func(code_motion, func)
+        bril['functions'][i] = blocks_to_func(code_motion, func)
+    
+    print(json.dumps(bril)) 
+#if __name__ == '__main__':
+#    loopReduce()
    
    
    
