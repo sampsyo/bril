@@ -15,21 +15,110 @@
           "value": false
         },
         {
+          "dest": "outside",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "max",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "c",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loopstart"
+        },
+        {
+          "args": [
+            "c"
+          ],
+          "op": "print"
+        },
+        {
           "args": [
             "b",
-            "there",
-            "here"
+            "if",
+            "else"
           ],
           "op": "br"
         },
         {
-          "label": "here"
+          "label": "if"
         },
         {
-          "dest": "v",
-          "op": "const",
-          "type": "int",
-          "value": 2
+          "args": [
+            "outside",
+            "v"
+          ],
+          "dest": "outside",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "outside",
+            "v"
+          ],
+          "dest": "outside",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "c",
+            "i"
+          ],
+          "dest": "c",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "c",
+            "max"
+          ],
+          "dest": "b",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b",
+            "loopstart",
+            "there"
+          ],
+          "op": "br"
         },
         {
           "label": "there"
@@ -37,6 +126,12 @@
         {
           "args": [
             "v"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "outside"
           ],
           "op": "print"
         }
