@@ -20,6 +20,17 @@ def union(sets):
         out.update(s)
     return out
 
+def intersection(sets):
+    out = None
+    for s in sets:
+        if out is None:
+            out = set(s)
+        else:
+            out = out.intersection(s)
+    if out is None:
+        out = set()
+    return out
+
 
 def df_worklist(blocks, analysis):
     """The worklist algorithm for iterating a data flow analysis to a
@@ -38,19 +49,16 @@ def df_worklist(blocks, analysis):
         out_edges = preds
 
     # Initialize.
-    in_ = {first_block: analysis.init}
-    out = {node: analysis.init for node in blocks}
+    in_ = {first_block: analysis.init(blocks)}
+    out = {node: analysis.init(blocks) for node in blocks}
 
     # Iterate.
     worklist = list(blocks.keys())
     while worklist:
         node = worklist.pop(0)
-
         inval = analysis.merge(out[n] for n in in_edges[node])
         in_[node] = inval
-
-        outval = analysis.transfer(blocks[node], inval)
-
+        outval = analysis.transfer(blocks,node, inval)
         if outval != out[node]:
             out[node] = outval
             worklist += out_edges[node]
@@ -137,32 +145,43 @@ def cprop_merge(vals_list):
                     out_vals[name] = val
     return out_vals
 
+def dom_transfer(blocks, node, inval):
+    inval.add(node)
+    return inval
 
 ANALYSES = {
     # A really really basic analysis that just accumulates all the
     # currently-defined variables.
     'defined': Analysis(
         True,
-        init=set(),
+        init=lambda blocks: set(),
         merge=union,
-        transfer=lambda block, in_: in_.union(gen(block)),
+        transfer=lambda blocks,node, in_: in_.union(gen(blocks[node])),
     ),
 
     # Live variable analysis: the variables that are both defined at a
     # given point and might be read along some path in the future.
     'live': Analysis(
         False,
-        init=set(),
+        init=lambda blocks: set(),
         merge=union,
-        transfer=lambda block, out: use(block).union(out - gen(block)),
+        transfer=lambda blocks,node, out: use(blocks[node]).union(out - gen(blocks[node])),
     ),
 
     # A simple constant propagation pass.
     'cprop': Analysis(
         True,
-        init={},
+        init=lambda blocks: {},
         merge=cprop_merge,
         transfer=cprop_transfer,
+    ),
+
+    # Dominators
+    'dominators': Analysis(
+        True,
+        init=lambda blocks : blocks.keys(),
+        merge=intersection,
+        transfer = dom_transfer
     ),
 }
 
