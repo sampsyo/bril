@@ -331,28 +331,6 @@ async function main() {
   console.log(weighted_call_graph);
 }
 
-async function profile() {
-  let prog = JSON.parse(await readStdin()) as bril.Program;
-  const profile_filename = process.argv[2];
-  const profile_data = fs.readFileSync(profile_filename, 'utf8');
-  const inputs = profile_data.split('\n');
-  for (let input of inputs) {
-    const args = input.split(/(\s+)/).filter((e: string) => e.trim().length > 0);
-    let cliArgs = [] as (BigInt | Boolean)[];
-    for (let arg of args) {
-        if (isNumeric(arg)) {
-            cliArgs.push(BigInt(parseInt(arg)));
-        } else if (arg === "true" || arg === "false") {
-            cliArgs.push(arg === "true");
-        } else {
-            throw `Argument ${arg} is not of type int or bool; exiting.`;
-        }
-    }
-    evalProg(prog, cliArgs);
-  }
-  console.log(weighted_call_graph);
-}
-
 // Make unhandled promise rejections terminate.
 process.on('unhandledRejection', e => { throw e });
 

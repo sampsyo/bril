@@ -1,0 +1,17 @@
+[
+  {
+    "from": "main",
+    "to": "fib",
+    "count": 3
+  },
+  {
+    "from": "fib",
+    "to": "le_one",
+    "count": 9
+  },
+  {
+    "from": "fib",
+    "to": "fib",
+    "count": 6
+  }
+]

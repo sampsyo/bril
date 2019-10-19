@@ -5,7 +5,7 @@ export function getEdge(graph: WeightedCallGraph, from: string, to: string): str
   return from + edge_sep + to;
 }
 
-export function getVerticesFromEdge(graph: WeightedCallGraph, edge: string): string[] {
+export function getVerticesFromEdge(edge: string): string[] {
   return edge.split(edge_sep);
 }
 
