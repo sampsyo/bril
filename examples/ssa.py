@@ -34,25 +34,24 @@ def insert_phi_nodes(blocks, frontiers):
                 # Check that we haven't already added this phi node
                 if len(instrs) and instrs[0]['op'] == 'phi' \
                     and instrs[0]['dest'] == var:
+                    instrs[0]['args'] += var
                     continue
 
-                phi = {'dest' : var, 'op' : 'phi', 'args' : []}
+                phi = {'dest' : var, 'op' : 'phi', 'args' : [var]}
                 blocks[frontier_block] = [phi] + instrs
 
                 if frontier_block not in var_defns[var]:
                     to_add[var].add(frontier_block)
 
-    #for name, instrs in blocks.items():
-    #    print(name, instrs)
-
     return blocks
 
 def rename(name, blocks, var_names, succ, dom_children, stacks):
     pushed = defaultdict(int)
+
     for instr in blocks[name]:
         # Replace arguments with new names
         if 'args' in instr and instr['op'] != 'phi':
-            print(instr['args'])
+            # print(instr['args'])
             instr['args'] = [stacks[v][-1] for v in instr['args'] if v in stacks]
 
         # Replace the destination with a fresh name
@@ -66,11 +65,15 @@ def rename(name, blocks, var_names, succ, dom_children, stacks):
 
     for succ_name in succ[name]:
         for instr in blocks[succ_name]:
-            # iterate only through phi blocks, which have been
-            # inserted at the start of the block if they exist
+            # Iterate only through phi blocks, which have been inserted at the
+            # start of the block if they exist
             if instr['op'] != 'phi': break
-            # TODO implement argument ordering to phi nodes??
-            instr['args'].append(stacks[instr['dest']][-1])
+
+            # Replace a single phi argument with the new stack value
+            for i, arg in enumerate(instr['args']):
+                if arg in stacks:
+                    instr['args'][i] = stacks[arg][-1]
+                    break
 
     for block in dom_children[name]:
         rename(block, blocks, var_names, succ, dom_children, stacks)
@@ -78,6 +81,11 @@ def rename(name, blocks, var_names, succ, dom_children, stacks):
     for name, num_pushed in pushed.items():
         stacks[name] = stacks[name][:-num_pushed]
 
+def print_blocks(blocks):
+    for n, instrs in blocks.items():
+        print(n)
+        for i in instrs:
+            print("\t", i)
 
 
 def rename_all(blocks, succ, dom):
@@ -87,16 +95,13 @@ def rename_all(blocks, succ, dom):
     dom_children = defaultdict(set)
     for k, bls in dom.items():
         for b in bls:
+            # We want direct children in the dominator tree only; so exclude the 
+            # block itself and any non-direct successors
             if k != b:
                 dom_children[b].add(k) 
-                # TODO: is this "direct" children in dominance tree?
 
     rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks)
-
-    # for n, instrs in blocks.items():
-    #     print(n)
-    #     for i in instrs:
-    #         print("\t", i)
+    print_blocks(blocks)
 
 def to_ssa(bril):
     for func in bril['functions']:
@@ -106,9 +111,13 @@ def to_ssa(bril):
 
         # dom maps each node to the nodes that dominate it
         dom = get_dom(succ, list(blocks.keys())[0])
-
         frontiers = get_frontiers(blocks, dom)
         blocks_with_phis = insert_phi_nodes(blocks, frontiers)
+
+        # Remove self dominance
+        for k, v in dom.items():
+            v.remove(k)
+
         rename_all(blocks_with_phis, succ, dom)
         
 
