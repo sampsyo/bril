@@ -1,0 +1,54 @@
+main {
+  zero: int = const 0;
+  inc:int = const 1;
+  size: int = const 16;
+  size_min_one: int = sub size inc;
+  vecSize: int = const 1;
+
+  a: int = const 0;
+  b: int = add a size;
+  c: int = add b size;
+
+  i: int = const 0;
+sw_loop:
+  ai: int = add a i;
+  bi: int = add b i;
+  ci: int = add c i;
+
+  sw i ai;
+  sw i bi;
+  sw zero ci;
+
+  i: int = add i inc;
+  done: bool = eq i size;
+  br done sw_done sw_loop;
+sw_done:
+  i:  int = const 0;
+  ii: int = add i inc;
+
+vvadd_loop:
+  ai:  int = add a i;
+  aii: int = add a ii;
+  ci: int = add a i;
+
+  va:  int = lw ai;
+  vaa: int = lw aii;
+  vc: int = add va vaa;
+  sw vc ci;
+
+  i: int = add i vecSize;
+  ii: int = add i inc;
+
+  done: bool = ge ii size;
+  br done vvadd_done vvadd_loop;
+vvadd_done:
+  i: int = const 0;
+lw_loop:
+  ci: int = add a i;
+  v: int = lw ci;
+  print v;
+  i: int = add i inc;
+  done: bool = eq i size_min_one;
+  br done lw_done lw_loop;
+lw_done:
+}
