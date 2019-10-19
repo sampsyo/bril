@@ -8,6 +8,7 @@ format and emits the ordinary JSON representation.
 """
 
 import lark
+from lark import Transformer
 import sys
 import json
 

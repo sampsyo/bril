@@ -1,0 +1,11 @@
+main {
+  v: int = const 4;
+  b: bool = const false;
+  br b there here;
+  c: int = const 1;
+here:
+  v: int = const 2;
+  br b there here;
+there:
+  print v;
+}
