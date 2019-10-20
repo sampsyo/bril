@@ -20,17 +20,18 @@ let blockify (instrs: Bril.directive list) =
     | Label lbl :: rest ->
        continue cur_block rest (Some lbl)
     | Instruction i :: rest ->
-       let cur_block =
-         { cur_block with
-           pre_body = cfg_instr_of_instr i :: cur_block.pre_body }
-       in
        begin match i with
        | EffectInstr (TermOp term) ->
          let cur_block = { cur_block with pre_term = Some term } in
          continue cur_block rest None
-       | _ -> blockify' rest cur_block
+       | i ->
+          let cur_block =
+            { cur_block with
+              pre_body = cfg_instr_of_instr i :: cur_block.pre_body }
+          in
+          blockify' rest cur_block
        end
-    | [] -> []
+    | [] -> [cur_block]
   and continue cur_block instrs lbl =
     let cur_block =
       { cur_block with pre_body = List.rev cur_block.pre_body }
@@ -45,7 +46,7 @@ let blockify (instrs: Bril.directive list) =
   let empty_block =
     { pre_lbl = None; pre_body = []; pre_term = None } 
   in
-  List.rev @@ blockify' instrs empty_block
+  blockify' instrs empty_block
 
 let ensure_labeled (block: Cfg.pre_basic_block) : Cfg.pre_basic_block * Ident.lbl =
   match block.pre_lbl with
@@ -101,6 +102,7 @@ let add_all_edges map graph blocks =
   List.fold ~f:(add_edges map) ~init:graph blocks
 
 let cfgify_dirs (dirs : Bril.directive list ) =
-  let blocks = normalize_blocks (blockify dirs) in
+  let pre_blocks = blockify dirs in
+  let blocks = normalize_blocks pre_blocks in
   let graph, map = List.fold ~init:Cfg.empty ~f:Cfg.add_block blocks in
   add_all_edges map graph blocks

@@ -5,16 +5,19 @@ type instruction =
   | Print of Ident.var list
   | ConstInstr of Bril.const_op
   | Nop
+  [@@deriving sexp]
                 
 type pre_basic_block =
   { pre_lbl: Ident.lbl option;
     pre_body: instruction list;
     pre_term: Bril.term_op option }
+  [@@deriving sexp]
 
 type basic_block =
   { lbl: Ident.lbl;
     body: instruction list;
     term: Bril.term_op }
+  [@@deriving sexp]
 
 module BasicBlock = struct
   type t = basic_block
