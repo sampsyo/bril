@@ -1,3 +1,5 @@
+open Core
+
 type instruction = 
   | ValueInstr of Bril.value_op
   | Print of Ident.var list
@@ -25,18 +27,33 @@ module BasicBlock = struct
 end
 
 module Label = struct
-  type t = Ident.lbl
+  type t = Ident.lbl [@@deriving sexp]
   let compare = Ident.cmp_lbl
   let hash = Hashtbl.hash
   let equal = (=)
 end
 
-module Graph = Graph.Persistent.Digraph.Concrete(BasicBlock)
-module Map = Map.Make(Label)
-type t = Graph.t * basic_block Map.t
+module CFG = struct
+  include Graph.Persistent.Digraph.Concrete(BasicBlock)
+  let vertex_name v = Ident.string_of_lbl v.lbl
+  let graph_attributes _ = []
+  let default_vertex_attributes _ = []
+  let vertex_attributes _ = []
+  let default_edge_attributes _ = []
+  let edge_attributes _ = []
+  let get_subgraph _ = None
+end
 
-let empty : t = (Graph.empty, Map.empty)
-let add_block (g, m) block =
-  let g = Graph.add_vertex g block in
-  let m = Map.add block.lbl block m in
+module Map = Map.Make(Label)
+type t = CFG.t * basic_block Map.t
+
+let empty : t = (CFG.empty, Map.empty)
+let add_block (g, m) block : t =
+  let g = CFG.add_vertex g block in
+  let m = Map.add_exn ~key:block.lbl ~data:block m in
   (g, m)
+
+module Viz = Graph.Graphviz.Dot(CFG)
+
+let dump_to_dot (graph: CFG.t) (channel: Out_channel.t) =
+  Viz.output_graph channel graph

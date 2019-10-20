@@ -4,27 +4,34 @@ open Lcm
 let fu _ =
   failwith "unimplemented"
 
+let go dot file () =
+  let prog = Parser.parse_bril file in
+  let fn = List.hd_exn prog in
+  let graph = Cfgify.cfgify_dirs fn.body in
+  Cfg.dump_to_dot graph dot
 
-let build_cfg (prog: Bril.program) : Cfg.t =
-  fu prog
+let open_in_opt = function
+  | Some path -> In_channel.create path
+  | None -> In_channel.stdin
 
-let analyze (cfg: Cfg.t) =
-  fu cfg
-
-let go file () =
-  print_s ([%sexp_of: Bril.program] (Parser.parse_bril file))
+let open_out_opt = function
+  | Some path -> Out_channel.create path
+  | None -> Out_channel.stdout
 
 let command =
   let spec =
     let open Command.Spec in
-    empty +> anon (maybe ("brilfile" %:string))
+    empty
+    +> flag "-dot" (optional string) ~doc:"<file.dot> Output CFG to .dot file"
+    +> anon (maybe ("brilfile" %:string))
   in
   Command.basic_spec
     ~summary:"lcm: Lazy code motion for the Bril intermediate language"
     spec
-    (function
-     | Some path -> go @@ In_channel.create path
-     | None -> go In_channel.stdin)
+    (fun dot_path bril_path ->
+      let bril = open_in_opt bril_path in
+      let dot = open_out_opt dot_path in
+      go dot bril)
 
 let () =
   Command.run ~version:"0.1.1" command

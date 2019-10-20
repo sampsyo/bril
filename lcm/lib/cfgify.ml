@@ -92,8 +92,8 @@ let successors block =
 
 let add_edges map graph block =
   let add_edge graph lbl =
-    let dst_block = Cfg.Map.find lbl map in
-    Cfg.Graph.add_edge graph block dst_block
+    let dst_block = Cfg.Map.find_exn map lbl in
+    Cfg.CFG.add_edge graph block dst_block
   in
   List.fold ~f:add_edge ~init:graph (successors block)
 
