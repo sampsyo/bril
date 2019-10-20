@@ -57,6 +57,14 @@ def findDelta(iv, out_header_rd, out_last_block_rd, out_last_block_cprop):
     var_val = out_last_block_cprop[var]
     return delta["op"], var_val
 
+def findBranchStmt(blocks, loop):
+    foundBranch = None
+    for blockName in loop:
+        for stmt in blocks[blockName]:
+            if 'op' in stmt and stmt['op'] == 'br':
+                assert(foundBranch is not None)
+                findBranch = stmt
+    return foundBranch
 
 def findLoopInfo(bril, loops):
     blocks, in_cprop, out_cprop = run_df_return(bril, ANALYSES['cprop'])
@@ -105,10 +113,11 @@ if __name__ == '__main__':
     bril = json.load(sys.stdin)
     res, blocks = backedge(bril)
     loops = findLoops(res, blocks)
-    # for item in loops[0]:
-    #     for item1 in blocks[item]:
-    #         print(item1)
-    lst = findLoopInfo(bril, loops)
-    for item in lst:
-        print(item, lst[item])
+    print("loops@@@@@@", loops)
+    for item in loops[0]:
+        for item1 in blocks[item]:
+            print(item1)
+    print("finding loop info")
+    a, b, c, d, e, f, g = findLoopInfo(bril, loops)
+    print (a,b,c,d,e,f,g)
 
