@@ -237,17 +237,20 @@ def get_fallthroughs(blocks, succ):
 
 ### order basic blocks according to the following constraints:
 ### * fallthroughs must be respected
-### * last block must remain the last block
-def order_basic_blocks(blocks, succ, fallthrough_map):
+### * first and last blocks must remain in the same position
+def order_basic_blocks(blocks, pred, succ, fallthrough_map):
   blockorder = []
   cur_block = None
   fallthroughs = fallthrough_map.values()
   while len(blockorder) < len(blocks):
     if cur_block is None:
-      for blockname,_ in blocks.items():
+      for blockname in blocks.keys():
         if blockname not in blockorder \
            and blockname not in fallthroughs \
-           and (len(blockorder) != len(blocks) - 1 or len(succ[blockname]) == 0):
+           and (len(blockorder) != len(blocks) - 1 or len(succ[blockname]) == 0) \
+           and (len(blockorder) == len(blocks) - 1 or len(succ[blockname]) != 0) \
+           and (len(blockorder) != 0 or len(pred[blockname]) == 0) \
+           and (len(blockorder) == 0 or len(pred[blockname]) != 0):
           cur_block = blockname
           break
 
@@ -342,8 +345,6 @@ def codemotion(instrs):
 
     preheader_name = "preheader" + str(natloop_ind)
     natloop_ind += 1
-    # make sure preheader precedes header
-    succ[preheader_name] = [sink]
 
     # save natural loop information
     natloop_info[preheader_name] = {
@@ -355,16 +356,30 @@ def codemotion(instrs):
 
   # generate new instructions
   new_blocks = dict(blocks)
+  new_succ = dict(succ)
+  new_pred = dict(pred)
   header_map = {}
   for preheader_name, info in natloop_info.items():
-    header_map[info["header_name"]] = preheader_name
-    new_blocks[preheader_name] = info["preheader"]
+    header_name = info["header_name"]
+    header_map[header_name] = preheader_name
 
+    # update CFG
+    new_blocks[preheader_name] = info["preheader"]
     for blockname, block in info["natloop_blocks"].items():
       new_blocks[blockname] = block
 
-  fallthrough_map = get_fallthroughs(new_blocks, succ)
-  blockorder = order_basic_blocks(new_blocks, succ, fallthrough_map)
+    new_succ[preheader_name] = [header_name]
+    new_pred[preheader_name] = []
+    new_pred[header_name] = [preheader_name]
+    for pred_blockname in pred[header_name]:
+      if pred_blockname not in info["natloop"]:
+        new_succ[pred_blockname] = \
+            list(filter(lambda s: s != header_name, succ[pred_blockname])) \
+            + [preheader_name]
+        new_pred[preheader_name].append(pred_blockname)
+
+  fallthrough_map = get_fallthroughs(new_blocks, new_succ)
+  blockorder = order_basic_blocks(new_blocks, new_pred, new_succ, fallthrough_map)
   new_instrs = blockmap_to_instrs(new_blocks, blockorder, header_map, natloop_info)
   return new_instrs
 
