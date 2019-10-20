@@ -20,7 +20,7 @@ def get_backedges(successors,domtree):
     return backedges
 
 
-### get natural loops
+### get the natural loop associated with an input backedge
 def loopsy(source,sink,predecessors):
     worklist = [source]
     loop = set()
@@ -36,6 +36,15 @@ def loopsy(source,sink,predecessors):
     return loop
 
 
+### find all the natural loops
+def natloops(blocks):
+  pred,succ = edges(blocks)
+  dom = get_dom(succ,list(blocks.keys())[0])
+  for source,sink in get_backedges(succ,dom):
+    yield loopsy(source,sink,pred)
+
+
+### get all reaching definitions
 def reachers(blocks):
     rins, routs = df_worklist(blocks, ANALYSIS["rdef"])
     return rins,routs
@@ -57,7 +66,7 @@ def reaching_def_vars(blocks, reaching_defs):
   return rdef_vars
     
 
-# detect LI instructions for a single natural loop
+### detect LI instructions for a single natural loop
 def invloop(blocks,rdef_var_ins,rdef_var_outs,natloop):
     boolmap = {}
     worklist = []
@@ -125,12 +134,6 @@ def codemot(bril):
 
     for natloop in natloops(blocks):
       boolmap = invloop(blocks,rdef_var_ins,rdef_var_outs,natloop) 
-
-def natloops(blocks): #input backedge
-  pred,succ = edges(blocks)
-  dom = get_dom(succ,list(blocks.keys())[0])
-  for source,sink in get_backedges(succ,dom):
-    yield loopsy(source,sink,pred) # natloops
 
 def printstuffs(bril):
   for func in bril['functions']:
