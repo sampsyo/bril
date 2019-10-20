@@ -1,14 +1,14 @@
 main {
   v: int = const 4;
   b: bool = const false;
-  
+  uncondb: bool = const false;
   outside: int = const 1;
   max: int = const 10;
   c: int = const 1;
   i: int = const 1;
 loopstart:
   print c;
-  br b if else;
+  br uncondb if else;
 if:
   outside: int = mul outside v;
   jmp end;
@@ -18,10 +18,10 @@ else:
 end:
   c: int = add c i;
   b: bool = le c max;
+  b2: bool = const false;
   br b loopstart there;
 there:
   print v;
-  b2: bool = const false;
   br b2 one two;
 one:
   jmp finish;

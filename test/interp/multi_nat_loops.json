@@ -15,6 +15,12 @@
           "value": false
         },
         {
+          "dest": "uncondb",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
           "dest": "outside",
           "op": "const",
           "type": "int",
@@ -49,7 +55,7 @@
         },
         {
           "args": [
-            "b",
+            "uncondb",
             "if",
             "else"
           ],
@@ -113,6 +119,12 @@
           "type": "bool"
         },
         {
+          "dest": "b2",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
           "args": [
             "b",
             "loopstart",
@@ -128,12 +140,6 @@
             "v"
           ],
           "op": "print"
-        },
-        {
-          "dest": "b2",
-          "op": "const",
-          "type": "bool",
-          "value": false
         },
         {
           "args": [

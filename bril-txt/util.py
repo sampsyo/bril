@@ -25,6 +25,21 @@ def var_args(instr):
     else:
         return []
 
+def var_loop(instr):
+    """ Get a list of all variables that are statements and arguments to this
+    instruction.  We exclude all TERMINATORS.
+    If the instruction is "b: = const 4" for example, return the list ["b"].
+    """
+    if 'op' in instr:
+        if instr['op'] in TERMINATORS:
+            return []
+        else:
+            d = instr.get('dest', [])
+            a = instr.get('args', [])
+            return (list(a) + list(d))
+    else:
+        return []
+
 
 def fresh(seed, names):
     """Generate a new name that is not in `names` starting with `seed`.
