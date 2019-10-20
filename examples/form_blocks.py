@@ -12,7 +12,7 @@ nextFreshLabelNum = 1
 def nextFreshLabel():
     global nextFreshLabelNum 
     nextFreshLabelNum += 1
-    return ("_____________label" + str(nextFreshLabelNum))
+    return ("____label" + str(nextFreshLabelNum))
 
 def form_blocks(instrs):
     """Given a list of Bril instructions, generate a sequence of

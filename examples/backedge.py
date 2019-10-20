@@ -88,7 +88,7 @@ def findLoopInfo(bril, loops):
     blocks, in_cprop, out_cprop = run_df_return(bril, ANALYSES['cprop'])
     blocks, in_rd, out_rd = run_df_return(bril, ANALYSES['reachingDefs'])
     valid_op = ["eq", "lt", "gt", "ge", "le"]
-    loop_info = {}
+    loop_infos = []
     for loop in loops:
         branch_stmt, branch_blockname = findBranchStmt(blocks, loop)
         
@@ -117,8 +117,8 @@ def findLoopInfo(bril, loops):
         bound_val = in_cprop[br_cond_var_stmt_blockname][bound_var]
         iv_val = findInitialIVValue(out_cprop,blocks, loop, iv)
         assert(iv_val is not None)
-        return iv, iv_val, bound_var, bound_val, br_cond_var_stmt_op, delta_op, delta_var_val
-
+        loop_infos.append((loop, (iv, iv_val, bound_var, bound_val, br_cond_var_stmt_op, delta_op, delta_var_val)))
+    return loop_infos
 
 
 if __name__ == '__main__':
@@ -128,6 +128,8 @@ if __name__ == '__main__':
     # for item in loops[0]:
     #     for item1 in blocks[item]:
     #         print(item1)
-    a, b, c, d, e, f, g = findLoopInfo(bril, loops)
-    print (a,b,c,d,e,f,g)
+    loop_infos= findLoopInfo(bril, loops)
+    for loop, info in loop_infos:
+        print("LOOP: ", loop)
+        print("INFO: ", info)
 
