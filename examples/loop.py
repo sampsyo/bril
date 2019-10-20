@@ -59,20 +59,6 @@ def natblocks(bril):#list of blocks and names
         ins, outs = df_worklist(blocks, ANALYSIS["rdefs"])
     return ins, outs, natloops
 
-###
-
-#def invar(bril)
-#    for func in bril['functions']:
-#        blocks = block_map(form_blocks(func['instrs']))
-#        add_terminators(blocks)
-#        ins, outs = df_worklist(blocks, ANALYSIS["rdefs"])
-#        natloops = 0
-#
-#        for loop in natloops:
-#            for instr in loop:
-#                run_df(instr, analysis)
-#    
-#
 
 def reachers(blocks):
     rins, routs = df_worklist(blocks, ANALYSIS["rdefs"])
@@ -109,7 +95,7 @@ def codemot(bril):
         rins, routs = reachers(blocks) # what is reaching
         for natloop in natloops(blocks):
             boolmap = invloop(blocks,rins,routs,natloop) 
-    
+            
     return new
 
 def natloops(blocks): #input backedge
