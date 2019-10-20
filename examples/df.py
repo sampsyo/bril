@@ -104,7 +104,6 @@ def run_df(bril, analysis):
         # Form the CFG.
         blocks = cfg.block_map(form_blocks(func['instrs']))
         cfg.add_terminators(blocks)
-
         in_, out = df_worklist(blocks, analysis)
         for block in blocks:
             print('{}:'.format(block))
@@ -170,10 +169,12 @@ def dom_transfer(blocks, node, inval):
     return inval
 
 def reachingDefsTransfer(blocks, node, in_):
+    in_2 = dict()
+    in_2.update(in_)
     for stmt in blocks[node]:
         if 'dest' in stmt:
-            in_[stmt['dest']] = stmt
-    return in_
+            in_2[stmt['dest']] = stmt
+    return in_2
 
 ANALYSES = {
     # A really really basic analysis that just accumulates all the
