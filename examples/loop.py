@@ -31,7 +31,6 @@ def loopsy(source,sink,predecessors):
             if not(p in loop or p==sink):
                 loop.add(p)
                 worklist.append(p)
-
     loop.add(sink)
     loop.add(source)
     return loop

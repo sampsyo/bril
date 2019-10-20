@@ -1,0 +1,36 @@
+main {
+  i: int const 11;
+  j: int const 7;
+  k: int const 5;
+  l: int const 100;
+
+header:
+  x: int = const 3;
+  zero: int = const 0;
+  cond: bool = gt i zero;
+  br cond bo exit
+
+bo:
+  one: int = const 1;
+  i: int = sub i one;
+  cond: bool = gt j zero
+  br cond bod header;
+
+bod:
+  y: int = const 3;
+  j: int = sub j one;
+  cond: bool = gt k zero
+  br cond body bo
+
+body:
+  z: int = const 3;
+  m: int = mul x y;
+  l: int = mul m z;
+  k: int = sub k one;
+  nop
+  jmp bod
+
+exit:
+  print l
+
+}
