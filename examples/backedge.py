@@ -12,12 +12,32 @@ def backedge(bril):
         for succ in succs[block]:
             if (succ in out[block]):
                 res.append((block, succ))
-    return res
+    return res, blocks
         
+def findLoop(current, target, blocks, visited):
+    if current == target:
+        visited.append(current)
+        return True, visited
+    preds, succs = edges(blocks)
+    myPreds = preds[current]
+    for p in myPreds:
+        visited.append(current)
+        found, path = findLoop(p, target, blocks, visited)
+        if found:
+            return found, path
+    return False, None
+
+
+def findLoops(res, blocks):
+    loops = []
+    for r in res:
+        _, path = findLoop(r[0], r[1], blocks, list())
+        loops.append(path)
+    return loops
+
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
-    res = backedge(bril)
-    print (res)
-
+    res, blocks = backedge(bril)
+    loops = findLoops(res, blocks)
 
