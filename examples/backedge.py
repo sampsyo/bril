@@ -48,9 +48,6 @@ def findInitialIVValue(out_cprop,blocks, loop, iv):
     else:
         return val[iv]
 
-# def findCondDef(loop, br_cond)
-#     #iterate over loop and find the shit
-
 def findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop):
     index_of_cond_var_block = loop.index(br_cond_var_stmt_blockname)
     index_of_block_before_cond_var_block = len(loop) - 1 if index_of_cond_var_block == 0 else index_of_cond_var_block - 1
@@ -61,8 +58,6 @@ def findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop):
     delta_var_name = next(a for a in delta_stmt["args"] if a != iv)
     delta_var_val = out_cprop[name_of_block_before_cond_var_block][delta_var_name]
     return delta_stmt["op"], delta_var_val
-
-
 
 #Asserts strictly 1 branch stmt in entire loop
 def findBranchStmt(blocks, loop):
@@ -89,35 +84,39 @@ def findLoopInfo(bril, loops):
     blocks, in_rd, out_rd = run_df_return(bril, ANALYSES['reachingDefs'])
     valid_op = ["eq", "lt", "gt", "ge", "le"]
     loop_infos = []
+
     for loop in loops:
+        #Find branch statement
         branch_stmt, branch_blockname = findBranchStmt(blocks, loop)
-        
         assert branch_stmt['op'] == 'br'
+        
+        #Find branch condition var
         br_cond_var = branch_stmt["args"][0]
         br_cond_var_stmt = out_rd[branch_blockname][br_cond_var]
         br_cond_var_stmt_blockname = findNameOfBlockWithStatement(blocks, br_cond_var_stmt)
-        # cond op
         br_cond_var_stmt_op = br_cond_var_stmt['op']
         assert(br_cond_var_stmt_op in valid_op)
 
+        #Find IV and bound
         iv_and_bound = br_cond_var_stmt['args']
         l = iv_and_bound[0]
         r = iv_and_bound[1]
         l_cprop = in_cprop[br_cond_var_stmt_blockname][l]
         r_cprop = in_cprop[br_cond_var_stmt_blockname][r]
         assert((l_cprop != '?') != (r_cprop != '?'))
-
-        br_cond_block_in_rd = in_rd[br_cond_var_stmt_blockname] #reaching defs in edge of the condition statement's block
+        #Determine which is which
         bound_var = l if l_cprop != '?' else r
         iv = l if r_cprop != '?' else r
-
-        iv_stmt = br_cond_block_in_rd[iv]
-
-        delta_op, delta_var_val= findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop)
+        #Get IV initial value and bound constant value
         bound_val = in_cprop[br_cond_var_stmt_blockname][bound_var]
         iv_val = findInitialIVValue(out_cprop,blocks, loop, iv)
         assert(iv_val is not None)
+
+        #Find delta op and delta val
+        delta_op, delta_var_val= findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop)
+        
         loop_infos.append((loop, (iv, iv_val, bound_var, bound_val, br_cond_var_stmt_op, delta_op, delta_var_val)))
+
     return loop_infos
 
 
