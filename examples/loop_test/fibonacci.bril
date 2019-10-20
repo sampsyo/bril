@@ -1,0 +1,20 @@
+main {
+  a: int = const 0;
+  b: int = const 1;
+  i: int = const 10;
+  zero: int = const 0;
+
+header:
+  cond: bool gt i zero;
+  br cond body exit;
+
+body:
+  print a;
+  a: int = add b zero;
+  b: int = add a b;
+  i: int = sub i one;
+
+exit:
+  nop;
+
+}
