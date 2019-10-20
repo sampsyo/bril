@@ -27,6 +27,22 @@ type value_expr =
   | Nop
 [@@deriving sexp]
 
+let args = function
+  | Add (x, y) -> [x; y]
+  | Mul (x, y) -> [x; y]
+  | Sub (x, y) -> [x; y]
+  | Div (x, y) -> [x; y]
+  | Eq (x, y) -> [x; y]
+  | Lt (x, y) -> [x; y]
+  | Gt (x, y) -> [x; y]
+  | Le (x, y) -> [x; y]
+  | Ge (x, y) -> [x; y]
+  | Not x -> [x]
+  | And (x, y) -> [x; y]
+  | Or (x, y) -> [x; y]
+  | Id x -> [x]
+  | Nop -> []
+
 type value_op =
   { op: value_expr;
     dest: Ident.var;

@@ -8,7 +8,36 @@ let go dot file () =
   let prog = Parser.parse_bril file in
   let fn = List.hd_exn prog in
   let graph = Cfgify.cfgify_dirs fn.body in
-  Cfg.dump_to_dot graph dot
+  Cfg.dump_to_dot graph dot;
+  let transp block = Analyze.transparent Analyze.expression block in
+  let computes block = Analyze.computes Analyze.expression block in
+  let anticipates block = Analyze.anticipates Analyze.expression block in
+  let avail_init b =
+    match Cfg.CFG.pred graph b with
+    | [] -> false
+    | _ -> true
+  in
+  let ant_init b =
+    match Cfg.CFG.succ graph b with
+    | [] -> false
+    | _ -> true
+  in
+  let avail = Analyze.Availability.analyze avail_init graph in
+  let ant = Analyze.Anticipatability.analyze ant_init graph in
+  Cfg.CFG.iter_vertex (fun v ->
+      print_string (Ident.string_of_lbl v.lbl);
+      print_string "\n\t";
+      print_string @@ string_of_bool (transp v);
+      print_string "\t";
+      print_string @@ string_of_bool (computes v);
+      print_string "\t";
+      print_string @@ string_of_bool (anticipates v);
+      print_string "\t";
+      print_string @@ string_of_bool (avail v);
+      print_string "\t";
+      print_string @@ string_of_bool (ant v);
+      print_string "\n")
+    graph
 
 let open_in_opt = function
   | Some path -> In_channel.create path

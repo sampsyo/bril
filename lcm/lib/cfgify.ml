@@ -32,7 +32,7 @@ let blockify (instrs: Bril.directive list) =
           blockify' rest cur_block
        end
     | [] ->
-       if List.length cur_block.pre_body > 0
+       if List.length cur_block.pre_body > 0 || cur_block.pre_term <> None
        then [cur_block]
        else []
   and continue cur_block instrs lbl =
@@ -42,7 +42,7 @@ let blockify (instrs: Bril.directive list) =
     let next_block =
       { pre_lbl = lbl; pre_body = []; pre_term = None }
     in
-    if List.length cur_block.pre_body > 0
+    if List.length cur_block.pre_body > 0 || cur_block.pre_term <> None
     then cur_block :: blockify' instrs next_block
     else blockify' instrs next_block
   in
