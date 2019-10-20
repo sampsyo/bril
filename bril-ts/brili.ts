@@ -210,12 +210,14 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function) {
+function evalFunc(func: bril.Function): number {
   let env: Env = new Map();
+  let num_instrs_exec = 0;
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
       let action = evalInstr(line, env);
+      num_instrs_exec++;
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -229,16 +231,19 @@ function evalFunc(func: bril.Function) {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return;
+        return num_instrs_exec;
       }
     }
   }
+
+  return num_instrs_exec;
 }
 
 function evalProg(prog: bril.Program) {
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func);
+      let num_instrs_exec = evalFunc(func);
+      console.log(`${num_instrs_exec} instructions executed`);
     }
   }
 }
