@@ -12,7 +12,7 @@ nextFreshLabelNum = 1
 def nextFreshLabel():
     global nextFreshLabelNum 
     nextFreshLabelNum += 1
-    return ("_____________label" + str(nextFreshLabelNum))
+    return ("____label" + str(nextFreshLabelNum))
 
 def form_blocks(instrs):
     """Given a list of Bril instructions, generate a sequence of
@@ -24,6 +24,14 @@ def form_blocks(instrs):
     can only appear at the *start* of a basic block. Basic blocks may
     not be empty.
     """
+
+    #Makes every statement a block.
+    #A block is composed of 3 things:
+    #1. A label
+    #2. A non-control-flow statement
+    #3. A control-flow instruction (br, jmp, or ret)
+    #Pseudocode:
+    # if block has more than 2 statements: dont()
     i = 0
     while i < len(instrs)-1:
         true1 = 'op' in instrs[i] and instrs[i]['op'] not in TERMINATORS 
