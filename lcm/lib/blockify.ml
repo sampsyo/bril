@@ -41,4 +41,7 @@ let blockify (instrs: Bril.directive list) =
     then cur_block :: blockify' instrs next_block
     else blockify' instrs next_block
   in
-  blockify' instrs { pre_lbl = None; pre_body = []; pre_term = None }
+  let empty_block =
+    { pre_lbl = None; pre_body = []; pre_term = None } 
+  in
+  List.rev @@ blockify' instrs empty_block
