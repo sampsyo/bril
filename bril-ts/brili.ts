@@ -281,7 +281,48 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     }
     env.set(instr.dest, vecC);    
 
-    //console.log(c);
+    return NEXT;
+  }
+
+  case "vmul": {
+
+    // serialized version
+    let vecA = getVec(instr, env, 0);
+    let vecB = getVec(instr, env, 1);
+    let vecC = new Int32Array(fixedVecSize);
+    for (let i = 0; i < fixedVecSize; i++) {
+      vecC[i] = vecA[i] * vecB[i];
+    }
+    env.set(instr.dest, vecC);    
+
+    return NEXT;
+  }
+
+  case "vsub": {
+
+    // serialized version
+    let vecA = getVec(instr, env, 0);
+    let vecB = getVec(instr, env, 1);
+    let vecC = new Int32Array(fixedVecSize);
+    for (let i = 0; i < fixedVecSize; i++) {
+      vecC[i] = vecA[i] - vecB[i];
+    }
+    env.set(instr.dest, vecC);    
+
+    return NEXT;
+  }
+
+  case "vdiv": {
+
+    // serialized version
+    let vecA = getVec(instr, env, 0);
+    let vecB = getVec(instr, env, 1);
+    let vecC = new Int32Array(fixedVecSize);
+    for (let i = 0; i < fixedVecSize; i++) {
+      vecC[i] = vecA[i] / vecB[i];
+    }
+    env.set(instr.dest, vecC);    
+
     return NEXT;
   }
 
