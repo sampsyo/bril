@@ -75,15 +75,20 @@ def findLoopInfo(bril, loops):
         br_cond = br_cond[br_cond_var]
         # cond op
         op = br_cond['op']
-        if br_cond is None or 'op' not in br_cond:
-            continue
-        elif op not in valid_op:
+        if br_cond is None or 'op' not in br_cond or op not in valid_op:
             continue 
         iv_or_bound = br_cond['args']
         l = iv_or_bound[0]
         r = iv_or_bound[1]
+        print("header name", loop[0])
+        print("left value:", l)
+        print("right value:", r)
+        print("reaching defs from header for l", out_header[l])
+        print("reaching defs from header for r", out_header[r])
         l_const = out_header[l] is not None and out_header[l]['op'] == "const" and out_rd[loop[0]][r] is None
         r_const = out_header[r] is not None and out_header[r]["op"] == "const" and out_rd[loop[0]][l] is None
+        print("lconst" , l_const)
+        print("rconst" , r_const)
         assert l_const != r_const
         boundvar = iv_or_bound[0] if l_const else iv_or_bound[1]
         iv = iv_or_bound[0] if r_const else iv_or_bound[1]
@@ -98,6 +103,10 @@ if __name__ == '__main__':
     bril = json.load(sys.stdin)
     res, blocks = backedge(bril)
     loops = findLoops(res, blocks)
+    for item in loops[0]:
+        for item1 in blocks[item]:
+            print(item1)
+    print("finding loop info")
     a, b, c, d, e, f = findLoopInfo(bril, loops)
     print (a,b,c,d,e,f)
 
