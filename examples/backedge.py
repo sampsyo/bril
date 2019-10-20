@@ -57,6 +57,14 @@ def findDelta(iv, out_header_rd, out_last_block_rd, out_last_block_cprop):
     var_val = out_last_block_cprop[var]
     return delta["op"], var_val
 
+def findBranchStmt(blocks, loop):
+    foundBranch = None
+    for blockName in loop:
+        for stmt in blocks[blockName]:
+            if 'op' in stmt and stmt['op'] == 'br':
+                assert(foundBranch is not None)
+                findBranch = stmt
+    return foundBranch
 
 def findLoopInfo(bril, loops):
     blocks, in_cprop, out_cprop = run_df_return(bril, ANALYSES['cprop'])
@@ -71,7 +79,7 @@ def findLoopInfo(bril, loops):
         in_header = in_rd[loop[0]]
         out_last_block = out_rd[loop[-1]]
         assert stmt['op'] == 'br'
-        print(stmt)
+        # print(stmt)
         br_cond_var = stmt["args"][0]
         br_cond = out_rd[loop[0]]
         br_cond = br_cond[br_cond_var]
@@ -82,15 +90,15 @@ def findLoopInfo(bril, loops):
         iv_or_bound = br_cond['args']
         l = iv_or_bound[0]
         r = iv_or_bound[1]
-        print("header name", loop[0])
-        print("left value:", l)
-        print("right value:", r)
-        print("reaching defs from header for l", in_header[l])
-        print("reaching defs from header for r", in_header[r])
+        # print("header name", loop[0])
+        # print("left value:", l)
+        # print("right value:", r)
+        # print("reaching defs from header for l", in_header[l])
+        # print("reaching defs from header for r", in_header[r])
         l_const = in_header[l] is not None and in_header[l]['op'] == "const" and in_header[r] is None
         r_const = in_header[r] is not None and in_header[r]["op"] == "const" and in_header[l] is None
-        print("lconst" , l_const)
-        print("rconst" , r_const)
+        # print("lconst" , l_const)
+        # print("rconst" , r_const)
         assert l_const != r_const
         boundvar = iv_or_bound[0] if l_const else iv_or_bound[1]
         iv = iv_or_bound[0] if r_const else iv_or_bound[1]
@@ -105,6 +113,7 @@ if __name__ == '__main__':
     bril = json.load(sys.stdin)
     res, blocks = backedge(bril)
     loops = findLoops(res, blocks)
+    print("loops@@@@@@", loops)
     for item in loops[0]:
         for item1 in blocks[item]:
             print(item1)
