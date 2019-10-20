@@ -47,5 +47,5 @@ lw_loop:
   done: bool = eq i size;
   br done lw_done lw_loop;
 lw_done:
-
+  print zero;
 }
