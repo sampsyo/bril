@@ -1,0 +1,25 @@
+main (n:int) {
+    v1: int = call fib n;
+    print v1;
+}
+
+le_one (n: int): bool {
+    one: int = const 1;
+    lto: bool = le n one;
+    ret lto;
+}
+
+fib n: int {
+    base: bool = call le_one n;
+    br base return continue;
+return:
+    ret n;
+continue:
+    one: int = const 1;
+    prev: int = sub n one;
+    prev2: int = sub prev one;
+    fib1: int = call fib prev;
+    fib2: int = call fib prev2;
+    ans: int = add fib1 fib2;
+    ret ans;
+}
