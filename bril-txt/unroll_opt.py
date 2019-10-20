@@ -84,34 +84,40 @@ def loop_finder(bril, cfg_edges, dom_dic):
     return loop_blocks
 
 
-def extract_variables_loop(bril, potential_loops, block_map):
+def extract_variables_loop(bril, potential_loop, block_map):
     """
         Extract variables that are defined/modified in a loop excluding
         terminators.
     """
-    potential_loops = potential_loops[0]
     all_variables = []
     # Obtain all variables
-    for b in potential_loops:
+    for b in potential_loop:
         vb = []
         block = block_map[b]
         for inst in block:
             vb = vb + util.var_loop(inst)
         all_variables = all_variables +  vb
     all_variables = set(all_variables)
-
     return set(all_variables)
 
-def is_switchable(bril, potential_loops, block_map):
+def is_switchable(bril, potential_loop, block_map):
     """
-        Returns True/False indicating if the passed loops is switchable.
-        optionally prints debug output indicating proof
+        Returns array of blocks that are switchable within a loop.
+        Returns [] if none exist
     """
 
-    # TODO: fix this so it returns an array per loop
-    a = extract_variables_loop(bril, potential_loops, block_map)
-    print(a)
-    pass
+    switchable_blocks = []
+    loop_variables = extract_variables_loop(bril, potential_loop, block_map)
+    for b in potential_loop:
+        print(b)
+        block = block_map[b]
+        term_instr = block[-1]
+        if term_instr['op'] == 'br':
+            vt = term_instr['args'][0]
+            if vt not in loop_variables:
+                switchable_blocks.append(b)
+    return switchable_blocks
+    
 
 def get_blocks_map(bril):
     for func in bril['functions']:
@@ -124,10 +130,10 @@ if __name__ == '__main__':
     edges = cfg_edges(bril)
     dom_dic = dom.get_dom_dict(bril)
     
-    potential_loops = loop_finder(bril, edges, dom_dic)
+    potential_loop = loop_finder(bril, edges, dom_dic)
     
-    is_switchable(bril, potential_loops, blocks_map)
-
+    bl = is_switchable(bril, potential_loop[0], blocks_map)
+    print('switchable block: ', bl)
 
     
 
