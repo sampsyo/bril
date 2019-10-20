@@ -114,21 +114,56 @@ def findLoopInfo(bril, loops):
 
         #Find delta op and delta val
         delta_op, delta_var_val= findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop)
+
+        #Find base pointers
+        base_pointers = findBasePointers(blocks, loop, in_cprop, iv, in_rd)
         
-        loop_infos.append((loop, (iv, iv_val, bound_var, bound_val, br_cond_var_stmt_op, delta_op, delta_var_val)))
+        loop_infos.append((loop, {'iv':iv, 'iv_val':iv_val, 'bound_var': bound_var, 'bound_val': bound_val, 'cond_op': br_cond_var_stmt_op, 'delta_op': delta_op, 'delta_val': delta_var_val, 'base_pointers': base_pointers}))
 
     return loop_infos
 
+def filterEligibleLoops(loop_infos):
+    out = []
+    for LI in loop_infos:
+        if LI[1]['delta_val'] != 1:
+            continue
+        out.append(LI)
+    return out
+
+def findBasePointers(blocks, loop, in_cprop, iv, in_rd):
+    loadstores = []
+    for blockName in loop:
+        for stmt in blocks[blockName]:
+            if 'op' in stmt and stmt['op'] == 'lw' or stmt['op'] == 'sw':
+                loadstores.append(stmt)
+    loadstore_pointers = [stmt['args'][-1] for stmt in loadstores]
+    loadstore_bases = []
+    loadstore_base_vals = []
+    for index, pointer in enumerate(loadstore_pointers):
+        loadstore_blockname = findNameOfBlockWithStatement(blocks, loadstores[index])
+        pointer_stmt = in_rd[loadstore_blockname][pointer]
+        base_var = next(arg for arg in pointer_stmt['args'] if arg != iv)
+        loadstore_bases.append(base_var)
+        pointer_stmt_blockname = findNameOfBlockWithStatement(blocks, pointer_stmt)
+        base_val = in_cprop[pointer_stmt_blockname][base_var]
+        # assert(base_val != '?')
+        loadstore_base_vals.append(base_val)
+        
+
+
+    return dict(zip(loadstore_bases,loadstore_base_vals))
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
     res, blocks = backedge(bril)
     loops = findLoops(res, blocks)
-    # for item in loops[0]:
+    # for item in loops[1]:
     #     for item1 in blocks[item]:
     #         print(item1)
     loop_infos= findLoopInfo(bril, loops)
     for loop, info in loop_infos:
         print("LOOP: ", loop)
-        print("INFO: ", info)
+        print("INFO: ", info, '\n')
+    filtered_loopInfos = filterEligibleLoops(loop_infos)
+
 
