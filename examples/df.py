@@ -20,6 +20,17 @@ def union(sets):
         out.update(s)
     return out
 
+def weirdunion(setOfDicts):
+    out = dict() #var to set of stmts
+    for varToStmtSet in setOfDicts:
+        for varName in varToStmtSet:
+            if varName in out:
+                if out[varName] is not varToStmtSet[varName]:
+                    out[varName] = None
+            else:
+                out[varName] = varToStmtSet[varName]
+    return out
+
 def intersection(sets):
     out = None
     for s in sets:
@@ -158,6 +169,12 @@ def dom_transfer(blocks, node, inval):
     inval.add(node)
     return inval
 
+def reachingDefsTransfer(blocks, node, in_):
+    for stmt in blocks[node]:
+        if 'dest' in stmt:
+            in_[stmt['dest']] = stmt
+    return in_
+
 ANALYSES = {
     # A really really basic analysis that just accumulates all the
     # currently-defined variables.
@@ -167,6 +184,16 @@ ANALYSES = {
         merge=union,
         transfer=lambda blocks,node, in_: in_.union(gen(blocks[node])),
     ),
+
+
+    #.......
+    'reachingDefs': Analysis(
+        True,
+        init=lambda blocks: set(),
+        merge=weirdunion,
+        transfer= reachingDefsTransfer,
+    ),
+
 
     # Live variable analysis: the variables that are both defined at a
     # given point and might be read along some path in the future.
