@@ -39,9 +39,21 @@ end
 module CFG = struct
   include Graph.Persistent.Digraph.Concrete(BasicBlock)
   let vertex_name v = Ident.string_of_lbl v.lbl
-  let graph_attributes _ = []
+  let graph_attributes _ : Graph.Graphviz.DotAttributes.graph list =
+    []
   let default_vertex_attributes _ = []
-  let vertex_attributes _ = []
+
+  let vertex_attributes block : Graph.Graphviz.DotAttributes.vertex list =
+    let text =
+      let label = Ident.string_of_lbl block.lbl in
+      let body = Sexp.to_string ([%sexp_of: instruction list] block.body) in
+      let term = Sexp.to_string ([%sexp_of: Bril.term_op] block.term) in
+      label ^ "\n" ^ body ^ "\n" ^ term
+    in
+    
+    [`Shape `Box;
+     `Label text]
+
   let default_edge_attributes _ = []
   let edge_attributes _ = []
   let get_subgraph _ = None
