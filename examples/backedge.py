@@ -88,7 +88,7 @@ def findLoopInfo(bril, loops):
     blocks, in_cprop, out_cprop = run_df_return(bril, ANALYSES['cprop'])
     blocks, in_rd, out_rd = run_df_return(bril, ANALYSES['reachingDefs'])
     valid_op = ["eq", "lt", "gt", "ge", "le"]
-
+    loop_info = {}
     for loop in loops:
         branch_stmt, branch_blockname = findBranchStmt(blocks, loop)
         
