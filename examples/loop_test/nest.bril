@@ -1,8 +1,8 @@
 main {
-  i: int const 11;
-  j: int const 7;
-  k: int const 5;
-  l: int const 100;
+  i: int = const 11;
+  j: int = const 7;
+  k: int = const 5;
+  l: int = const 100;
 
 header:
   x: int = const 3;
