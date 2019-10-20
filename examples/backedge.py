@@ -67,6 +67,8 @@ def findLoopInfo(bril, loops):
         block = blocks[loop[0]]
         stmt = block[-1]
         out_header = out_rd[loop[0]]
+        out_cprop_header = out_cprop[loop[0]]
+        in_header = in_rd[loop[0]]
         out_last_block = out_rd[loop[-1]]
         assert stmt['op'] == 'br'
         print(stmt)
@@ -83,19 +85,19 @@ def findLoopInfo(bril, loops):
         print("header name", loop[0])
         print("left value:", l)
         print("right value:", r)
-        print("reaching defs from header for l", out_header[l])
-        print("reaching defs from header for r", out_header[r])
-        l_const = out_header[l] is not None and out_header[l]['op'] == "const" and out_rd[loop[0]][r] is None
-        r_const = out_header[r] is not None and out_header[r]["op"] == "const" and out_rd[loop[0]][l] is None
+        print("reaching defs from header for l", in_header[l])
+        print("reaching defs from header for r", in_header[r])
+        l_const = in_header[l] is not None and in_header[l]['op'] == "const" and in_header[r] is None
+        r_const = in_header[r] is not None and in_header[r]["op"] == "const" and in_header[l] is None
         print("lconst" , l_const)
         print("rconst" , r_const)
         assert l_const != r_const
         boundvar = iv_or_bound[0] if l_const else iv_or_bound[1]
         iv = iv_or_bound[0] if r_const else iv_or_bound[1]
         delta_op, val= findDelta(iv, out_header, out_last_block, out_cprop[loop[-1]])
-
+        bound_val = out_cprop_header[boundvar]
         iv_val = findInitialInductionVarialbeValue(out_cprop, blocks, loop[0], loop[-1], iv)
-        return iv, boundvar, op, delta_op, val, iv_val
+        return iv, iv_val, boundvar, bound_val, op, delta_op, val
 
 
 
@@ -107,6 +109,6 @@ if __name__ == '__main__':
         for item1 in blocks[item]:
             print(item1)
     print("finding loop info")
-    a, b, c, d, e, f = findLoopInfo(bril, loops)
-    print (a,b,c,d,e,f)
+    a, b, c, d, e, f, g = findLoopInfo(bril, loops)
+    print (a,b,c,d,e,f,g)
 
