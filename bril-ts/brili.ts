@@ -25,6 +25,9 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   lw: 1,
   sw: 2,
   vadd: 2,
+  vsub: 2,
+  vmul: 2,
+  vdiv: 2,
   vload: 1,
   vstore: 2,
 };
