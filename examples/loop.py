@@ -11,13 +11,13 @@ from df import *
 
 ### detect back-edges
 def get_backedges(successors,domtree):
-    backedges = set()
-    for source,sinks in successors.items():
-        for sink in sinks:
-            if sink in domtree[source]:
-                backedges.add((source,sink))
+  backedges = set()
+  for source,sinks in successors.items():
+    for sink in sinks:
+      if sink in domtree[source]:
+        backedges.add((source,sink))
 
-    return backedges
+  return backedges
 
 
 ### get natural loops
