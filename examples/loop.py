@@ -126,6 +126,17 @@ def loop_exits(blocks, succ, natloop):
   return exits
 
 
+### get the uses of a variable
+def get_variable_uses(blocks, var):
+  uses = []
+  for blockname, block in blocks.items():
+    for i,instr in enumerate(block):
+      if "args" in var in instr["args"]:
+        uses.append((blockname,i))
+
+  return uses
+
+
 ### check hoisting conditions for loop-invariant instruction
 def can_hoist(blocks, succ, domtree, rdef_var_ins, rdef_var_outs, \
               natloop, blockname, instr_ind):
@@ -148,8 +159,14 @@ def can_hoist(blocks, succ, domtree, rdef_var_ins, rdef_var_outs, \
         only_definition = False
 
   # condition 3: definition dominates all its uses
-  # TODO: actually implement this
   dominates_uses = True
+  uses = get_variable_uses(blocks, var)
+  for use_blockname, use_instr_ind in uses:
+    if use_blockname == blockname:
+      dominates_uses = dominates_uses and instr_ind < use_instr_ind
+
+    else:
+      dominates_uses = dominates_uses and blockname in domtree[use_blockname]
 
   return dominates_exits and only_definition and dominates_uses
 
@@ -342,8 +359,7 @@ def codemotion(instrs):
   header_map = {}
   for preheader_name, info in natloop_info.items():
     header_map[info["header_name"]] = preheader_name
-    if len(info["preheader"]) > 0:
-      new_blocks[preheader_name] = info["preheader"]
+    new_blocks[preheader_name] = info["preheader"]
 
     for blockname, block in info["natloop_blocks"].items():
       new_blocks[blockname] = block

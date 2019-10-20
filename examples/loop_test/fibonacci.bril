@@ -5,7 +5,7 @@ main {
   zero: int = const 0;
 
 header:
-  cond: bool gt i zero;
+  cond: bool = gt i zero;
   br cond body exit;
 
 body:
