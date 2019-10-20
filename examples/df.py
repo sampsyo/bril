@@ -139,9 +139,9 @@ def use(block):
     return used
 
 
-def cprop_transfer(block, in_vals):
+def cprop_transfer(blocks, node, in_vals):
     out_vals = dict(in_vals)
-    for instr in block:
+    for instr in blocks[node]:
         if 'dest' in instr:
             if instr['op'] == 'const':
                 out_vals[instr['dest']] = instr['value']
