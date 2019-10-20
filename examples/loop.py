@@ -22,7 +22,6 @@ def get_backedges(successors,domtree):
 
 ### get natural loops
 def loopsy(source,sink,predecessors):
-<<<<<<< HEAD
     worklist = [source]
     loop = set()
     while len(worklist)>0:
@@ -37,7 +36,6 @@ def loopsy(source,sink,predecessors):
     return loop
 
 
-<<<<<<< HEAD
 ### find all the natural loops
 def natloops(blocks):
   pred,succ = edges(blocks)
@@ -46,31 +44,10 @@ def natloops(blocks):
     yield loopsy(source,sink,pred)
 
 
-### get all reaching definitions
-=======
-  worklist = [source]
-  loop = set()
-  while len(worklist)>0:
-    current = worklist.pop()
-    pr = predecessors[current]
-    for p in pr:
-      if not(p in loop or p==sink):
-        loop.add(p)
-        worklist.append(p)
-
-  loop.add(sink)
-  loop.add(source)
-  return loop
-
-
 ### apply reaching definitions analysis
->>>>>>> c04226ddf403fc9a006c79f8d078c825897d881c
-=======
->>>>>>> parent of cdac03f... Commented code
 def reachers(blocks):
   rins, routs = df_worklist(blocks, ANALYSIS["rdef"])
   return rins,routs
-
 
 ### get variable information for reaching definitions
 def reaching_def_vars(blocks, reaching_defs):
@@ -87,12 +64,7 @@ def reaching_def_vars(blocks, reaching_defs):
 
   return rdef_vars
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ### detect LI instructions for a single natural loop
-=======
-# detect LI instructions for a single natural loop
->>>>>>> parent of cdac03f... Commented code
 def invloop(blocks,rdef_var_ins,rdef_var_outs,natloop):
     boolmap = {}
     worklist = []
@@ -168,7 +140,6 @@ def natloops(blocks): #input backedge
     yield loopsy(source,sink,pred) # natloops
 
 def printstuffs(bril):
-=======
 
 # detect loop-invariant instructions for a single natural loop
 def invloop(blocks,rdef_var_ins,rdef_var_outs,natloop):
@@ -469,7 +440,6 @@ def codemotion(instrs):
 def bril_codemotion(bril):
   new_funcs = []
 
->>>>>>> c04226ddf403fc9a006c79f8d078c825897d881c
   for func in bril['functions']:
     new_instrs = codemotion(func["instrs"])
     new_funcs.append({"instrs": new_instrs, "name": func["name"]})
