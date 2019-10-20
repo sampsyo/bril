@@ -215,6 +215,40 @@ def hoist_instructions(blocks, natloop, hoistmap):
   return natloop_blocks
 
 
+### generate codemotion information for each natural loop
+def codemotion_info(blocks, pred, succ, domtree):
+  # perform reaching definitions analysis
+  rins, routs = reachers(blocks) # what is reaching
+  rdef_var_ins  = reaching_def_vars(blocks, rins)
+  rdef_var_outs = reaching_def_vars(blocks, routs)
+
+  natloop_ind = 1
+  natloop_info = {}
+  for source,sink in get_backedges(succ, domtree):
+    natloop = loopsy(source, sink, pred)
+
+    # compute which instructions to hoist
+    invmap = invloop(blocks, rdef_var_ins, rdef_var_outs, natloop) 
+    hoistmap = hoistloop(blocks, succ, domtree, rdef_var_ins, rdef_var_outs, \
+        natloop, invmap)
+
+    preheader = build_preheader(blocks, natloop, hoistmap)
+    natloop_blocks = hoist_instructions(blocks, natloop, hoistmap)
+
+    preheader_name = "preheader" + str(natloop_ind)
+    natloop_ind += 1
+
+    # save natural loop information
+    natloop_info[preheader_name] = {
+      "preheader": preheader,
+      "header_name": sink,
+      "natloop": natloop,
+      "natloop_blocks": natloop_blocks
+    }
+
+  return natloop_info
+
+
 ### calculate fallthroughs of blocks
 def get_fallthroughs(blocks, succ):
   fallthrough_map = {}
@@ -317,43 +351,8 @@ def blockmap_to_instrs(blocks, blockorder, header_map, natloop_info):
   return instrs
 
 
-### it's loop-invariant code motion, baby
-def codemotion(instrs):
-  # create CFG and dominator tree
-  blocks = block_map(form_blocks(instrs))
-  add_terminators(blocks)
-  pred, succ = edges(blocks)
-  domtree = get_dom(succ,list(blocks.keys())[0])
-  
-  # perform reaching definitions analysis
-  rins, routs = reachers(blocks) # what is reaching
-  rdef_var_ins  = reaching_def_vars(blocks, rins)
-  rdef_var_outs = reaching_def_vars(blocks, routs)
-
-  natloop_ind = 1
-  natloop_info = {}
-  for source,sink in get_backedges(succ, domtree):
-    natloop = loopsy(source, sink, pred)
-
-    # compute which instructions to hoist
-    invmap = invloop(blocks, rdef_var_ins, rdef_var_outs, natloop) 
-    hoistmap = hoistloop(blocks, succ, domtree, rdef_var_ins, rdef_var_outs, \
-        natloop, invmap)
-
-    preheader = build_preheader(blocks, natloop, hoistmap)
-    natloop_blocks = hoist_instructions(blocks, natloop, hoistmap)
-
-    preheader_name = "preheader" + str(natloop_ind)
-    natloop_ind += 1
-
-    # save natural loop information
-    natloop_info[preheader_name] = {
-      "preheader": preheader,
-      "header_name": sink,
-      "natloop": natloop,
-      "natloop_blocks": natloop_blocks
-    }
-
+### apply codemotion info to CFG
+def codemotion_change_cfg(blocks, succ, pred, natloop_info):
   # generate new instructions
   new_blocks = dict(blocks)
   new_succ = dict(succ)
@@ -372,15 +371,32 @@ def codemotion(instrs):
     new_pred[preheader_name] = []
     new_pred[header_name] = [preheader_name]
     for pred_blockname in pred[header_name]:
+      # only point to preheader for blocks outside the natural loop
       if pred_blockname not in info["natloop"]:
         new_succ[pred_blockname] = \
             list(filter(lambda s: s != header_name, succ[pred_blockname])) \
             + [preheader_name]
         new_pred[preheader_name].append(pred_blockname)
 
+  # compute ordering of basic blocks
   fallthrough_map = get_fallthroughs(new_blocks, new_succ)
   blockorder = order_basic_blocks(new_blocks, new_pred, new_succ, fallthrough_map)
+
+  # convert CFG to instruction list
   new_instrs = blockmap_to_instrs(new_blocks, blockorder, header_map, natloop_info)
+  return new_instrs
+
+
+### loop-invariant code motion?? in this economy??
+def codemotion(instrs):
+  # create CFG and dominator tree
+  blocks = block_map(form_blocks(instrs))
+  add_terminators(blocks)
+  pred, succ = edges(blocks)
+  domtree = get_dom(succ,list(blocks.keys())[0])
+  
+  natloop_info = codemotion_info(blocks, pred, succ, domtree)
+  new_instrs = codemotion_change_cfg(blocks, succ, pred, natloop_info)
   return new_instrs
 
 
