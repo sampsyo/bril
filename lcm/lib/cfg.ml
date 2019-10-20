@@ -24,4 +24,19 @@ module BasicBlock = struct
     x.lbl = y.lbl
 end
 
-include Graph.Persistent.Digraph.Concrete(BasicBlock)
+module Label = struct
+  type t = Ident.lbl
+  let compare = Ident.cmp_lbl
+  let hash = Hashtbl.hash
+  let equal = (=)
+end
+
+module Graph = Graph.Persistent.Digraph.Concrete(BasicBlock)
+module Map = Map.Make(Label)
+type t = Graph.t * basic_block Map.t
+
+let empty : t = (Graph.empty, Map.empty)
+let add_block (g, m) block =
+  let g = Graph.add_vertex g block in
+  let m = Map.add block.lbl block m in
+  (g, m)
