@@ -166,8 +166,10 @@ def reaching_def_transfer(blocks, name, in_set):
       defs.add((name,i))
 
   # filter out other defs of variables in in_set
-  out_set = filter(lambda (name,i): blocks[name][i]["dest"] not in var, in_set)
-  out_set += defs
+  out_set = set(defs)
+  for rdef_block,rdef_instr in in_set:
+    if blocks[rdef_block][rdef_instr]["dest"] not in var:
+      out_set.add((rdef_block,rdef_instr))
 
   return out_set
 
