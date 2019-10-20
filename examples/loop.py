@@ -140,9 +140,11 @@ def can_hoist(blocks, succ, domtree, rdef_var_ins, rdef_var_outs, \
   instr = blocks[blockname][instr_ind]
   var = instr["dest"]
   only_definition = True
-  for blockname in natloop:
-    for rdef_blockid,rdef_instr,rdef_var in rdef_var_outs[blockname]:
-      if rdef_var == var and (rdef_blockid != blockname or rdef_instr != instr_ind):
+  for loop_blockname in natloop:
+    for rdef_blockid,rdef_instr,rdef_var in rdef_var_outs[loop_blockname]:
+      if rdef_var == var \
+         and rdef_blockid in natloop \
+         and (rdef_blockid != blockname or rdef_instr != instr_ind):
         only_definition = False
 
   # condition 3: definition dominates all its uses
@@ -307,7 +309,7 @@ def codemotion(instrs):
   # perform reaching definitions analysis
   rins, routs = reachers(blocks) # what is reaching
   rdef_var_ins  = reaching_def_vars(blocks, rins)
-  rdef_var_outs = reaching_def_vars(blocks, rins)
+  rdef_var_outs = reaching_def_vars(blocks, routs)
 
   natloop_ind = 1
   natloop_info = {}
@@ -319,8 +321,8 @@ def codemotion(instrs):
     hoistmap = hoistloop(blocks, succ, domtree, rdef_var_ins, rdef_var_outs, \
         natloop, invmap)
 
-    preheader = build_preheader(blocks, natloop, invmap)
-    natloop_blocks = hoist_instructions(blocks, natloop, invmap)
+    preheader = build_preheader(blocks, natloop, hoistmap)
+    natloop_blocks = hoist_instructions(blocks, natloop, hoistmap)
 
     preheader_name = "preheader" + str(natloop_ind)
     natloop_ind += 1
