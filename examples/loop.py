@@ -20,9 +20,8 @@ def get_backedges(successors,domtree):
   return backedges
 
 
-### get the natural loop associated with an input backedge
+### get natural loops
 def loopsy(source,sink,predecessors):
-<<<<<<< HEAD
     worklist = [source]
     loop = set()
     while len(worklist)>0:
@@ -45,29 +44,10 @@ def natloops(blocks):
     yield loopsy(source,sink,pred)
 
 
-### get all reaching definitions
-=======
-  worklist = [source]
-  loop = set()
-  while len(worklist)>0:
-    current = worklist.pop()
-    pr = predecessors[current]
-    for p in pr:
-      if not(p in loop or p==sink):
-        loop.add(p)
-        worklist.append(p)
-
-  loop.add(sink)
-  loop.add(source)
-  return loop
-
-
 ### apply reaching definitions analysis
->>>>>>> c04226ddf403fc9a006c79f8d078c825897d881c
 def reachers(blocks):
   rins, routs = df_worklist(blocks, ANALYSIS["rdef"])
   return rins,routs
-
 
 ### get variable information for reaching definitions
 def reaching_def_vars(blocks, reaching_defs):
@@ -84,7 +64,6 @@ def reaching_def_vars(blocks, reaching_defs):
 
   return rdef_vars
 
-<<<<<<< HEAD
 ### detect LI instructions for a single natural loop
 def invloop(blocks,rdef_var_ins,rdef_var_outs,natloop):
     boolmap = {}
@@ -154,8 +133,13 @@ def codemot(bril):
     for natloop in natloops(blocks):
       boolmap = invloop(blocks,rdef_var_ins,rdef_var_outs,natloop) 
 
+def natloops(blocks): #input backedge
+  pred,succ = edges(blocks)
+  dom = get_dom(succ,list(blocks.keys())[0])
+  for source,sink in get_backedges(succ,dom):
+    yield loopsy(source,sink,pred) # natloops
+
 def printstuffs(bril):
-=======
 
 # detect loop-invariant instructions for a single natural loop
 def invloop(blocks,rdef_var_ins,rdef_var_outs,natloop):
@@ -472,7 +456,6 @@ def codemotion(instrs):
 def bril_codemotion(bril):
   new_funcs = []
 
->>>>>>> c04226ddf403fc9a006c79f8d078c825897d881c
   for func in bril['functions']:
     new_instrs = codemotion(func["instrs"])
     new_funcs.append({"instrs": new_instrs, "name": func["name"]})
