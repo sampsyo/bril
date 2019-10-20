@@ -7,6 +7,12 @@ import sys
 # Instructions that terminate a basic block.
 TERMINATORS = 'br', 'jmp', 'ret'
 
+nextFreshLabelNum = 1
+
+def nextFreshLabel():
+    global nextFreshLabelNum 
+    nextFreshLabelNum += 1
+    return ("_____________label" + str(nextFreshLabelNum))
 
 def form_blocks(instrs):
     """Given a list of Bril instructions, generate a sequence of
@@ -18,6 +24,21 @@ def form_blocks(instrs):
     can only appear at the *start* of a basic block. Basic blocks may
     not be empty.
     """
+    i = 0
+    while i < len(instrs)-1:
+        true1 = 'op' in instrs[i] and instrs[i]['op'] not in TERMINATORS 
+        true2 = 'op' in instrs[i+1] and instrs[i+1]['op'] not in TERMINATORS
+
+        if true1 and true2:
+            newLabel = nextFreshLabel()
+            labelInst = {'label': newLabel}
+            jumpInst = {'args': [newLabel], 'op': 'jmp'}
+            instrs.insert(i+1, labelInst)
+            instrs.insert(i+1, jumpInst)
+        i+=1
+
+    # for i in instrs:
+    #     print(i)
 
     # Start with an empty block.
     cur_block = []
