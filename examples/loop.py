@@ -36,12 +36,6 @@ def loopsy(source,sink,predecessors):
     return loop
 
 
-### apply reaching definitions analysis
-def reachers(blocks):
-  rins, routs = df_worklist(blocks, ANALYSIS["rdef"])
-  return rins,routs
-
-
 ### get variable information for reaching definitions
 def reaching_def_vars(blocks, reaching_defs):
   rdef_vars = {}
@@ -218,7 +212,7 @@ def hoist_instructions(blocks, natloop, hoistmap):
 ### generate codemotion information for each natural loop
 def codemotion_info(blocks, pred, succ, domtree):
   # perform reaching definitions analysis
-  rins, routs = reachers(blocks) # what is reaching
+  rins, routs = df_worklist(blocks, ANALYSIS["rdef"])
   rdef_var_ins  = reaching_def_vars(blocks, rins)
   rdef_var_outs = reaching_def_vars(blocks, routs)
 
