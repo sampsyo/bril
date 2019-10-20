@@ -100,6 +100,15 @@ def run_df(bril, analysis):
             print('  in: ', fmt(in_[block]))
             print('  out:', fmt(out[block]))
 
+def run_df_return(bril, analysis):
+    for func in bril['functions']:
+        # Form the CFG.
+        blocks = cfg.block_map(form_blocks(func['instrs']))
+        cfg.add_terminators(blocks)
+
+        in_, out = df_worklist(blocks, analysis)
+        return blocks, in_, out
+
 
 def gen(block):
     """Variables that are written in the block.
