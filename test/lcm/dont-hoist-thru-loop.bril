@@ -1,0 +1,13 @@
+
+main {
+  x: int = const 9;
+  y: int = const 2;
+loop_head:
+  b: bool = const false;
+  x: int = const 2;
+  br b loop_head loop_done;
+loop_done:
+  z: int = add x y;
+  print z;
+  ret;
+}

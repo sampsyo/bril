@@ -1,0 +1,13 @@
+main {
+  x: int = const 9;
+  y: int = const 2;
+loop_head:
+  b: bool = const false;
+  br b loop_head loop_done;
+loop_done:
+  z: int = add x y;
+  print z;
+  jmp exit;
+exit:
+  ret;
+}
