@@ -8,6 +8,12 @@ Edge = collections.namedtuple('Edge', ['s', 't'])
 def max_weight_edge(call_graph):
     return max(call_graph, key=call_graph.get)
 
+def hottest_node(call_graph):
+    nodes = dict()
+    for e, count in call_graph.items():
+        nodes[e.t] = nodes.get(e.t, 0) + count
+    return max(nodes, key=nodes.get)
+
 def json_to_graph(json_graph):
     edge_weights = dict()
     for edge in json_graph:
@@ -16,16 +22,11 @@ def json_to_graph(json_graph):
             edge_weights[e] = edge_weights.get(e, 0) + edge['count']
     return edge_weights
 
-def coalesce_nodes(a, b, graph, coalesced_map):
+def coalesce_nodes(hot_node, graph, coalesced_map):
     coalesced_map = copy.deepcopy(coalesced_map)
-    a_to_b = [e for e in graph if e.s == a and e.t == b]
-    b_to_a = [e for e in graph if e.s == b and e.t == a]
-
-    a_to_b_weight = sum(graph.get(e) for e in a_to_b)
-    b_to_a_weight = sum(graph.get(e) for e in b_to_a)
-    if b_to_a_weight > a_to_b_weight:
-        a, b = b, a  # We want a -> b to be the higher-weighted edge
-
+    preds = [(e.s, c) for e, c in graph.items() if e.t == hot_node]
+    max_pred = max(preds, key= lambda x: x[1])
+    a, b = max_pred[0], hot_node
     new_node_name = '{} -> {}'.format(a, b)
     assert new_node_name not in coalesced_map
     a_nodes = coalesced_map.get(a, [a])
@@ -51,10 +52,11 @@ if __name__ == '__main__':
         call_graph = json.load(f)
     coalesced_map = dict()
     graph = json_to_graph(call_graph)
+    print(hottest_node(graph))
     while len(graph) > 0:
         print(graph)
         print('\n')
-        max_e = max_weight_edge(graph)
-        graph, coalesced_map = coalesce_nodes(max_e.s, max_e.t, graph, coalesced_map)
+        hot_node = hottest_node(graph)
+        graph, coalesced_map = coalesce_nodes(hot_node, graph, coalesced_map)
     assert len(coalesced_map) == 1
     print('Function order:', coalesced_map[list(coalesced_map)[0]])
