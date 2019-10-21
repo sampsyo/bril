@@ -102,7 +102,7 @@ def fmt(val):
 def run_df(bril, analysis):
     for func in bril['functions']:
         # Form the CFG.
-        blocks = cfg.block_map(form_blocks(func['instrs']))
+        blocks = cfg.block_map(form_blocks(func['instrs'], True))
         cfg.add_terminators(blocks)
         in_, out = df_worklist(blocks, analysis)
         for block in blocks:
@@ -113,7 +113,7 @@ def run_df(bril, analysis):
 def run_df_return(bril, analysis):
     for func in bril['functions']:
         # Form the CFG.
-        blocks = cfg.block_map(form_blocks(func['instrs']))
+        blocks = cfg.block_map(form_blocks(func['instrs'], True))
         cfg.add_terminators(blocks)
 
         in_, out = df_worklist(blocks, analysis)
