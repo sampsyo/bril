@@ -244,7 +244,9 @@ function noConflicts(group: bril.Group): Boolean {
 
   for (let instr of [...group.conds, ...group.instrs]) {
     // Add all reads to set of reads
-    instr.args.forEach(arg => reads.add(arg));
+    if ('args' in instr) {
+      instr.args.forEach(arg => reads.add(arg));
+    }
 
     if (writes.has(instr.dest) || reads.has(instr.dest)) {
       return false;

@@ -61,7 +61,7 @@ export type Operation = EffectOperation | ValueOperation;
  */
 export type Group = {
   conds: ValueOperation[];
-  instrs: ValueOperation[];
+  instrs: (ValueOperation | Constant)[];
   failLabel: Ident;
 }
 
