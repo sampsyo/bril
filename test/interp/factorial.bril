@@ -1,0 +1,17 @@
+void main(x : int) {
+  result : int = call factorial(x);
+  print result;
+}
+
+int factorial(n : int) {
+  one : int = const 1;
+  b : bool = le n one;
+  br b if else;
+if:
+  ret one;
+else:
+  n_minus_one : int = sub n one;
+  m : int = call factorial(n_minus_one);
+  result : int = mul n m;
+  ret result;
+}
