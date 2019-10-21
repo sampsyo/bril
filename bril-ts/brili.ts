@@ -2,7 +2,6 @@
 import * as bril from './bril';
 import * as callgraph from './call-graph';
 import {readStdin, unreachable} from './util';
-import * as fs from 'fs';
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -31,6 +30,8 @@ type Env = Map<bril.Ident, Value>;
 type FunctionMap = Map<bril.Ident, bril.Function>;
 const returnVar = "_ret";
 export let weighted_call_graph = new Map();
+export let basic_block_flows: Map<bril.Ident, callgraph.WeightedCallGraph> = new Map();
+let previous_block: bril.Ident | undefined;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -98,6 +99,17 @@ function evalInstr(
       checkArgs(instr, count);
     }
   }
+  let block_graph = basic_block_flows.has(functionName) ? basic_block_flows.get(functionName) : new Map();
+  let current_block = instr.block;
+  if (current_block === undefined) {
+    throw "No basic block info";
+  }
+  if (previous_block !== undefined && previous_block !== current_block) {
+    callgraph.incrementEdge(block_graph as Map<string, number>, previous_block, current_block);
+    basic_block_flows.set(functionName, block_graph as Map<string, number>);
+  }
+  previous_block = current_block;
+  // console.log(basic_block_flows);
 
   switch (instr.op) {
   case "const":
@@ -225,7 +237,9 @@ function evalInstr(
         newEnv.set(func.args[i].name, env.get(args[i]));
       }
       callgraph.incrementEdge(weighted_call_graph, functionName, name);
+      let pb = previous_block;
       evalFunc(func, newEnv, functionMap);
+      previous_block = pb;
       if (func.type !== undefined) {
         let returnVal = newEnv.get(returnVar);
         env.set(instr.dest, returnVal);
@@ -255,6 +269,7 @@ function evalInstr(
 }
 
 function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
+  previous_block = undefined;
   let localFunctionMap: FunctionMap = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];

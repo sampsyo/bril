@@ -18,6 +18,7 @@ export type Type = "int" | "bool";
 export interface EffectOperation {
   op: "br" | "jmp" | "print" | "ret";
   args: Ident[];
+  block: Ident | undefined;
 }
 
 /**
@@ -32,6 +33,7 @@ export interface ValueOperation {
   args: Ident[];
   dest: Ident;
   type: Type;
+  block: Ident | undefined;
 }
 
 /**
@@ -47,6 +49,7 @@ export interface Constant {
   value: Value;
   dest: Ident;
   type: Type;
+  block: Ident | undefined;
 }
 
 /**

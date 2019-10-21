@@ -52,13 +52,10 @@ if __name__ == '__main__':
     with open(bril_file) as f:
         program = json.loads(briltxt.parse_bril(f.read()))
     with open(profile_file) as f:
-        call_graph = json.load(f)
+        call_graph = json.load(f)['call_graph']
     coalesced_map = dict()
     graph = json_to_graph(call_graph)
-    print(hottest_node(graph))
     while len(graph) > 0:
-        print(graph)
-        print('\n')
         hot_node = hottest_node(graph)
         graph, coalesced_map = coalesce_nodes(hot_node, graph, coalesced_map)
     assert len(coalesced_map) == 1

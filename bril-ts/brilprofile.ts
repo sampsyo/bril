@@ -5,6 +5,19 @@ import * as callgraph from './call-graph';
 import { readStdin } from './util';
 import * as fs from 'fs';
 
+function json_from_call_graph(call_graph: callgraph.WeightedCallGraph) {
+  let call_graph_json: { from: string; to: string; count: Number; }[] = [];
+  call_graph.forEach((value: Number, key: string) => {
+    const vertices = callgraph.getVerticesFromEdge(key);
+    call_graph_json.push({
+      from: vertices[0],
+      to: vertices[1],
+      count: value
+    });
+  });
+  return call_graph_json;
+}
+
 async function profile() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
   const profile_filename = process.argv[2];
@@ -29,16 +42,16 @@ async function profile() {
     brili.evalProg(prog, cliArgs);
   }
   console.log = consoleLog;
-  let output_json: { from: string; to: string; count: Number; }[] = [];
-  brili.weighted_call_graph.forEach((value: Number, key: string) => {
-    const vertices = callgraph.getVerticesFromEdge(key);
-    output_json.push({
-      from: vertices[0],
-      to: vertices[1],
-      count: value
-    });
+  let call_graph_json: { from: string; to: string; count: Number; }[] = json_from_call_graph(brili.weighted_call_graph);
+  let basic_block_json: { function: string; from: string; to: string; count: Number; }[][] = [];
+  brili.basic_block_flows.forEach((value: callgraph.WeightedCallGraph, key: string) => {
+    let bb_flows = json_from_call_graph(value);
+    basic_block_json.push(bb_flows.map(el => ({...el, function: key})));
   });
-  console.log(JSON.stringify(output_json, undefined, 2));
+  console.log(JSON.stringify({
+    call_graph: call_graph_json,
+    basic_block_flows: basic_block_json
+  }, undefined, 2));
 }
 
 if (!module.parent) {

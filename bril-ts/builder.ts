@@ -30,7 +30,7 @@ export class Builder {
   buildValue(op: bril.ValueOpCode, args: string[],
              type: bril.Type, dest?: string) {
     dest = dest || this.freshVar();
-    let instr: bril.ValueOperation = { op, args, dest, type };
+    let instr: bril.ValueOperation = { op, args, dest, type, block: undefined };
     this.insert(instr);
     return instr;
   }
@@ -39,7 +39,7 @@ export class Builder {
    * Build a non-value-producing (side-effecting) operation instruction.
    */
   buildEffect(op: bril.EffectOpCode, args: string[]) {
-    let instr: bril.EffectOperation = { op, args };
+    let instr: bril.EffectOperation = { op, args, block: undefined };
     this.insert(instr);
     return instr;
   }
@@ -49,7 +49,7 @@ export class Builder {
    */
   buildConst(value: bril.Value, type: bril.Type, dest?: string) {
     dest = dest || this.freshVar();
-    let instr: bril.Constant = { op: "const", value, dest, type };
+    let instr: bril.Constant = { op: "const", value, dest, type, block: undefined };
     this.insert(instr);
     return instr;
   }
