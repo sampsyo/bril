@@ -6,6 +6,7 @@ Performs loop unrolling.
 Baby: Natural loops (aiming to complete)
 Adv: All types of loops (if time)
 """
+from collections import ChainMap
 from form_blocks import form_blocks, TERMINATORS
 from cfg_dot import *
 import cfg
@@ -117,7 +118,6 @@ def is_switchable(bril, potential_loop, block_map):
     switchable_blocks = []
     loop_variables = extract_variables_loop(bril, potential_loop, block_map)
     for b in potential_loop:
-        print(b)
         block = block_map[b]
         term_instr = block[-1]
         if term_instr['op'] == 'br':
@@ -185,7 +185,7 @@ def reorder(bril, potential_loop, block_map, term_instr, dom_dic):
 
     # New Header block should just consist of the case statement
     t['args'] = [t.get('args')[0], if_ll, else_ll]
-    new_block_map[header_block] = t
+    new_block_map[header_block] = [t]
 
     
     ## ---------- Create loop logic blocks -----------------
@@ -300,13 +300,60 @@ def reorder(bril, potential_loop, block_map, term_instr, dom_dic):
     new_block_map[else_by] = [create_jump(loop_exit_label)]
 
 
-    # Debug:
-    for k in new_block_map:
-        print('--> ', k, ' ', new_block_map[k], '\n \n')
+    # # Debug:
+    # for k in new_block_map:
+    #     print('--> ', k, ' ', new_block_map[k], '\n \n')
     
-    pass
+    return new_block_map
+def merge_blocks(old_map, new_map):
+    """
+        Take in old map and new optimized map and 
+        returns new bril program mapping.
+
+        CAUTION: We need to be very careful about
+        keeping the ordering invariant.   This is for two reasons
+        (1) we can mess up the flow of the assembly code and cause the program
+        to not end, and
+        (2) there are other optimizations that take into account block locality.
+    """
+    flag = True
+    opt = {}
+    for k in old_map:
+        if k in new_map:
+            if flag:
+                flag = False
+                for n in new_map:
+                    opt[n] = new_map[n]
+        else:
+            opt[k] = old_map[k]
+    return opt
 
 
+    return dict(ChainMap(new_map, old_map))
+
+def generate_json(oldjson, opt_map):
+    '''
+        TODO:
+    '''
+    out = {}
+    # Default beginning
+    instructions = opt_map['b1']
+    for k in opt_map:
+        if k != 'b1':
+            instructions += [ { "label" : str(k)  } ]
+            instructions += opt_map[k]
+    # TODO: make this less hacky
+    for fun in oldjson:
+        junk = oldjson[fun]
+        for j in junk:
+            j['instrs'] = instructions
+    
+    # Hacky fix .. figure out why this is weird.
+    oldjson = str(oldjson)
+    oldjson = oldjson.replace("'", "\"")
+    oldjson = oldjson.replace("True", "true") 
+    oldjson = oldjson.replace("False","false")
+    return oldjson
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
@@ -315,14 +362,22 @@ if __name__ == '__main__':
     dom_dic = dom.get_dom_dict(bril)
     
     potential_loop = loop_finder(bril, edges, dom_dic)
-    print('loop detected: ', potential_loop)
-    bl, term_instr = is_switchable(bril, potential_loop[0], blocks_map)
-    print('switchable block: ', bl)
-    print('terminal inst', term_instr)
-    reorder(bril, potential_loop[0], blocks_map, term_instr, dom_dic)
-
     
+    bl, term_instr = is_switchable(bril, potential_loop[0], blocks_map)
+    
+    opt_map = reorder(bril, potential_loop[0], blocks_map, term_instr, dom_dic)
 
+    opt_map =  merge_blocks(blocks_map, opt_map)
+    
+    for k in blocks_map:
+        print(' ~~> ', k, ' : ', blocks_map[k])
+
+    for k in opt_map:
+        print(' ==> ', k, ' : ', opt_map[k])
+    
+    js = generate_json(bril, opt_map)
+
+    print(js)
     
     
     
