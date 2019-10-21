@@ -164,14 +164,29 @@ def stripMine(loops, filtered_loopInfos, blocks):
         # Duplicate loop and connect to bottom if (n mod 4 != 0)
         if (loop_info['bound_val'] % 4 != 0):
             print("gotta duplicate the loop")
-
+        
+        loaded_vars = set()
         # Traverse loop, change loads to vload(i)
         for insn in loops[i]:
             current_insn = blocks[insn][0]
             if 'op' in current_insn and current_insn['op'] == 'lw':
                 current_insn["op"] = 'vload'
+                loaded_vars.add(current_insn["dest"])
             elif 'op' in current_insn and current_insn['op'] == 'sw':
                 current_insn["op"] = 'vstore'
+            elif 'op' in current_insn and current_insn['op'] == 'add':
+                if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
+                 current_insn["op"] = 'vadd'
+            elif 'op' in current_insn and current_insn['op'] == 'sub':
+                if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
+                 current_insn["op"] = 'vsub'
+            elif 'op' in current_insn and current_insn['op'] == 'mul':
+                if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
+                 current_insn["op"] = 'vmul'
+            elif 'op' in current_insn and current_insn['op'] == 'div':
+                if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars: 
+                 current_insn["op"] = 'vdiv'
+
 
         # Find last block with branch
         last_block = blocks[loops[i][-1]]
