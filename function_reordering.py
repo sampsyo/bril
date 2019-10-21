@@ -2,6 +2,9 @@ import collections
 import copy
 import json
 import sys
+sys.path.append('bril-txt/')
+import briltxt
+
 
 Edge = collections.namedtuple('Edge', ['s', 't'])
 
@@ -47,7 +50,7 @@ if __name__ == '__main__':
     bril_file = sys.argv[1]
     profile_file = sys.argv[2]
     with open(bril_file) as f:
-        program = json.load(f)
+        program = json.loads(briltxt.parse_bril(f.read()))
     with open(profile_file) as f:
         call_graph = json.load(f)
     coalesced_map = dict()
@@ -59,4 +62,7 @@ if __name__ == '__main__':
         hot_node = hottest_node(graph)
         graph, coalesced_map = coalesce_nodes(hot_node, graph, coalesced_map)
     assert len(coalesced_map) == 1
-    print('Function order:', coalesced_map[list(coalesced_map)[0]])
+    function_order = coalesced_map[list(coalesced_map)[0]]
+    new_program = copy.deepcopy(program)
+    new_program['functions'] = sorted(program['functions'], key=lambda f: function_order.index(f['name']))
+    briltxt.print_prog(new_program)
