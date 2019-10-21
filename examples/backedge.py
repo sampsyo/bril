@@ -191,6 +191,7 @@ def stripMine(loops, filtered_loopInfos, blocks):
         vector_insns.extend([four, n_mod_four, inc_four, cond])
         last_block.append(vector_insns)
         last_block.append(br)
+        blocks[loops[i][-1]] = last_block
 
     # TODO Quad all other instructions. If they use i, do i+1, i+2, i+3 (depending on add)
     # First only handle add case
@@ -212,6 +213,8 @@ if __name__ == '__main__':
         print("INFO: ", info, '\n')
     filtered_loopInfos = filterEligibleLoops(loop_infos)
     blocks = stripMine(loops, filtered_loopInfos, blocks)
-    print(blocks)
+    for block in blocks:
+        print('{}:'.format(block))
+        print('   ',blocks[block])
 
 
