@@ -90,7 +90,7 @@ def loop_finder(bril, cfg_edges, dom_dic):
                     if b == d:
                         stack.append(a)
         loop_blocks.append(body)
-    return loop_blocks
+    return h, loop_blocks
 
 
 def extract_variables_loop(bril, potential_loop, block_map):
@@ -133,7 +133,18 @@ def get_blocks_map(bril):
         blocks = block_map(form_blocks(func['instrs']))
     return blocks
 
-def reorder(bril, potential_loop, block_map, term_instr, dom_dic):
+
+def reorder_cfg_pre_if(header_block, block_list, edges):
+    ordered = []
+    for e in edges:
+        h, t = e
+        if h == header_block and t in block_list:
+            ordered.append(t)
+            header_block = t
+    # TODO: implement
+    return ordered
+
+def reorder(bril, header, potential_loop, block_map, term_instr, dom_dic, edges):
     """
         Perform the loop unswitching.  Return dictionary
         of overwritten blocks in CFG
@@ -181,7 +192,7 @@ def reorder(bril, potential_loop, block_map, term_instr, dom_dic):
 
     ## ---------- Create header block ----------------
     # Create first block with same name but different instructions
-    header_block = potential_loop[0] # First block is always head 
+    header_block = header # First block is always head 
 
     # New Header block should just consist of the case statement
     t['args'] = [t.get('args')[0], if_ll, else_ll]
@@ -227,19 +238,28 @@ def reorder(bril, potential_loop, block_map, term_instr, dom_dic):
     dominated_if_else = set(dom_dic[ old_if ]).intersection(
         set(dom_dic[ old_else])
         )
-
     # TODO: I think there may be a bug here if there are multiple and it
     # adds it out of order ... look into this when evaluating
     for hblock in dominated_if_else:
         if hblock != header_block and header_block in dom_dic[hblock]:
             before_body.append(hblock) 
-    before_body = before_body[0]  # TODO: FIX???
-
-
+    
+    
+    # We need to sort before_body according to CFG.
+    # Proof: everything is dominated by header, so we start with that
+    before_body = reorder_cfg_pre_if(header_block, before_body, edges)
+    
+    before_body_cont = []
+    for i, b in enumerate(before_body):
+        t = copy.deepcopy(block_map[b])
+        before_body_cont += t
+    
+    
 
     # Delete last branching instruction before going to if/else
-    before_body_cont = block_map[before_body][:-1]
-
+    
+    before_body_cont = copy.deepcopy(before_body_cont[:-1])
+    
 
     ## Old block contents should be added to respective block
     # This is the portion of the loop that is selectively executed 
@@ -280,11 +300,15 @@ def reorder(bril, potential_loop, block_map, term_instr, dom_dic):
     if_last_instr['args'] = [if_jmp]
     else_last_instr['args'] = [else_jmp]
    
+    if_bod = copy.deepcopy(before_body_cont)
+    el_bod = copy.deepcopy(before_body_cont)
     ## Now combine
-    if_bb_body = before_body_cont + old_if_contents  \
+    if_bb_body = if_bod + old_if_contents  \
         + if_dom + last_contents + [if_last_instr]
-    else_bb_body = before_body_cont + old_else_contents \
+    
+    else_bb_body = el_bod + old_else_contents \
          + else_dom + last_contents + [else_last_instr]
+
 
     new_block_map[if_bb] = if_bb_body
     new_block_map[else_bb] = else_bb_body    
@@ -361,11 +385,11 @@ if __name__ == '__main__':
     blocks_map = get_blocks_map(bril)
     edges = cfg_edges(bril)
     dom_dic = dom.get_dom_dict(bril)
-    potential_loop = loop_finder(bril, edges, dom_dic)
+    header, potential_loop = loop_finder(bril, edges, dom_dic)
     
     bl, term_instr = is_switchable(bril, potential_loop[0], blocks_map)
     
-    opt_map = reorder(bril, potential_loop[0], blocks_map, term_instr, dom_dic)
+    opt_map = reorder(bril, header, potential_loop[0], blocks_map, term_instr, dom_dic, edges)
 
     opt_map =  merge_blocks(blocks_map, opt_map)
     
