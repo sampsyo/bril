@@ -55,10 +55,14 @@ export type Operation = EffectOperation | ValueOperation;
 
 /**
  * A group is a list of instructions and represents a VLIW (Very Long Instruction Word):
- * multiple instructions that can run at the same time.
+ * multiple instructions that can run at the same time. The first list represents
+ * set of conditions to be executed. The execution jumps to `failLabel` if
+ * the conditional is false.
  */
 export type Group = {
-  instrs: MicroInstruction[];
+  conds: ValueOperation[];
+  instrs: ValueOperation[];
+  failLabel: Ident;
 }
 
 /**
