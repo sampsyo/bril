@@ -14,7 +14,7 @@ def nextFreshLabel():
     nextFreshLabelNum += 1
     return ("____label" + str(nextFreshLabelNum))
 
-def form_blocks(instrs):
+def form_blocks(instrs, singletonBlocks = False):
     """Given a list of Bril instructions, generate a sequence of
     instruction lists representing the basic blocks in the program.
 
@@ -32,18 +32,21 @@ def form_blocks(instrs):
     #3. A control-flow instruction (br, jmp, or ret)
     #Pseudocode:
     # if block has more than 2 statements: dont()
-    i = 0
-    while i < len(instrs)-1:
-        true1 = 'op' in instrs[i] and instrs[i]['op'] not in TERMINATORS 
-        true2 = 'op' in instrs[i+1] and instrs[i+1]['op'] not in TERMINATORS
 
-        if true1 and true2:
-            newLabel = nextFreshLabel()
-            labelInst = {'label': newLabel}
-            jumpInst = {'args': [newLabel], 'op': 'jmp'}
-            instrs.insert(i+1, labelInst)
-            instrs.insert(i+1, jumpInst)
-        i+=1
+
+    if singletonBlocks:
+        i = 0
+        while i < len(instrs)-1:
+            true1 = 'op' in instrs[i] and instrs[i]['op'] not in TERMINATORS 
+            true2 = 'op' in instrs[i+1] and instrs[i+1]['op'] not in TERMINATORS
+
+            if true1 and true2:
+                newLabel = nextFreshLabel()
+                labelInst = {'label': newLabel}
+                jumpInst = {'args': [newLabel], 'op': 'jmp'}
+                instrs.insert(i+1, labelInst)
+                instrs.insert(i+1, jumpInst)
+            i+=1
 
     # for i in instrs:
     #     print(i)
