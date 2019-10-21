@@ -57,7 +57,7 @@ def findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop):
     assert(delta_stmt is not None)
     delta_var_name = next(a for a in delta_stmt["args"] if a != iv)
     delta_var_val = out_cprop[name_of_block_before_cond_var_block][delta_var_name]
-    return delta_stmt["op"], delta_var_val
+    return delta_stmt["op"], delta_var_val, delta_stmt
 
 #Asserts strictly 1 branch stmt in entire loop
 def findBranchStmt(blocks, loop):
@@ -111,17 +111,21 @@ def findLoopInfo(bril, loops):
         iv = l if r_cprop != '?' else r
 
         #Get IV initial value and bound constant value
+        bound_var_def = in_rd[br_cond_var_stmt_blockname][bound_var]
         bound_val = in_cprop[br_cond_var_stmt_blockname][bound_var]
         iv_val = findInitialIVValue(out_cprop,blocks, loop, iv)
         assert(iv_val is not None)
 
         #Find delta op and delta val
-        delta_op, delta_var_val= findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop)
+        delta_op, delta_var_val, delta_stmt = findDelta(iv, br_cond_var_stmt_blockname, loop, out_rd, out_cprop)
 
         #Find base pointers
         base_pointers = findBasePointers(blocks, loop, in_cprop, iv, in_rd)
         
-        loop_infos.append((loop, {'iv':iv, 'iv_val':iv_val, 'bound_var': bound_var, 'bound_val': bound_val, 'cond_op': br_cond_var_stmt_op, 'delta_op': delta_op, 'delta_val': delta_var_val, 'base_pointers': base_pointers}))
+        loop_infos.append((loop, {'iv':iv, 'iv_val':iv_val,'bound_var_def':bound_var_def,
+            'bound_var': bound_var, 'bound_val': bound_val, 'cond_op': br_cond_var_stmt_op,
+            'br_cond_var_stmt': br_cond_var_stmt, 'delta_stmt': delta_stmt, 'delta_op': delta_op,
+            'delta_val': delta_var_val, 'base_pointers': base_pointers}))
 
     return loop_infos
 
@@ -164,14 +168,32 @@ def stripMine(loops, filtered_loopInfos, blocks):
         # Duplicate loop and connect to bottom if (n mod 4 != 0)
         if (loop_info['bound_val'] % 4 != 0):
             print("gotta duplicate the loop")
+
+        # Add this assignment to top of loop
+        four = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 4}
+
+        # Find Delta Stmt
+        inc_four = {'args': [loop_info["iv"], 'four'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
         
         loaded_vars = set()
         # Traverse loop, change loads to vload(i)
-        for insn in loops[i]:
-            current_insn = blocks[insn][0]
+        for block_name in loops[i]:
+            # Every block is a single insn follow by a jump. Only care about first one
+            current_insn = blocks[block_name][0]
             if 'op' in current_insn and current_insn['op'] == 'lw':
                 current_insn["op"] = 'vload'
                 loaded_vars.add(current_insn["dest"])
+            # Change increment to i = i + 4 
+            elif current_insn is loop_info['delta_stmt']:
+                jump = blocks[block_name][1]
+                blocks[block_name][0] = four
+                blocks[block_name][1] = inc_four
+                blocks[block_name].append(jump)
+            # New Bound Variable Value
+            elif current_insn is loop_info['bound_var_def']:
+                n = loop_info['bound_val']
+                n_mod_four = n - (n % 4)
+                blocks[block_name][0] = {'dest': loop_info["bound_var"], 'op': 'const', 'type': 'int', 'value': n_mod_four}
             elif 'op' in current_insn and current_insn['op'] == 'sw':
                 current_insn["op"] = 'vstore'
             elif 'op' in current_insn and current_insn['op'] == 'add':
@@ -187,26 +209,7 @@ def stripMine(loops, filtered_loopInfos, blocks):
                 if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars: 
                  current_insn["op"] = 'vdiv'
 
-
-        # Find last block with branch
-        last_block = blocks[loops[i][-1]]
-        br = last_block[-1]
-        last_block = last_block[:-1]
-
         # TODO maybe handle subtract case
-        # Insert a few insns above br in last block
-        # Change boundvar to n mod 4 - add assignment above branch
-        three = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 3}
-        n_mod_four = {'dest': loop_info["bound_var"], 'op': 'const', 'type': 'int', 'value': loop_info["bound_val"] - loop_info["bound_val"] % 4 }
-        inc_four = {'args': [loop_info["iv"], 'three'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
-        cond = {'args': [loop_info["iv"], loop_info["bound_var"]], 'dest': br['args'][0], 'op': loop_info["cond_op"], 'type': 'bool'}
-
-        # Create new instructions for vectorized computation
-        vector_insns = []
-        vector_insns.extend([three, n_mod_four, inc_four, cond])
-        last_block.append(vector_insns)
-        last_block.append(br)
-        blocks[loops[i][-1]] = last_block
 
     # TODO Quad all other instructions. If they use i, do i+1, i+2, i+3 (depending on add)
     # First only handle add case
