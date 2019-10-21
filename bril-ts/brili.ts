@@ -9,6 +9,7 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   div: 2,
   id: 1,
   lt: 2,
+
   le: 2,
   gt: 2,
   ge: 2,
