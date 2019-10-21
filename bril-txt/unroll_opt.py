@@ -356,11 +356,11 @@ def generate_json(oldjson, opt_map):
     return oldjson
 
 if __name__ == '__main__':
-    bril = json.load(sys.stdin)
+    f = sys.stdin
+    bril = json.load(f)
     blocks_map = get_blocks_map(bril)
     edges = cfg_edges(bril)
     dom_dic = dom.get_dom_dict(bril)
-    
     potential_loop = loop_finder(bril, edges, dom_dic)
     
     bl, term_instr = is_switchable(bril, potential_loop[0], blocks_map)
@@ -369,15 +369,17 @@ if __name__ == '__main__':
 
     opt_map =  merge_blocks(blocks_map, opt_map)
     
-    for k in blocks_map:
-        print(' ~~> ', k, ' : ', blocks_map[k])
+    # Debugging:
+    # for k in blocks_map:
+    #     print(' ~~> ', k, ' : ', blocks_map[k])
 
-    for k in opt_map:
-        print(' ==> ', k, ' : ', opt_map[k])
+    # for k in opt_map:
+    #     print(' ==> ', k, ' : ', opt_map[k])
     
     js = generate_json(bril, opt_map)
-
-    print(js)
     
+    with open('../test/interp/optimizedversion.json', 'w') as outfile:
+        outfile.write(js)
+
     
     
