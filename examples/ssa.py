@@ -1,12 +1,15 @@
 import json
+import operator
 import sys
 
-from util import fresh
 from collections import defaultdict
+from functools import reduce
+
 from cfg import block_map, block_successors, add_terminators
 from dom import get_dom
 from dom_frontier import get_frontiers
 from form_blocks import form_blocks
+from util import fresh
 
 def get_variable_definitions(blocks):
     """Given all blocks, return a map from variable name to the list of blocks 
@@ -40,7 +43,13 @@ def insert_phi_nodes(blocks, frontiers, preds):
                 # Number of args to phi is the number of predecessors of this 
                 # block
                 args = [var] * len(preds[frontier_block])
-                phi = {'dest' : var, 'op' : 'phi', 'args' : args}
+                phi = {
+                  'dest' : var,
+                  'type': 'void',
+                  'op' : 'phi',
+                  'args' : args,
+                  'sources': []
+                }
                 blocks[frontier_block] = [phi] + instrs
 
                 if frontier_block not in var_defns[var]:
@@ -59,7 +68,7 @@ def rename(name, blocks, var_names, succ, dom_children, stacks, visited):
     for instr in blocks[name]:
         # Replace arguments with new names
         if 'args' in instr and instr['op'] != 'phi':
-            instr['args'] = [stacks[v][-1] for v in instr['args'] if v in stacks]
+            instr['args'] = [stacks[v][-1] if v in stacks else v for v in instr['args']]
 
         # Replace the destination with a fresh name
         if 'dest' in instr:
@@ -80,6 +89,7 @@ def rename(name, blocks, var_names, succ, dom_children, stacks, visited):
             for i, arg in enumerate(instr['args']):
                 if arg in stacks:
                     instr['args'][i] = stacks[arg][-1]
+                    instr['sources'].append(name)
                     break
 
     for block in dom_children[name]:
@@ -108,7 +118,6 @@ def rename_all(blocks, succ, dom):
                 dom_children[b].add(k) 
 
     rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks, set())
-    print_blocks(blocks)
 
 def to_ssa(bril):
     for func in bril['functions']:
@@ -132,7 +141,13 @@ def to_ssa(bril):
             v.remove(k)
 
         rename_all(blocks_with_phis, succ, dom)
-        
+        func['instrs'] = reduce(operator.iconcat, [[{'label' : k}] + v for k, v in blocks_with_phis.items()], [])
+
+    return json.dumps(bril, indent=4)
+
+def bril2ssa():
+    ssa = to_ssa(json.load(sys.stdin))
+    print(ssa)
 
 if __name__ == '__main__':
-    to_ssa(json.load(sys.stdin))
+    bril2ssa()
