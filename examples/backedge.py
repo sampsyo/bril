@@ -94,6 +94,7 @@ def findLoopInfo(bril, loops):
         br_cond_var = branch_stmt["args"][0]
         br_cond_var_stmt = out_rd[branch_blockname][br_cond_var]
         br_cond_var_stmt_blockname = findNameOfBlockWithStatement(blocks, br_cond_var_stmt)
+        # TODO have this so that iv and bound are ordered like this i < n 
         br_cond_var_stmt_op = br_cond_var_stmt['op']
         assert(br_cond_var_stmt_op in valid_op)
 
@@ -104,9 +105,11 @@ def findLoopInfo(bril, loops):
         l_cprop = in_cprop[br_cond_var_stmt_blockname][l]
         r_cprop = in_cprop[br_cond_var_stmt_blockname][r]
         assert((l_cprop != '?') != (r_cprop != '?'))
+
         #Determine which is which
         bound_var = l if l_cprop != '?' else r
         iv = l if r_cprop != '?' else r
+
         #Get IV initial value and bound constant value
         bound_val = in_cprop[br_cond_var_stmt_blockname][bound_var]
         iv_val = findInitialIVValue(out_cprop,blocks, loop, iv)
@@ -153,6 +156,49 @@ def findBasePointers(blocks, loop, in_cprop, iv, in_rd):
 
     return dict(zip(loadstore_bases,loadstore_base_vals))
 
+def stripMine(loops, filtered_loopInfos, blocks):
+    for i in range(len(loops)):
+        loop_info = filtered_loopInfos[i][1]
+
+        # TODO duplicate loop in case n mod 4 != 0
+        # Duplicate loop and connect to bottom if (n mod 4 != 0)
+        if (loop_info['bound_val'] % 4 != 0):
+            print("gotta duplicate the loop")
+
+        # Traverse loop, change loads to vload(i)
+        for insn in loops[i]:
+            current_insn = blocks[insn][0]
+            if 'op' in current_insn and current_insn['op'] == 'lw':
+                current_insn["op"] = 'vload'
+            elif 'op' in current_insn and current_insn['op'] == 'sw':
+                current_insn["op"] = 'vstore'
+
+        # Find last block with branch
+        last_block = blocks[loops[i][-1]]
+        br = last_block[-1]
+        last_block = last_block[:-1]
+
+        # TODO maybe handle subtract case
+        # Insert a few insns above br in last block
+        # Change boundvar to n mod 4 - add assignment above branch
+        four = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 4}
+        n_mod_four = {'dest': loop_info["bound_var"], 'op': 'const', 'type': 'int', 'value': loop_info["bound_val"] - loop_info["bound_val"] % 4 }
+        inc_four = {'args': [loop_info["iv"], 'four'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
+        cond = {'args': [loop_info["iv"], loop_info["bound_var"]], 'dest': br['args'][0], 'op': loop_info["cond_op"], 'type': 'bool'}
+
+        # Create new instructions for vectorized computation
+        vector_insns = []
+        vector_insns.extend([four, n_mod_four, inc_four, cond])
+        last_block.append(vector_insns)
+        last_block.append(br)
+
+    # TODO Quad all other instructions. If they use i, do i+1, i+2, i+3 (depending on add)
+    # First only handle add case
+
+    # TODO Do we need to change loop info struct?
+
+    return blocks
+
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
     res, blocks = backedge(bril)
@@ -165,5 +211,7 @@ if __name__ == '__main__':
         print("LOOP: ", loop)
         print("INFO: ", info, '\n')
     filtered_loopInfos = filterEligibleLoops(loop_infos)
+    blocks = stripMine(loops, filtered_loopInfos, blocks)
+    print(blocks)
 
 
