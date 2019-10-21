@@ -23,6 +23,29 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   nop: 0,
 };
 
+const constCost = 1;
+const opCosts: { [key in bril.OpCode]: number } = {
+  add: 1,
+  mul: 1,
+  sub: 1,
+  div: 1,
+  id: 1,
+  lt: 1,
+  le: 1,
+  gt: 1,
+  ge: 1,
+  eq: 1,
+  not: 1,
+  and: 1,
+  or: 1,
+  print: 0,  // Any number of arguments.
+  br: 1,
+  jmp: 1,
+  ret: 1,
+  nop: 1,
+};
+const groupCost = 1;
+
 type Value = boolean | BigInt;
 type Env = Map<bril.Ident, Value>;
 
@@ -77,7 +100,7 @@ let END: Action = { "end": true };
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalMicroInstr(instr: bril.MicroInstruction, env: Env): Action {
+function evalMicroInstr(instr: bril.MicroInstruction, env: Env): [Action, number] {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -99,111 +122,111 @@ function evalMicroInstr(instr: bril.MicroInstruction, env: Env): Action {
       }
 
       env.set(instr.dest, value);
-      return NEXT;
+      return [NEXT, constCost];
 
     case "id": {
       let val = get(env, instr.args[0]);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "add": {
       let val = getInt(instr, env, 0) + getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "mul": {
       let val = getInt(instr, env, 0) * getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "sub": {
       let val = getInt(instr, env, 0) - getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "div": {
       let val = getInt(instr, env, 0) / getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "le": {
       let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "lt": {
       let val = getInt(instr, env, 0) < getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "gt": {
       let val = getInt(instr, env, 0) > getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "ge": {
       let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "eq": {
       let val = getInt(instr, env, 0) === getInt(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "not": {
       let val = !getBool(instr, env, 0);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "and": {
       let val = getBool(instr, env, 0) && getBool(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "or": {
       let val = getBool(instr, env, 0) || getBool(instr, env, 1);
       env.set(instr.dest, val);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "print": {
       let values = instr.args.map(i => get(env, i).toString());
       console.log(...values);
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
 
     case "jmp": {
-      return { "label": instr.args[0] };
+      return [{ "label": instr.args[0] }, opCosts[instr.op]];
     }
 
     case "br": {
       let cond = getBool(instr, env, 0);
       if (cond) {
-        return { "label": instr.args[1] };
+        return [{ "label": instr.args[1] }, opCosts[instr.op]];
       } else {
-        return { "label": instr.args[2] };
+        return [{ "label": instr.args[2] }, opCosts[instr.op]];
       }
     }
 
     case "ret": {
-      return END;
+      return [END, opCosts[instr.op]];
     }
 
     case "nop": {
-      return NEXT;
+      return [NEXT, opCosts[instr.op]];
     }
   }
   unreachable(instr);
@@ -246,28 +269,31 @@ function resourceCompatible(group: bril.Group): Boolean {
   return validWrites(group) && validGroupInstrs(group);
 }
 
-function evalInstr(instr: bril.Instruction, env: Env): Action {
+function evalInstr(instr: bril.Instruction, env: Env): [Action, number] {
   if ('op' in instr) { // is a micro instruction
-    return evalMicroInstr(instr, env);
+    let [act, cost] = evalMicroInstr(instr, env);
+    return [act, cost];
   } else { // is a group
     if (resourceCompatible(instr)) {
       for (let i = 0; i < instr.instrs.length; i++) {
         evalMicroInstr(instr.instrs[i], env);
       }
-      return NEXT;
+      return [NEXT, groupCost];
     } else {
       throw `Group is not resource compatible`
     }
   }
 }
 
-function evalFunc(func: bril.Function) {
+function evalFunc(func: bril.Function): number {
   let env: Env = new Map();
+  let totCost = 0;
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     // if line is not a label
     if (!('label' in line)) {
-      let action = evalInstr(line, env);
+      let [action, instrCost] = evalInstr(line, env);
+      totCost += instrCost;
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -281,18 +307,21 @@ function evalFunc(func: bril.Function) {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return;
+        return totCost;
       }
     }
   }
+  return totCost;
 }
 
 function evalProg(prog: bril.Program) {
+  let cost = 0;
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func);
+      cost += evalFunc(func);
     }
   }
+  console.error("Cost: ", cost);
 }
 
 async function main() {
