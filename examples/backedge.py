@@ -196,14 +196,14 @@ def stripMine(loops, filtered_loopInfos, blocks):
         # TODO maybe handle subtract case
         # Insert a few insns above br in last block
         # Change boundvar to n mod 4 - add assignment above branch
-        four = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 4}
+        three = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 3}
         n_mod_four = {'dest': loop_info["bound_var"], 'op': 'const', 'type': 'int', 'value': loop_info["bound_val"] - loop_info["bound_val"] % 4 }
-        inc_four = {'args': [loop_info["iv"], 'four'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
+        inc_four = {'args': [loop_info["iv"], 'three'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
         cond = {'args': [loop_info["iv"], loop_info["bound_var"]], 'dest': br['args'][0], 'op': loop_info["cond_op"], 'type': 'bool'}
 
         # Create new instructions for vectorized computation
         vector_insns = []
-        vector_insns.extend([four, n_mod_four, inc_four, cond])
+        vector_insns.extend([three, n_mod_four, inc_four, cond])
         last_block.append(vector_insns)
         last_block.append(br)
         blocks[loops[i][-1]] = last_block
