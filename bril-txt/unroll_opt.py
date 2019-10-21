@@ -249,17 +249,44 @@ def reorder(bril, header, potential_loop, block_map, term_instr, dom_dic, edges)
     # Proof: everything is dominated by header, so we start with that
     before_body = reorder_cfg_pre_if(header_block, before_body, edges)
     
-    before_body_cont = []
-    for i, b in enumerate(before_body):
+    
+
+    # IF::
+    flag = False
+    if_bod = []
+    for i, b in enumerate(before_body):    
+        if flag:
+            if_bod += [ { "label" : str(b) + if_hash } ]
+        flag = True
         t = copy.deepcopy(block_map[b])
-        before_body_cont += t
+        if_bod += t
+        # Change last branching if jump
+        # TODO: All terminator cases
+        if if_bod[-1]['op'] == 'jmp':
+            # Change branch to hashed version
+            if_bod[-1]['args'] = [ if_bod[-1]['args'][0] + if_hash ]
+    # Delete last branching instruction before going to if/else
+    if_bod = copy.deepcopy(if_bod[:-1])
     
     
 
+    # ELSE::
+    flag = False
+    el_bod = []
+    for i, b in enumerate(before_body):
+        if flag:
+            el_bod += [ { "label" : str(b) + else_hash } ]
+        flag = True
+        t = copy.deepcopy(block_map[b])
+        el_bod += t
+        # TODO: for all terminators
+        if el_bod[-1]['op'] == 'jmp':
+            # Change branch to hashed version
+            el_bod[-1]['args'] = [ el_bod[-1]['args'][0] + else_hash ]
+
     # Delete last branching instruction before going to if/else
-    
-    before_body_cont = copy.deepcopy(before_body_cont[:-1])
-    
+    el_bod = copy.deepcopy(el_bod[:-1])
+
 
     ## Old block contents should be added to respective block
     # This is the portion of the loop that is selectively executed 
@@ -300,8 +327,7 @@ def reorder(bril, header, potential_loop, block_map, term_instr, dom_dic, edges)
     if_last_instr['args'] = [if_jmp]
     else_last_instr['args'] = [else_jmp]
    
-    if_bod = copy.deepcopy(before_body_cont)
-    el_bod = copy.deepcopy(before_body_cont)
+    
     ## Now combine
     if_bb_body = if_bod + old_if_contents  \
         + if_dom + last_contents + [if_last_instr]
@@ -326,10 +352,10 @@ def reorder(bril, header, potential_loop, block_map, term_instr, dom_dic, edges)
 
     # # Debug:
     # for k in new_block_map:
-    #     print('--> ', k, ' ', new_block_map[k], '\n \n')
+        # print('--> ', k, ' ', new_block_map[k], '\n \n')
     
     return new_block_map
-def merge_blocks(old_map, new_map):
+def merge_blocks(old_map, loop_blocks, new_map):
     """
         Take in old map and new optimized map and 
         returns new bril program mapping.
@@ -340,6 +366,8 @@ def merge_blocks(old_map, new_map):
         to not end, and
         (2) there are other optimizations that take into account block locality.
     """
+    print(loop_blocks)
+    print(new_map.keys())
     flag = True
     opt = {}
     for k in old_map:
@@ -348,7 +376,7 @@ def merge_blocks(old_map, new_map):
                 flag = False
                 for n in new_map:
                     opt[n] = new_map[n]
-        else:
+        else: 
             opt[k] = old_map[k]
     return opt
 
@@ -391,7 +419,7 @@ if __name__ == '__main__':
     
     opt_map = reorder(bril, header, potential_loop[0], blocks_map, term_instr, dom_dic, edges)
 
-    opt_map =  merge_blocks(blocks_map, opt_map)
+    opt_map =  merge_blocks(blocks_map, potential_loop[0], opt_map)
     
     # Debugging:
     # for k in blocks_map:
