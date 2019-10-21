@@ -86,12 +86,10 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 
 /**
  * The thing to do after interpreting an instruction: either transfer
- * control to a label, go to the next instruction, or end thefunction.
+ * control to a label, go to the next instruction, end the function, or
+ * signal the failure of a Group cond instruction.
  */
-type Action =
-  { "label": bril.Ident } |
-  { "next": true } |
-  { "end": true };
+type Action = { "label": bril.Ident } | { "next": true } | { "end": true };
 let NEXT: Action = { "next": true };
 let END: Action = { "end": true };
 
@@ -238,36 +236,23 @@ function evalMicroInstr(instr: bril.MicroInstruction, env: Env): [Action, number
  * Returns true if all the writes in group are to distinct locations
  * and false otherwise.
  */
-function validWrites(group: bril.Group): Boolean {
+function noConflicts(group: bril.Group): Boolean {
+  // Set of registers written to.
+  let reads: Set<bril.Ident> = new Set();
+  // Set of registers read from.
   let writes: Set<bril.Ident> = new Set();
-  for (let i = 0; i < group.instrs.length; i++) {
-    let instr = group.instrs[i];
-    if ("dest" in instr) {
-      if (writes.has(instr.dest)) {
-        return false;
-      }
+
+  for (let instr of [...group.conds, ...group.instrs]) {
+    // Add all reads to set of reads
+    instr.args.forEach(arg => reads.add(arg));
+
+    if (writes.has(instr.dest) || reads.has(instr.dest)) {
+      return false;
     }
+
+    writes.add(instr.dest);
   }
   return true;
-}
-
-/**
- * Valid group instrs are all ValueOperations
- */
-function validGroupInstrs(group: bril.Group): Boolean {
-  for (let instr of group.instrs) {
-    if (!("dest" in instr)) return false;
-  }
-  return true;
-}
-
-/**
- * Returns true is the given group is resourceCompatible. A group
- * is resourceCompatible when it consists of non-conflicting writes
- * and only value instructions.
- */
-function resourceCompatible(group: bril.Group): Boolean {
-  return validWrites(group) && validGroupInstrs(group);
 }
 
 function evalInstr(instr: bril.Instruction, env: Env): [Action, number] {
@@ -275,9 +260,19 @@ function evalInstr(instr: bril.Instruction, env: Env): [Action, number] {
     let [act, cost] = evalMicroInstr(instr, env);
     return [act, cost];
   } else { // is a group
-    if (resourceCompatible(instr)) {
-      for (let i = 0; i < instr.instrs.length; i++) {
-        evalMicroInstr(instr.instrs[i], env);
+    if (noConflicts(instr)) {
+      // Evaluate the pre condition for group instruction.
+      for (let cond of instr.conds) {
+        // Copy the instruction
+        let condCopy = Object.assign({}, cond);
+        cond.dest = "INVALID";
+        evalMicroInstr(cond, env);
+        // If the condition was false, the instruction failed.
+        if (!get(env, "INVALID"))
+          return [{ "label": instr.failLabel }, groupCost]
+      }
+      for (let inst of instr.instrs) {
+        evalMicroInstr(inst, env);
       }
       return [NEXT, groupCost];
     } else {
