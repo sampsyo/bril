@@ -54,10 +54,24 @@ export interface Constant {
 export type Operation = EffectOperation | ValueOperation;
 
 /**
- * Instructions can be operations (which have arguments) or constants (which
+ * A group is a list of instructions and represents a VLIW (Very Long Instruction Word):
+ * multiple instructions that can run at the same time.
+ */
+export type Group = {
+  instrs: MicroInstruction[];
+}
+
+/**
+ * Micro-instructions can be operations (which have arguments) or constants (which
  * don't). Both produce a value in a destination variable.
  */
-export type Instruction = Operation | Constant;
+export type MicroInstruction = Operation | Constant;
+
+/**
+ * Represents a thing that can execute at the same time. It is either a single MicroInstruction
+ * or a group which is an Array of MicroInstructions.
+ */
+export type Instruction = Group | MicroInstruction;
 
 /**
  * Both constants and value operations produce results.

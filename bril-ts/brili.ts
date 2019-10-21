@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import {readStdin, unreachable} from './util';
+import { readStdin, unreachable } from './util';
 
-const argCounts: {[key in bril.OpCode]: number | null} = {
+const argCounts: { [key in bril.OpCode]: number | null } = {
   add: 2,
   mul: 2,
   sub: 2,
@@ -65,19 +65,19 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
  * control to a label, go to the next instruction, or end thefunction.
  */
 type Action =
-  {"label": bril.Ident} |
-  {"next": true} |
-  {"end": true};
-let NEXT: Action = {"next": true};
-let END: Action = {"end": true};
+  { "label": bril.Ident } |
+  { "next": true } |
+  { "end": true };
+let NEXT: Action = { "next": true };
+let END: Action = { "end": true };
 
 /**
- * Interpret an instruction in a given environment, possibly updating the
+ * Interpret a micro-instruction in a given environment, possibly updating the
  * environment. If the instruction branches to a new label, return that label;
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env): Action {
+function evalMicroInstr(instr: bril.MicroInstruction, env: Env): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -89,132 +89,184 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   switch (instr.op) {
-  case "const":
-    // Ensure that JSON ints get represented appropriately.
-    let value: Value;
-    if (typeof instr.value === "number") {
-      value = BigInt(instr.value);
-    } else {
-      value = instr.value;
+    case "const":
+      // Ensure that JSON ints get represented appropriately.
+      let value: Value;
+      if (typeof instr.value === "number") {
+        value = BigInt(instr.value);
+      } else {
+        value = instr.value;
+      }
+
+      env.set(instr.dest, value);
+      return NEXT;
+
+    case "id": {
+      let val = get(env, instr.args[0]);
+      env.set(instr.dest, val);
+      return NEXT;
     }
 
-    env.set(instr.dest, value);
-    return NEXT;
-
-  case "id": {
-    let val = get(env, instr.args[0]);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "add": {
-    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "mul": {
-    let val = getInt(instr, env, 0) * getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "sub": {
-    let val = getInt(instr, env, 0) - getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "div": {
-    let val = getInt(instr, env, 0) / getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "le": {
-    let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "lt": {
-    let val = getInt(instr, env, 0) < getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "gt": {
-    let val = getInt(instr, env, 0) > getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "ge": {
-    let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "eq": {
-    let val = getInt(instr, env, 0) === getInt(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "not": {
-    let val = !getBool(instr, env, 0);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "and": {
-    let val = getBool(instr, env, 0) && getBool(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "or": {
-    let val = getBool(instr, env, 0) || getBool(instr, env, 1);
-    env.set(instr.dest, val);
-    return NEXT;
-  }
-
-  case "print": {
-    let values = instr.args.map(i => get(env, i).toString());
-    console.log(...values);
-    return NEXT;
-  }
-
-  case "jmp": {
-    return {"label": instr.args[0]};
-  }
-
-  case "br": {
-    let cond = getBool(instr, env, 0);
-    if (cond) {
-      return {"label": instr.args[1]};
-    } else {
-      return {"label": instr.args[2]};
+    case "add": {
+      let val = getInt(instr, env, 0) + getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
     }
-  }
-  
-  case "ret": {
-    return END;
-  }
 
-  case "nop": {
-    return NEXT;
-  }
+    case "mul": {
+      let val = getInt(instr, env, 0) * getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "sub": {
+      let val = getInt(instr, env, 0) - getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "div": {
+      let val = getInt(instr, env, 0) / getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "le": {
+      let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "lt": {
+      let val = getInt(instr, env, 0) < getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "gt": {
+      let val = getInt(instr, env, 0) > getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "ge": {
+      let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "eq": {
+      let val = getInt(instr, env, 0) === getInt(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "not": {
+      let val = !getBool(instr, env, 0);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "and": {
+      let val = getBool(instr, env, 0) && getBool(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "or": {
+      let val = getBool(instr, env, 0) || getBool(instr, env, 1);
+      env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "print": {
+      let values = instr.args.map(i => get(env, i).toString());
+      console.log(...values);
+      return NEXT;
+    }
+
+    case "jmp": {
+      return { "label": instr.args[0] };
+    }
+
+    case "br": {
+      let cond = getBool(instr, env, 0);
+      if (cond) {
+        return { "label": instr.args[1] };
+      } else {
+        return { "label": instr.args[2] };
+      }
+    }
+
+    case "ret": {
+      return END;
+    }
+
+    case "nop": {
+      return NEXT;
+    }
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
+}
+
+/**
+ * Returns true if all the writes in group are to distinct locations
+ * and false otherwise.
+ */
+function validWrites(group: bril.Group): Boolean {
+  let writes: Set<bril.Ident> = new Set();
+  for (let i = 0; i < group.instrs.length; i++) {
+    let instr = group.instrs[i];
+    if ("dest" in instr) {
+      if (writes.has(instr.dest)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * Valid group instrs are all ValueOperations
+ */
+function validGroupInstrs(group: bril.Group): Boolean {
+  for (let instr of group.instrs) {
+    if (!("dest" in instr)) return false;
+  }
+  return true;
+}
+
+/**
+ * Returns true is the given group is resourceCompatible. A group
+ * is resourceCompatible when it consists of non-conflicting writes
+ * and only value instructions.
+ */
+function resourceCompatible(group: bril.Group): Boolean {
+  return validWrites(group) && validGroupInstrs(group);
+}
+
+function evalInstr(instr: bril.Instruction, env: Env): Action {
+  if ('op' in instr) { // is a micro instruction
+    return evalMicroInstr(instr, env);
+  } else { // is a group
+    if (resourceCompatible(instr)) {
+      for (let i = 0; i < instr.instrs.length; i++) {
+        evalMicroInstr(instr.instrs[i], env);
+      }
+      return NEXT;
+    } else {
+      throw `Group is not resource compatible`
+    }
+  }
 }
 
 function evalFunc(func: bril.Function) {
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
-    if ('op' in line) {
+    // if line is not a label
+    if (!('label' in line)) {
       let action = evalInstr(line, env);
 
       if ('label' in action) {

@@ -21,7 +21,11 @@ start: func*
 
 func: CNAME "{" instr* "}"
 
-?instr: const | vop | eop | label
+?instr: micro | label | group
+
+?micro: const | vop | eop
+
+group: "[" micro+ "]"
 
 const.4: IDENT ":" type "=" "const" lit ";"
 vop.3: IDENT ":" type "=" CNAME IDENT* ";"
@@ -89,6 +93,9 @@ class JSONTransformer(lark.Transformer):
             'label': name,
         }
 
+    def group(self, items):
+        return {"instrs": items}
+
     def int(self, items):
         return int(str(items[0]))
 
@@ -111,29 +118,37 @@ def parse_bril(txt):
 
 # Text format pretty-printer.
 
-def instr_to_string(instr):
-    if instr['op'] == 'const':
+def micro_to_string(micro):
+    if micro['op'] == 'const':
         return '{}: {} = const {}'.format(
-            instr['dest'],
-            instr['type'],
-            str(instr['value']).lower(),
+            micro['dest'],
+            micro['type'],
+            str(micro['value']).lower(),
         )
-    elif 'dest' in instr:
+    elif 'dest' in micro:
         return '{}: {} = {} {}'.format(
-            instr['dest'],
-            instr['type'],
-            instr['op'],
-            ' '.join(instr['args']),
+            micro['dest'],
+            micro['type'],
+            micro['op'],
+            ' '.join(micro['args']),
         )
     else:
         return '{} {}'.format(
-            instr['op'],
-            ' '.join(instr['args']),
+            micro['op'],
+            ' '.join(micro['args']),
         )
 
 
+def instr_to_string(instr):
+    if 'group' in instr:
+        instr_strs = " ".join(map(lambda s: f"{micro_to_string(s)};", instr['group']))
+        return f"[{instr_strs}]"
+    else:
+        return f"{micro_to_string(instr)};"
+
+
 def print_instr(instr):
-    print('  {};'.format(instr_to_string(instr)))
+    print('  {}'.format(instr_to_string(instr)))
 
 
 def print_label(label):
