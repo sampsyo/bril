@@ -21,7 +21,7 @@ def get_variable_definitions(blocks):
                 defns[var].add(block_name)
     return defns
 
-def insert_phi_nodes(blocks, frontiers):
+def insert_phi_nodes(blocks, frontiers, preds):
     var_defns = get_variable_definitions(blocks)
 
     queue = [(k, v) for k, v in var_defns.items()]
@@ -35,10 +35,12 @@ def insert_phi_nodes(blocks, frontiers):
                 # Check that we haven't already added this phi node
                 if len(instrs) and instrs[0]['op'] == 'phi' \
                     and instrs[0]['dest'] == var:
-                    instrs[0]['args'] += var
                     continue
 
-                phi = {'dest' : var, 'op' : 'phi', 'args' : [var]}
+                # Number of args to phi is the number of predecessors of this 
+                # block
+                args = [var] * len(preds[frontier_block])
+                phi = {'dest' : var, 'op' : 'phi', 'args' : args}
                 blocks[frontier_block] = [phi] + instrs
 
                 if frontier_block not in var_defns[var]:
@@ -46,13 +48,17 @@ def insert_phi_nodes(blocks, frontiers):
 
     return blocks
 
-def rename(name, blocks, var_names, succ, dom_children, stacks):
+def rename(name, blocks, var_names, succ, dom_children, stacks, visited):
     pushed = defaultdict(int)
+
+    # Only visit each block once
+    if name in visited:
+        return
+    visited.add(name)
 
     for instr in blocks[name]:
         # Replace arguments with new names
         if 'args' in instr and instr['op'] != 'phi':
-            # print(instr['args'])
             instr['args'] = [stacks[v][-1] for v in instr['args'] if v in stacks]
 
         # Replace the destination with a fresh name
@@ -77,7 +83,7 @@ def rename(name, blocks, var_names, succ, dom_children, stacks):
                     break
 
     for block in dom_children[name]:
-        rename(block, blocks, var_names, succ, dom_children, stacks)
+        rename(block, blocks, var_names, succ, dom_children, stacks, visited)
     
     for name, num_pushed in pushed.items():
         stacks[name] = stacks[name][:-num_pushed]
@@ -101,7 +107,7 @@ def rename_all(blocks, succ, dom):
             if k != b:
                 dom_children[b].add(k) 
 
-    rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks)
+    rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks, set())
     print_blocks(blocks)
 
 def to_ssa(bril):
@@ -113,7 +119,13 @@ def to_ssa(bril):
         # dom maps each node to the nodes that dominate it
         dom = get_dom(succ, list(blocks.keys())[0])
         frontiers = get_frontiers(blocks, dom)
-        blocks_with_phis = insert_phi_nodes(blocks, frontiers)
+
+        preds = defaultdict(set)
+        for k, values in succ.items():
+            for v in values:
+                preds[v].add(k)
+
+        blocks_with_phis = insert_phi_nodes(blocks, frontiers, preds)
 
         # Remove self dominance
         for k, v in dom.items():

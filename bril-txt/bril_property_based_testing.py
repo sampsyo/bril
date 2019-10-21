@@ -23,7 +23,58 @@ names = text(alphabet=characters(min_codepoint=97, max_codepoint=122),
              min_size=1,
              max_size=1)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 types = sampled_from(["int", "bool"])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@composite 
+def function_type(draw):
+    return draw(sampled_from([draw(types), "void"]))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @composite
 def effect_opcodes(draw):
@@ -34,9 +85,24 @@ def value_opcodes(draw):
     return draw(sampled_from(["add", "mul", "sub", "div", "id", "nop", "eq",
                               "lt", "gt", "ge", "le", "not", "and", "or"]))
 
-@composite 
-def function_type(draw):
-    return draw(sampled_from([draw(types), "void"]))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @composite
 def bril_effect_instr(draw):
@@ -48,6 +114,20 @@ def bril_effect_instr(draw):
     return {
         "op": opcode,
         "args": args}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @composite
 def bril_value_instr(draw):
@@ -152,6 +232,28 @@ def bril_program(draw):
       "functions": all_funs,
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @composite
 def bril_structued_function(draw):
     constants = draw(lists(bril_constant_instr(), min_size=2, max_size=2))
@@ -175,6 +277,31 @@ def bril_structued_function(draw):
           "instrs": instrs,
           "args": args,
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @composite
 def bril_structued_program(draw):

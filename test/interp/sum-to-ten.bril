@@ -1,0 +1,15 @@
+void main() {
+  acc : int = const 0;
+  i : int = const 1;
+  one : int = const 0;
+  ten : int = const 10;
+loop:
+  b : bool = le i ten;
+  br b next after;
+next:
+  acc : int = add acc i;
+  i : int = add i one;
+  jmp loop;
+after:
+  print acc;
+}
