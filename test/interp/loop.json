@@ -1,0 +1,202 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "dest": "b",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "dest": "uncondb",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "dest": "outside",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "max",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "c",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "x",
+          "op": "const",
+          "type": "int",
+          "value": 100
+        },
+        {
+          "dest": "y",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "label": "loopstart"
+        },
+        {
+          "args": [
+            "c",
+            "max"
+          ],
+          "dest": "b",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "c",
+            "i"
+          ],
+          "dest": "c",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "continuebranch",
+            "exitbranch"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "continuebranch"
+        },
+        {
+          "dest": "a",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [
+            "a",
+            "max"
+          ],
+          "dest": "a",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "uncondb",
+            "if",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if"
+        },
+        {
+          "args": [
+            "x",
+            "x"
+          ],
+          "dest": "x",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "y",
+            "i"
+          ],
+          "dest": "y",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "loopstart"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "exitbranch"
+        },
+        {
+          "dest": "z",
+          "op": "const",
+          "type": "int",
+          "value": 153
+        },
+        {
+          "args": [
+            "z"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

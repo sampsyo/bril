@@ -1,0 +1,34 @@
+main {
+  v: int = const 4;
+  b: bool = const false;
+  uncondb: bool = const false;
+  outside: int = const 1;
+  max: int = const 10;
+  c: int = const 1;
+  i: int = const 1;
+  x: int = const 100;
+  y: int = const 10;
+loopstart:
+  b: bool = le c max;
+  c: int = add c i;
+  br b continuebranch exitbranch;
+continuebranch:
+  a: int = const 3;
+  a: int = add a max;
+  print a;  
+  br uncondb if else;
+if:
+  x: int = add x x;
+  print x;
+  jmp end;
+else:
+  y: int = add y i;
+  print y;
+  jmp end;
+end:
+  print a;
+  jmp loopstart;
+exitbranch:
+  z: int = const 153;
+  print z;
+}

@@ -13,7 +13,15 @@ import json
 import sys
 import dom
 import util
+import copy
 from collections import OrderedDict
+
+
+
+
+def create_jump(dest):
+    instr = { "args": [ dest ], "op": "jmp" }
+    return instr
 
 def cfg_edges(bril):
     """
@@ -116,13 +124,189 @@ def is_switchable(bril, potential_loop, block_map):
             vt = term_instr['args'][0]
             if vt not in loop_variables:
                 switchable_blocks.append(b)
-    return switchable_blocks
+                break
+    return switchable_blocks, term_instr
     
 
 def get_blocks_map(bril):
     for func in bril['functions']:
         blocks = block_map(form_blocks(func['instrs']))
     return blocks
+
+def reorder(bril, potential_loop, block_map, term_instr, dom_dic):
+    """
+        Perform the loop unswitching.  Return dictionary
+        of overwritten blocks in CFG
+    """
+    
+    
+    # The idea is that we will create a new dictionary that should
+    # overright block names in the original block mapping dictionary
+    # We will return this dictionary and merge the two, giving this
+    # dictionary higher priority, which will alter the CFG and thus
+    # the program itself
+
+    new_block_map = {}
+
+    # Identify statement "t" that performs the unconditional transfer
+    # We need to modify the branches so it points to "if_loop_logic"
+    # and "else_loop_logic"
+    t = term_instr
+    
+    ## ---------- Create new block names ----------------
+    
+    t_args = t.get('args')
+    t_args_var = t_args[0]
+    
+    old_if = t_args[1]
+    old_else = t_args[2]
+
+    if_hash = str(hash(old_if) % 100)
+    else_hash = str(hash(old_else) %100)
+    
+    # Create if/else loop logic block names
+    if_ll = 'if_loop_logic' + if_hash
+    else_ll = 'else_loop_logic' + else_hash
+
+    # Create if/else body block names
+    if_bb = 'if_body_block' + if_hash
+    else_bb = 'else_body_block' + else_hash
+
+    if_jmp = 'if_jmp' + if_hash
+    else_jmp = 'else_jmp' + else_hash
+
+    if_by = 'if_bypass' + if_hash
+    else_by = 'else_bypass' + else_hash    
+    
+
+    ## ---------- Create header block ----------------
+    # Create first block with same name but different instructions
+    header_block = potential_loop[0] # First block is always head 
+
+    # New Header block should just consist of the case statement
+    t['args'] = [t.get('args')[0], if_ll, else_ll]
+    new_block_map[header_block] = t
+
+    
+    ## ---------- Create loop logic blocks -----------------
+    # Create for loop logic block. This will all be contained in 
+    # the header block which encoded whether we should continue
+    # looping or not.
+    loop_logic = block_map[header_block]
+    loop_exit_label = loop_logic[-1]['args'][2]
+    
+    # We need one copy for if and one copy for else
+    if_loop_logic = copy.deepcopy(loop_logic)
+    else_loop_logic = copy.deepcopy(loop_logic)
+
+    # Modify exit nodes for each
+    # if -> if_bb, if_by
+    # else -> else_bb, else_by
+    if_cond = if_loop_logic[-1]['args'][0]
+    else_cond = else_loop_logic[-1]['args'][0]
+
+    if_loop_logic[-1]['args'] = [if_cond, if_bb, if_by]
+    else_loop_logic[-1]['args'] = [else_cond, else_bb, else_by]
+
+    new_block_map[if_ll] = if_loop_logic
+    new_block_map[else_ll] = else_loop_logic
+
+    ## ---------- Create the body blocks -----------------
+
+    # Contents should include stuff that dominates the block
+    # and is dominated by the big loop block
+
+    before_body = []
+    # Body before = loop body before the if/else statement
+    # To figure this out, we essentially look for a block
+    # that is dominated by the start of the for loop
+    # and that dominates BOTH the "if" and "else" branch
+    
+    # Blocks that domiante both If and Else (set intersection)
+    # as a check, this should always equal the union
+    dominated_if_else = set(dom_dic[ old_if ]).intersection(
+        set(dom_dic[ old_else])
+        )
+
+    # TODO: I think there may be a bug here if there are multiple and it
+    # adds it out of order ... look into this when evaluating
+    for hblock in dominated_if_else:
+        if hblock != header_block and header_block in dom_dic[hblock]:
+            before_body.append(hblock) 
+    before_body = before_body[0]  # TODO: FIX???
+
+
+
+    # Delete last branching instruction before going to if/else
+    before_body_cont = block_map[before_body][:-1]
+
+
+    ## Old block contents should be added to respective block
+    # This is the portion of the loop that is selectively executed 
+    old_if_contents = block_map[old_if][:-1]
+    old_else_contents = block_map[old_else][:-1]
+
+
+    ## Blocks after if/else should be added as well.
+    # We add blocks to "if_bb" if they are dominated by if_bb
+    if_dom = []
+    for lp in potential_loop:
+        if old_if in dom_dic[lp] and lp != old_if:
+            if_dom.append(lp[:-1])
+    # print(if_dom)
+    
+    # We add blocks to "else_bb" if they are dominated by if_bb 
+    else_dom = []
+    for lp in potential_loop:
+        if old_else in dom_dic[lp] and lp != old_else:
+            else_dom.append(lp[:-1])
+    # print(else_dom)
+
+    ## Finally, we create the last block that is shared
+    last_block = potential_loop[1] # this is the backedge to the loop
+    # in particular, it will always be the second element of potential_loop
+    # breaking this invariant means that there is not a loop
+
+    last_contents = block_map[last_block]
+    jump_instr = last_contents[-1]
+
+    # Surgery on last instruction
+    last_contents = last_contents[:-1]
+
+    # Modify last instruction jump
+    if_last_instr = copy.deepcopy(jump_instr)
+    else_last_instr = copy.deepcopy(jump_instr)
+
+    if_last_instr['args'] = [if_jmp]
+    else_last_instr['args'] = [else_jmp]
+   
+    ## Now combine
+    if_bb_body = before_body_cont + old_if_contents  \
+        + if_dom + last_contents + [if_last_instr]
+    else_bb_body = before_body_cont + old_else_contents \
+         + else_dom + last_contents + [else_last_instr]
+
+    new_block_map[if_bb] = if_bb_body
+    new_block_map[else_bb] = else_bb_body    
+
+    # -------- Creating jump blocks -----------
+
+    # This is easy.  We just add a jump instruction
+    new_block_map[if_jmp] = [create_jump(if_ll)]
+    new_block_map[else_jmp] = [create_jump(else_ll)]
+
+    # --------- Creating bypass blocks ----------
+    new_block_map[if_by] = [create_jump(loop_exit_label)]
+    new_block_map[else_by] = [create_jump(loop_exit_label)]
+
+
+    # Debug:
+    for k in new_block_map:
+        print('--> ', k, ' ', new_block_map[k], '\n \n')
+    
+    pass
+
+
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
@@ -131,9 +315,11 @@ if __name__ == '__main__':
     dom_dic = dom.get_dom_dict(bril)
     
     potential_loop = loop_finder(bril, edges, dom_dic)
-    
-    bl = is_switchable(bril, potential_loop[0], blocks_map)
+    print('loop detected: ', potential_loop)
+    bl, term_instr = is_switchable(bril, potential_loop[0], blocks_map)
     print('switchable block: ', bl)
+    print('terminal inst', term_instr)
+    reorder(bril, potential_loop[0], blocks_map, term_instr, dom_dic)
 
     
 
