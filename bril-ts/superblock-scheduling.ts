@@ -44,7 +44,7 @@ function getTrace(
     // If there more than one entrance to this block, don't add it to the
     // trace.
     let preds = predMap.get(curLabel);
-    if (preds && preds.length > 1) {
+    if (preds && preds.length > 1 && trace.length !== 0) {
       return trace;
     }
     let instrs = labelMap.get(curLabel);
@@ -52,6 +52,7 @@ function getTrace(
     if (!instrs) {
       throw new Error(`Unknown label ${curLabel}`)
     }
+    console.log(instrs)
 
     trace.push(...instrs.slice(0, -1));
     let final = instrs[instrs.length - 1];
@@ -85,8 +86,8 @@ function patchFunction(func: bril.Function): bril.Function {
     idx++;
     curInst = func.instrs[idx];
   }
-  let first = func.instrs.slice(0, idx - 1);
-  let last = func.instrs.slice(idx, func.instrs.length - 1);
+  let first = func.instrs.slice(0, idx);
+  let last = func.instrs.slice(idx, func.instrs.length);
   let jmp: bril.EffectOperation = {
     op: "jmp", args: [curInst.label]
   }
@@ -104,7 +105,7 @@ function simple(prog: bril.Program): Array<bril.Instruction> {
     let fm = cf.genFuncMap(pfunc);
     let control = cf.getPreds(fm);
 
-    let trace = getTrace("start", fm, control, (_) => true, 10);
+    let trace = getTrace("for.cond.2", fm, control, (_) => true, 10);
     console.log("TRACE")
     console.log(trace);
     console.log("END")
