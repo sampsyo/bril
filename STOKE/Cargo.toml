@@ -1,0 +1,13 @@
+[package]
+name = "superopt"
+version = "0.1.0"
+authors = ["splash"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+strum = "0.16.0"
+strum_macros = "0.16.0"
