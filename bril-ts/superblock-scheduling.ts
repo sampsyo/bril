@@ -21,7 +21,7 @@ function simple(prog: bril.Program): Array<bril.Instruction> {
 async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
   let trace = simple(prog);
-  console.log(df.dataflow(trace));
+  console.dir(df.dataflow(trace), { depth: 3 });
 }
 
 // Make unhandled promise rejections terminate.
