@@ -36,7 +36,9 @@ def var_loop(instr):
         else:
             d = instr.get('dest', [])
             a = instr.get('args', [])
-            return (list(a) + list(d))
+            if d:
+                d = [d]
+            return (a + list(d))
     else:
         return []
 

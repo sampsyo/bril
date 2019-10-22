@@ -1,0 +1,175 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "x",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "y",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "b",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "dest": "uncondb",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "dest": "max",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "c",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loopstart"
+        },
+        {
+          "args": [
+            "c",
+            "max"
+          ],
+          "dest": "b",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "c",
+            "i"
+          ],
+          "dest": "c",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "continuebranch",
+            "exitbranch"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "continuebranch"
+        },
+        {
+          "args": [
+            "b",
+            "if",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if"
+        },
+        {
+          "args": [
+            "x",
+            "x"
+          ],
+          "dest": "x",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "y",
+            "y"
+          ],
+          "dest": "y",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "loopstart"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "exitbranch"
+        },
+        {
+          "dest": "z",
+          "op": "const",
+          "type": "int",
+          "value": 11111
+        },
+        {
+          "args": [
+            "z"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

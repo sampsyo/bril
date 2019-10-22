@@ -4,7 +4,7 @@ CS 6120 Graduate Compilers.
 
 Performs loop unrolling.
 Baby: Natural loops (aiming to complete)
-Adv: All types of loops (if time)
+Adv: All types of loops 
 """
 from collections import ChainMap
 from form_blocks import form_blocks, TERMINATORS
@@ -100,8 +100,9 @@ def extract_variables_loop(bril, potential_loop, block_map):
     """
     all_variables = []
     # Obtain all variables
+    
     for b in potential_loop:
-        vb = []
+        vb = [] #variables in one block
         block = block_map[b]
         for inst in block:
             vb = vb + util.var_loop(inst)
@@ -366,8 +367,7 @@ def merge_blocks(old_map, loop_blocks, new_map):
         to not end, and
         (2) there are other optimizations that take into account block locality.
     """
-    print(loop_blocks)
-    print(new_map.keys())
+    
     flag = True
     opt = {}
     for k in old_map:
@@ -415,23 +415,30 @@ if __name__ == '__main__':
     dom_dic = dom.get_dom_dict(bril)
     header, potential_loop = loop_finder(bril, edges, dom_dic)
     
+    print(potential_loop)
+
     bl, term_instr = is_switchable(bril, potential_loop[0], blocks_map)
-    
-    opt_map = reorder(bril, header, potential_loop[0], blocks_map, term_instr, dom_dic, edges)
 
-    opt_map =  merge_blocks(blocks_map, potential_loop[0], opt_map)
-    
-    # Debugging:
-    # for k in blocks_map:
-    #     print(' ~~> ', k, ' : ', blocks_map[k])
+    if not bl:
+        print('no optimizations available')
+    else:        
+        opt_map = reorder(bril, header, potential_loop[0], blocks_map, term_instr, dom_dic, edges)
+        opt_map =  merge_blocks(blocks_map, potential_loop[0], opt_map)
+        js = generate_json(bril, opt_map)
 
-    # for k in opt_map:
-    #     print(' ==> ', k, ' : ', opt_map[k])
+        
+        with open('../test/opt_tests/optimizedversion.json', 'w') as outfile:
+            outfile.write(js)
+
+        # Debugging:
+        # for k in blocks_map:
+        #     print(' ~~> ', k, ' : ', blocks_map[k])
+
+        # for k in opt_map:
+        #     print(' ==> ', k, ' : ', opt_map[k])
     
-    js = generate_json(bril, opt_map)
     
-    with open('../test/interp/optimizedversion.json', 'w') as outfile:
-        outfile.write(js)
+
 
     
     

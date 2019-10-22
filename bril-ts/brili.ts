@@ -210,13 +210,19 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-function evalFunc(func: bril.Function) {
+function evalFunc(func: bril.Function, branch_count: number) {
+
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env);
+      if (line.op  == "jmp" || 
+        line.op == "br" ||
+        line.op == "ret") {
+        branch_count += 1;
+      }
 
+      let action = evalInstr(line, env);
       if ('label' in action) {
         // Search for the label and transfer control.
         for (i = 0; i < func.instrs.length; ++i) {
@@ -229,18 +235,21 @@ function evalFunc(func: bril.Function) {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return;
+        return branch_count ;
       }
     }
   }
+  return branch_count;
 }
 
 function evalProg(prog: bril.Program) {
+  let branch_count = 0;
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func);
+      branch_count = <any>evalFunc(func, branch_count);
     }
   }
+  console.log( ' Total number of branches %s', branch_count);
 }
 
 async function main() {
