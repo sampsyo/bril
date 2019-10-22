@@ -19,14 +19,27 @@ type basic_block =
     term: Bril.term_op }
   [@@deriving sexp]
 
+module Attrs = struct
+  type t = (string, Bitv.t) Hashtbl.t
+  let create () = String.Table.create ()
+  let get = Hashtbl.find_exn
+end
+
 module BasicBlock = struct
-  type t = basic_block
-  let compare x y =
+  type t = basic_block * Attrs.t
+  let compare (x, _) (y, _) =
     Ident.cmp_lbl x.lbl y.lbl
-  let hash x =
+  let hash (x, _) =
     Hashtbl.hash x.lbl
-  let equal x y =
+  let equal (x, _) (y, _) =
     x.lbl = y.lbl
+end
+
+module EdgeLabel = struct
+  type t = Attrs.t
+  let compare x y =
+    compare (Hashtbl.length x) (Hashtbl.length y)
+  let default : t = String.Table.create ()
 end
 
 module Label = struct
@@ -37,13 +50,12 @@ module Label = struct
 end
 
 module CFG = struct
-  include Graph.Persistent.Digraph.Concrete(BasicBlock)
-  let vertex_name v = Ident.string_of_lbl v.lbl
-  let graph_attributes _ : Graph.Graphviz.DotAttributes.graph list =
-    []
+  include Graph.Persistent.Digraph.ConcreteLabeled(BasicBlock)(EdgeLabel)
+  let vertex_name (v, _) = Ident.string_of_lbl v.lbl
+  let graph_attributes _ = []
   let default_vertex_attributes _ = []
 
-  let vertex_attributes block : Graph.Graphviz.DotAttributes.vertex list =
+  let vertex_attributes (block, _) : Graph.Graphviz.DotAttributes.vertex list =
     let text =
       let label = Ident.string_of_lbl block.lbl in
       let body = Sexp.to_string ([%sexp_of: instruction list] block.body) in
@@ -60,12 +72,14 @@ module CFG = struct
 end
 
 module Map = Map.Make(Label)
-type t = CFG.t * basic_block Map.t
+type t = CFG.t * BasicBlock.t Map.t
 
 let empty : t = (CFG.empty, Map.empty)
+
 let add_block (g, m) block : t =
-  let g = CFG.add_vertex g block in
-  let m = Map.add_exn ~key:block.lbl ~data:block m in
+  let block' = (block, Attrs.create ()) in
+  let g = CFG.add_vertex g block' in
+  let m = Map.add_exn ~key:block.lbl ~data:block' m in
   (g, m)
 
 module Viz = Graph.Graphviz.Dot(CFG)

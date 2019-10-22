@@ -4,5 +4,6 @@
   (libraries
     core
     ocamlgraph
+    bitv
     yojson)
   (preprocess (pps ppx_jane)))

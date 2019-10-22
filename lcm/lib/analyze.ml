@@ -1,5 +1,11 @@
 open Core
 open Cfg
+open Analysis
+
+module type Exprs = sig
+  val expressions : Bril.value_expr list
+  val build : f:(Bril.value_expr -> bool) -> Bitv.t
+end
 
 let assigns_to var instr =
   match instr with
@@ -17,7 +23,7 @@ let instr_transparent expression instr =
 let instrs_transparent expression instrs =
   List.for_all ~f:(instr_transparent expression) instrs
 
-let transparent expression block =
+let expr_transparent expression block =
   instrs_transparent expression block.body
 
 let instr_computes expression instr =
@@ -26,7 +32,7 @@ let instr_computes expression instr =
      op = expression
   | _ -> false
 
-let computes expression block =
+let expr_computes expression block =
   let rec computes' instrs =
     match instrs with
     | [] -> false
@@ -37,43 +43,95 @@ let computes expression block =
   in
   computes' block.body
 
-let anticipates expression block =
-  computes expression {block with body = List.rev block.body}
+module Analyze (EXPRS: Exprs) = struct
 
-let expression = Bril.Add (Ident.var_of_string "x",
-                           Ident.var_of_string "y")
+  module Transparent =
+    MakeBlockLocal
+      (struct
+        let attr_name = "transparent"
+        let analyze (block, _) =
+          EXPRS.build ~f:(fun expr -> expr_transparent expr block)
+      end)
 
-module Availability =
-  Graph.Fixpoint.Make(CFG)
-    (struct 
-      type vertex = CFG.E.vertex
-      type edge = CFG.E.t
-      type g = CFG.t
-      type data = bool
-      let direction = Graph.Fixpoint.Forward
-      let equal = (=)
-      let join = (&&)
-      let analyze (src, _) src_avail_in =
-        transparent expression src
-        && src_avail_in
-        || computes expression src
-    end)
+  module Computes =
+    MakeBlockLocal
+      (struct 
+        let attr_name = "computes"
+        let analyze (block, _) =
+          EXPRS.build ~f:(fun expr -> expr_computes expr block)
+      end)
 
-module Anticipatability =
-  Graph.Fixpoint.Make(CFG)
-    (struct 
-      type vertex = CFG.E.vertex
-      type edge = CFG.E.t
-      type g = CFG.t
-      type data = bool
-      let direction = Graph.Fixpoint.Backward
-      let equal = (=)
-      let join = (&&)
-      let analyze (_, dst) dst_ant_out =
-        transparent expression dst
-        && dst_ant_out
-        || anticipates expression dst
-    end)
-    
-    
-  
+  module LocallyAnticipates =
+    MakeBlockLocal
+      (struct 
+        let attr_name = "locally_anticipates"
+        let analyze (block, _) =
+          let block = {block with body = List.rev block.body} in
+          EXPRS.build ~f:(fun expr -> expr_computes expr block)
+      end)
+
+  module Availability =
+    MakeDataflow
+      (struct
+        let attr_name = "availability"
+        let direction = Graph.Fixpoint.Forward
+        let init (_, b_attrs) =
+          if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "entry"
+          then EXPRS.build ~f:(fun _ -> true)
+          else EXPRS.build ~f:(fun _ -> false)
+        let analyze ((_, src_attrs), _, _) src_avail_in =
+          Bitv.bw_or
+            (Bitv.bw_and
+               (Cfg.Attrs.get src_attrs "transparent")
+               src_avail_in)
+            (Cfg.Attrs.get src_attrs "computes")
+      end)
+
+  module Anticipatability 
+    MakeDataflow
+      (struct
+        let attr_name = "anticipatability"
+        let direction = Graph.Fixpoint.Backward
+        let init (_, b_attrs) =
+          if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "exit"
+          then EXPRS.build ~f:(fun _ -> true)
+          else EXPRS.build ~f:(fun _ -> false)
+        let analyze (_, _, (_, dst_attrs)) dst_ant_out =
+          Bitv.bw_or
+            (Bitv.bw_and
+               (Cfg.Attrs.get dst_attrs "transparent")
+               dst_ant_out)
+            (Cfg.Attrs.get dst_attrs "locally_anticipates")
+      end)
+
+  module Earliest =
+    MakeEdgeLocal
+      (struct
+        let attr_name = "earliest"
+        let analyze ((_, src_attrs), _, (_, dst_attrs)) =
+          let ant_in_dst = Cfg.Attrs.get dst_attrs "ant_in" in
+          let avail_out_src = Cfg.Attrs.get src_attrs "avail_out" in
+          let entry_cond = Bitv.bw_and ant_in_dst (Bitv.bw_not avail_out_src) in
+          Bitv.bw_and entry_cond
+            (Bitv.bw_or
+               (Bitv.bw_not (Cfg.Attrs.get src_attrs "transparent"))
+               (Bitv.bw_not (Cfg.Attrs.get src_attrs "ant_out")))
+      end)
+          
+  module Later =
+    Graph.Fixpoint.Make(CFG)
+      (struct
+        type vertex = CFG.E.vertex
+        type edge = CFG.E.t
+        type g = CFG.t
+        type data = Bitv.t
+        let direction = Graph.Fixpoint.Forward
+        let equal x y = Bitv.all_zeros (Bitv.bw_xor x y) (* hack *)
+        let join = Bitv.bw_and
+        let analyze ((_, src_attrs), edge_attrs, (_, _)) src_later_in =
+          Bitv.bw_or
+            (Bitv.bw_and src_later_in
+               (Bitv.bw_not (Cfg.Attrs.get src_attrs "locally_anticipates")))
+            (Cfg.Attrs.get edge_attrs "earliest")
+      end)
+end

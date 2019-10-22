@@ -18,6 +18,7 @@ depends: [
   "core"
   "yojson"
   "ocamlgraph"
+  "bitv"
   "ppx_jane"
 ]
 

@@ -94,17 +94,18 @@ let successors block =
   | Jmp lbl -> [lbl]
   | Br { true_lbl; false_lbl; cond = _ } -> [true_lbl; false_lbl]
 
-let add_edges map graph block =
+let add_edges map graph (block: Cfg.basic_block) =
+  let src_block = Cfg.Map.find_exn map block.lbl in
   let add_edge graph lbl =
     let dst_block = Cfg.Map.find_exn map lbl in
-    Cfg.CFG.add_edge graph block dst_block
+    Cfg.CFG.add_edge graph src_block dst_block
   in
   List.fold ~f:add_edge ~init:graph (successors block)
 
 let add_all_edges map graph blocks =
   List.fold ~f:(add_edges map) ~init:graph blocks
 
-let cfgify_dirs (dirs : Bril.directive list ) =
+let cfgify_dirs (dirs : Bril.directive list) =
   let pre_blocks = blockify dirs in
   let blocks = normalize_blocks pre_blocks in
   let graph, map = List.fold ~init:Cfg.empty ~f:Cfg.add_block blocks in
