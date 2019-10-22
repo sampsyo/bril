@@ -1,0 +1,6 @@
+for f in *.ts
+do
+    ts2bril $f > perf/${f%.ts}
+    ts2bril $f | loopReduce > perf/opt_${f%.ts}
+done
+
