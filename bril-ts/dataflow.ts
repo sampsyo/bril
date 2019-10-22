@@ -80,39 +80,45 @@ export function listSchedule(
 
   // initialize queue
   for (let node of dag.succs) {
-    // console.dir(node, { depth: 2 });
     // if node has no preds, add to queue
     if (node.preds.size === 0) {
       queue.add(node)
     }
   }
 
+  // set of nodes that have already been scheduled
   let scheduled: Set<Node> = new Set();
-  let schedule: Array<Array<bril.Instruction>> = [];
-  let currentGroup: Array<bril.Instruction> = [];
+  // set of nodes that need to be added to queue next time it is empty
+  let toUpdate: Set<Node> = new Set();
 
-  // while queue is non-empty
-  while (!queue.isEmpty()) {
+  // current group that we are filling up
+  let currentGroup: Array<bril.Instruction> = [];
+  // total schedule
+  let schedule: Array<Array<bril.Instruction>> = [];
+
+  while (true) {
     let node = queue.next();
     if (node && node.instr !== "start") {
-      // add instruction to group if valid, else create new group
-      if (valid(currentGroup, node.instr) && dependenciesOk(node, currentGroup)) {
+      // if we can add node.instr to the currentGroup
+      if (valid(currentGroup, node.instr)) {
         currentGroup.push(node.instr);
-      } else {
-        schedule.push(currentGroup);
-        currentGroup = [node.instr];
-      }
-
-      // add group to scheduled
-      scheduled.add(node);
-
-      // update queue
-      for (let child of node.succs) {
-        if (subset(child.preds, scheduled)) {
-          queue.add(child);
+        scheduled.add(node);
+        // check succs for updates next time around
+        for (let child of node.succs) {
+          if (subset(child.preds, scheduled)) toUpdate.add(child);
         }
+      } else {
+        // check this node again
+        toUpdate.add(node);
       }
-
+    } else { // nothing left in the queue, finalize group and merge toUpdate with queue
+      schedule.push(currentGroup);
+      for (let item of toUpdate) {
+        queue.add(item);
+      }
+      toUpdate.clear();
+      if (queue.isEmpty()) break;
+      else currentGroup = [];
     }
   }
 

@@ -113,7 +113,7 @@ async function main() {
   let dag = df.dataflow(trace);
   df.assignDagPriority(dag);
   let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
-  console.log(sched);
+  console.dir(sched, { depth: 3 });
 }
 
 // Make unhandled promise rejections terminate.
