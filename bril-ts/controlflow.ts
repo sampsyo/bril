@@ -37,34 +37,49 @@ export function genFuncMap(func: b.Function): FuncMap {
   };
 }
 
+type CFGStruct = {
+  label: b.Ident;
+  succ: CFGStruct[];
+  preds: CFGStruct[];
+}
+
 /**
  * Mapping from a block label to its predecessors.
  */
-export function getPreds(funcMap: FuncMap): Map<b.Ident, b.Ident[]> {
-  let map: Map<b.Ident, b.Ident[]> = new Map();
+export function getCFG(funcMap: FuncMap): CFGStruct {
+  let start = { label: 'start', succ: [], preds: [], }
+  let cfg: CFGStruct = start
+  let map: Map<b.Ident, CFGStruct> = new Map();
+  map.set('start', start)
 
-  function addOrCreate(pred: b.Ident, me: b.Ident) {
-    let val = map.get(pred);
+  function getOrCreate(key: b.Ident): CFGStruct {
+    let val = map.get(key);
     if (!val) {
-      val = []
-      map.set(pred, val)
+      val = { label: key, succ: [], preds: [] };
+      map.set(key, val);
     }
-    val.push(me);
+    return val
   }
 
   for (let [label, instrs] of funcMap.blocks) {
     let last = instrs[instrs.length - 1];
+    let node: CFGStruct = getOrCreate(label);
     if (!last || !('op' in last)) {
       throw new Error("Block is empty");
     }
     switch (last.op) {
       case "br": {
-        addOrCreate(last.args[1], label);
-        addOrCreate(last.args[2], label);
+        let node1 = getOrCreate(last.args[1]);
+        let node2 = getOrCreate(last.args[2]);
+        node.succ.push(node1, node2);
+        node1.preds.push(node);
+        node2.preds.push(node);
         break;
       }
       case "jmp": {
-        addOrCreate(last.args[0], label);
+        let node1 = getOrCreate(last.args[0]);
+        node.succ.push(node1);
+        node1.preds.push(node);
         break;
       }
       case "ret": {
@@ -83,7 +98,9 @@ export function getPreds(funcMap: FuncMap): Map<b.Ident, b.Ident[]> {
           }
         }
         if (nextLabel) {
-          addOrCreate(nextLabel, label);
+          let node1 = getOrCreate(nextLabel);
+          node.succ.push(node1);
+          node1.preds.push(node);
           // add jump to next label
           let jmp: b.EffectOperation = {
             op: 'jmp',
@@ -94,5 +111,5 @@ export function getPreds(funcMap: FuncMap): Map<b.Ident, b.Ident[]> {
       }
     }
   }
-  return map;
+  return cfg;
 }

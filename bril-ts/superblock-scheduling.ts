@@ -2,20 +2,20 @@
 import * as df from './dataflow';
 import * as cf from './controlflow';
 import { readStdin } from './util';
-import * as bril from './bril';
+import * as b from './bril';
 import { Ident, Function, Instruction, EffectOperation } from './bril';
 
 /**
  * Given a sequence of instructions, generate a group with pre-condition tests
  * extracted out from the function.
  */
-function toGroup(trace: bril.MicroInstruction[], failLabel: bril.Ident): bril.Group {
-  let conds: bril.ValueOperation[] = [];
-  let instrs: (bril.ValueOperation | bril.Constant)[] = [];
+function toGroup(trace: b.MicroInstruction[], failLabel: b.Ident): b.Group {
+  let conds: b.ValueOperation[] = [];
+  let instrs: (b.ValueOperation | b.Constant)[] = [];
 
   // Calculate set of pre conditions for trace
   for (let inst of trace.slice().reverse()) {
-    let condArgs: Set<bril.Ident> = new Set();
+    let condArgs: Set<b.Ident> = new Set();
     // If an Effect Operation, add the arguments to set of condArgs
     if (!('dest' in inst)) {
       inst.args.forEach(a => condArgs.add(a));
@@ -36,6 +36,7 @@ function getTrace(
   onBranch: (op: EffectOperation) => boolean,
   blocks: number
 ): Instruction[] {
+
   let remaining = blocks;
   let trace: Instruction[] = [];
   let curLabel = startLabel;
@@ -61,6 +62,14 @@ function getTrace(
         case "br": {
           if (onBranch(final)) curLabel = final.args[1];
           else curLabel = final.args[2];
+          // Add fake id instruction
+          let fake: b.ValueOperation = {
+            op: "id",
+            args: getLives(labelMap.get(curLabel) || []),
+            dest: "DO_NO_WRONG",
+            type: 'int'
+          };
+          trace.push(fake);
           break;
         }
         case "jmp": {
@@ -77,38 +86,88 @@ function getTrace(
   return trace;
 }
 
-function run(prog: bril.Program) {
+function getLives(block: b.Instruction[]): b.Ident[] {
+  let lives: b.Ident[] = [];
+  for (let inst of block) {
+    if ('failLabel' in inst) {
+      getLives([...inst.conds, ...inst.instrs]).forEach(el => lives.push(el));
+    } else if ('dest' in inst) {
+      lives.push(inst.dest)
+    }
+  }
+  return lives;
+}
+
+function getUses(block: b.Instruction[]): Set<b.Ident> {
+  let uses: Set<b.Ident> = new Set();
+  for (let inst of block) {
+    if ('args' in inst)
+      inst.args.forEach(el => uses.add(el));
+  }
+  return uses;
+}
+
+function getDefs(block: b.Instruction[]): Set<b.Ident> {
+  let def: Set<b.Ident> = new Set();
+  for (let inst of block) {
+    if ('dest' in inst)
+      def.add(inst.dest);
+  }
+  return def;
+}
+
+function getLiveOut(func: FuncMap, cfg: cf.CFGStruct): Map<b.Ident, Set<b.Ident>> {
+  let out: Map<b.Ident, Set<b.Ident>> = new Map();
+  let worklist: b.Ident[] = [];
+
+  function getOrCreate(key: b.Ident): Set<b.Ident> {
+    let val = out.get(key);
+    if (!val) {
+      val = new Set();
+      map.add(val)
+    }
+    return val;
+  }
+
+  while(worklist) {
+    block = worklist.pop();
+    preds = cfg.preds
+  }
+}
+
+function removeGarbage(insts: b.Instruction[]): b.Instruction[] {
+  let newInsts: b.Instruction[] = [];
+  for (let inst of insts) {
+    if (('op' in inst) && inst.op === 'id' && inst.args.length > 1) continue;
+    newInsts.push(inst);
+  }
+  return newInsts;
+}
+
+function run(prog: b.Program) {
   for (let func of prog.functions) {
 
     // let pfunc = patchFunction(func);
     let fm = cf.genFuncMap(func);
-    let control = cf.getPreds(fm);
+    let control = cf.getCFG(fm);
+    console.log(control)
 
-    console.log("func map", control);
-    let trace = getTrace("for.cond.2", fm.blocks, control, (_) => true, 10);
-    console.log("TRACE")
-    bril.logInstrs(trace);
-    console.log("END")
+    //console.log("func map", control);
+    //let trace = getTrace("for.cond.2", fm.blocks, control, (_) => true, 10);
+    //console.log("TRACE")
+    //b.logInstrs(trace);
+    //console.log("END")
 
-    let dag = df.dataflow(trace);
-    df.assignDagPriority(dag);
-    let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
-    sched.forEach((v, i) => { console.log("GROUP", i); bril.logInstrs(v); console.log("END") })
-
-    // if (func.name === "main") {
-    //   let res: bril.Instruction[] = [];
-    //   for (let ins of func.instrs) {
-    //     if ("instrs" in ins || "op" in ins) {
-    //       res.push(ins);
-    //     }
-    //   }
-    //   return res;
-    // }
+    //let dag = df.dataflow(trace);
+    //df.assignDagPriority(dag);
+    ////console.dir(dag, { depth: 4 })
+    //let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
+    //sched.forEach((v, i) => { console.log("GROUP", i); b.logInstrs(v); console.log("END") })
   }
 }
 
 async function main() {
-  let prog = JSON.parse(await readStdin()) as bril.Program;
+  let prog = JSON.parse(await readStdin()) as b.Program;
   let trace = run(prog);
 }
 
