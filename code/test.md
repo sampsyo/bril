@@ -13,3 +13,53 @@ Because loop invariant code motion and strength reduction are specific optimizat
 | `strengthreduction*.ts`                 | Expecting strength reduction optimizations. |
 | `both*.ts`                              | Expecting both kinds of optimizations.      |
 
+
+### Loop Invariant Code Motion examples
+
+The program `codemotion1.ts` has the following loop code:
+
+```
+let a = 8;
+let x = 0;
+let y = 8;
+let z = 1;
+let n = 10;
+for (let i = n; i > 0; i = i - 1) {
+    x = y + z;
+    a = a + x * x;
+}
+```
+Since both `y` and `z` are constants in the loop, computation of `x` in each iteration is redundant and this operation can be moved outside the loop. The optimized Bril code does perform this function outside the loop as:
+```
+v10: int = id y;
+v11: int = id z;
+v12: int = add v10 v11;
+x: int = id v12; x= y+z
+```
+and the loop body is reduced to:
+```
+for.body.5:
+v13: int = id a;
+v14: int = id x;
+v15: int = id x;
+v16: int = mul v14 v15; #using the updated x for x*x
+v17: int = add v13 v16; #a=a+x*x
+a: int = id v17;
+```
+Assuming the cost of `x=y+z` was `c` we reduced the computation in the program by `(n-1)*c`. To benchmark this, we timed our optimized version:
+```
+time ts2bril codemotion1.ts | loopReduce | brili
+
+real    0m0.844s
+user    0m1.314s
+sys    0m0.122s
+```
+to the unoptimized version of the code:
+```
+time ts2bril codemotion1.ts | brili
+
+real    0m0.781s
+user    0m1.218s
+sys    0m0.105s
+```
+It is evident that we have slowed down the program. We have become the monsters we set out to defeat.
