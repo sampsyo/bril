@@ -7,6 +7,9 @@ export type Node = {
   priority: number | undefined,
 };
 
+/**
+ * Very simply Priority Queue implementation
+ */
 class PQueue<T> {
   t: Set<T>;
   /** compare(t1, t2) is true when t1 is better than t2 */
@@ -36,6 +39,19 @@ class PQueue<T> {
   }
 }
 
+/**
+ * subset(s1, s2) is true when s1 is a subset of s2
+ */
+function subset<T>(s1: Set<T>, s2: Set<T>): boolean {
+  // console.log("subset", s1, s2);
+  for (let elem of s1) {
+    if (s2.has(elem)) continue;
+    else return false;
+
+  }
+  return true;
+}
+
 function nodeCompare(t1: Node, t2: Node): boolean {
   if (t1.priority && t2.priority) {
     return t1.priority > t2.priority;
@@ -44,12 +60,13 @@ function nodeCompare(t1: Node, t2: Node): boolean {
 }
 
 /**
- * subset(s1, s2) is true when s1 is a subset of s2
+ * Checks to make sure that none of node's preds are in group.
  */
-function subset<T>(s1: Set<T>, s2: Set<T>): boolean {
-  for (let elem of s1) {
-    if (s2.has(elem)) continue;
-    else return false;
+export function dependenciesOk(node: Node, group: Array<bril.Instruction>): boolean {
+  for (let req of node.preds) {
+    if (req.instr !== "start") {
+      if (group.includes(req.instr)) return false;
+    }
   }
   return true;
 }
@@ -63,14 +80,12 @@ export function listSchedule(
 
   // initialize queue
   for (let node of dag.succs) {
-    console.dir(node, { depth: 2 });
+    // console.dir(node, { depth: 2 });
     // if node has no preds, add to queue
     if (node.preds.size === 0) {
       queue.add(node)
     }
   }
-
-  console.log(queue);
 
   let scheduled: Set<Node> = new Set();
   let schedule: Array<Array<bril.Instruction>> = [];
@@ -80,15 +95,15 @@ export function listSchedule(
   while (!queue.isEmpty()) {
     let node = queue.next();
     if (node && node.instr !== "start") {
-      // add instruction to a group
-      if (valid(currentGroup, node.instr)) {
+      // add instruction to group if valid, else create new group
+      if (valid(currentGroup, node.instr) && dependenciesOk(node, currentGroup)) {
         currentGroup.push(node.instr);
       } else {
         schedule.push(currentGroup);
         currentGroup = [node.instr];
       }
 
-      // add node to scheduled
+      // add group to scheduled
       scheduled.add(node);
 
       // update queue
