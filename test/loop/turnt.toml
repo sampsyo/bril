@@ -1,0 +1,2 @@
+#command = "ts2bril {filename}.ts |  bril2txt > {filename}.bril"
+command = "ts2bril {filename}.ts | loopReduce | bril2txt > {filename}.bril"
