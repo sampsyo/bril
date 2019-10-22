@@ -2,6 +2,7 @@ import sys
 import json
 from cfg import edges
 from df import run_df_return, ANALYSES, cprop_merge
+from util import flatten
 
 def backedge(bril):
     blocks, in_, out = run_df_return(bril, ANALYSES['dominators'])
@@ -238,10 +239,7 @@ def stripMine(loops, filtered_loopInfos, blocks):
         # Add this assignment to top of loop
         four = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 4}
 
-        # hmmmmm
-        # Find Delta Stmt
-        # inc_four = {'args': [loop_info["iv"], 'four'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
-        
+        # Makes loop into 1 big block
         loopToOneBlock(blocks, loops[i])
         loaded_vars = set()
         # TODO: Dependency precheck
@@ -345,4 +343,7 @@ if __name__ == '__main__':
         for inst in blocks[block]:
             print('   ',inst)
 
+    for func in bril['functions']:
+        func['instrs'] = flatten(blocks)
+    json.dump(bril, sys.stdout, indent=2, sort_keys=True)
 
