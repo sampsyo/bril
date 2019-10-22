@@ -60,13 +60,8 @@ def insert_phi_nodes(blocks, frontiers, preds):
 
     return blocks
 
-def rename(name, blocks, var_names, succ, dom_children, stacks, visited):
+def rename(name, blocks, var_names, succ, dom_children, stacks):
     pushed = defaultdict(int)
-
-    # Only visit each block once
-    if name in visited:
-        return
-    visited.add(name)
 
     for instr in blocks[name]:
         # Replace arguments with new names
@@ -96,7 +91,7 @@ def rename(name, blocks, var_names, succ, dom_children, stacks, visited):
                     break
 
     for block in dom_children[name]:
-        rename(block, blocks, var_names, succ, dom_children, stacks, visited)
+        rename(block, blocks, var_names, succ, dom_children, stacks)
     
     for name, num_pushed in pushed.items():
         stacks[name] = stacks[name][:-num_pushed]
@@ -117,11 +112,21 @@ def rename_all(blocks, succ, dom):
     for k, bls in dom.items():
         for b in bls:
             # We want direct children in the dominator tree only; so exclude the 
-            # block itself and any non-direct successors
+            # block itself 
             if k != b:
                 dom_children[b].add(k) 
 
-    rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks, set())
+    block_names = list(blocks.keys())
+
+    # Remove redudant edges to get the dominator tree
+    for i in block_names:
+        for j in block_names:
+            if j in dom_children[i]:
+                for k in block_names:
+                    if k in dom_children[j]:
+                        dom_children[i].remove(k)
+
+    rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks)
 
 def to_ssa(bril):
     for func in bril['functions']:

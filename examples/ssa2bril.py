@@ -13,28 +13,54 @@ from util import fresh
 
 
 def replace_phis_with_copies(blocks):
-    for name, instrs in blocks.items():
+    new_blocks = {}
+    for current_block, instrs in blocks.items():
         num_phis = 0
+        copy_block_names = {}
         for instr in instrs:
             if instr['op'] != 'phi': break
-
-            for arg, pred_name in zip(instr['args'], instr['sources']):
-                pred_instrs = blocks[pred_name]
-
-                copy_block = fresh('copy', blocks)
-                # copy_instr = {
-                #     'op' : 'id',
-                #     'dest' : 
-                # }
-
-                terminator = pred_instrs[-1]['args']
-
-
-                pred_instrs[-1]['args'] = [a if ]
-
-
             num_phis += 1
-           
+
+            # Add a copy instruction per phi to the new block
+            for arg, pred_name in zip(instr['args'], instr['sources']):
+
+                # Create a new block to hold the copies per source
+                if pred_name not in copy_block_names:
+                    names = list(blocks.keys()) + list(new_blocks.keys())
+                    copy_block = fresh('copy', names)
+                    copy_block_names[pred_name] = copy_block
+                    new_blocks[copy_block] = []
+                else:
+                    copy_block = copy_block_names[pred_name]
+
+                # Create a new copy instruction from this arg to the phi's dest
+                copy_instr = {
+                    'op' : 'id',
+                    'dest' : instr['dest'],
+                    'type' : instr['type'],
+                    'args' : [arg],
+                }
+
+                new_blocks[copy_block].append(copy_instr)
+
+        # Remove all the phi nodes from the current block
+        del instrs[:num_phis]
+
+        # Now, fix up the branches/jumps to link in the new blocks
+        for source, copy_block in copy_block_names.items():
+            # Now, fix up the branches/jumps to link in the new blocks
+            # Jump from the copy to the current block.
+            jmp_instr = {
+                'op' : 'jmp',
+                'args' : [current_block],
+            }
+            new_blocks[copy_block].append(jmp_instr)
+
+            # Modify the source's terminator to go instead to the copy block
+            terminator = blocks[source][-1]
+            terminator['args'] = [copy_block if b == current_block else b for b in terminator['args']]
+            
+    blocks.update(new_blocks)
 
 def from_ssa(bril): 
     for func in bril['functions']:
@@ -42,8 +68,10 @@ def from_ssa(bril):
         add_terminators(blocks)
         succ = {name: block_successors(block) for name, block in blocks.items()}
 
+        replace_phis_with_copies(blocks)
+        func['instrs'] = reduce(operator.iconcat, [[{'label' : k}] + v for k, v in blocks.items()], [])
 
-
+    return json.dumps(bril, indent=4)
 
 def ssa2bril():
     bril_without_phis = from_ssa(json.load(sys.stdin))
