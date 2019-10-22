@@ -59,18 +59,6 @@ function nodeCompare(t1: Node, t2: Node): boolean {
   return t1.priority !== undefined;
 }
 
-/**
- * Checks to make sure that none of node's preds are in group.
- */
-export function dependenciesOk(node: Node, group: Array<bril.Instruction>): boolean {
-  for (let req of node.preds) {
-    if (req.instr !== "start") {
-      if (group.includes(req.instr)) return false;
-    }
-  }
-  return true;
-}
-
 export function listSchedule(
   dag: Node,
   valid: (instrs: Array<bril.Instruction>, cand: bril.Instruction) => boolean

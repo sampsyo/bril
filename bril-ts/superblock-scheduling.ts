@@ -30,22 +30,25 @@ function toGroup(trace: bril.MicroInstruction[], failLabel: bril.Ident): bril.Gr
 
 
 /**
- * Assumes that the starting block of the function also has a name.
+ * Generates a map from labels to the instructions run by jumping to label
+ * i.e generated basic blocks.
  */
 function genFuncMap(func: Function): Map<Ident, Instruction[]> {
+  // XXX do we need to ensure that blocks end in a jump like instruction?
   let map: Map<Ident, Instruction[]> = new Map();
-  for (let i = 0; i < func.instrs.length; i++) {
-    let curInst = func.instrs[i];
-    if ('label' in curInst) {
-      let instrs: Instruction[] = [];
-      let label = curInst.label;
 
-      curInst = func.instrs[i++];
-      while (!('label' in curInst)) {
-        instrs.push(curInst);
-        curInst = func.instrs[i++];
+  let curLabel = "start";
+  for (let instr of func.instrs) {
+    // instr is a label
+    if ('label' in instr) {
+      curLabel = instr.label;
+    } else {
+      let block = map.get(curLabel);
+      if (block) {
+        block.push(instr);
+      } else {
+        map.set(curLabel, [instr]);
       }
-      map.set(label, instrs);
     }
   }
 
@@ -56,44 +59,46 @@ function getTrace(
   startLabel: Ident,
   labelMap: Map<Ident, Instruction[]>,
   onBranch: (op: EffectOperation) => boolean,
-  blocks: number): Instruction[] {
-    let remaining = blocks;
-    let trace: Instruction[] = [];
-    let curLabel = startLabel;
+  blocks: number
+): Instruction[] {
+  let remaining = blocks;
+  let trace: Instruction[] = [];
+  let curLabel = startLabel;
 
-    while(--remaining > 0) {
-      let instrs = labelMap.get(curLabel);
+  while (--remaining > 0) {
+    let instrs = labelMap.get(curLabel);
 
-      if (!instrs) {
-        throw new Error(`Unknown label ${curLabel}`)
-      }
+    if (!instrs) {
+      throw new Error(`Unknown label ${curLabel}`)
+    }
 
-      trace.push(...instrs.slice(0, -1));
-      let final = instrs[instrs.length - 1];
+    trace.push(...instrs.slice(0, -1));
+    let final = instrs[instrs.length - 1];
 
-      if ('op' in final) {
-        switch (final.op) {
-          case "br": {
-            if (onBranch(final)) curLabel = final.args[1];
-            else curLabel = final.args[2];
-            break;
-          }
-          case "jmp": {
-            curLabel = final.args[0];
-            break;
-          }
-          case "ret": {
-            return trace;
-          }
+    if ('op' in final) {
+      switch (final.op) {
+        case "br": {
+          if (onBranch(final)) curLabel = final.args[1];
+          else curLabel = final.args[2];
+          break;
+        }
+        case "jmp": {
+          curLabel = final.args[0];
+          break;
+        }
+        case "ret": {
+          return trace;
         }
       }
     }
+  }
 
-    return trace;
+  return trace;
 }
 
 function simple(prog: bril.Program): Array<bril.Instruction> {
   for (let func of prog.functions) {
+    console.log("func map", genFuncMap(func));
     if (func.name === "main") {
       let res: bril.Instruction[] = [];
       for (let ins of func.instrs) {
