@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as df from './dataflow';
+import * as cf from './controlflow';
 import { readStdin } from './util';
 import * as bril from './bril';
 import { Ident, Function, Instruction, EffectOperation } from './bril';
@@ -28,36 +29,10 @@ function toGroup(trace: bril.MicroInstruction[], failLabel: bril.Ident): bril.Gr
   return { conds, instrs, failLabel }
 }
 
-
-/**
- * Generates a map from labels to the instructions run by jumping to label
- * i.e generated basic blocks.
- */
-function genFuncMap(func: Function): Map<Ident, Instruction[]> {
-  // XXX do we need to ensure that blocks end in a jump like instruction?
-  let map: Map<Ident, Instruction[]> = new Map();
-
-  let curLabel = "start";
-  for (let instr of func.instrs) {
-    // instr is a label
-    if ('label' in instr) {
-      curLabel = instr.label;
-    } else {
-      let block = map.get(curLabel);
-      if (block) {
-        block.push(instr);
-      } else {
-        map.set(curLabel, [instr]);
-      }
-    }
-  }
-
-  return map;
-}
-
 function getTrace(
   startLabel: Ident,
   labelMap: Map<Ident, Instruction[]>,
+  predMap: Map<Ident, Ident[]>,
   onBranch: (op: EffectOperation) => boolean,
   blocks: number
 ): Instruction[] {
@@ -66,6 +41,12 @@ function getTrace(
   let curLabel = startLabel;
 
   while (--remaining > 0) {
+    // If there more than one entrance to this block, don't add it to the
+    // trace.
+    let preds = predMap.get(curLabel);
+    if (preds && preds.length > 1) {
+      return trace;
+    }
     let instrs = labelMap.get(curLabel);
 
     if (!instrs) {
@@ -96,9 +77,38 @@ function getTrace(
   return trace;
 }
 
+function patchFunction(func: bril.Function): bril.Function {
+  let idx = 0;
+  // Find the first block's label.
+  let curInst = func.instrs[idx];
+  while (!('label' in curInst)) {
+    idx++;
+    curInst = func.instrs[idx];
+  }
+  let first = func.instrs.slice(0, idx - 1);
+  let last = func.instrs.slice(idx, func.instrs.length - 1);
+  let jmp: bril.EffectOperation = {
+    op: "jmp", args: [curInst.label]
+  }
+  let start: bril.Label = {label: 'start'}
+  return {
+    name: func.name,
+    instrs: [start, ...first, jmp, ...last ]
+  }
+}
+
 function simple(prog: bril.Program): Array<bril.Instruction> {
   for (let func of prog.functions) {
-    console.log("func map", genFuncMap(func));
+
+    let pfunc = patchFunction(func);
+    let fm = cf.genFuncMap(pfunc);
+    let control = cf.getPreds(fm);
+
+    let trace = getTrace("start", fm, control, (_) => true, 10);
+    console.log("TRACE")
+    console.log(trace);
+    console.log("END")
+
     if (func.name === "main") {
       let res: bril.Instruction[] = [];
       for (let ins of func.instrs) {
