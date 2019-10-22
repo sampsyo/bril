@@ -112,6 +112,11 @@ def parse_bril(txt):
 # Text format pretty-printer.
 
 def instr_to_string(instr):
+    if 'comment' in instr:
+        comment = instr['comment']
+        del instr['comment']
+        return  instr_to_string(instr) + ' #' + comment
+        
     if instr['op'] == 'const':
         return '{}: {} = const {}'.format(
             instr['dest'],
