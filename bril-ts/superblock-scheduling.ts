@@ -49,7 +49,7 @@ function getTrace(
     }
     let instrs = labelMap.get(curLabel);
 
-    if (!instrs) {
+    if (instrs === undefined) {
       throw new Error(`Unknown label ${curLabel}`)
     }
 
