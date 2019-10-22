@@ -45,14 +45,15 @@ def insert_phi_nodes(blocks, frontiers, preds):
 
                 # Number of args to phi is the number of predecessors of this 
                 # block
-                args = [var] * len(preds[frontier_block])
+                num_preds = len(preds[frontier_block])
                 phi = {
                   'dest' : var,
                   'type': types[var],
                   'op' : 'phi',
-                  'args' : args,
-                  'sources': []
+                  'args' : [var] * num_preds,
+                  'sources': [""] * num_preds,
                 }
+
                 blocks[frontier_block] = [phi] + instrs
 
                 if frontier_block not in var_defns[var]:
@@ -65,7 +66,7 @@ def rename(name, blocks, var_names, succ, dom_children, stacks):
 
     for instr in blocks[name]:
         # Replace arguments with new names
-        if 'args' in instr and instr['op'] != 'phi':
+        if 'args' in instr:
             instr['args'] = [stacks[v][-1] if v in stacks else v for v in instr['args']]
 
         # Replace the destination with a fresh name
@@ -87,7 +88,7 @@ def rename(name, blocks, var_names, succ, dom_children, stacks):
             for i, arg in enumerate(instr['args']):
                 if arg in stacks:
                     instr['args'][i] = stacks[arg][-1]
-                    instr['sources'].append(name)
+                    instr['sources'][i] = name
                     break
 
     for block in dom_children[name]:
@@ -126,6 +127,7 @@ def rename_all(blocks, succ, dom):
                     if k in dom_children[j]:
                         dom_children[i].remove(k)
 
+    print(dom_children)
     rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks)
 
 def to_ssa(bril):
