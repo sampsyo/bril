@@ -110,7 +110,10 @@ function simple(prog: bril.Program): Array<bril.Instruction> {
 async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
   let trace = simple(prog);
-  console.dir(df.dataflow(trace), { depth: 3 });
+  let dag = df.dataflow(trace);
+  df.assignDagPriority(dag);
+  let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
+  console.log(sched);
 }
 
 // Make unhandled promise rejections terminate.
