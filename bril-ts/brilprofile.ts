@@ -43,10 +43,10 @@ async function profile() {
   }
   console.log = consoleLog;
   let call_graph_json: { from: string; to: string; count: Number; }[] = json_from_call_graph(brili.weighted_call_graph);
-  let basic_block_json: { function: string; from: string; to: string; count: Number; }[][] = [];
+  let basic_block_json: { function: string; from: string; to: string; count: Number; }[] = [];
   brili.basic_block_flows.forEach((value: callgraph.WeightedCallGraph, key: string) => {
-    let bb_flows = json_from_call_graph(value);
-    basic_block_json.push(bb_flows.map(el => ({...el, function: key})));
+    let bb_flows = json_from_call_graph(value).map(el => ({...el, function: key}));
+    basic_block_json.push(...bb_flows);
   });
   console.log(JSON.stringify({
     call_graph: call_graph_json,

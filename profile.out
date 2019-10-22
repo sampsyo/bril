@@ -17,19 +17,23 @@
     }
   ],
   "basic_block_flows": [
-    [
-      {
-        "from": "b1",
-        "to": "return",
-        "count": 6,
-        "function": "fib"
-      },
-      {
-        "from": "b1",
-        "to": "continue",
-        "count": 3,
-        "function": "fib"
-      }
-    ]
+    {
+      "from": "a",
+      "to": "b",
+      "count": 9,
+      "function": "le_one"
+    },
+    {
+      "from": "b1",
+      "to": "return",
+      "count": 6,
+      "function": "fib"
+    },
+    {
+      "from": "b1",
+      "to": "continue",
+      "count": 3,
+      "function": "fib"
+    }
   ]
 }

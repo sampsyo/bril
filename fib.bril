@@ -4,7 +4,9 @@ main (n:int) {
 }
 
 le_one (n: int): bool {
+a:
     one: int = const 1;
+b:
     lto: bool = le n one;
     ret lto;
 }
