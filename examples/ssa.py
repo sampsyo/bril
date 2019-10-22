@@ -12,20 +12,23 @@ from form_blocks import form_blocks
 from util import fresh
 
 def get_variable_definitions(blocks):
-    """Given all blocks, return a map from variable name to the list of blocks 
-    where that variable is defined
+    """Given all blocks, return a map from variable name to a set of
+    the blocks where that variable is defined and a map from variable name to
+    its type
     """
 
     defns = defaultdict(set)
+    types = {}
     for block_name, instrs in blocks.items():
         for instr in instrs:
             if 'dest' in instr:
                 var = instr['dest']
-                defns[var].add(block_name)
-    return defns
+                defns[var].add((block_name))
+                types[var] = instr['type']
+    return defns, types
 
 def insert_phi_nodes(blocks, frontiers, preds):
-    var_defns = get_variable_definitions(blocks)
+    var_defns, types = get_variable_definitions(blocks)
 
     queue = [(k, v) for k, v in var_defns.items()]
 
@@ -45,7 +48,7 @@ def insert_phi_nodes(blocks, frontiers, preds):
                 args = [var] * len(preds[frontier_block])
                 phi = {
                   'dest' : var,
-                  'type': 'void',
+                  'type': types[var],
                   'op' : 'phi',
                   'args' : args,
                   'sources': []
@@ -106,7 +109,8 @@ def print_blocks(blocks):
 
 
 def rename_all(blocks, succ, dom):
-    var_names = list(get_variable_definitions(blocks).keys())
+    var_defns, _ = get_variable_definitions(blocks)
+    var_names = list(var_defns.keys())
     stacks = {v : [v] for v in var_names}
 
     dom_children = defaultdict(set)
