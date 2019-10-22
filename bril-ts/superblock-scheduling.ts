@@ -52,7 +52,6 @@ function getTrace(
     if (!instrs) {
       throw new Error(`Unknown label ${curLabel}`)
     }
-    console.log(instrs)
 
     trace.push(...instrs.slice(0, -1));
     let final = instrs[instrs.length - 1];
@@ -78,58 +77,39 @@ function getTrace(
   return trace;
 }
 
-function patchFunction(func: bril.Function): bril.Function {
-  let idx = 0;
-  // Find the first block's label.
-  let curInst = func.instrs[idx];
-  while (!('label' in curInst)) {
-    idx++;
-    curInst = func.instrs[idx];
-  }
-  let first = func.instrs.slice(0, idx);
-  let last = func.instrs.slice(idx, func.instrs.length);
-  let jmp: bril.EffectOperation = {
-    op: "jmp", args: [curInst.label]
-  }
-  let start: bril.Label = {label: 'start'}
-  return {
-    name: func.name,
-    instrs: [start, ...first, jmp, ...last ]
-  }
-}
-
-function simple(prog: bril.Program): Array<bril.Instruction> {
+function run(prog: bril.Program) {
   for (let func of prog.functions) {
 
-    let pfunc = patchFunction(func);
-    let fm = cf.genFuncMap(pfunc);
+    // let pfunc = patchFunction(func);
+    let fm = cf.genFuncMap(func);
     let control = cf.getPreds(fm);
 
-    let trace = getTrace("for.cond.2", fm, control, (_) => true, 10);
+    console.log("func map", control);
+    let trace = getTrace("for.cond.2", fm.blocks, control, (_) => true, 10);
     console.log("TRACE")
-    console.log(trace);
+    bril.logInstrs(trace);
     console.log("END")
 
-    if (func.name === "main") {
-      let res: bril.Instruction[] = [];
-      for (let ins of func.instrs) {
-        if ("instrs" in ins || "op" in ins) {
-          res.push(ins);
-        }
-      }
-      return res;
-    }
+    let dag = df.dataflow(trace);
+    df.assignDagPriority(dag);
+    let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
+    sched.forEach((v, i) => { console.log("GROUP", i); bril.logInstrs(v); console.log("END") })
+
+    // if (func.name === "main") {
+    //   let res: bril.Instruction[] = [];
+    //   for (let ins of func.instrs) {
+    //     if ("instrs" in ins || "op" in ins) {
+    //       res.push(ins);
+    //     }
+    //   }
+    //   return res;
+    // }
   }
-  return [];
 }
 
 async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
-  let trace = simple(prog);
-  let dag = df.dataflow(trace);
-  df.assignDagPriority(dag);
-  let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
-  console.dir(sched, { depth: 3 });
+  let trace = run(prog);
 }
 
 // Make unhandled promise rejections terminate.

@@ -13,4 +13,5 @@ else.1:
   print v5;
   v6: int = const 0;
 endif.1:
+  nop;
 }

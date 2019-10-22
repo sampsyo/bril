@@ -26,8 +26,8 @@ export interface EffectOperation {
  */
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
-      "id" | "nop" |
-      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+  "id" | "nop" |
+  "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -76,6 +76,40 @@ export type MicroInstruction = Operation | Constant;
  * or a group which is an Array of MicroInstructions.
  */
 export type Instruction = Group | MicroInstruction;
+
+
+export function logInstr(instr: Instruction | Label) {
+  if ("failLabel" in instr) {
+    console.log(instr);
+  } else if ("label" in instr) {
+    console.log(instr.label)
+  } else {
+    switch (instr.op) {
+      case "br":
+        console.log("  br", instr.args[0], instr.args[1], instr.args[2]);
+        break;
+      case "jmp":
+        console.log("  jmp", instr.args[0]);
+        break;
+      case "ret":
+        console.log("  ret");
+        break;
+      case "const":
+        console.log(" ", instr.dest, "=", "const", instr.value);
+        break;
+      default:
+        if ("dest" in instr) {
+          console.log(" ", instr.dest, "=", instr.op, instr.args);
+        } else {
+          console.log(instr);
+        }
+    }
+  }
+}
+
+export function logInstrs(instrs: (Label | Instruction)[]) {
+  instrs.forEach((v) => logInstr(v));
+}
 
 /**
  * Both constants and value operations produce results.
