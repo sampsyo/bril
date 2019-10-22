@@ -144,6 +144,7 @@ def findBasePointers(blocks, loop, in_cprop, iv, in_rd):
             if 'op' in stmt and stmt['op'] == 'lw' or stmt['op'] == 'sw':
                 loadstores.append(stmt)
     loadstore_pointers = [stmt['args'][-1] for stmt in loadstores]
+    loadstore_pointer_stmts = [in_rd[findNameOfBlockWithStatement(blocks, stmt)][stmt['args'][-1]] for stmt in loadstores] #Messy
     loadstore_bases = []
     loadstore_base_vals = []
     for index, pointer in enumerate(loadstore_pointers):
@@ -153,44 +154,122 @@ def findBasePointers(blocks, loop, in_cprop, iv, in_rd):
         loadstore_bases.append(base_var)
         pointer_stmt_blockname = findNameOfBlockWithStatement(blocks, pointer_stmt)
         base_val = in_cprop[pointer_stmt_blockname][base_var]
+        # TODO: check this asertion
         # assert(base_val != '?')
         loadstore_base_vals.append(base_val)
+
+    return {'loadstore_stmts': loadstores,
+    'loadstore_bases': loadstore_bases,
+    'loadstore_base_vals': loadstore_base_vals, 
+    'loadstore_pointers':loadstore_pointers, 
+    'loadstore_pointer_stmts': loadstore_pointer_stmts}
+
+#Delete block and handle in/out edges. Doesn't work for br blocks
+def annihilateBlock(blocks, targetBlock):
+    # print("TARGET: ", targetBlock)
+    preds, succs = edges(blocks)
+
+    # print("PREDS:", preds[targetBlock])
+    # print("SUCCS:", succs[targetBlock])
+
+    assert(len(preds[targetBlock])==1 and len(succs[targetBlock]) == 1)
+    assert(blocks[targetBlock][-1]['op'] != 'br')
+    if(len(preds[targetBlock])==1 ):
+        pred_exit_instr = blocks[preds[targetBlock][0]][-1]
+        succ_block_name = succs[targetBlock][0]
+        for index, arg in enumerate(pred_exit_instr['args']):
+            if arg == targetBlock:
+                pred_exit_instr['args'][index] = succ_block_name
+        blocks.pop(targetBlock)
+    else:
+        assert("DONT" == "USE")
+        curr_exit_instr = blocks[targetBlock][-1]
+        curr_exit_target = curr_exit_instr['args'][0]
+        succ_block_name = succs[targetBlock][0]
+        blocks[curr_exit_target] = blocks[succs[targetBlock][0]]
         
 
+def loopToOneBlock(blocks, loop):
+    #Assert br is last instruction of loop
+    # TODO: remove this restricting with smarter logic
+    assert(blocks[loop[-1]][-1]['op'] == 'br') 
+    br_stmt = blocks[loop[-1]][-1]
+    while len(loop) > 2:
+        blockName = loop.pop(1)
+        blockStmt = blocks[blockName][0]
+        blocks[loop[0]].insert(-1, blockStmt)
+        annihilateBlock(blocks, blockName)
+    blockName = loop.pop(1)
+    blockStmt = blocks[blockName][0]
+    blocks[loop[0]].insert(-1, blockStmt)
+    blocks[loop[0]][-1] = br_stmt
+    blocks.pop(blockName)
+    # print("AFTER 1BLOCKING",blocks)
 
-    return dict(zip(loadstore_bases,loadstore_base_vals))
+# TODO: this only works for br at very end. E.g. a do-while loop
+def numIterations(initial_val, delta_op, bound_val, cond_op):
+    num = 0
+    i = initial_val
+    num += 1 if delta_op == 'add' else -1
+    temp = ["eq", "lt", "gt", "ge", "le"]
+    if cond_op == 'eq':
+        if i == bound_val: return num
+    elif cond_op == 'lt':
+        if i < bound_val: return num
+    elif cond_op == 'gt':
+        if i > bound_val: return num
+    elif cond_op == 'ge':
+        if i >= bound_val: return num
+    elif cond_op == 'le':
+        if i <= bound_val: return num
+    
 
 def stripMine(loops, filtered_loopInfos, blocks):
     for i in range(len(loops)):
         loop_info = filtered_loopInfos[i][1]
 
+        # TODO check that br is very last instr in loop
         # TODO duplicate loop in case n mod 4 != 0
         # Duplicate loop and connect to bottom if (n mod 4 != 0)
         if (loop_info['bound_val'] % 4 != 0):
             print("gotta duplicate the loop")
+            assert("TODO" == "NOT DONE")
 
         # Add this assignment to top of loop
         four = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 4}
 
+        # hmmmmm
         # Find Delta Stmt
-        inc_four = {'args': [loop_info["iv"], 'four'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
+        # inc_four = {'args': [loop_info["iv"], 'four'], 'dest': loop_info["iv"], 'op': 'add', 'type': 'int'}
         
+        loopToOneBlock(blocks, loops[i])
         loaded_vars = set()
+        # TODO: Dependency precheck
+        serial_vars = []
         # Traverse loop, change loads to vload(i)
-        for block_name in loops[i]:
+        assert(len(loops[i]) == 1)
+        index = 0
+        while index < len(blocks[loops[i][0]]):
+            current_block = blocks[loops[i][0]]
+            current_insn = current_block[index]
             # Every block is a single insn follow by a jump. Only care about first one
-            current_insn = blocks[block_name][0]
+            # current_insn = blocks[block_name][0]
+            # assert(len(blocks[block_name]) == 2)
+            assert('op' in current_insn)
             if 'op' in current_insn and current_insn['op'] == 'lw':
                 current_insn["op"] = 'vload'
                 loaded_vars.add(current_insn["dest"])
             # Change increment to i = i + 4 
             elif current_insn is loop_info['delta_stmt']:
-                jump = blocks[block_name][1]
-                blocks[block_name][0] = four
-                blocks[block_name][1] = inc_four
-                blocks[block_name].append(jump)
+                arg0 = current_insn['args'][0]
+                if arg0 != loop_info['iv']: current_insn['args'][0] = 'four'
+                arg1 = current_insn['args'][1]
+                if arg1 != loop_info['iv']: current_insn['args'][1] = 'four'
+                current_block.insert(index, four)
+                index+=1
             # New Bound Variable Value
             elif current_insn is loop_info['bound_var_def']:
+                #not necessarily in the loop...
                 n = loop_info['bound_val']
                 n_mod_four = n - (n % 4)
                 blocks[block_name][0] = {'dest': loop_info["bound_var"], 'op': 'const', 'type': 'int', 'value': n_mod_four}
@@ -198,16 +277,45 @@ def stripMine(loops, filtered_loopInfos, blocks):
                 current_insn["op"] = 'vstore'
             elif 'op' in current_insn and current_insn['op'] == 'add':
                 if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
-                 current_insn["op"] = 'vadd'
+                    current_insn["op"] = 'vadd'
+                else:
+                    serial_vars.append(current_insn)
             elif 'op' in current_insn and current_insn['op'] == 'sub':
                 if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
-                 current_insn["op"] = 'vsub'
+                    current_insn["op"] = 'vsub'
+                else:
+                    serial_vars.append(current_insn)
             elif 'op' in current_insn and current_insn['op'] == 'mul':
                 if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
-                 current_insn["op"] = 'vmul'
+                    current_insn["op"] = 'vmul'
+                else:
+                    serial_vars.append(current_insn)
             elif 'op' in current_insn and current_insn['op'] == 'div':
                 if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars: 
-                 current_insn["op"] = 'vdiv'
+                    current_insn["op"] = 'vdiv'
+                else:
+                    serial_vars.append(current_insn)
+                 
+            index +=1
+        # TODO assert that no serial vars follow delta stmt
+        print("SERIAL VARS: ", serial_vars)
+
+        delta_index = next(ind for ind in range(len(blocks[loops[i][0]])) if blocks[loops[i][0]][ind] is loop_info['delta_stmt'])
+        loopBlock = blocks[loops[i][0]]
+
+        loopBlock.insert(delta_index+1, loop_info['delta_stmt'])
+        for inst in serial_vars:
+            loopBlock.insert(delta_index + 1, inst)
+        
+        loopBlock.insert(delta_index+1, loop_info['delta_stmt'])
+        for inst in serial_vars:
+            loopBlock.insert(delta_index + 1, inst)
+        
+        loopBlock.insert(delta_index+1, loop_info['delta_stmt'])
+        for inst in serial_vars:
+            loopBlock.insert(delta_index + 1, inst)
+        
+
 
         # TODO maybe handle subtract case
 
@@ -226,13 +334,15 @@ if __name__ == '__main__':
     #     for item1 in blocks[item]:
     #         print(item1)
     loop_infos= findLoopInfo(bril, loops)
-    for loop, info in loop_infos:
-        print("LOOP: ", loop)
-        print("INFO: ", info, '\n')
+    # for loop, info in loop_infos:
+    #     print("LOOP: ", loop)
+    #     print("INFO: ", info, '\n')
     filtered_loopInfos = filterEligibleLoops(loop_infos)
     blocks = stripMine(loops, filtered_loopInfos, blocks)
+    print("@@@@@@@@@DONE@@@@@@@@")
     for block in blocks:
         print('{}:'.format(block))
-        print('   ',blocks[block])
+        for inst in blocks[block]:
+            print('   ',inst)
 
 
