@@ -1,0 +1,16 @@
+void main() {
+  value : int = const 5;
+  zero : int = const 0;
+  one : int = const 1;
+  i : int = id value;
+  acc : int = const 1;
+loop:
+  b : bool = gt i zero;
+  br b next after;
+next:
+  acc : int = mul acc i;
+  i : int = sub i one;
+  jmp loop;
+after:
+  print acc;
+}
