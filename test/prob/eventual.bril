@@ -1,0 +1,9 @@
+main {
+start : 
+  x: bool = flip;
+  y: bool = flip;
+  z: bool = and x y;
+  br z start end;
+end:
+  ret;
+}

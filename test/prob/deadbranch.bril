@@ -1,0 +1,11 @@
+main {
+  x: bool = flip;
+  br x label1 label2;
+label1:
+  print x;
+  ret;
+label2:
+  y: bool = flip;
+  print y;
+  obv x;
+}

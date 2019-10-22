@@ -16,7 +16,7 @@ export type Type = "int" | "bool" | "float" | "double";
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret";
+  op: "br" | "jmp" | "print" | "ret" | "obv";
   args: Ident[];
 }
 
@@ -24,16 +24,30 @@ export interface EffectOperation {
  * An operation that produces a value and places its result in the
  * destination variable.
  */
-export interface ValueOperation {
+interface ValueOperationCore {
+  args: Ident[];
+  dest: Ident;
+  type: Type;
+}
+ 
+export interface DetValueOperation extends ValueOperationCore {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
       "fadd" | "fmul" | "fsub" | "fdiv" |
       "feq" | "flt" | "fgt" | "fge" | "fle";
-  args: Ident[];
-  dest: Ident;
-  type: Type;
 }
+
+/**
+ * An instruction for random 
+ TODO: figure out what counts as RandOperation when we add Normal, or
+ int-supported distributions?
+ */
+export interface RandValueOperation extends ValueOperationCore {
+  op: "flip";
+}
+
+export type ValueOperation = DetValueOperation | RandValueOperation;
 
 /**
  * The type of Bril values that may appear in constants.
@@ -50,10 +64,11 @@ export interface Constant {
   type: Type;
 }
 
+
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
-export type Operation = EffectOperation | ValueOperation;
+export type Operation = EffectOperation | ValueOperation ;
 
 /**
  * Instructions can be operations (which have arguments) or constants (which
