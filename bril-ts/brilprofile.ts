@@ -50,7 +50,8 @@ async function profile() {
   });
   console.log(JSON.stringify({
     call_graph: call_graph_json,
-    basic_block_flows: basic_block_json
+    basic_block_flows: basic_block_json,
+    ip_jumps: brili.totalIPJumps
   }, undefined, 2));
 }
 

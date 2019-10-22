@@ -32,6 +32,16 @@ const returnVar = "_ret";
 export let weighted_call_graph = new Map();
 export let basic_block_flows: Map<bril.Ident, callgraph.WeightedCallGraph> = new Map();
 let previous_block: bril.Ident | undefined;
+let instruction_pointer: number;
+export let totalIPJumps: number = 0;
+
+function moveInstructionPointer(new_line_num: number | undefined) {
+  if (new_line_num === undefined)
+    return;
+  if (instruction_pointer !== undefined)
+    totalIPJumps += Math.abs(new_line_num - instruction_pointer);
+  instruction_pointer = new_line_num;
+}
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -109,7 +119,8 @@ function evalInstr(
     basic_block_flows.set(functionName, block_graph as Map<string, number>);
   }
   previous_block = current_block;
-  // console.log(basic_block_flows);
+  
+  moveInstructionPointer(instr.line);
 
   switch (instr.op) {
   case "const":
@@ -269,6 +280,7 @@ function evalInstr(
 }
 
 function evalFunc(func: bril.Function, env: Env, functionMap: FunctionMap) {
+  moveInstructionPointer(func.line);
   previous_block = undefined;
   let localFunctionMap: FunctionMap = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
@@ -343,7 +355,6 @@ async function main() {
       }
   }
   evalProg(prog, cliArgs);
-  console.log(weighted_call_graph);
 }
 
 // Make unhandled promise rejections terminate.

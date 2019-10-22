@@ -19,6 +19,7 @@ export interface EffectOperation {
   op: "br" | "jmp" | "print" | "ret";
   args: Ident[];
   block: Ident | undefined;
+  line: number | undefined;
 }
 
 /**
@@ -34,6 +35,7 @@ export interface ValueOperation {
   dest: Ident;
   type: Type;
   block: Ident | undefined;
+  line: number | undefined;
 }
 
 /**
@@ -50,6 +52,7 @@ export interface Constant {
   dest: Ident;
   type: Type;
   block: Ident | undefined;
+  line: number | undefined;
 }
 
 /**
@@ -103,6 +106,7 @@ export interface Function {
   type: Type | undefined;
   args: (FunctionArg)[];
   instrs: (Instruction | Label)[];
+  line: number | undefined;
 }
 
 /**

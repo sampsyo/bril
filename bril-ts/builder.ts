@@ -16,7 +16,7 @@ export class Builder {
    * Create a new, empty function into which further code will be generated.
    */
   buildFunction(name: string) {
-    let func: bril.Function = { name, instrs: [], type: undefined, args: [] };
+    let func: bril.Function = { name, instrs: [], type: undefined, args: [], line: undefined };
     this.program.functions.push(func);
     this.curFunction = func;
     this.nextFresh = 0;
@@ -30,7 +30,7 @@ export class Builder {
   buildValue(op: bril.ValueOpCode, args: string[],
              type: bril.Type, dest?: string) {
     dest = dest || this.freshVar();
-    let instr: bril.ValueOperation = { op, args, dest, type, block: undefined };
+    let instr: bril.ValueOperation = { op, args, dest, type, block: undefined, line: undefined };
     this.insert(instr);
     return instr;
   }
@@ -39,7 +39,7 @@ export class Builder {
    * Build a non-value-producing (side-effecting) operation instruction.
    */
   buildEffect(op: bril.EffectOpCode, args: string[]) {
-    let instr: bril.EffectOperation = { op, args, block: undefined };
+    let instr: bril.EffectOperation = { op, args, block: undefined, line: undefined };
     this.insert(instr);
     return instr;
   }
@@ -49,7 +49,7 @@ export class Builder {
    */
   buildConst(value: bril.Value, type: bril.Type, dest?: string) {
     dest = dest || this.freshVar();
-    let instr: bril.Constant = { op: "const", value, dest, type, block: undefined };
+    let instr: bril.Constant = { op: "const", value, dest, type, block: undefined, line: undefined };
     this.insert(instr);
     return instr;
   }

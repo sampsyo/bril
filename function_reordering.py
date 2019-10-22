@@ -46,13 +46,8 @@ def coalesce_nodes(hot_node, graph, coalesced_map):
             new_edges[e] = new_edges.get(e, 0) + count
     return new_edges, coalesced_map
 
-if __name__ == '__main__':
-    bril_file = sys.argv[1]
-    profile_file = sys.argv[2]
-    with open(bril_file) as f:
-        program = json.loads(briltxt.parse_bril(f.read()))
-    with open(profile_file) as f:
-        call_graph = json.load(f)['call_graph']
+def reorder(program, profile_out):
+    call_graph = profile_out['call_graph']
     coalesced_map = dict()
     graph = json_to_graph(call_graph)
     while len(graph) > 0:
@@ -62,4 +57,15 @@ if __name__ == '__main__':
     function_order = coalesced_map[list(coalesced_map)[0]]
     new_program = copy.deepcopy(program)
     new_program['functions'] = sorted(program['functions'], key=lambda f: function_order.index(f['name']))
-    briltxt.print_prog(new_program)
+    return new_program
+
+
+if __name__ == '__main__':
+    bril_file = sys.argv[1]
+    profile_file = sys.argv[2]
+    with open(bril_file) as f:
+        program = json.loads(briltxt.parse_bril(f.read()))
+    with open(profile_file) as f:
+        profile_out = json.load(f)
+    program = reorder(program, profile_out)
+    briltxt.print_prog(program)

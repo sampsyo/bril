@@ -54,13 +54,9 @@ def json_to_graph(json_graph):
             edge_weights[e] = edge_weights.get(e, 0) + edge['count']
     return edge_weights, nodes
 
-if __name__ == '__main__':
-    bril_file = sys.argv[1]
-    profile_file = sys.argv[2]
-    with open(bril_file) as f:
-        program = json.loads(briltxt.parse_bril(f.read()))
-    with open(profile_file) as f:
-        basic_block_flows = json.load(f)['basic_block_flows']
+def reorder(program, profile_out):
+    program = copy.deepcopy(program)
+    basic_block_flows = profile_out['basic_block_flows']
     for function in program['functions']:
         function_name = function['name']
         block_edges = [e for e in basic_block_flows if e['function'] == function_name]
@@ -84,7 +80,6 @@ if __name__ == '__main__':
                         if dest in dest_chain:
                             precedence[(name, dest_name)] = precedence.get((name, dest_name), 0) + 1
         basic_block_order = combine_chains(coalesced_map, precedence)
-        # print(basic_block_order)
         blocks = cfg.block_map(form_blocks.form_blocks(function['instrs']))
         cfg.add_terminators(blocks)
         instrs = []
@@ -104,5 +99,15 @@ if __name__ == '__main__':
             else:
                 instrs += blocks[label]
         function['instrs'] = instrs
+    return program
 
-    print(json.dumps(program, indent=2, sort_keys=True))
+
+if __name__ == '__main__':
+    bril_file = sys.argv[1]
+    profile_file = sys.argv[2]
+    with open(bril_file) as f:
+        program = json.loads(briltxt.parse_bril(f.read()))
+    with open(profile_file) as f:
+        profile_out = json.load(f)
+    program = reorder(program, profile_out)
+    briltxt.print_prog(program)
