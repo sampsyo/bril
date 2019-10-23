@@ -345,6 +345,21 @@ def blockmap_to_instrs(blocks, blockorder, header_map, natloop_info):
   return instrs
 
 
+### remove adjacent labels
+def remove_double_labels(instrs):
+  double_label_map = {}
+  dedup_instrs = []
+  for i in range(len(instrs)-1):
+    if "label" in instrs[i] and "label" in instrs[i+1]:
+      double_label_map[instrs[i]["label"]] = instrs[i+1]["label"]
+
+    else:
+      dedup_instrs.append(instrs[i])
+
+
+  return double_label_map, dedup_instrs
+
+
 ### apply codemotion info to CFG
 def codemotion_change_cfg(blocks, succ, pred, natloop_info):
   # generate new instructions
@@ -378,6 +393,11 @@ def codemotion_change_cfg(blocks, succ, pred, natloop_info):
 
   # convert CFG to instruction list
   new_instrs = blockmap_to_instrs(new_blocks, blockorder, header_map, natloop_info)
+
+  # remove double labels (empty preheaders)
+  double_label_map, new_instrs = remove_double_labels(new_instrs)
+  new_instrs = rename_targets(double_label_map, new_instrs)
+  
   return new_instrs
 
 
