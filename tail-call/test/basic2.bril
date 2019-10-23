@@ -1,0 +1,9 @@
+void foo(x: int) {
+    print x;
+}
+
+main {
+    i: int = const 5;
+    push i;
+    jmp foo;
+}

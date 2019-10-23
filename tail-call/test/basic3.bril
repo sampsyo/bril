@@ -1,0 +1,12 @@
+int foo(x: int) {
+    ret x;
+}
+
+main {
+    i: int = const 10;
+    push i;
+    call foo;
+    r: int = retval;
+    print r;
+    ret;
+}

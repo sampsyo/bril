@@ -1,0 +1,20 @@
+int loop(n: int) {
+    zero: int = const 0;
+    one: int = const 1;
+    is_zero: bool = eq n zero;
+    br is_zero t f;
+t:
+    ret zero;
+f:
+    n: int = sub n one;
+    push n;
+    jmp loop;
+}
+
+main {
+    i: int = const 1000000;
+    push i;
+    call loop;
+    r: int = retval;
+    print r;
+}

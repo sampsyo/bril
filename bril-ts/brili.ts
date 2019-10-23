@@ -259,14 +259,16 @@ function evalFunc(prog: bril.Program, func: bril.Function, callStack: CallStack)
 
             if ('label' in action) {
                 // Search for the label and transfer control.
-                let i;
-                for (i = 0; i < func.instrs.length; ++i) {
-                    let sLine = func.instrs[i];
+                for (currCall.pc = 0;
+                     currCall.pc < func.instrs.length;
+                     ++currCall.pc)
+                {
+                    let sLine = func.instrs[currCall.pc];
                     if ('label' in sLine && sLine.label === action.label) {
                         break;
                     }
                 }
-                if (i === func.instrs.length) {
+                if (currCall.pc === func.instrs.length) {
                     // The label is a function name, so change the call stack's
                     // function to be this new one, with a PC of 0, and
                     // correctly bind the arguments

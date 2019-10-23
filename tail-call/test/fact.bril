@@ -1,0 +1,22 @@
+int fact(n: int, acc: int) {
+    zero: int = const 0;
+    one: int = const 1;
+    is_zero: bool = eq n zero;
+    br is_zero t f;
+t:
+    ret acc;
+f:
+    acc: int = mul acc n;
+    n: int = sub n one;
+    push n acc;
+    jmp fact;
+}
+
+main {
+    i: int = const 10000;
+    acc: int = const 1;
+    push i acc;
+    call fact;
+    r: int = retval;
+    print r;
+}

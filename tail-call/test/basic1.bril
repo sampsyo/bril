@@ -1,0 +1,10 @@
+void foo(x: int) {
+    print x;
+    ret;
+}
+
+main {
+    i: int = const 5;
+    push i;
+    call foo;
+}
