@@ -48,8 +48,7 @@ def insert_phi_nodes(blocks, frontiers, preds):
                   'dest' : var,
                   'type': types[var],
                   'op' : 'phi',
-                  'args' : [var] * num_preds,
-                  'sources': [""] * num_preds,
+                  'args' : [var] * num_preds + [""] * num_preds,
                 }
 
                 blocks[frontier_block] = [phi] + instrs
@@ -83,10 +82,12 @@ def rename(name, blocks, var_names, succ, dom_tree, stacks):
             if instr['op'] != 'phi': break
 
             # Replace a single phi argument with the new stack value
-            for i, arg in enumerate(instr['args']):
+            numArgs = int(len(instr['args'])/2)
+            for i in range(numArgs):
+                arg = instr['args'][i]
                 if arg in stacks:
                     instr['args'][i] = stacks[arg][-1]
-                    instr['sources'][i] = name
+                    instr['args'][i + numArgs] = name
                     break
 
     for block in dom_tree[name]:
