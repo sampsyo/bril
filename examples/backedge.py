@@ -40,10 +40,13 @@ def findLoops(res, blocks):
 def findInitialIVValue(out_cprop,blocks, loop, iv):
     preds, succs = edges(blocks)
     cond_var_preds = preds[loop[0]]
+
+    in_aggregate = []
     for pred in cond_var_preds:
         if (pred in loop):
             continue
-        val = cprop_merge([out_cprop[pred]])
+        in_aggregate.append(pred)
+    val = cprop_merge([out_cprop[pred] for pred in in_aggregate])
     if (val[iv] == '?'):
         return None
     else:
@@ -128,14 +131,48 @@ def findLoopInfo(bril, loops):
             'br_cond_var_stmt': br_cond_var_stmt, 'delta_stmt': delta_stmt, 'delta_op': delta_op,
             'delta_val': delta_var_val, 'base_pointers': base_pointers}))
 
-    return loop_infos
+    return loop_infos, in_cprop
 
-def filterEligibleLoops(loop_infos):
+def filterEligibleLoops(loop_infos, blocks, in_cprop):
     out = []
-    for LI in loop_infos:
-        if LI[1]['delta_val'] != 1:
+    for li in loop_infos:
+        loop = li[0]
+        info = li[1]
+        # print(loop)
+        if info['delta_val'] != 1:
+            # print("FAIL1")
             continue
-        out.append(LI)
+        if blocks[loop[-1]][-1]['op'] != 'br':
+            # print("FAIL2")
+            continue
+        loaded_vars = []
+        offset_vars = [] #in the form const + i
+        dip = False
+        for blockName in loop:
+            inst = blocks[blockName][0]
+            if inst['op'] == 'lw':
+                loaded_vars.append(inst['dest'])
+            elif inst['op'] == 'sw':
+                data_var = inst['args'][0]
+                # print(data_var, in_cprop[blockName][data_var])
+                # TODO Cprop here is messed up...
+                if data_var not in loaded_vars and in_cprop[blockName][data_var] == '?' or data_var == info['iv']:
+                    # print("FAIL3", inst, "LOADED: ", loaded_vars)
+                    dip = True
+                    break
+                
+            elif inst['op'] == 'print':
+                if inst['args'][0] in loaded_vars:
+                    # print("FAIL4")
+                    dip = True
+                    break
+            elif len(inst['args']) == 2:
+                if inst['args'][0] in loaded_vars and inst['args'][1] in loaded_vars:
+                    loaded_vars.append(inst['dest'])
+        if dip:
+            continue
+        
+        out.append((loop,info))
     return out
 
 def findBasePointers(blocks, loop, in_cprop, iv, in_rd):
@@ -167,11 +204,7 @@ def findBasePointers(blocks, loop, in_cprop, iv, in_rd):
 
 #Delete block and handle in/out edges. Doesn't work for br blocks
 def annihilateBlock(blocks, targetBlock):
-    # print("TARGET: ", targetBlock)
     preds, succs = edges(blocks)
-
-    # print("PREDS:", preds[targetBlock])
-    # print("SUCCS:", succs[targetBlock])
 
     assert(len(preds[targetBlock])==1 and len(succs[targetBlock]) == 1)
     assert(blocks[targetBlock][-1]['op'] != 'br')
@@ -205,7 +238,6 @@ def loopToOneBlock(blocks, loop):
     blocks[loop[0]].insert(-1, blockStmt)
     blocks[loop[0]][-1] = br_stmt
     blocks.pop(blockName)
-    # print("AFTER 1BLOCKING",blocks)
 
 # TODO: this only works for br at very end. E.g. a do-while loop
 def numIterations(initial_val, delta_op, bound_val, cond_op):
@@ -225,11 +257,14 @@ def numIterations(initial_val, delta_op, bound_val, cond_op):
         if i <= bound_val: return num
     
 
-def stripMine(loops, filtered_loopInfos, blocks):
+def stripMine(filtered_loopInfos, blocks):
+    loops = []
+    for li in filtered_loopInfos:
+        loops.append(li[0])
     for i in range(len(loops)):
         #TODO: remove by having pre-checks
-        if i != 1:
-            continue
+        # if i != 1:
+            # continue
         loop_info = filtered_loopInfos[i][1]
 
         # TODO check that br is very last instr in loop
@@ -295,8 +330,8 @@ def stripMine(loops, filtered_loopInfos, blocks):
                     current_insn["op"] = 'vdiv'
                 else:
                     serial_vars.append(current_insn)
-                 
             index +=1
+
         # TODO assert that no serial vars follow delta stmt
         # print("SERIAL VARS: ", serial_vars)
 
@@ -314,10 +349,6 @@ def stripMine(loops, filtered_loopInfos, blocks):
         loopBlock.insert(delta_index+1, loop_info['delta_stmt'])
         for inst in serial_vars:
             loopBlock.insert(delta_index + 1, inst)
-        
-
-
-        # TODO maybe handle subtract case
 
     # TODO Quad all other instructions. If they use i, do i+1, i+2, i+3 (depending on add)
     # First only handle add case
@@ -333,12 +364,14 @@ if __name__ == '__main__':
     # for item in loops[1]:
     #     for item1 in blocks[item]:
     #         print(item1)
-    loop_infos= findLoopInfo(bril, loops)
+    loop_infos, in_cprop = findLoopInfo(bril, loops)
     # for loop, info in loop_infos:
     #     print("LOOP: ", loop)
     #     print("INFO: ", info, '\n')
-    filtered_loopInfos = filterEligibleLoops(loop_infos)
-    blocks = stripMine(loops, filtered_loopInfos, blocks)
+    
+    filtered_loopInfos = filterEligibleLoops(loop_infos, blocks, in_cprop)
+    
+    blocks = stripMine(filtered_loopInfos, blocks)
     # print("@@@@@@@@@DONE@@@@@@@@")
     # for block in blocks:
     #     print('{}:'.format(block))
