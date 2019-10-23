@@ -29,6 +29,13 @@ let expr_loc exprs expr =
   "_lcm_tmp" ^ string_of_int (index_of expr exprs)
   |> Ident.var_of_string 
 
+(* uh oh! *)
+let typ_of _ : Bril.typ = Bril.Int
+
+let make_computation exprs expr =
+  let loc = expr_loc exprs expr in
+  ValueInstr { op = expr; dest = loc; typ = typ_of expr }
+
 let unify_expression_locations exprs graph =
   let fix_computation = function
     | ValueInstr { op; dest; typ } ->
@@ -52,7 +59,7 @@ let interp_bitv exprs bitv =
 let exprs_equal x y =
   Bril.compare_value_expr x y = 0
 
-let delete_computations exprs_to_delete block =
+let delete_computations_in exprs_to_delete block =
   let found = ref false in (* hack *)
   block_instr_rewrite block
     ~f:(fun i ->
@@ -69,25 +76,55 @@ let delete_computations exprs graph =
       let exprs_to_delete =
         interp_bitv exprs @@ Attrs.get (snd block) "delete"
       in
-      Printf.printf "%s\n" (Ident.string_of_lbl (fst block).lbl) ;
-      Out_channel.newline stdout;
-      Attrs.print (snd block);
-      Out_channel.newline stdout;
-      print_s ([%sexp_of:Bril.value_expr list] exprs_to_delete);
-      Out_channel.newline stdout;
-      delete_computations exprs_to_delete block)
+      delete_computations_in exprs_to_delete block)
     graph
 
+let replace_block old_block new_block graph =
+  CFG.map_vertex
+    (fun b ->
+      if (fst b).lbl = (fst old_block).lbl
+      then new_block
+      else b)
+  graph
+
+let insert_computations_at exprs exprs_to_compute edge graph =
+  let (src, _, dst) = edge in
+  let instrs = List.map ~f:(make_computation exprs) exprs_to_compute in
+  let new_block = 
+    { lbl = Ident.fresh_lbl "lcm_inserted_block";
+      body = instrs;
+      term = Jmp (fst dst).lbl}
+  in
+  let new_vtx = new_block, Attrs.create () in
+  let out_edge = (new_vtx, Attrs.create (), dst) in
+  let graph = CFG.remove_edge_e graph edge in
+  let graph = CFG.add_vertex graph new_vtx in
+  let graph = CFG.add_edge_e graph out_edge in
+  let fix_lbl l = if l = (fst dst).lbl then new_block.lbl else l in
+  let src_term' : Bril.term_op =
+    match (fst src).term with
+    | Ret -> failwith "edge out of returning node???"
+    | Jmp l -> Jmp (fix_lbl l)
+    | Br { cond; true_lbl; false_lbl } ->
+       Br { cond = cond;
+            true_lbl = fix_lbl true_lbl;
+            false_lbl = fix_lbl false_lbl }
+  in
+  let src' = { (fst src) with term = src_term' }, Attrs.create () in
+  let in_edge = (src', Attrs.create (), new_vtx) in
+  let graph = replace_block src src' graph in
+  CFG.add_edge_e graph in_edge
+
+  
+
 let insert_computations exprs graph =
-  let _ = exprs in
-  CFG.iter_edges_e
-    (fun ((s, _), attrs, (d, _)) ->
+  CFG.fold_edges_e
+    (fun edge graph' ->
+      let (_, attrs, _) = edge in
       let exprs_to_insert =
         interp_bitv exprs @@ Attrs.get attrs "insert"
       in
-      Printf.printf "%s -> %s\n" (Ident.string_of_lbl s.lbl) (Ident.string_of_lbl d.lbl);
-      Attrs.print attrs;
-      print_s ([%sexp_of:Bril.value_expr list] exprs_to_insert);
-      Out_channel.newline stdout)
-    graph;
-  graph
+      if List.length exprs_to_insert > 0
+      then insert_computations_at exprs exprs_to_insert edge graph'
+      else graph')
+    graph graph;
