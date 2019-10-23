@@ -15,13 +15,12 @@ __version__ = '0.0.1'
 
 
 # Text format parser.
-# Grammar modified from https://github.com/sampsyo/bril/pull/16
-
+# NOTE: Grammar taken and modified from https://github.com/sampsyo/bril/pull/16
 GRAMMAR = """
 start: (legacy_func | func)*
 
 legacy_func: CNAME "{" instr* "}"
-func: CNAME "(" arg_list ")" "{" instr* "}"
+func: type CNAME "(" arg_list ")" "{" instr* "}"
 
 arg_list: | arg ("," arg)*
 arg: IDENT ":" type
@@ -57,12 +56,13 @@ class JSONTransformer(lark.Transformer):
 
     def legacy_func(self, items):
         name = items.pop(0)
-        return {'name': str(name), 'args': [], 'instrs': items}
+        return {'name': str(name), 'args': [], 'instrs': items, 'ret_type': "void"}
 
     def func(self, items):
+        ret_type = items.pop(0)
         name = items.pop(0)
         args = items.pop(0)
-        return {'name': str(name), 'args': args, 'instrs': items}
+        return {'name': str(name), 'args': args, 'instrs': items, 'ret_type': ret_type}
 
     def arg_list(self, items):
         return items
@@ -157,9 +157,16 @@ def print_instr(instr):
 def print_label(label):
     print('{}:'.format(label['label']))
 
+def args_to_str(args):
+    result = ""
+    sep = ""
+    for arg in args:
+        result += f'{sep}{arg["name"]}: {arg["type"]}'
+        sep = ", "
+    return result
 
 def print_func(func):
-    print('{} {{'.format(func['name']))
+    print('{} {}({}) {{'.format(func['ret_type'], func['name'], args_to_str(func['args'])))
     for instr_or_label in func['instrs']:
         if 'label' in instr_or_label:
             print_label(instr_or_label)
