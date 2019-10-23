@@ -72,8 +72,5 @@ Time (mean ± σ):     665.4 ms ±  11.9 ms
 
 | Filename       | Unoptimized runtime      | Optimized runtime | Speedup |
 | -------------- | ---------------------------- | ----------------------| ---------- |
-| `codemotion1.ts` | 
-| `normal.ts`, `nested.ts`, `nestedif.ts` | No optimization expected.                   |
-| `codemotion*.ts`                        | Expecting code motion.                      |
-| `strengthreduction*.ts`                 | Expecting strength reduction optimizations. |
-| `both*.ts`                              | Expecting both kinds of optimizations.      |
+| `codemotion1.ts` |  216.8 ms | 163.8 ms | 1.32x |
+| `codemotion1.ts` |  908.6 ms | 665.4 ms | 1.36x |
