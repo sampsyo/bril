@@ -2,8 +2,8 @@
 Sameer Lal, sjl328.
 CS 6120 Graduate Compilers.
 
-Performs loop unrolling.
-Natural loops (aiming to complete)
+Performs loop unswitching optimization on natural loops.
+
 """
 from collections import ChainMap
 from form_blocks import form_blocks, TERMINATORS
