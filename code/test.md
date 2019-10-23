@@ -58,4 +58,12 @@ hyperfine --warmup 1 'brili < orig_codemotion'
 
 Time (mean ± σ):     216.8 ms ±   4.5 ms
 ```
+Similarly `codemotion2.ts` has nested loops where invariant code can be moved from inner loops to outer ones. 
 
+```
+hyperfine --warmup 1 'brili < orig_codemotion2'
+Time (mean ± σ):     216.8 ms ±   4.5 ms
+
+hyperfine --warmup 1 'brili < opt_codemotion1'
+Time (mean ± σ):     163.8 ms ±   3.2 ms
+```
