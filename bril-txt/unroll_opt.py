@@ -3,8 +3,7 @@ Sameer Lal, sjl328.
 CS 6120 Graduate Compilers.
 
 Performs loop unrolling.
-Baby: Natural loops (aiming to complete)
-Adv: All types of loops 
+Natural loops (aiming to complete)
 """
 from collections import ChainMap
 from form_blocks import form_blocks, TERMINATORS
@@ -65,8 +64,7 @@ def find_backedges(cfg_edges, dom_dict):
 def loop_finder(bril, cfg_edges, dom_dic):
     """
     Looks at CFG and outputs blocks that form a loop
-    In the first implementation we will naively look for cycles and 
-    consider those to be loops.
+    
     """
     loop_blocks = []
     back_edges = find_backedges(cfg_edges, dom_dic)
@@ -266,6 +264,9 @@ def reorder(bril, header, potential_loop, block_map, term_instr, dom_dic, edges)
         if if_bod[-1]['op'] == 'jmp':
             # Change branch to hashed version
             if_bod[-1]['args'] = [ if_bod[-1]['args'][0] + if_hash ]
+        
+
+
     # Delete last branching instruction before going to if/else
     if_bod = copy.deepcopy(if_bod[:-1])
     
