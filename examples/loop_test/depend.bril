@@ -5,15 +5,23 @@ main {
   zero: int = const 0;
 
 header:
+  j: int = const 7;
   cond: bool = gt i zero;
-  br cond body exit;
+  br cond bo exit;
+
+bo:
+  ded: int = const 3; #unused
+  dedo: int = mul ded one;
+  j: int = sub j one;
+  cond bool = gt j zero;
+  br cond body header;
 
 body:
   print a;
   a: int = add b zero;
   b: int = add a b;
   i: int = sub i one;
-  jmp header;
+  jmp bo;
 
 exit:
   nop;
