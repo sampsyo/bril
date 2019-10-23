@@ -1,6 +1,8 @@
 import itertools
-from form_blocks import TERMINATORS
+import operator
 
+from form_blocks import TERMINATORS
+from functools import reduce
 
 def flatten(ll):
     """Flatten an iterable of iterable to a single list.
@@ -35,3 +37,6 @@ def fresh(seed, names):
         if name not in names:
             return name
         i += 1
+
+def block_map_to_instrs(bm):
+    return reduce(operator.iconcat, [[{'label' : k}] + v for k, v in bm.items()], [])
