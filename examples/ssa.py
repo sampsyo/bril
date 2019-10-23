@@ -30,7 +30,7 @@ def get_variable_definitions(blocks):
 def insert_phi_nodes(blocks, frontiers, preds):
     var_defns, types = get_variable_definitions(blocks)
 
-    queue = [(k, v) for k, v in var_defns.items()]
+    queue = [(k, v) for k, v in var_defns.items() if len(v) > 1]
 
     while len(queue):
         var, defn_blocks = queue.pop(0)
@@ -66,7 +66,7 @@ def rename(name, blocks, var_names, succ, dom_children, stacks):
 
     for instr in blocks[name]:
         # Replace arguments with new names
-        if 'args' in instr:
+        if 'args' in instr and instr['op'] != 'phi':
             instr['args'] = [stacks[v][-1] if v in stacks else v for v in instr['args']]
 
         # Replace the destination with a fresh name
@@ -127,7 +127,6 @@ def rename_all(blocks, succ, dom):
                     if k in dom_children[j]:
                         dom_children[i].remove(k)
 
-    print(dom_children)
     rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks)
 
 def to_ssa(bril):
