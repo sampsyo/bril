@@ -75,3 +75,7 @@ all([b_name in dom[e] for e in edest]) # if true, third check passed.
 ### Block to Dictionaries
 
 ` json.load(sys.stdin)['functions']` gives us dictionaries and for each dictionary we obtain list of instructions when the key is `instrs`. Then we change this list of instructions into a directory of blocks. We would like to reverse this process to regenerate list of instructions with modified blocks. However, original block does not have so many labels introduced when generating block names and creating pre-headers. Luckily, the modified blocks are still ordered dictionary and we can omit blocks we introduced. Therefore in this step, we only create `label` instruction when the original labels in blocks. The rest is just copy every instruction other than labels to the new list of instructions.
+
+## Hardest Part
+1. There are more properties we need than we originally expected. At first, we only generated loops, reaching variables. Then we for loop invariants code motion, we needed exits to the loop, dominance relations, live variables. 
+2. The representation of different variables are randomly decided at first and need implementation after we finalized the representation. For example,the loop invariant at first was stored as the list of instructions. Later, we found it necessary to change the storage form to the dictionary whose key is the block name. Otherwise, we would need to search and match the instruction to block, e.g, in the `move_LI` function.
