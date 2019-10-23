@@ -1,5 +1,4 @@
 import json
-import operator
 import sys
 
 from collections import defaultdict
@@ -21,7 +20,9 @@ def replace_phis_with_copies(blocks):
             num_phis += 1
 
             # Add a copy instruction per phi to the new block
-            for arg, pred_name in zip(instr['args'], instr['sources']):
+            args = instr['args']
+            numArgs = int(len(args)/2)
+            for arg, pred_name in zip(args[:numArgs], args[numArgs:]):
 
                 # Create a new block to hold the copies per source
                 if pred_name not in copy_block_names:

@@ -21,9 +21,9 @@ B3:
   y1 : int = add e0 f0;
   jmp B4;
 B4:
-  u2 : int = phi u0 u1;
-  x2 : int = phi x0 x1;
-  y2 : int = phi y0 y1;
+  u2 : int = phi u0 u1 B2 B3;
+  x2 : int = phi x0 x1 B2 B3;
+  y2 : int = phi y0 y1 B2 B3;
   z0 : int = add u2 y2;
   u3 : int = add a0 b0;
 }
