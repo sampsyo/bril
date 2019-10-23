@@ -14,6 +14,10 @@ type SSAInstruction = bril.Instruction | PhiOperation;
 
 type LatticeElement = "top" | "bottom" | bril.Value;
 
+type FlowWorkListItem = [BasicBlock, BasicBlock]
+type SSAWorkListItem = [SSAInstruction, BasicBlock]
+type WorkListItem = FlowWorkListItem | SSAWorkListItem;
+
 class BasicBlock {
     constructor(label: string | null, insts: bril.Instruction[]) {
         this.label = label;
@@ -100,7 +104,8 @@ function cfg(blocks: BasicBlock[]): BasicBlock[] {
                 break;
             case "jmp":
                 addEdge(block, labelMap.get(last.args[0]) as number);
-                break;
+            case "ret":
+                block.instructions.pop();
         }
     }
 
@@ -281,10 +286,11 @@ function insertPhis(blocks: BasicBlock[]) {
 
 // Renames all variables such that each definition is to a unique variable.
 // Returns a map from variables to all their uses.
-function renameVariables(blocks: BasicBlock[]): Map<string, SSAInstruction[]> {
+function renameVariables(blocks: BasicBlock[]):
+        Map<string, SSAWorkListItem[]> {
     let stacks = new Map<string, string[]>();
     let defCounts = new Map<string, number>();
-    let out = new Map<string, SSAInstruction[]>();
+    let out = new Map<string, [SSAInstruction, BasicBlock][]>();
 
     function getStack(x: string): string[] {
         if (stacks.has(x))
@@ -311,8 +317,9 @@ function renameVariables(blocks: BasicBlock[]): Map<string, SSAInstruction[]> {
                         inst.args.forEach((arg, i, args) => {
                             let s = getStack(arg);
                             let newArg = s[s.length - 1];
+                            let uses = out.get(newArg) as [SSAInstruction, BasicBlock][];
                             args[i] = newArg;
-                            (out.get(newArg) as SSAInstruction[]).push(inst);
+                            uses.push([inst, block]);
                         });
                 }
             if ("dest" in inst) {
@@ -355,26 +362,82 @@ function meet(x: LatticeElement, y: LatticeElement): LatticeElement {
     return "bottom";
 }
 
+function toInt(x: LatticeElement): number {
+    if (typeof x == 'number')
+        return x;
+    throw "expected int"
+}
+
+function toBool(x: LatticeElement): boolean {
+    if (typeof x == 'boolean')
+        return x;
+    throw "expected boolean"
+}
+
+
 // Performs the sparse conditional constant propagation analysis.
 // Returns a mapping from variables to their lattice value.
 // Does not modify the program.
-function sccp(blocks: BasicBlock[], uses: Map<string, SSAInstruction[]>):
+function sccp(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>):
         Map<string, LatticeElement> {
-    type WorkListItem = [BasicBlock | SSAInstruction, BasicBlock]
-
+    
     let out = new Map<string, LatticeElement>();
     let start = new BasicBlock(null, []);
     let worklist: WorkListItem[] = [[start, blocks[0]]];
 
+    function evaluateExpression(inst: bril.ValueOperation): LatticeElement {
+        let argLatElems = inst.args.map(v => out.get(v)) as LatticeElement[];
+        if (!["and", "or"].includes(inst.op) && argLatElems.includes("bottom"))
+            return "bottom";
+        switch (inst.op) {
+        case "add": return toInt(argLatElems[0]) + toInt(argLatElems[1]);
+        case "mul": return toInt(argLatElems[0]) * toInt(argLatElems[1]);
+        case "sub": return toInt(argLatElems[0]) - toInt(argLatElems[1]);
+        case "div": return Math.floor(toInt(argLatElems[0]) / toInt(argLatElems[1]));
+        case "id":  return argLatElems[0];
+        case "eq":  return argLatElems[0] == argLatElems[1];
+        case "lt":  return toInt(argLatElems[0]) < toInt(argLatElems[1]);
+        case "gt":  return toInt(argLatElems[0]) > toInt(argLatElems[1]);
+        case "ge":  return toInt(argLatElems[0]) >= toInt(argLatElems[1]);
+        case "le":  return toInt(argLatElems[0]) <= toInt(argLatElems[1]);
+        case "not": return !toBool(argLatElems[0]);
+        case "and": return !argLatElems.includes(false);
+        case "or":  return argLatElems.includes(true);
+        }
+        throw "constant propagation error";
+    }
+
     function visitPhi(inst: PhiOperation, executable: boolean[]) {
         let executables = inst.args.filter((a, i) => executable[i]);
-        let elems = executables.map(out.get) as LatticeElement[];
+        let elems = executables.map(v => out.get(v)) as LatticeElement[];
         let glb = elems.reduce(meet, "top");
         out.set(inst.dest, glb);
     }
 
-    function visitExpression(inst: SSAInstruction) {
-        // TODO
+    function visitExpression(inst: SSAInstruction, block: BasicBlock) {
+        switch (inst.op) {
+        case "br": // add executable out flow edges to worklist
+            let latElem = out.get(inst.args[0]) as LatticeElement;
+            if (meet(latElem, false) == "bottom")
+                worklist.push([block, block.successors[0]]);
+            if (meet(latElem, true) == "bottom")
+                worklist.push([block, block.successors[1]]);
+            break;
+        case "const": // set lattice element to const value
+            out.set(inst.dest, inst.value);
+            break;
+        case "print": // do nothing
+        case "nop":
+            break;
+        default:
+            let valOp = inst as bril.ValueOperation
+            let updated = evaluateExpression(valOp);
+            if (out.get(valOp.dest) != updated) {
+                out.set(valOp.dest, updated);
+                for (let use of uses.get(valOp.dest) as SSAWorkListItem[])
+                    worklist.push(use);
+            }
+        }
     }
 
     blocks[0].predecessors.push(start);
@@ -390,17 +453,17 @@ function sccp(blocks: BasicBlock[], uses: Map<string, SSAInstruction[]>):
                 continue;
             block.inEdgeExecutable[predIdx] = true;
             let i = 0;
-            while (block.instructions[i].op == "phi")
+            while (i < block.instructions.length && block.instructions[i].op == "phi")
                 visitPhi(block.instructions[i++] as PhiOperation, block.inEdgeExecutable);
             if (block.inEdgeExecutable.every((b, i) => !b || i == predIdx))
                 while (i < block.instructions.length)
-                    visitExpression(block.instructions[i++]);
+                    visitExpression(block.instructions[i++], block);
             if (block.successors.length == 1)
                 worklist.push([block, block.successors[0]]);
         } else if (predOrInst.op == "phi")
             visitPhi(predOrInst, block.inEdgeExecutable);
         else if (block.inEdgeExecutable.some(b => b))
-            visitExpression(predOrInst);
+            visitExpression(predOrInst, block);
     }
     return out;
 }
@@ -411,7 +474,7 @@ async function main() {
     dominatorTree(blocks);
     insertPhis(blocks);
     let uses = renameVariables(blocks);
-    sccp(blocks, uses);
+    console.log(sccp(blocks, uses));
     //console.log(JSON.stringify(blocks.map(b => b.instructions), undefined, 2));
 }
 
