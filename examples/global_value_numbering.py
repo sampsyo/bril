@@ -1,7 +1,7 @@
 import json
 import sys
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from cfg import block_map, block_successors, add_terminators
 from dom import get_dom
@@ -9,11 +9,15 @@ from dom_frontier import get_dominator_tree
 from form_blocks import form_blocks
 from util import block_map_to_instrs
 
-def canonicalize_phi(instr):
-    return str(instr)
+# from Adrian's implementation of local value numbering
+Value = namedtuple('Value', ['op', 'args'])
+def canonicalize(instr):
+    value = Value(instr['op'], tuple(instr['args']))
+    if value.op in ('add', 'mul'):
+        return Value(value.op, tuple(sorted(value.args)))
+    else:
+        return value
 
-def canonicalize_rhs(instr):
-    return str(instr)
 
 # From Briggs, Cooper, and Simpson, 1997.
 def dominator_value_numbering(block_name, blocks, succ, dom_tree):
@@ -37,7 +41,9 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
             # start of the block if they exist
             if instr['op'] != 'phi': break
             
-            canonicalized = canonicalize_phi(instr)
+            # TODO: verify that it's okay to discard the destination when
+            # canonicalizing phi nodes
+            canonicalized = canonicalize(instr)
 
             # Meaningless phi nodes are those whose arguments all already have
             # the same value number
@@ -82,7 +88,7 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
 
                 instr['args'] = [vars_to_value_nums[a] if a in vars_to_value_nums else a for a in instr['args']]
                 
-                canonicalized = canonicalize_rhs(instr)
+                canonicalized = canonicalize(instr)
 
                 # TODO: maybe "simplify" expr
 
