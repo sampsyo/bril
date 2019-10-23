@@ -1,46 +1,8 @@
-extern crate serde_json;
-
 use serde::{Serialize, Deserialize};
 
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-
-#[derive(Deserialize, Debug, EnumString)]
-pub enum Op {
-    #[strum(serialize = "add")]
-    Add,
-    #[strum(serialize = "mul")]
-    Mul,
-    #[strum(serialize = "sub")]
-    Sub,
-    #[strum(serialize = "div")]
-    Div,
-    #[strum(serialize = "id")]
-    Id,
-    #[strum(serialize = "const")]
-    Const,
-    #[strum(serialize = "lt")]
-    Lt,
-    #[strum(serialize = "le")]
-    Le,
-    #[strum(serialize = "gt")]
-    Gt,
-    #[strum(serialize = "ge")]
-    Ge,
-    #[strum(serialize = "eq")]
-    Equal,
-    #[strum(serialize = "not")]
-    Not,
-    #[strum(serialize = "and")]
-    And,
-    #[strum(serialize = "or")]
-    Or,
-    #[strum(serialize = "print")]
-    Print,
-    #[strum(serialize = "nop")]
-    Nop
-}
 
 #[derive(Deserialize, Debug)]
 pub enum InstrType {
@@ -58,13 +20,29 @@ pub struct Function {
     pub instrs: Vec<Instruction>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct Instruction {
     args: Option<Vec<String>>,
     dest: Option<String>,
     op: String,
     value: Option<i32>,
     vtype: Option<String>
+}
+
+impl Instruction {
+    pub fn new(args: Option<Vec<String>>, dest: Option<String>, op: String, value: Option<i32>, vtype: Option<String>) -> Option<Instruction> {
+        let instruction = match op.as_ref() {
+            "nop" => Some(Instruction {
+                args: None,
+                dest: None,
+                op: "nop".to_string(),
+                value: None,
+                vtype: None,
+            }),
+            _ => None
+        };
+        return instruction;
+    }
 }
 
 pub fn read_json() -> Result<Program, Box<Error>>{
