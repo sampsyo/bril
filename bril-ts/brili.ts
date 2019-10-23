@@ -11,14 +11,16 @@ const Int32Array = ArrayType(ref.types.int32);
 const ByteArray = ArrayType(ref.types.uint8);
 
 const libWeb = ffi.Library(libPath, {
-  'add':  ['int32', [Int32Array, Int32Array, Int32Array]],
+  'add':  ['int32', ['int32', 'int32']],
   'vadd': ['int32', [Int32Array, Int32Array, Int32Array]],
   'vmul': ['int32', [Int32Array, Int32Array, Int32Array]],
   'vsub': ['int32', [Int32Array, Int32Array, Int32Array]],
-  'vstore': ['int32', [Int32Array, Int32Array]]
+  'vstore': ['int32', [Int32Array, 'int32', Int32Array]],
+  'store': ['int32', [Int32Array, 'int32', 'int32']],
+  'load': ['int32', [Int32Array, 'int32']]
 });
 
-const { add, vadd, vmul, vsub, vstore} = libWeb;
+const { add, vadd, vmul, vsub, vstore, store, load} = libWeb;
 // const array = [1,2,3,4];
 // const array1 = [1,2,3,4];
 // const array2 = new Int32Array(4);
@@ -28,17 +30,17 @@ const { add, vadd, vmul, vsub, vstore} = libWeb;
 
 // (function(js_array, js_array1, js_array2){
 //   console.log("length", js_array.length)
-//   let a = vadd(js_array, js_array1, js_array2);
-//   // console.log("should tr 5")
-//   // console.log(a);
+//   let a = store(array2, 50, 1);
+//   console.log(a);
 //   console.log(array2[0]);
 //   console.log(array2[1]);
-//   console.log(array2[2]);
-//   console.log(array2[3]);
-//   let p = new Int32Array(4);
-//   vstore(array, p);
-//   console.log(p[0]);
-//   console.log(p[1]);
+//   // console.log(array2[1]);
+//   // console.log(array2[2]);
+//   // console.log(array2[3]);
+//   // let p = new Int32Array(4);
+//   // vstore(array, p);
+//   // console.log(p[0]);
+//   // console.log(p[1]);
 // })(array, array1, array2);
 
 
@@ -199,12 +201,9 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "add": {
     let l = getInt(instr, env, 0)
     let r = getInt(instr, env, 1)
-    let vecA = [l];
-    let vecB = [r];
-    let vecC = new Int32Array(1);
-    let a = add(vecA, vecB, vecC);
+    let c = add(l, r);
     // let c = a + b;
-    env.set(instr.dest, vecC[0] );
+    env.set(instr.dest, c );
     return NEXT;
   }
 
@@ -305,7 +304,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "lw": {
     // lookup memory based on value in register
     let addr = getInt(instr, env, 0);
-    let val = getMem(addr);
+    let val = load(stack, addr)
     env.set(instr.dest, val);
     return NEXT;
   }
@@ -313,7 +312,7 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "sw": {
     let val = getInt(instr, env, 0);
     let addr = getInt(instr, env, 1);
-    setMem(val, addr);
+    store(stack, val, addr);
     return NEXT;
   }
 
@@ -376,11 +375,8 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 
   case "vstore": {
       // serialized version
-      let val = getVec(instr, env, 0);
+      let c = getVec(instr, env, 0) as Int32Array;
       let addr = getInt(instr, env, 1);
-      let c = new Int32Array(4);
-      c = val;
-      vstore(val, addr);
       for (let i = 0; i < fixedVecSize; i++) {
         setMem(c[i], addr + i);
       }

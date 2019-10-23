@@ -1,18 +1,10 @@
 extern crate core;
 use core::arch::x86_64::*;
 use std::ptr::write;
-use std::ptr::read;
 
 #[no_mangle] 
-pub fn add(data_a: *const i32, data_b: *const i32, data_c: *mut i32) -> i32 {
-    unsafe {
-        let a = *data_a;
-        let b = *data_b;
-        let c = a + b;
-        write(data_c, c);
-        std::mem::forget(data_c);
-        1
-    }
+pub fn add(data_a: i32, data_b: i32) -> i32 {
+    data_a + data_b
 }
 
 #[no_mangle] 
@@ -61,15 +53,34 @@ pub fn vmul(data_a: *const i32, data_b: *const i32, data_c: *mut i32) -> i32 {
 }
 
 #[no_mangle] 
-pub fn vstore(data_a: *const i32, data_c: *mut i32) -> i32 {
+pub fn vstore(data_a: *mut i32, offset: i32, data_c: *mut i32) -> i32 {
     unsafe {
-        let mem_a = data_a as *const _;
+        let mem_a = data_a.offset(offset as isize);
+        let mem_a = data_a as *mut _;
         let mem_c = data_c as *mut _;
-        let a = _mm_load_si128(mem_a);
-        _mm_store_si128(mem_c, a);
-        std::mem::forget(mem_c);
+        let val = _mm_load_si128(mem_c);
+        _mm_store_si128(mem_a, val);
+        std::mem::forget(mem_a);
         1
     }
 }
+
+#[no_mangle] 
+pub fn store(stack: *mut i32, data: i32, offset: i32) -> i32 {
+    unsafe {
+        let ptr = stack.offset(offset as isize);
+        write(ptr, data);
+        std::mem::forget(ptr);
+        1
+    }
+}
+
+#[no_mangle] 
+pub fn load(addr: *const i32, offset: i32) -> i32 {
+    unsafe {
+        *addr.offset(offset as isize)
+    }
+}
+
 
 
