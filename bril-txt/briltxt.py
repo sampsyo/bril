@@ -15,11 +15,16 @@ __version__ = '0.0.1'
 
 
 # Text format parser.
+# Grammar modified from https://github.com/sampsyo/bril/pull/16
 
 GRAMMAR = """
-start: func*
+start: (legacy_func | func)*
 
-func: CNAME "{" instr* "}"
+legacy_func: CNAME "{" instr* "}"
+func: CNAME "(" arg_list ")" "{" instr* "}"
+
+arg_list: | arg ("," arg)*
+arg: IDENT ":" type
 
 ?instr: const | vop | eop | label
 
@@ -50,9 +55,22 @@ class JSONTransformer(lark.Transformer):
     def start(self, items):
         return {'functions': items}
 
+    def legacy_func(self, items):
+        name = items.pop(0)
+        return {'name': str(name), 'args': [], 'instrs': items}
+
     def func(self, items):
         name = items.pop(0)
-        return {'name': str(name), 'instrs': items}
+        args = items.pop(0)
+        return {'name': str(name), 'args': args, 'instrs': items}
+
+    def arg_list(self, items):
+        return items
+
+    def arg(self, items):
+        name = items.pop(0)
+        arg_type = items.pop(0)
+        return {'name': str(name), 'type': arg_type}
 
     def const(self, items):
         dest = items.pop(0)
