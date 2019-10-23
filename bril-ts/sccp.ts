@@ -12,6 +12,8 @@ interface PhiOperation {
 
 type SSAInstruction = bril.Instruction | PhiOperation;
 
+type LatticeElement = "top" | "bottom" | bril.Value;
+
 class BasicBlock {
     constructor(label: string | null, insts: bril.Instruction[]) {
         this.label = label;
@@ -23,8 +25,9 @@ class BasicBlock {
     predecessors: BasicBlock[] = [];
     parent: BasicBlock | null = null;
     children: BasicBlock[] = [];
-    frontier: Set<BasicBlock> | null= null
+    frontier: Set<BasicBlock> | null = null;
     id: number = 0;
+    inEdgeExecutable: boolean[] = [];
 }
 
 function isLabel(inst: bril.Label | bril.Instruction): inst is bril.Label {
@@ -277,10 +280,11 @@ function insertPhis(blocks: BasicBlock[]) {
 }
 
 // Renames all variables such that each definition is to a unique variable.
-function renameVariables(blocks: BasicBlock[]) {
+// Returns a map from variables to all their uses.
+function renameVariables(blocks: BasicBlock[]): Map<string, SSAInstruction[]> {
     let stacks = new Map<string, string[]>();
     let defCounts = new Map<string, number>();
-
+    let out = new Map<string, SSAInstruction[]>();
 
     function getStack(x: string): string[] {
         if (stacks.has(x))
@@ -306,7 +310,9 @@ function renameVariables(blocks: BasicBlock[]) {
                     default:
                         inst.args.forEach((arg, i, args) => {
                             let s = getStack(arg);
-                            args[i] = s[s.length - 1];
+                            let newArg = s[s.length - 1];
+                            args[i] = newArg;
+                            (out.get(newArg) as SSAInstruction[]).push(inst);
                         });
                 }
             if ("dest" in inst) {
@@ -317,6 +323,7 @@ function renameVariables(blocks: BasicBlock[]) {
                 defCounts.set(dest, defs + 1);
                 pushCounts.set(dest, pushes + 1);
                 getStack(dest).push(newDest);
+                out.set(newDest, []);
                 inst.dest = newDest;
             }
         }
@@ -336,6 +343,66 @@ function renameVariables(blocks: BasicBlock[]) {
     }
 
     rename(blocks[0]);
+    return out;
+}
+
+// greatest lower bound of x and y in the lattice
+function meet(x: LatticeElement, y: LatticeElement): LatticeElement {
+    if (x == "top")
+        return y;
+    if (y == "top" || x == y)
+        return x;
+    return "bottom";
+}
+
+// Performs the sparse conditional constant propagation analysis.
+// Returns a mapping from variables to their lattice value.
+// Does not modify the program.
+function sccp(blocks: BasicBlock[], uses: Map<string, SSAInstruction[]>):
+        Map<string, LatticeElement> {
+    type WorkListItem = [BasicBlock | SSAInstruction, BasicBlock]
+
+    let out = new Map<string, LatticeElement>();
+    let start = new BasicBlock(null, []);
+    let worklist: WorkListItem[] = [[start, blocks[0]]];
+
+    function visitPhi(inst: PhiOperation, executable: boolean[]) {
+        let executables = inst.args.filter((a, i) => executable[i]);
+        let elems = executables.map(out.get) as LatticeElement[];
+        let glb = elems.reduce(meet, "top");
+        out.set(inst.dest, glb);
+    }
+
+    function visitExpression(inst: SSAInstruction) {
+        // TODO
+    }
+
+    blocks[0].predecessors.push(start);
+    for (let v of uses.keys())
+        out.set(v, "top");
+    for (let block of blocks)
+        block.inEdgeExecutable = new Array(block.predecessors.length).fill(false);
+    while (worklist.length) {
+        let [predOrInst, block] = worklist.pop() as WorkListItem;
+        if (predOrInst instanceof BasicBlock) {
+            let predIdx = block.predecessors.indexOf(predOrInst);
+            if (block.inEdgeExecutable[predIdx])
+                continue;
+            block.inEdgeExecutable[predIdx] = true;
+            let i = 0;
+            while (block.instructions[i].op == "phi")
+                visitPhi(block.instructions[i++] as PhiOperation, block.inEdgeExecutable);
+            if (block.inEdgeExecutable.every((b, i) => !b || i == predIdx))
+                while (i < block.instructions.length)
+                    visitExpression(block.instructions[i++]);
+            if (block.successors.length == 1)
+                worklist.push([block, block.successors[0]]);
+        } else if (predOrInst.op == "phi")
+            visitPhi(predOrInst, block.inEdgeExecutable);
+        else if (block.inEdgeExecutable.some(b => b))
+            visitExpression(predOrInst);
+    }
+    return out;
 }
 
 async function main() {
@@ -343,8 +410,9 @@ async function main() {
     let blocks = cfg(basicBlocks(prog.functions[0]));
     dominatorTree(blocks);
     insertPhis(blocks);
-    renameVariables(blocks);
-    console.log(JSON.stringify(blocks.map(b => b.instructions), undefined, 2));
+    let uses = renameVariables(blocks);
+    sccp(blocks, uses);
+    //console.log(JSON.stringify(blocks.map(b => b.instructions), undefined, 2));
 }
 
 process.on('unhandledRejection', e => { throw e });
