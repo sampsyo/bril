@@ -155,10 +155,10 @@ module Analyze (EXPRS: Exprs) = struct
             (Cfg.Attrs.get src_attrs "computes")
       end)
 
-  module Anticipatability =
+  module AnticipatabilityIn =
     MakeDataflow
       (struct
-        let attr_name = "anticipatability"
+        let attr_name = "anticipatability_in"
         let direction = Graph.Fixpoint.Backward
         let init (_, b_attrs) =
           if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "exit"
@@ -173,35 +173,83 @@ module Analyze (EXPRS: Exprs) = struct
             (Cfg.Attrs.get dst_attrs "locally_anticipates")
       end)
 
+  module AnticipatabilityOut : Analysis.Analysis =
+    struct
+      let run graph =
+        let run_block b =
+            let succs = CFG.succ graph b in
+            let succ_ants =
+              List.map succs ~f:(fun (_, a) -> Cfg.Attrs.get a "anticipatability_in")
+            in
+            let ant_out =
+              match succ_ants with
+              | [] -> zeros
+              | ant :: rest -> List.fold ~f:Bitv.bw_and ~init:ant rest
+            in
+            Hashtbl.set ~key:"anticipatability_out" ~data:ant_out (snd b)
+        in
+        CFG.iter_vertex run_block graph;
+        graph
+    end
+
   module Earliest =
     MakeEdgeLocal
       (struct
         let attr_name = "earliest"
         let analyze ((_, src_attrs), _, (_, dst_attrs)) =
-          let ant_in_dst = Cfg.Attrs.get dst_attrs "anticipatability" in
+          let ant_in_dst = Cfg.Attrs.get dst_attrs "anticipatability_in" in
           let avail_out_src = Cfg.Attrs.get src_attrs "availability" in
           let entry_cond = Bitv.bw_and ant_in_dst (Bitv.bw_not avail_out_src) in
           Bitv.bw_and entry_cond
             (Bitv.bw_or
                (Bitv.bw_not (Cfg.Attrs.get src_attrs "transparent"))
-               (* this should be ant_out not ant_in *)
-               (Bitv.bw_not (Cfg.Attrs.get src_attrs "anticipatability")))
+               (Bitv.bw_not (Cfg.Attrs.get src_attrs "anticipatability_out")))
       end)
           
   module Later =
-    Graph.Fixpoint.Make(CFG)
+    MakeDataflow
       (struct
-        type vertex = CFG.E.vertex
-        type edge = CFG.E.t
-        type g = CFG.t
-        type data = Bitv.t
+        let attr_name = "later"
         let direction = Graph.Fixpoint.Forward
-        let equal x y = Bitv.all_zeros (Bitv.bw_xor x y) (* hack *)
-        let join = Bitv.bw_and
+        let init (_, b_attrs) = 
+          let v = 
+            if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "entry"
+            then EXPRS.build ~f:(fun _ -> true)
+            else EXPRS.build ~f:(fun _ -> false)
+          in
+          Hashtbl.set ~key:"later_in" ~data:v b_attrs;
+          v
         let analyze ((_, src_attrs), edge_attrs, (_, _)) src_later_in =
-          Bitv.bw_or
-            (Bitv.bw_and src_later_in
-               (Bitv.bw_not (Cfg.Attrs.get src_attrs "locally_anticipates")))
-            (Cfg.Attrs.get edge_attrs "earliest")
+          let later_src_dst =
+            Bitv.bw_or
+              (Bitv.bw_and src_later_in
+                 (Bitv.bw_not (Cfg.Attrs.get src_attrs "locally_anticipates")))
+              (Cfg.Attrs.get edge_attrs "earliest")
+          in
+          Hashtbl.set ~key:"later_in" ~data:src_later_in src_attrs; (* hack *)
+          Hashtbl.set ~key:"later" ~data:later_src_dst edge_attrs; (* hack *)
+          later_src_dst
+      end)
+
+  module Insert =
+    MakeEdgeLocal
+      (struct
+        let attr_name = "insert"
+        let analyze (_, edge_attrs, (_, dst_attrs)) =
+          Bitv.bw_and
+            (Cfg.Attrs.get edge_attrs "later")
+            (Bitv.bw_not (Cfg.Attrs.get dst_attrs "later_in"))
+      end)
+
+  module Delete =
+    MakeBlockLocal
+      (struct
+        let attr_name = "insert"
+        let analyze (_, block_attrs) =
+          if Bitv.all_zeros @@ Cfg.Attrs.get block_attrs "entry"
+          then Bitv.bw_and
+                 (Cfg.Attrs.get block_attrs "locally_anticipates")
+                 (Bitv.bw_not (Cfg.Attrs.get block_attrs "later_in"))
+          else zeros
       end)
 end

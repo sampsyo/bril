@@ -30,8 +30,12 @@ let go dot file () =
     |> Analyze.Computes.run
     |> Analyze.LocallyAnticipates.run
     |> Analyze.Availability.run
-    |> Analyze.Anticipatability.run
+    |> Analyze.AnticipatabilityIn.run
+    |> Analyze.AnticipatabilityOut.run
     |> Analyze.Earliest.run
+    |> Analyze.Later.run
+    |> Analyze.Insert.run
+    |> Analyze.Delete.run
   in
   Cfg.dump_to_dot graph dot
 
