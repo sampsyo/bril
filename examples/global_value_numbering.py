@@ -107,9 +107,16 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
             for instr in blocks[succ_name]:
                 if instr['op'] != 'phi': break
                 # Replace phi arguments if they were calculated in this block
-                for i, arg in enumerate(instr['args']):
-                    # TODO
-                    pass
+                args = instr['args']
+                numArgs = int(len(args)/2)
+                for i, (arg, pred_name) in enumerate(zip(args[:numArgs], args[numArgs:])):
+                    if pred_name != block_name or arg not in vars_to_value_nums:
+                        continue
+
+                    instr['args'][i] = vars_to_value_nums[arg]
+
+        for i in instrs_to_remove:
+            blocks[block_name].remove(i)
 
         for child_name in dom_tree[block_name]:
             dvn(child_name)
@@ -129,16 +136,14 @@ def global_value_numbering(bril):
 
         dom_tree = get_dominator_tree(blocks, succ)
 
-        func['instrs'] = block_map_to_instrs(blocks)
-
         dominator_value_numbering(next(iter(blocks)), blocks, succ, dom_tree)
-
+        func['instrs'] = block_map_to_instrs(blocks)
 
     return json.dumps(bril, indent=4)
 
 def gvn():
     bril = global_value_numbering(json.load(sys.stdin))
-    #print(bril)
+    print(bril)
 
 if __name__ == '__main__':
     gvn()
