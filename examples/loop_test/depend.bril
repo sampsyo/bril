@@ -11,9 +11,10 @@ header:
 
 bo:
   ded: int = const 3; #unused
+  one: int = const 1;
   dedo: int = mul ded one;
   j: int = sub j one;
-  cond bool = gt j zero;
+  cond: bool = gt j zero;
   br cond body header;
 
 body:

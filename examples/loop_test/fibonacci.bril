@@ -3,6 +3,7 @@ main {
   b: int = const 1;
   i: int = const 10;
   zero: int = const 0;
+  one: int = const 1;
 
 header:
   cond: bool = gt i zero;
