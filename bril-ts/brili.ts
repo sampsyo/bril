@@ -63,7 +63,6 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   vadd: 2,
   vsub: 2,
   vmul: 2,
-  vdiv: 2,
   vload: 1,
   vstore: 2,
 };
@@ -198,7 +197,8 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let l = getInt(instr, env, 0);
     let r = getInt(instr, env, 1);
 
-    let val = add(l, r);
+    // let val = add(l, r);
+    let val = l + r;
     env.set(instr.dest, val);
     return NEXT;
   }
@@ -348,20 +348,6 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let vecC = new Int32Array(fixedVecSize);
     for (let i = 0; i < fixedVecSize; i++) {
       vecC[i] = vecA[i] - vecB[i];
-    }
-    env.set(instr.dest, vecC);    
-
-    return NEXT;
-  }
-
-  case "vdiv": {
-
-    // serialized version
-    let vecA = getVec(instr, env, 0);
-    let vecB = getVec(instr, env, 1);
-    let vecC = new Int32Array(fixedVecSize);
-    for (let i = 0; i < fixedVecSize; i++) {
-      vecC[i] = vecA[i] / vecB[i];
     }
     env.set(instr.dest, vecC);    
 
