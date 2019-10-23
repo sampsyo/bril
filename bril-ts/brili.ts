@@ -2,6 +2,42 @@
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 import { isConstructSignatureDeclaration } from 'typescript';
+const ffi = require('ffi');
+const libPath = '../native/target/release/libthread_count';
+
+const ref = require('ref');
+const ArrayType = require('ref-array');
+const IntArray = ArrayType(ref.types.int32);
+const ByteArray = ArrayType(ref.types.uint8);
+
+const libWeb = ffi.Library(libPath, {
+  'add': [ 'int32', [ 'int32', 'int32' ] ],
+  'vadd': ['int32', [IntArray, IntArray, IntArray]],
+  'vmul': ['int32', [IntArray, IntArray, IntArray]],
+  'vsub': ['int32', [IntArray, IntArray, IntArray]],
+});
+
+const { add, vadd, vmul, vsub} = libWeb;
+const array = [1,2,3,4];
+const array1 = new IntArray(4);
+array1[0] = 1;
+array1[1] = 2;
+array1[2] = 3;
+array1[3] = 4;
+const array2 = new IntArray(4);
+
+console.log(array[0]);
+
+
+(function(js_array, js_array1, js_array2){
+  console.log("length", js_array.length)
+  let a = vmul(js_array, js_array1, js_array2);
+  console.log(array2[0]);
+  console.log(array2[1]);
+  console.log(array2[2]);
+  console.log(array2[3]);
+})(array, array1, array2);
+
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
@@ -27,7 +63,6 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   vadd: 2,
   vsub: 2,
   vmul: 2,
-  vdiv: 2,
   vload: 1,
   vstore: 2,
 };
@@ -159,7 +194,11 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "add": {
-    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
+    let l = getInt(instr, env, 0);
+    let r = getInt(instr, env, 1);
+
+    // let val = add(l, r);
+    let val = l + r;
     env.set(instr.dest, val);
     return NEXT;
   }
@@ -309,20 +348,6 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let vecC = new Int32Array(fixedVecSize);
     for (let i = 0; i < fixedVecSize; i++) {
       vecC[i] = vecA[i] - vecB[i];
-    }
-    env.set(instr.dest, vecC);    
-
-    return NEXT;
-  }
-
-  case "vdiv": {
-
-    // serialized version
-    let vecA = getVec(instr, env, 0);
-    let vecB = getVec(instr, env, 1);
-    let vecC = new Int32Array(fixedVecSize);
-    for (let i = 0; i < fixedVecSize; i++) {
-      vecC[i] = vecA[i] / vecB[i];
     }
     env.set(instr.dest, vecC);    
 
