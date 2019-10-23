@@ -387,7 +387,8 @@ def codemotion(instrs):
   blocks = block_map(form_blocks(instrs))
   add_terminators(blocks)
   pred, succ = edges(blocks)
-  domtree = get_dom(succ,list(blocks.keys())[0])
+  pred, succ, domtree = get_dom(succ,list(blocks.keys())[0])
+  blocks = {bname: blocks[bname] for bname in domtree.keys()}
   
   natloop_info = codemotion_info(blocks, pred, succ, domtree)
   new_instrs = codemotion_change_cfg(blocks, succ, pred, natloop_info)

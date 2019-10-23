@@ -50,6 +50,8 @@ def get_dom(succ, entry):
     nodes = list(reversed(postorder(succ, entry)))  # Reverse postorder.
 
     dom = {v: set(nodes) for v in nodes}
+    succ = {n: [s for s in succ[n] if s in nodes] for n in nodes}
+    pred = {n: [p for p in pred[n] if p in nodes] for n in nodes}
 
     while True:
         changed = False
@@ -65,7 +67,7 @@ def get_dom(succ, entry):
         if not changed:
             break
 
-    return dom
+    return pred, succ, dom
 
 
 def print_dom(bril):
