@@ -9,7 +9,7 @@ from dom_frontier import get_dominator_tree
 from form_blocks import form_blocks
 from util import block_map_to_instrs
 
-# from Adrian's implementation of local value numbering
+# From Adrian's implementation of local value numbering
 Value = namedtuple('Value', ['op', 'args'])
 def canonicalize(instr):
     value = Value(instr['op'], tuple(instr['args']))
@@ -18,6 +18,46 @@ def canonicalize(instr):
     else:
         return value
 
+
+def check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
+    # Meaningless phi nodes are those whose arguments all already have
+    # the same value number
+    canonicalized = canonicalize(instr)
+    meaningless = True
+    arg_value_number = None
+
+    args = instr['args']
+    numArgs = int(len(args)/2)
+    for i in range(numArgs):
+        arg = args[i]
+        if arg not in vars_to_value_nums:
+            meaningless = False
+            break
+        if not arg_value_number:
+            arg_value_number = vars_to_value_nums[arg]
+            continue
+        if arg_value_number != vars_to_value_nums[arg]:
+            meaningless = False
+            break
+
+    if meaningless:
+        # Map the destination to just the existing arg value number
+        vars_to_value_nums[instr['dest']] = arg_value_number
+        return True
+
+    # Redundant phi nodes are those that are identical to ones we 
+    # already computed: those in the hash table
+    redundant = canonicalized in exprs_to_value_nums
+    if not redundant:
+        sys.stderr.write(json.dumps(instr, indent=2) + "\n")
+
+    if redundant:
+        # Use the previous value number we already calculated
+        value_number = exprs_to_value_nums[canonicalized][-1]
+        vars_to_value_nums[instr['dest']] = value_number
+        return True
+    
+    return False
 
 # From Briggs, Cooper, and Simpson, 1997.
 def dominator_value_numbering(block_name, blocks, succ, dom_tree):
@@ -30,11 +70,10 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
     exprs_to_value_nums = defaultdict(list)
 
     def dvn(block_name):
-
         # Intialize hashtable scope (track changes to be cleaned after this
         # recursive call)
         pushed = defaultdict(int)
-        instrs_to_remove = []
+        instrs_to_remove = defaultdict(list)
 
         for instr in blocks[block_name]:
             # Iterate only through phi nodes, which have been inserted at the
@@ -45,36 +84,8 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
             # canonicalizing phi nodes
             canonicalized = canonicalize(instr)
 
-            # Meaningless phi nodes are those whose arguments all already have
-            # the same value number
-            meaningless = True
-            arg_value_number = None
-            for arg in instr['args']:
-                if arg not in vars_to_value_nums:
-                    meaningless = False
-                    break
-                if not arg_value_number:
-                    arg_value_number = vars_to_value_nums[arg]
-                    continue
-                if arg_value_number != vars_to_value_nums[arg]:
-                    meaningless = False
-                    break
-
-            # Redundant phi nodes are those that are identical to ones we 
-            # already computed: those in the hash table
-            redundant = canonicalized in exprs_to_value_nums
-
-            if meaningless:
-                # Map the destination to just the existing arg value number
-                vars_to_value_nums[instr['dest']] = arg_value_number
-
-                instrs_to_remove.append(instr)
-            elif redundant:
-                # Use the previous value number we already calculated
-                value_number = exprs_to_value_nums[canonicalized][-1]
-                vars_to_value_nums[instr['dest']] = value_number
-
-                instrs_to_remove.append(instr)
+            if check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
+                instrs_to_remove[block_name].append(instr)
             else:
                 vars_to_value_nums[instr['dest']] = instr['dest']
 
@@ -92,11 +103,11 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
 
                 # TODO: maybe "simplify" expr
 
-                # Check if we already have a vlaue number for this expression
+                # Check if we already have a value number for this expression
                 if canonicalized in exprs_to_value_nums:
                     value_number = exprs_to_value_nums[canonicalized][-1]
                     vars_to_value_nums[instr['dest']] = value_number
-                    instrs_to_remove.append(instr)
+                    instrs_to_remove[block_name].append(instr)
                 else:
                     vars_to_value_nums[instr['dest']] = instr['dest']
                     exprs_to_value_nums[canonicalized].append(instr['dest'])
@@ -115,8 +126,13 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
 
                     instr['args'][i] = vars_to_value_nums[arg]
 
-        for i in instrs_to_remove:
-            blocks[block_name].remove(i)
+                # TODO: is this chill?
+                if check_removeable_phi(instr,  vars_to_value_nums, exprs_to_value_nums):
+                    instrs_to_remove[succ_name].append(instr)
+
+        for name, instrs in instrs_to_remove.items():
+            for instr in instrs:
+                blocks[name].remove(instr)
 
         for child_name in dom_tree[block_name]:
             dvn(child_name)
