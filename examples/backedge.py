@@ -260,11 +260,11 @@ def stripMine(loops, filtered_loopInfos, blocks):
                 loaded_vars.add(current_insn["dest"])
             # Change increment to i = i + 4 
             elif current_insn is loop_info['delta_stmt']:
-                arg0 = current_insn['args'][0]
-                if arg0 != loop_info['iv']: current_insn['args'][0] = 'four'
-                arg1 = current_insn['args'][1]
-                if arg1 != loop_info['iv']: current_insn['args'][1] = 'four'
-                current_block.insert(index, four)
+                # arg0 = current_insn['args'][0]
+                # if arg0 != loop_info['iv']: current_insn['args'][0] = 'four'
+                # arg1 = current_insn['args'][1]
+                # if arg1 != loop_info['iv']: current_insn['args'][1] = 'four'
+                # current_block.insert(index, four)
                 index+=1
             # New Bound Variable Value
             elif current_insn is loop_info['bound_var_def']:
