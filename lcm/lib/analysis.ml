@@ -2,8 +2,7 @@ open Core
 open Cfg
 
 module type Analysis = sig
-  val run :
-  CFG.t -> unit
+  val run : CFG.t -> CFG.t
 end
 
 module type DataflowAnalysis = sig
@@ -29,7 +28,8 @@ module MakeBlockLocal (A: BlockLocalAnalysis) = struct
       let res = A.analyze b in
       Hashtbl.set ~key:A.attr_name ~data:res (snd b)
     in
-    Cfg.CFG.iter_vertex do_block graph
+    Cfg.CFG.iter_vertex do_block graph;
+    graph
 end
 
 module MakeEdgeLocal (A: EdgeLocalAnalysis) = struct
@@ -39,7 +39,8 @@ module MakeEdgeLocal (A: EdgeLocalAnalysis) = struct
       let (_, attrs, _) = e in
       Hashtbl.set ~key:A.attr_name ~data:res attrs
     in
-    Cfg.CFG.iter_edges_e do_edge graph
+    Cfg.CFG.iter_edges_e do_edge graph;
+    graph
 end
 
 module MakeDataflow (A: DataflowAnalysis) : Analysis = struct
@@ -58,7 +59,8 @@ module MakeDataflow (A: DataflowAnalysis) : Analysis = struct
     let update_block b =
       Hashtbl.set ~key:A.attr_name ~data:(data b) (snd b)
     in
-    Cfg.CFG.iter_vertex update_block graph
+    Cfg.CFG.iter_vertex update_block graph;
+    graph
 end
 
 module BitvAnalysis = struct

@@ -39,7 +39,10 @@ module EdgeLabel = struct
   type t = Attrs.t
   let compare x y =
     compare (Hashtbl.length x) (Hashtbl.length y)
-  let default : t = String.Table.create ()
+  let default : t =
+    let a = Attrs.create () in
+    Hashtbl.set ~key:"default" ~data:(Bitv.init 1 (fun _ -> true)) a;
+    a
 end
 
 module Label = struct
@@ -71,15 +74,14 @@ module CFG = struct
   let get_subgraph _ = None
 end
 
-module Map = Map.Make(Label)
-type t = CFG.t * BasicBlock.t Map.t
+module LabelMap = Map.Make(Label)
+type t = CFG.t * BasicBlock.t LabelMap.t
 
-let empty : t = (CFG.empty, Map.empty)
+let empty : t = (CFG.empty, LabelMap.empty)
 
 let add_block (g, m) block : t =
-  let block' = (block, Attrs.create ()) in
-  let g = CFG.add_vertex g block' in
-  let m = Map.add_exn ~key:block.lbl ~data:block' m in
+  let g = CFG.add_vertex g block in
+  let m = LabelMap.add_exn ~key:(fst block).lbl ~data:block m in
   (g, m)
 
 module Viz = Graph.Graphviz.Dot(CFG)

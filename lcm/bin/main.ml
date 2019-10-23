@@ -8,22 +8,32 @@ let go dot file () =
   let prog = Parser.parse_bril file in
   let fn = List.hd_exn prog in
   let graph = Cfgify.cfgify_dirs fn.body in
-  Cfg.dump_to_dot graph dot;
+  let expr_locs = Analyze.aggregate_expression_locs graph in
+  let expressions = Analyze.ExprMap.keys expr_locs in
+  let graph = Optimize.unify_expression_locations expressions graph in
   let module Exprs = struct
-      let expressions = []
+      let expressions = expressions
       let len = List.length expressions
-      let build ~f:_ =
-        let bits = Bitv.create len false in
-        bits
+      let build ~f =
+        let bit_at i =
+          let expr = List.nth_exn expressions i in
+          f expr
+        in
+        Bitv.init len bit_at
     end
   in
   let module Analyze = Analyze.Analyze(Exprs) in
-  Analyze.Transparent.run graph;
-  Analyze.Computes.run graph;
-  Analyze.LocallyAnticipates.run graph;
-  Analyze.Availability.run graph;
-  Analyze.Anticipatability.run graph;
-  Analyze.Earliest.run graph
+  let _ =
+    Analyze.Entry.run graph
+    |> Analyze.Exit.run
+    |> Analyze.Transparent.run
+    |> Analyze.Computes.run
+    |> Analyze.LocallyAnticipates.run
+    |> Analyze.Availability.run
+    |> Analyze.Anticipatability.run
+    |> Analyze.Earliest.run
+  in
+  Cfg.dump_to_dot graph dot
 
 let open_in_opt = function
   | Some path -> In_channel.create path

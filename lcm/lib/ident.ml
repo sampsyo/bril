@@ -1,8 +1,8 @@
 open Core
 
-type var = string [@@deriving sexp]
-type lbl = string [@@deriving sexp]
-type fn = string [@@deriving sexp]
+type var = string [@@deriving sexp, compare]
+type lbl = string [@@deriving sexp, compare]
+type fn = string [@@deriving sexp, compare]
 let var_of_string s = s 
 let lbl_of_string s = s 
 let string_of_lbl l = l

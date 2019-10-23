@@ -1,6 +1,6 @@
-type var [@@deriving sexp]
-type lbl [@@deriving sexp]
-type fn [@@deriving sexp]
+type var [@@deriving sexp, compare]
+type lbl [@@deriving sexp, compare]
+type fn [@@deriving sexp, compare]
 val var_of_string : string -> var
 val lbl_of_string : string -> lbl
 val string_of_lbl : lbl -> string

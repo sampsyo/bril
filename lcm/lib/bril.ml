@@ -25,7 +25,7 @@ type value_expr =
   | Or of Ident.var * Ident.var
   | Id of Ident.var
   | Nop
-[@@deriving sexp]
+[@@deriving sexp, compare]
 
 let args = function
   | Add (x, y) -> [x; y]
@@ -42,6 +42,11 @@ let args = function
   | Or (x, y) -> [x; y]
   | Id x -> [x]
   | Nop -> []
+
+let is_computation = function
+  | Id _ -> false
+  | Nop -> false
+  | _ -> true
 
 type value_op =
   { op: value_expr;
