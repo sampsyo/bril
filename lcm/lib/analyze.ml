@@ -138,70 +138,75 @@ module Analyze (EXPRS: Exprs) = struct
           EXPRS.build ~f:(fun expr -> expr_computes expr block')
       end)
 
-  module Availability =
+  let avail_out (_, block_attrs) avail_in =
+    Bitv.bw_or
+      (Bitv.bw_and
+         (Cfg.Attrs.get block_attrs "transparent")
+         avail_in)
+      (Cfg.Attrs.get block_attrs "computes")
+
+  module AvailabilityIn =
     MakeDataflow
       (struct
-        let attr_name = "availability_out"
+        let attr_name = "availability_in"
         let direction = Graph.Fixpoint.Forward
-        let init (_, b_attrs) =
-          if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "entry"
-          then EXPRS.build ~f:(fun _ -> true)
-          else EXPRS.build ~f:(fun _ -> false)
-        let analyze ((_, src_attrs), _, _) src_avail_in =
-          Bitv.bw_or
-            (Bitv.bw_and
-               (Cfg.Attrs.get src_attrs "transparent")
-               src_avail_in)
-            (Cfg.Attrs.get src_attrs "computes")
+        let init _ =
+          EXPRS.build ~f:(fun _ -> false)
+        let analyze (src, _, _) src_avail_in =
+          avail_out src src_avail_in
       end)
 
-  module AnticipatabilityIn =
+  module AvailabilityOut =
+    MakeBlockLocal
+      (struct
+        let attr_name = "availability_out"
+        let analyze block =
+          avail_out block (Cfg.Attrs.get (snd block) "availability_in")
+      end)
+
+  let ant_in (_, attrs) ant_out =
+    Bitv.bw_or
+      (Bitv.bw_and
+         (Cfg.Attrs.get attrs "transparent")
+         ant_out)
+      (Cfg.Attrs.get attrs "locally_anticipates")
+
+  module AnticipatabilityOut =
     MakeDataflow
       (struct
-        let attr_name = "anticipatability_in"
+        let attr_name = "anticipatability_out"
         let direction = Graph.Fixpoint.Backward
         let init (_, b_attrs) =
           if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "exit"
           then EXPRS.build ~f:(fun _ -> true)
           else EXPRS.build ~f:(fun _ -> false)
-        let analyze (_, _, (_, dst_attrs)) dst_ant_out =
-          let transp = Cfg.Attrs.get dst_attrs "transparent" in
-          Bitv.bw_or
-            (Bitv.bw_and
-               transp
-               dst_ant_out)
-            (Cfg.Attrs.get dst_attrs "locally_anticipates")
+        let analyze (_, _, dst) dst_ant_out =
+          ant_in dst dst_ant_out
       end)
 
-  module AnticipatabilityOut : Analysis.Analysis =
-    struct
-      let run graph =
-        let run_block b =
-            let succs = CFG.succ graph b in
-            let succ_ants =
-              List.map succs ~f:(fun (_, a) -> Cfg.Attrs.get a "anticipatability_in")
-            in
-            let ant_out =
-              match succ_ants with
-              | [] -> zeros
-              | ant :: rest -> List.fold ~f:Bitv.bw_and ~init:ant rest
-            in
-            Hashtbl.set ~key:"anticipatability_out" ~data:ant_out (snd b)
-        in
-        CFG.iter_vertex run_block graph;
-        graph
-    end
+  module AnticipatabilityIn =
+    MakeBlockLocal
+      (struct
+        let attr_name = "anticipatability_in"
+        let analyze block =
+          ant_in block (Cfg.Attrs.get (snd block) "anticipatability_out")
+      end)
 
   module Earliest =
     MakeEdgeLocal
       (struct
         let attr_name = "earliest"
         let analyze ((_, src_attrs), _, (_, dst_attrs)) =
+          Printf.printf "running Earliest.analyze";
           let ant_in_dst = Cfg.Attrs.get dst_attrs "anticipatability_in" in
           let avail_out_src = Cfg.Attrs.get src_attrs "availability_out" in
           let entry_cond = Bitv.bw_and ant_in_dst (Bitv.bw_not avail_out_src) in
+          print_string @@ Bitv.M.to_string entry_cond;
+          print_string @@ Bitv.M.to_string @@ Cfg.Attrs.get src_attrs "entry";
+          Out_channel.newline stdout;
           if Bitv.all_zeros @@ Cfg.Attrs.get src_attrs "entry"
-          then Bitv.bw_and entry_cond
+          then Bitv.bw_and
+                 entry_cond
                  (Bitv.bw_or
                     (Bitv.bw_not (Cfg.Attrs.get src_attrs "transparent"))
                     (Bitv.bw_not (Cfg.Attrs.get src_attrs "anticipatability_out")))
@@ -214,10 +219,7 @@ module Analyze (EXPRS: Exprs) = struct
         let attr_name = "later"
         let direction = Graph.Fixpoint.Forward
         let init (_, b_attrs) = 
-          let v = 
-            if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "entry"
-            then EXPRS.build ~f:(fun _ -> true)
-            else EXPRS.build ~f:(fun _ -> false)
+          let v = EXPRS.build ~f:(fun _ -> false)
           in
           Hashtbl.set ~key:"later_in" ~data:v b_attrs;
           v

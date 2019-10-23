@@ -29,9 +29,10 @@ let go dot file () =
     |> Analyze.Transparent.run
     |> Analyze.Computes.run
     |> Analyze.LocallyAnticipates.run
-    |> Analyze.Availability.run
-    |> Analyze.AnticipatabilityIn.run
+    |> Analyze.AvailabilityIn.run
+    |> Analyze.AvailabilityOut.run
     |> Analyze.AnticipatabilityOut.run
+    |> Analyze.AnticipatabilityIn.run
     |> Analyze.Earliest.run
     |> Analyze.Later.run
     |> Analyze.Insert.run

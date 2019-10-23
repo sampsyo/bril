@@ -66,13 +66,15 @@ let delete_computations exprs_to_delete block =
 let delete_computations exprs graph =
   CFG.map_vertex
     (fun block ->
-      print_string (Ident.string_of_lbl (fst block).lbl);
-      Out_channel.newline stdout;
-      Attrs.print (snd block);
-      Out_channel.newline stdout;
       let exprs_to_delete =
         interp_bitv exprs @@ Attrs.get (snd block) "delete"
       in
+      Printf.printf "%s\n" (Ident.string_of_lbl (fst block).lbl) ;
+      Out_channel.newline stdout;
+      Attrs.print (snd block);
+      Out_channel.newline stdout;
+      print_s ([%sexp_of:Bril.value_expr list] exprs_to_delete);
+      Out_channel.newline stdout;
       delete_computations exprs_to_delete block)
     graph
 

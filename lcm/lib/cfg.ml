@@ -45,7 +45,7 @@ module EdgeLabel = struct
     compare (Hashtbl.length x) (Hashtbl.length y)
   let default : t =
     let a = Attrs.create () in
-    Hashtbl.set ~key:"default" ~data:(Bitv.init 1 (fun _ -> true)) a;
+    Hashtbl.set ~key:"BUG_used_default" ~data:(Bitv.init 1 (fun _ -> true)) a;
     a
 end
 

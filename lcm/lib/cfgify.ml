@@ -97,7 +97,7 @@ let successors block =
 let add_edges map graph block =
   let add_edge graph lbl =
     let dst_block = Cfg.LabelMap.find_exn map lbl in
-    Cfg.CFG.add_edge graph block dst_block
+    Cfg.CFG.add_edge_e graph (block, Cfg.Attrs.create (), dst_block)
   in
   List.fold ~f:add_edge ~init:graph (successors (fst block))
 

@@ -34,9 +34,8 @@ end
 
 module MakeEdgeLocal (A: EdgeLocalAnalysis) = struct
   let run graph =
-    let do_edge e =
-      let res = A.analyze e in
-      let (_, attrs, _) = e in
+    let do_edge (src, attrs, dst) =
+      let res = A.analyze (src, attrs, dst) in
       Hashtbl.set ~key:A.attr_name ~data:res attrs
     in
     Cfg.CFG.iter_edges_e do_edge graph;

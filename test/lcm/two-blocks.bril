@@ -2,9 +2,8 @@ main {
 initialize:
   x: int = const 9;
   y: int = const 2;
-addhere:
-  z: int = add x y;
 finish:
+  z: int = add x y;
   print z;
   ret;
 }
