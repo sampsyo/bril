@@ -344,6 +344,9 @@ if __name__ == '__main__':
             print('   ',inst)
 
     for func in bril['functions']:
-        func['instrs'] = flatten(blocks)
+        func['instrs'] = []
+        for name, block in blocks.items():
+            func['instrs'].append({"label":name})
+            func['instrs'].extend(block)
     json.dump(bril, sys.stdout, indent=2, sort_keys=True)
 
