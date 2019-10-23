@@ -37,7 +37,7 @@ export function genFuncMap(func: b.Function): FuncMap {
   };
 }
 
-type CFGStruct = {
+export type CFGStruct = {
   label: b.Ident;
   succ: CFGStruct[];
   preds: CFGStruct[];
@@ -46,7 +46,7 @@ type CFGStruct = {
 /**
  * Mapping from a block label to its predecessors.
  */
-export function getCFG(funcMap: FuncMap): CFGStruct {
+export function getCFG(funcMap: FuncMap): Map<b.Ident, CFGStruct> {
   let start = { label: 'start', succ: [], preds: [], }
   let cfg: CFGStruct = start
   let map: Map<b.Ident, CFGStruct> = new Map();
@@ -111,5 +111,5 @@ export function getCFG(funcMap: FuncMap): CFGStruct {
       }
     }
   }
-  return cfg;
+  return map;
 }

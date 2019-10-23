@@ -31,8 +31,8 @@ function toGroup(trace: b.MicroInstruction[], failLabel: b.Ident): b.Group {
 
 function getTrace(
   startLabel: Ident,
-  labelMap: Map<Ident, Instruction[]>,
-  predMap: Map<Ident, Ident[]>,
+  funcMap: cf.FuncMap,
+  cfg: Map<Ident, cf.CFGStruct>,
   onBranch: (op: EffectOperation) => boolean,
   blocks: number
 ): Instruction[] {
@@ -41,14 +41,16 @@ function getTrace(
   let trace: Instruction[] = [];
   let curLabel = startLabel;
 
+  let liveOuts = getLiveOut(funcMap, cfg);
+
   while (--remaining > 0) {
     // If there more than one entrance to this block, don't add it to the
     // trace.
-    let preds = predMap.get(curLabel);
-    if (preds && preds.length > 1 && trace.length !== 0) {
+    let node = cfg.get(curLabel);
+    if (node && node.preds.length > 1 && trace.length !== 0) {
       return trace;
     }
-    let instrs = labelMap.get(curLabel);
+    let instrs = funcMap.blocks.get(curLabel);
 
     if (instrs === undefined) {
       throw new Error(`Unknown label ${curLabel}`)
@@ -62,10 +64,13 @@ function getTrace(
         case "br": {
           if (onBranch(final)) curLabel = final.args[1];
           else curLabel = final.args[2];
+          let live = liveOuts.get(curLabel);
+          if (!live) throw new Error(`${curLabel} not in liveOuts`);
           // Add fake id instruction
           let fake: b.ValueOperation = {
             op: "id",
-            args: getLives(labelMap.get(curLabel) || []),
+            // args: getLiveOut(labelMap.get(curLabel) || []),
+            args: Array.from(live.values()),
             dest: "DO_NO_WRONG",
             type: 'int'
           };
@@ -98,41 +103,86 @@ function getLives(block: b.Instruction[]): b.Ident[] {
   return lives;
 }
 
-function getUses(block: b.Instruction[]): Set<b.Ident> {
-  let uses: Set<b.Ident> = new Set();
-  for (let inst of block) {
-    if ('args' in inst)
-      inst.args.forEach(el => uses.add(el));
+function transfer(block: b.Instruction[], liveOut: Set<b.Ident>): Set<b.Ident> {
+  let liveIn: Set<b.Ident> = new Set();
+  liveOut.forEach(v => liveIn.add(v));
+
+  for (let i = block.length - 1; i >= 0; i--) {
+    let instr = block[i];
+    if ('dest' in instr) {
+      liveIn.delete(instr.dest);
+    }
+    if ('op' in instr) {
+      switch (instr.op) {
+        case "br":
+          liveIn.add(instr.args[0]);
+          break;
+        case "const":
+          break;
+        case "print":
+          instr.args.forEach(a1 => liveIn.add(a1));
+          break;
+        default:
+          // value operation
+          if ('dest' in instr) instr.args.forEach(a1 => liveIn.add(a1));
+
+      }
+    }
   }
-  return uses;
+  return liveIn;
 }
 
-function getDefs(block: b.Instruction[]): Set<b.Ident> {
-  let def: Set<b.Ident> = new Set();
-  for (let inst of block) {
-    if ('dest' in inst)
-      def.add(inst.dest);
-  }
-  return def;
-}
+function getLiveOut(func: cf.FuncMap, cfg: Map<b.Ident, cf.CFGStruct>): Map<b.Ident, Set<b.Ident>> {
+  let ins: Map<b.Ident, Set<b.Ident>> = new Map();
+  let outs: Map<b.Ident, Set<b.Ident>> = new Map();
+  let worklist: b.Ident[] = Array.from(func.blocks.keys());
 
-function getLiveOut(func: FuncMap, cfg: cf.CFGStruct): Map<b.Ident, Set<b.Ident>> {
-  let out: Map<b.Ident, Set<b.Ident>> = new Map();
-  let worklist: b.Ident[] = [];
-
-  function getOrCreate(key: b.Ident): Set<b.Ident> {
-    let val = out.get(key);
+  function getOrCreate(map: Map<b.Ident, Set<b.Ident>>, key: b.Ident): Set<b.Ident> {
+    let val = map.get(key);
     if (!val) {
       val = new Set();
-      map.add(val)
+      map.set(key, val);
     }
     return val;
   }
 
-  while(worklist) {
-    block = worklist.pop();
-    preds = cfg.preds
+  function union<T>(s1: Set<T>, s2: Set<T>) {
+    s2.forEach(v => s1.add(v));
   }
+
+  function equals<T>(s1: Set<T>, s2: Set<T>): boolean {
+    let res = true;
+    s1.forEach(v => res = res && s2.has(v));
+    s2.forEach(v => res = res && s1.has(v));
+    return res;
+  }
+
+  while (worklist.length !== 0) {
+    let block = worklist.pop();
+    if (!block) throw new Error("Worklist was empty?");
+    let node = cfg.get(block);
+    if (!node) throw new Error("Node undefined");
+
+    let liveOuts: Set<b.Ident> = getOrCreate(outs, block);
+    node.succ.forEach(v => union(liveOuts, getOrCreate(ins, v.label)));
+    outs.set(block, liveOuts);
+
+    let instrs = func.blocks.get(block);
+    if (!instrs) throw new Error("Empty block");
+
+    let liveIns: Set<b.Ident> = transfer(instrs, liveOuts);
+
+    // if changed, update worklist
+    let myIns = getOrCreate(ins, block);
+    if (!equals(myIns, liveIns)) {
+      ins.set(block, liveIns);
+      node.preds.forEach(v => {
+        if (!worklist.includes(v.label)) worklist.push(v.label);
+      });
+    }
+  }
+
+  return outs;
 }
 
 function removeGarbage(insts: b.Instruction[]): b.Instruction[] {
@@ -150,19 +200,20 @@ function run(prog: b.Program) {
     // let pfunc = patchFunction(func);
     let fm = cf.genFuncMap(func);
     let control = cf.getCFG(fm);
-    console.log(control)
+    let liveVars = getLiveOut(fm, control);
+    // console.log(liveVars);
 
-    //console.log("func map", control);
-    //let trace = getTrace("for.cond.2", fm.blocks, control, (_) => true, 10);
-    //console.log("TRACE")
-    //b.logInstrs(trace);
-    //console.log("END")
+    // console.log("func map", control);
+    let trace = getTrace("for.cond.2", fm, control, (_) => true, 10);
+    console.log("TRACE")
+    b.logInstrs(trace);
+    console.log("END")
 
-    //let dag = df.dataflow(trace);
-    //df.assignDagPriority(dag);
-    ////console.dir(dag, { depth: 4 })
-    //let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
-    //sched.forEach((v, i) => { console.log("GROUP", i); b.logInstrs(v); console.log("END") })
+    let dag = df.dataflow(trace);
+    df.assignDagPriority(dag);
+    // console.dir(dag, { depth: 4 })
+    let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
+    sched.forEach((v, i) => { console.log("GROUP", i); b.logInstrs(v); console.log("END") })
   }
 }
 
