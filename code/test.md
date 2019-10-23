@@ -62,8 +62,18 @@ Similarly `codemotion2.ts` has nested loops where invariant code can be moved fr
 
 ```
 hyperfine --warmup 1 'brili < orig_codemotion2'
-Time (mean ± σ):     216.8 ms ±   4.5 ms
+Time (mean ± σ):     908.6 ms ±  14.8 ms
 
-hyperfine --warmup 1 'brili < opt_codemotion1'
-Time (mean ± σ):     163.8 ms ±   3.2 ms
+hyperfine --warmup 1 'brili < opt_codemotion2'
+Time (mean ± σ):     665.4 ms ±  11.9 ms
 ```
+
+### Final Results
+
+| Filename       | Unoptimized runtime      | Optimized runtime | Speedup |
+| -------------- | ---------------------------- | ----------------------| ---------- |
+| `codemotion1.ts` | 
+| `normal.ts`, `nested.ts`, `nestedif.ts` | No optimization expected.                   |
+| `codemotion*.ts`                        | Expecting code motion.                      |
+| `strengthreduction*.ts`                 | Expecting strength reduction optimizations. |
+| `both*.ts`                              | Expecting both kinds of optimizations.      |
