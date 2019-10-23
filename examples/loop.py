@@ -229,7 +229,18 @@ def codemotion_info(blocks, pred, succ, domtree):
     preheader = build_preheader(blocks, natloop, hoistmap)
     natloop_blocks = hoist_instructions(blocks, natloop, hoistmap)
 
-    preheader_name = "preheader" + str(natloop_ind)
+    # compute unique preheader name
+    preheader_base_name = "preheader_"
+    preheader_base_i = 0
+    while True:
+      if preheader_base_name in blocks.keys():
+        preheader_base_i += 1
+        preheader_base_name = "preheader" + str(preheader_base_i) + "_"
+
+      else:
+        break
+
+    preheader_name = preheader_base_name + str(natloop_ind)
     natloop_ind += 1
 
     # save natural loop information
