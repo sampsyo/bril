@@ -10,13 +10,13 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | "void" | "TODO";
 
 /**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret";
+  op: "br" | "jmp" | "print" | "ret" | "call" | "push" | "popargs";
   args: Ident[];
 }
 
@@ -27,7 +27,8 @@ export interface EffectOperation {
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
-      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
+      "retval";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -87,11 +88,21 @@ export interface Label {
 }
 
 /**
+ * Arguments to a function
+ */
+export interface Arg {
+    name: Ident;
+    type: Type;
+}
+
+/**
  * A function consists of a sequence of instructions.
  */
 export interface Function {
   name: Ident;
   instrs: (Instruction | Label)[];
+  ret_type: Type;
+  args: Arg[];
 }
 
 /**
