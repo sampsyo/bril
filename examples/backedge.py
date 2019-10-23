@@ -227,6 +227,9 @@ def numIterations(initial_val, delta_op, bound_val, cond_op):
 
 def stripMine(loops, filtered_loopInfos, blocks):
     for i in range(len(loops)):
+        #TODO: remove by having pre-checks
+        if i != 1:
+            continue
         loop_info = filtered_loopInfos[i][1]
 
         # TODO check that br is very last instr in loop
@@ -245,14 +248,12 @@ def stripMine(loops, filtered_loopInfos, blocks):
         # TODO: Dependency precheck
         serial_vars = []
         # Traverse loop, change loads to vload(i)
+        #Assert single-block loops
         assert(len(loops[i]) == 1)
         index = 0
         while index < len(blocks[loops[i][0]]):
             current_block = blocks[loops[i][0]]
             current_insn = current_block[index]
-            # Every block is a single insn follow by a jump. Only care about first one
-            # current_insn = blocks[block_name][0]
-            # assert(len(blocks[block_name]) == 2)
             assert('op' in current_insn)
             if 'op' in current_insn and current_insn['op'] == 'lw':
                 current_insn["op"] = 'vload'
@@ -273,6 +274,7 @@ def stripMine(loops, filtered_loopInfos, blocks):
                 blocks[block_name][0] = {'dest': loop_info["bound_var"], 'op': 'const', 'type': 'int', 'value': n_mod_four}
             elif 'op' in current_insn and current_insn['op'] == 'sw':
                 current_insn["op"] = 'vstore'
+            # TODO: don't add to serial_vars if the args are a constant and the iv
             elif 'op' in current_insn and current_insn['op'] == 'add':
                 if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
                     current_insn["op"] = 'vadd'
@@ -296,7 +298,7 @@ def stripMine(loops, filtered_loopInfos, blocks):
                  
             index +=1
         # TODO assert that no serial vars follow delta stmt
-        print("SERIAL VARS: ", serial_vars)
+        # print("SERIAL VARS: ", serial_vars)
 
         delta_index = next(ind for ind in range(len(blocks[loops[i][0]])) if blocks[loops[i][0]][ind] is loop_info['delta_stmt'])
         loopBlock = blocks[loops[i][0]]
@@ -337,11 +339,11 @@ if __name__ == '__main__':
     #     print("INFO: ", info, '\n')
     filtered_loopInfos = filterEligibleLoops(loop_infos)
     blocks = stripMine(loops, filtered_loopInfos, blocks)
-    print("@@@@@@@@@DONE@@@@@@@@")
-    for block in blocks:
-        print('{}:'.format(block))
-        for inst in blocks[block]:
-            print('   ',inst)
+    # print("@@@@@@@@@DONE@@@@@@@@")
+    # for block in blocks:
+    #     print('{}:'.format(block))
+    #     for inst in blocks[block]:
+    #         print('   ',inst)
 
     for func in bril['functions']:
         func['instrs'] = []
