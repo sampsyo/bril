@@ -123,7 +123,18 @@ export function assignDagPriority(dag: Node): number {
 }
 
 export function dataflow(instrs: Array<bril.Instruction>): Node {
-  let seen: Map<bril.Ident, Node> = new Map();
+  let written: Map<bril.Ident, Node> = new Map();
+  let read: Map<bril.Ident, Set<Node>> = new Map();
+
+  function addRead(ident: bril.Ident, node: Node) {
+    let val = read.get(ident);
+    if (!val) {
+      val = new Set();
+      read.set(ident, val);
+    }
+    val.add(node);
+  }
+
   let startNode: Node = {
     succs: new Set(),
     preds: new Set(),
@@ -132,30 +143,43 @@ export function dataflow(instrs: Array<bril.Instruction>): Node {
   };
   for (let instr of instrs) {
     // XXX(sam), what happens if we jump out of the trace?
+    let currNode: Node = {
+      succs: new Set(),
+      preds: new Set(),
+      instr: instr,
+      priority: undefined
+    };
+
+    // add edge from start -> currNode so that it's feasible to
+    // schedule currNode.instr first
+    startNode.succs.add(currNode);
+
     if ("dest" in instr) {
-      let currNode: Node = {
-        succs: new Set(),
-        preds: new Set(),
-        instr: instr,
-        priority: undefined
-      };
-      if ("args" in instr) {
-        for (let arg of instr.args) {
-          let parent = seen.get(arg);
-          // we have already seen arg, add edges from parent <-> currNode
-          if (parent) {
-            parent.succs.add(currNode);
-            currNode.preds.add(parent);
-          }
+      // add edges from writes in this instr to prev reads
+      let parent = read.get(instr.dest);
+      if (parent) {
+        for (let node of parent) {
+          node.succs.add(currNode);
+          currNode.preds.add(node);
         }
       }
 
-      // add edge from start -> currNode so that it's feasible to
-      // schedule currNode.instr first
-      startNode.succs.add(currNode);
-
       // add currNode to seen
-      seen.set(instr.dest, currNode);
+      written.set(instr.dest, currNode);
+    }
+
+    // add edges from reads in this instr to prev writes
+    if ("args" in instr) {
+      for (let arg of instr.args) {
+        let parent = written.get(arg);
+        // we have already seen arg, add edges from parent <-> currNode
+        if (parent) {
+          parent.succs.add(currNode);
+          currNode.preds.add(parent);
+        }
+        // add arg to read map
+        addRead(arg, currNode);
+      }
     }
   }
   return startNode;

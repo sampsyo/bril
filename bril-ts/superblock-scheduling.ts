@@ -211,7 +211,16 @@ function run(prog: b.Program) {
 
     let dag = df.dataflow(trace);
     df.assignDagPriority(dag);
-    // console.dir(dag, { depth: 4 })
+
+    dag.succs.forEach(m => {
+      if (m.instr !== "start" && "dest" in m.instr) {
+        if (m.instr.dest === "DO_NO_WRONG") {
+          console.dir(m, { depth: 3 });
+        }
+      }
+    });
+    // console.dir(dag, { depth: 4 });
+
     let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
     sched.forEach((v, i) => { console.log("GROUP", i); b.logInstrs(v); console.log("END") })
   }
