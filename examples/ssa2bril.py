@@ -3,13 +3,12 @@ import operator
 import sys
 
 from collections import defaultdict
-from functools import reduce
 
 from cfg import block_map, block_successors, add_terminators
 from dom import get_dom
 from dom_frontier import get_frontiers
 from form_blocks import form_blocks
-from util import fresh
+from util import fresh, block_map_to_instrs
 
 
 def replace_phis_with_copies(blocks):
@@ -69,7 +68,7 @@ def from_ssa(bril):
         succ = {name: block_successors(block) for name, block in blocks.items()}
 
         replace_phis_with_copies(blocks)
-        func['instrs'] = reduce(operator.iconcat, [[{'label' : k}] + v for k, v in blocks.items()], [])
+        func['instrs'] = block_map_to_instrs(blocks)
 
     return json.dumps(bril, indent=4)
 

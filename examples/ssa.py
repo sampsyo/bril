@@ -1,15 +1,13 @@
 import json
-import operator
 import sys
 
 from collections import defaultdict
-from functools import reduce
 
 from cfg import block_map, block_successors, add_terminators
 from dom import get_dom
-from dom_frontier import get_frontiers
+from dom_frontier import get_frontiers, get_dominator_tree
 from form_blocks import form_blocks
-from util import fresh
+from util import fresh, block_map_to_instrs
 
 def get_variable_definitions(blocks):
     """Given all blocks, return a map from variable name to a set of
@@ -61,7 +59,7 @@ def insert_phi_nodes(blocks, frontiers, preds):
 
     return blocks
 
-def rename(name, blocks, var_names, succ, dom_children, stacks):
+def rename(name, blocks, var_names, succ, dom_tree, stacks):
     pushed = defaultdict(int)
 
     for instr in blocks[name]:
@@ -91,8 +89,8 @@ def rename(name, blocks, var_names, succ, dom_children, stacks):
                     instr['sources'][i] = name
                     break
 
-    for block in dom_children[name]:
-        rename(block, blocks, var_names, succ, dom_children, stacks)
+    for block in dom_tree[name]:
+        rename(block, blocks, var_names, succ, dom_tree, stacks)
     
     for name, num_pushed in pushed.items():
         stacks[name] = stacks[name][:-num_pushed]
@@ -104,30 +102,12 @@ def print_blocks(blocks):
             print("\t", i)
 
 
-def rename_all(blocks, succ, dom):
+def rename_all(blocks, succ, dom_tree):
     var_defns, _ = get_variable_definitions(blocks)
     var_names = list(var_defns.keys())
     stacks = {v : [v] for v in var_names}
 
-    dom_children = defaultdict(set)
-    for k, bls in dom.items():
-        for b in bls:
-            # We want direct children in the dominator tree only; so exclude the 
-            # block itself 
-            if k != b:
-                dom_children[b].add(k) 
-
-    block_names = list(blocks.keys())
-
-    # Remove redudant edges to get the dominator tree
-    for i in block_names:
-        for j in block_names:
-            if j in dom_children[i]:
-                for k in block_names:
-                    if k in dom_children[j]:
-                        dom_children[i].remove(k)
-
-    rename(next(iter(blocks)), blocks, var_names, succ, dom_children, stacks)
+    rename(next(iter(blocks)), blocks, var_names, succ, dom_tree, stacks)
 
 def to_ssa(bril):
     for func in bril['functions']:
@@ -135,9 +115,9 @@ def to_ssa(bril):
         add_terminators(blocks)
         succ = {name: block_successors(block) for name, block in blocks.items()}
 
-        # dom maps each node to the nodes that dominate it
         dom = get_dom(succ, list(blocks.keys())[0])
         frontiers = get_frontiers(blocks, dom)
+        dom_tree = get_dominator_tree(blocks, succ)
 
         preds = defaultdict(set)
         for k, values in succ.items():
@@ -146,12 +126,8 @@ def to_ssa(bril):
 
         blocks_with_phis = insert_phi_nodes(blocks, frontiers, preds)
 
-        # Remove self dominance
-        for k, v in dom.items():
-            v.remove(k)
-
-        rename_all(blocks_with_phis, succ, dom)
-        func['instrs'] = reduce(operator.iconcat, [[{'label' : k}] + v for k, v in blocks_with_phis.items()], [])
+        rename_all(blocks_with_phis, succ, dom_tree)
+        func['instrs'] = block_map_to_instrs(blocks_with_phis)
 
     return json.dumps(bril, indent=4)
 
