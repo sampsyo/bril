@@ -217,7 +217,9 @@ function evalFunc(func: bril.Function): number {
     let line = func.instrs[i];
     if ('op' in line) {
       let action = evalInstr(line, env);
-      num_instrs_exec++;
+      if (line['op'] != 'ret') {
+        num_instrs_exec++;
+      }
 
       if ('label' in action) {
         // Search for the label and transfer control.
