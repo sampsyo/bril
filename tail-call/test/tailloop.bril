@@ -8,9 +8,7 @@ t:
 f:
     n: int = sub n one;
     push n;
-    call loop;
-    r: int = retval;
-    ret r;
+    jmp loop;
 }
 
 main {
