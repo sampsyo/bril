@@ -54,15 +54,53 @@ function subset<T>(s1: Set<T>, s2: Set<T>): boolean {
 
 function nodeCompare(t1: Node, t2: Node): boolean {
   if (t1.priority && t2.priority) {
-    return t1.priority > t2.priority;
+    return t1.priority < t2.priority;
   }
   return t1.priority !== undefined;
 }
 
+/**
+ * Given a sequence of instructions, generate a group with pre-condition tests
+ * extracted out from the function.
+ */
+function toGroup(trace: bril.Instruction[]): bril.Group {
+  let conds: bril.Ident[] = [];
+  let instrs: (bril.ValueOperation | bril.Constant)[] = [];
+  let failLabel: bril.Ident = "";
+
+  // Calculate set of pre conditions for trace
+  for (let instr of trace) {
+    if ('conds' in instr) throw `Cannot nest groups`;
+    if (instr.op === 'trace') {
+      switch (instr.effect.op) {
+        case "br":
+          conds.push(instr.effect.args[0]);
+          break;
+      }
+      failLabel = instr.failLabel;
+    } else if ('dest' in instr) {
+      instrs.push(instr)
+    }
+
+    // let condArgs: Set<b.Ident> = new Set();
+    // // If an Effect Operation, add the arguments to set of condArgs
+    // if (!('dest' in inst)) {
+    //   inst.args.forEach(a => condArgs.add(a));
+    // } else if (inst.op != 'const' && condArgs.has(inst.dest)) {
+    //   conds.push(inst);
+    // } else {
+    //   instrs.push(inst);
+    // }
+  }
+
+  return { conds, instrs, failLabel }
+}
+
+
 export function listSchedule(
   dag: Node,
   valid: (instrs: Array<bril.Instruction>, cand: bril.Instruction) => boolean
-): Array<Array<bril.Instruction>> {
+): bril.Group[] {
   // a queue that holds nodes that are ready to be scheduled (no predecessors left unscheduled)
   let queue: PQueue<Node> = new PQueue(nodeCompare);
 
@@ -80,9 +118,9 @@ export function listSchedule(
   let toUpdate: Set<Node> = new Set();
 
   // current group that we are filling up
-  let currentGroup: Array<bril.Instruction> = [];
+  let currentGroup: bril.Instruction[] = [];
   // total schedule
-  let schedule: Array<Array<bril.Instruction>> = [];
+  let schedule: bril.Group[] = [];
 
   while (true) {
     let node = queue.next();
@@ -100,7 +138,7 @@ export function listSchedule(
         toUpdate.add(node);
       }
     } else { // nothing left in the queue, finalize group and merge toUpdate with queue
-      schedule.push(currentGroup);
+      schedule.push(toGroup(currentGroup));
       for (let item of toUpdate) {
         queue.add(item);
       }

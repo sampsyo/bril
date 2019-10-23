@@ -25,7 +25,7 @@ func: CNAME "{" instr* "}"
 
 ?micro: const | vop | eop
 
-group: "[" micro+ "]"
+group: "[" IDENT* ":" micro+ ":" label "]"
 
 const.4: IDENT ":" type "=" "const" lit ";"
 vop.3: IDENT ":" type "=" CNAME IDENT* ";"
@@ -94,7 +94,14 @@ class JSONTransformer(lark.Transformer):
         }
 
     def group(self, items):
-        return {"instrs": items}
+        conds = items.pop(0)
+        instrs = items.pop(0)
+        label = items.pop(0)
+        return {
+            "conds": conds,
+            "instrs": instrs,
+            failLabel: label,
+        }
 
     def int(self, items):
         return int(str(items[0]))
@@ -140,9 +147,12 @@ def micro_to_string(micro):
 
 
 def instr_to_string(instr):
-    if 'group' in instr:
-        instr_strs = " ".join(map(lambda s: f"{micro_to_string(s)};", instr['group']))
-        return f"[{instr_strs}]"
+    if 'instrs' in instr:
+        # print(instr)
+        cond_strs = " ".join(instr['conds'])
+        instr_strs = " ".join(map(lambda s: f"{micro_to_string(s)};", instr['instrs']))
+        failLabel = instr['failLabel']
+        return f"[{cond_strs} : {instr_strs} : {failLabel}]"
     else:
         return f"{micro_to_string(instr)};"
 

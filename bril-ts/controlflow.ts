@@ -43,13 +43,15 @@ export type CFGStruct = {
   preds: CFGStruct[];
 }
 
+export type CFG = Map<b.Ident, CFGStruct>;
+
 /**
  * Mapping from a block label to its predecessors.
  */
-export function getCFG(funcMap: FuncMap): Map<b.Ident, CFGStruct> {
+export function getCFG(funcMap: FuncMap): CFG {
   let start = { label: 'start', succ: [], preds: [], }
   let cfg: CFGStruct = start
-  let map: Map<b.Ident, CFGStruct> = new Map();
+  let map: CFG = new Map();
   map.set('start', start)
 
   function getOrCreate(key: b.Ident): CFGStruct {
@@ -107,6 +109,12 @@ export function getCFG(funcMap: FuncMap): Map<b.Ident, CFGStruct> {
             args: [nextLabel]
           }
           instrs.push(jmp);
+        } else {
+          let ret: b.EffectOperation = {
+            op: 'ret',
+            args: [],
+          }
+          instrs.push(ret);
         }
       }
     }

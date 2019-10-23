@@ -20,6 +20,13 @@ export interface EffectOperation {
   args: Ident[];
 }
 
+export interface TraceEffectOperation {
+  op: "trace",
+  failLabel: Ident;
+  effect: EffectOperation,
+  args: Ident[],
+}
+
 /**
  * An operation that produces a value and places its result in the
  * destination variable.
@@ -60,7 +67,7 @@ export type Operation = EffectOperation | ValueOperation;
  * the conditional is false.
  */
 export type Group = {
-  conds: ValueOperation[];
+  conds: Ident[];
   instrs: (ValueOperation | Constant)[];
   failLabel: Ident;
 }
@@ -69,7 +76,7 @@ export type Group = {
  * Micro-instructions can be operations (which have arguments) or constants (which
  * don't). Both produce a value in a destination variable.
  */
-export type MicroInstruction = Operation | Constant;
+export type MicroInstruction = Operation | Constant | TraceEffectOperation;
 
 /**
  * Represents a thing that can execute at the same time. It is either a single MicroInstruction
@@ -79,7 +86,7 @@ export type Instruction = Group | MicroInstruction;
 
 
 export function logInstr(instr: Instruction | Label) {
-  if ("failLabel" in instr) {
+  if ("conds" in instr) {
     console.log(instr);
   } else if ("label" in instr) {
     console.log(instr.label)
@@ -96,6 +103,10 @@ export function logInstr(instr: Instruction | Label) {
         break;
       case "const":
         console.log(" ", instr.dest, "=", "const", instr.value);
+        break;
+      case "trace":
+        process.stdout.write(`  trace ${instr.failLabel} [ ${instr.args} ] <-`);
+        logInstr(instr.effect);
         break;
       default:
         if ("dest" in instr) {

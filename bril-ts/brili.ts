@@ -101,6 +101,7 @@ let END: Action = { "end": true };
  */
 function evalMicroInstr(instr: bril.MicroInstruction, env: Env): [Action, number] {
   // Check that we have the right number of arguments.
+  if (instr.op === 'trace') throw `Cannot interpret traces`;
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
     if (count === undefined) {
@@ -238,11 +239,11 @@ function evalMicroInstr(instr: bril.MicroInstruction, env: Env): [Action, number
  */
 function noConflicts(group: bril.Group): Boolean {
   // Set of registers written to.
-  let reads: Set<bril.Ident> = new Set();
+  let reads: Set<bril.Ident> = new Set(group.conds);
   // Set of registers read from.
   let writes: Set<bril.Ident> = new Set();
 
-  for (let instr of [...group.conds, ...group.instrs]) {
+  for (let instr of [...group.instrs]) {
     // Add all reads to set of reads
     if ('args' in instr) {
       instr.args.forEach(arg => reads.add(arg));
@@ -258,21 +259,31 @@ function noConflicts(group: bril.Group): Boolean {
 }
 
 function evalInstr(instr: bril.Instruction, env: Env): [Action, number] {
-  if ('op' in instr) { // is a micro instruction
+  if ('effect' in instr) {
+    throw `Traces can not be interpreted`;
+  } else if ('op' in instr) { // is a micro instruction
     let [act, cost] = evalMicroInstr(instr, env);
     return [act, cost];
   } else { // is a group
     if (noConflicts(instr)) {
       // Evaluate the pre condition for group instruction.
-      for (let cond of instr.conds) {
-        // Copy the instruction
-        let condCopy = Object.assign({}, cond);
-        cond.dest = "INVALID";
-        evalMicroInstr(cond, env);
-        // If the condition was false, the instruction failed.
-        if (!get(env, "INVALID"))
-          return [{ "label": instr.failLabel }, groupCost]
-      }
+      let condVal = true;
+      instr.conds.forEach(c => {
+        let lookup = get(env, c);
+        if (typeof lookup === 'boolean') {
+          condVal = condVal && lookup;
+        }
+      });
+      if (!condVal) return [{ "label": instr.failLabel }, groupCost]
+      // for (let cond of instr.conds) {
+      //   // Copy the instruction
+      //   let condCopy = Object.assign({}, cond);
+      //   cond.dest = "INVALID";
+      //   evalMicroInstr(cond, env);
+      //   // If the condition was false, the instruction failed.
+      //   if (!get(env, "INVALID"))
+      //     return [{ "label": instr.failLabel }, groupCost]
+      // }
       for (let inst of instr.instrs) {
         evalMicroInstr(inst, env);
       }

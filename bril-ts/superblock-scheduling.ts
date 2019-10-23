@@ -5,102 +5,64 @@ import { readStdin } from './util';
 import * as b from './bril';
 import { Ident, Function, Instruction, EffectOperation } from './bril';
 
-/**
- * Given a sequence of instructions, generate a group with pre-condition tests
- * extracted out from the function.
- */
-function toGroup(trace: b.MicroInstruction[], failLabel: b.Ident): b.Group {
-  let conds: b.ValueOperation[] = [];
-  let instrs: (b.ValueOperation | b.Constant)[] = [];
-
-  // Calculate set of pre conditions for trace
-  for (let inst of trace.slice().reverse()) {
-    let condArgs: Set<b.Ident> = new Set();
-    // If an Effect Operation, add the arguments to set of condArgs
-    if (!('dest' in inst)) {
-      inst.args.forEach(a => condArgs.add(a));
-    } else if (inst.op != 'const' && condArgs.has(inst.dest)) {
-      conds.push(inst);
-    } else {
-      instrs.push(inst);
-    }
-  }
-
-  return { conds, instrs, failLabel }
-}
-
 function getTrace(
   startLabel: Ident,
   funcMap: cf.FuncMap,
   cfg: Map<Ident, cf.CFGStruct>,
   onBranch: (op: EffectOperation) => boolean,
   blocks: number
-): Instruction[] {
-
+): Ident[] {
   let remaining = blocks;
-  let trace: Instruction[] = [];
+  // let trace: Instruction[] = [];
+  let trace: Ident[] = [];
   let curLabel = startLabel;
 
   let liveOuts = getLiveOut(funcMap, cfg);
 
   while (--remaining > 0) {
-    // If there more than one entrance to this block, don't add it to the
-    // trace.
-    let node = cfg.get(curLabel);
-    if (node && node.preds.length > 1 && trace.length !== 0) {
-      return trace;
-    }
     let instrs = funcMap.blocks.get(curLabel);
+    let node = cfg.get(curLabel);
+    if (!instrs || !node) throw `${curLabel} not a basic block`;
 
-    if (instrs === undefined) {
-      throw new Error(`Unknown label ${curLabel}`)
-    }
+    // prevent multiple entries to the trace
+    if (node.preds.length > 1 && trace.length !== 0) return trace;
 
-    trace.push(...instrs.slice(0, -1));
-    let final = instrs[instrs.length - 1];
+    // not a conditional jump, add the this block to the trace
+    if (node.succ.length === 1) {
+      trace.push(curLabel);
+      curLabel = node.succ[0].label;
+    } else { // conditional jump
+      let condInstr = instrs[instrs.length - 1];
+      if (!('op' in condInstr && condInstr.op === 'br')) throw `Expected a branch but found ${condInstr}`;
 
-    if ('op' in final) {
-      switch (final.op) {
-        case "br": {
-          if (onBranch(final)) curLabel = final.args[1];
-          else curLabel = final.args[2];
-          let live = liveOuts.get(curLabel);
-          if (!live) throw new Error(`${curLabel} not in liveOuts`);
-          // Add fake id instruction
-          let fake: b.ValueOperation = {
-            op: "id",
-            // args: getLiveOut(labelMap.get(curLabel) || []),
-            args: Array.from(live.values()),
-            dest: "DO_NO_WRONG",
-            type: 'int'
-          };
-          trace.push(fake);
-          break;
-        }
-        case "jmp": {
-          curLabel = final.args[0];
-          break;
-        }
-        case "ret": {
-          return trace;
-        }
+      let failLabel = "";
+      let nextLabel = "";
+      if (onBranch(condInstr)) {
+        nextLabel = condInstr.args[1];
+        failLabel = condInstr.args[2];
       }
+      else {
+        nextLabel = condInstr.args[2];
+        failLabel = condInstr.args[1];
+      }
+      let live = liveOuts.get(nextLabel);
+      if (!live) throw new Error(`${nextLabel} not in liveOuts`);
+      // replace condition with trace instruction
+      let traceInstr: b.TraceEffectOperation = {
+        op: "trace",
+        failLabel,
+        effect: condInstr,
+        args: [...live.values(), condInstr.args[0]],
+      };
+      instrs.pop();
+      instrs.push(traceInstr);
+      // condInstr = traceInstr;
+      trace.push(curLabel);
+      curLabel = nextLabel;
     }
   }
 
   return trace;
-}
-
-function getLives(block: b.Instruction[]): b.Ident[] {
-  let lives: b.Ident[] = [];
-  for (let inst of block) {
-    if ('failLabel' in inst) {
-      getLives([...inst.conds, ...inst.instrs]).forEach(el => lives.push(el));
-    } else if ('dest' in inst) {
-      lives.push(inst.dest)
-    }
-  }
-  return lives;
 }
 
 function transfer(block: b.Instruction[], liveOut: Set<b.Ident>): Set<b.Ident> {
@@ -185,16 +147,91 @@ function getLiveOut(func: cf.FuncMap, cfg: Map<b.Ident, cf.CFGStruct>): Map<b.Id
   return outs;
 }
 
-function removeGarbage(insts: b.Instruction[]): b.Instruction[] {
-  let newInsts: b.Instruction[] = [];
-  for (let inst of insts) {
-    if (('op' in inst) && inst.op === 'id' && inst.args.length > 1) continue;
-    newInsts.push(inst);
+function traceInstrs(trace: b.Ident[], fm: cf.FuncMap): b.Instruction[] {
+  let instrs: b.Instruction[] = [];
+  for (let lbl of trace) {
+    let nextInstrs = fm.blocks.get(lbl);
+    if (!nextInstrs) throw `${lbl} not a basic block`;
+    instrs = [...instrs, ...nextInstrs];
   }
-  return newInsts;
+  return instrs;
 }
 
-function run(prog: b.Program) {
+let SUPERBLOCK_IDX: number = 0;
+function freshLabel(): string {
+  let label = `superblock.${SUPERBLOCK_IDX}`;
+  SUPERBLOCK_IDX++;
+  return label;
+}
+
+function insertSuperblock(trace: b.Ident[], fm: cf.FuncMap, cfg: cf.CFG, newInstrs: b.Instruction[]): cf.FuncMap {
+  let label: b.Ident = freshLabel();
+
+  // XXX(what if the last instruction is a conditional?)
+  // figure out where the superblock should jump
+  let lastNode = cfg.get(trace[trace.length - 1]);
+  if (!lastNode) throw `${trace[trace.length - 1]} was not in the CFG`;
+  if (lastNode.succ.length === 0) {
+    let ret: b.EffectOperation = {
+      op: "ret",
+      args: [],
+    }
+    newInstrs.push(ret);
+  }
+  if (lastNode.succ.length === 1) {
+    let lbl: string = lastNode.succ[0].label;
+    if (trace.includes(lbl)) {
+      lbl = label;
+    }
+    let jmp: b.EffectOperation = {
+      op: "jmp",
+      args: [lbl],
+    }
+    newInstrs.push(jmp);
+  } else {
+    throw "Haven't dealt with conditional branches at ends of superblocks yet";
+  }
+
+  // add new block for superblock
+  fm.blocks.set(label, newInstrs);
+
+  // patch all jumps pointing to head of trace
+  let headNode = cfg.get(trace[0]);
+  if (!headNode) throw `${trace[0]} was not in the CFG`;
+  let headLabel = headNode.label;
+  for (let pred of headNode.preds) {
+    let block = fm.blocks.get(pred.label);
+    if (!block) throw `${pred.label} not a basic block`;
+    let cond = block.pop();
+    if (!cond) throw `block was empty`;
+    if ('args' in cond) {
+      cond.args = cond.args.slice().map(l => {
+        if (l === headLabel) return label;
+        else return l;
+      })
+    }
+    block.push(cond);
+  }
+
+  // remove trace blocks
+  trace.forEach(lbl => fm.blocks.delete(lbl));
+
+  return fm;
+}
+
+function funcMapInstrs(fm: cf.FuncMap): (b.Instruction | b.Label)[] {
+  let instrs: (b.Instruction | b.Label)[] = [];
+  for (let [lbl, ins] of fm.blocks) {
+    let label: b.Label = {
+      label: lbl
+    };
+    instrs = [...instrs, label, ...ins]
+  }
+  return instrs;
+}
+
+function run(prog: b.Program): b.Program {
+  let functions: Function[] = [];
   for (let func of prog.functions) {
 
     // let pfunc = patchFunction(func);
@@ -205,30 +242,35 @@ function run(prog: b.Program) {
 
     // console.log("func map", control);
     let trace = getTrace("for.cond.2", fm, control, (_) => true, 10);
-    console.log("TRACE")
-    b.logInstrs(trace);
-    console.log("END")
+    let instrs = traceInstrs(trace, fm);
+    // console.log("TRACE")
+    // b.logInstrs(instrs);
+    // console.log("END")
 
-    let dag = df.dataflow(trace);
+    let dag = df.dataflow(instrs);
     df.assignDagPriority(dag);
-
-    dag.succs.forEach(m => {
-      if (m.instr !== "start" && "dest" in m.instr) {
-        if (m.instr.dest === "DO_NO_WRONG") {
-          console.dir(m, { depth: 3 });
-        }
-      }
-    });
-    // console.dir(dag, { depth: 4 });
-
+    // // console.dir(dag, { depth: 4 });
     let sched = df.listSchedule(dag, (is, _c) => is.length + 1 < 4);
-    sched.forEach((v, i) => { console.log("GROUP", i); b.logInstrs(v); console.log("END") })
+
+    let newFm = insertSuperblock(trace, fm, control, sched);
+    let newInstrs: (b.Instruction | b.Label)[] = funcMapInstrs(newFm);
+    // let newInstrs: b.Instruction[] = [];
+    // newFm.blocks.forEach((ins, _) => newInstrs = [...newInstrs, ...ins]);
+
+    let newFunc: Function = {
+      name: func.name,
+      instrs: newInstrs,
+    }
+
+    functions.push(newFunc);
   }
+
+  return { functions };
 }
 
 async function main() {
   let prog = JSON.parse(await readStdin()) as b.Program;
-  let trace = run(prog);
+  console.log(JSON.stringify(run(prog)));
 }
 
 // Make unhandled promise rejections terminate.
