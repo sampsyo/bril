@@ -141,7 +141,7 @@ module Analyze (EXPRS: Exprs) = struct
   module Availability =
     MakeDataflow
       (struct
-        let attr_name = "availability"
+        let attr_name = "availability_out"
         let direction = Graph.Fixpoint.Forward
         let init (_, b_attrs) =
           if Bitv.all_zeros @@ Cfg.Attrs.get b_attrs "entry"
@@ -198,12 +198,14 @@ module Analyze (EXPRS: Exprs) = struct
         let attr_name = "earliest"
         let analyze ((_, src_attrs), _, (_, dst_attrs)) =
           let ant_in_dst = Cfg.Attrs.get dst_attrs "anticipatability_in" in
-          let avail_out_src = Cfg.Attrs.get src_attrs "availability" in
+          let avail_out_src = Cfg.Attrs.get src_attrs "availability_out" in
           let entry_cond = Bitv.bw_and ant_in_dst (Bitv.bw_not avail_out_src) in
-          Bitv.bw_and entry_cond
-            (Bitv.bw_or
-               (Bitv.bw_not (Cfg.Attrs.get src_attrs "transparent"))
-               (Bitv.bw_not (Cfg.Attrs.get src_attrs "anticipatability_out")))
+          if Bitv.all_zeros @@ Cfg.Attrs.get src_attrs "entry"
+          then Bitv.bw_and entry_cond
+                 (Bitv.bw_or
+                    (Bitv.bw_not (Cfg.Attrs.get src_attrs "transparent"))
+                    (Bitv.bw_not (Cfg.Attrs.get src_attrs "anticipatability_out")))
+          else entry_cond
       end)
           
   module Later =
@@ -244,7 +246,7 @@ module Analyze (EXPRS: Exprs) = struct
   module Delete =
     MakeBlockLocal
       (struct
-        let attr_name = "insert"
+        let attr_name = "delete"
         let analyze (_, block_attrs) =
           if Bitv.all_zeros @@ Cfg.Attrs.get block_attrs "entry"
           then Bitv.bw_and

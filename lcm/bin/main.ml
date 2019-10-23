@@ -23,7 +23,7 @@ let go dot file () =
     end
   in
   let module Analyze = Analyze.Analyze(Exprs) in
-  let _ =
+  let graph =
     Analyze.Entry.run graph
     |> Analyze.Exit.run
     |> Analyze.Transparent.run
@@ -36,6 +36,8 @@ let go dot file () =
     |> Analyze.Later.run
     |> Analyze.Insert.run
     |> Analyze.Delete.run
+    |> Optimize.delete_computations expressions
+    |> Optimize.insert_computations expressions
   in
   Cfg.dump_to_dot graph dot
 

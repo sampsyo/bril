@@ -41,11 +41,51 @@ let unify_expression_locations exprs graph =
   in
   instr_rewrite ~f:fix_computation graph
 
-let insert_computations_by exprs graph =
+let interp_bitv exprs bitv =
+  Bitv.foldi_left
+    (fun accr idx bit ->
+      if bit
+      then List.nth_exn exprs idx :: accr
+      else accr)
+    [] bitv
+
+let exprs_equal x y =
+  Bril.compare_value_expr x y = 0
+
+let delete_computations exprs_to_delete block =
+  let found = ref false in (* hack *)
+  block_instr_rewrite block
+    ~f:(fun i ->
+      match i with
+      | ValueInstr { op; _ } ->
+         if not !found && List.mem exprs_to_delete op ~equal:exprs_equal
+         then begin found := true; [] end
+         else [i]
+      | _ -> [i])
+
+let delete_computations exprs graph =
+  CFG.map_vertex
+    (fun block ->
+      print_string (Ident.string_of_lbl (fst block).lbl);
+      Out_channel.newline stdout;
+      Attrs.print (snd block);
+      Out_channel.newline stdout;
+      let exprs_to_delete =
+        interp_bitv exprs @@ Attrs.get (snd block) "delete"
+      in
+      delete_computations exprs_to_delete block)
+    graph
+
+let insert_computations exprs graph =
   let _ = exprs in
   CFG.iter_edges_e
-    (fun (_, attrs, _) ->
-      if Bitv.all_zeros @@ Attrs.get attrs "insert"
-      then ()
-      else ())
-    graph
+    (fun ((s, _), attrs, (d, _)) ->
+      let exprs_to_insert =
+        interp_bitv exprs @@ Attrs.get attrs "insert"
+      in
+      Printf.printf "%s -> %s\n" (Ident.string_of_lbl s.lbl) (Ident.string_of_lbl d.lbl);
+      Attrs.print attrs;
+      print_s ([%sexp_of:Bril.value_expr list] exprs_to_insert);
+      Out_channel.newline stdout)
+    graph;
+  graph

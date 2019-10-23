@@ -3,9 +3,9 @@ main {
   y: int = const 2;
 loop_head:
   b: bool = const false;
+  z: int = add x y;
   br b loop_head loop_done;
 loop_done:
-  z: int = add x y;
   print z;
   jmp exit;
 exit:

@@ -23,6 +23,10 @@ module Attrs = struct
   type t = (string, Bitv.t) Hashtbl.t
   let create () = String.Table.create ()
   let get = Hashtbl.find_exn
+  let print a =
+    let keys = Hashtbl.keys a in
+    List.iter keys
+      ~f:(fun k -> Printf.printf "%s: %s\n" k (Bitv.M.to_string (get a k)))
 end
 
 module BasicBlock = struct
