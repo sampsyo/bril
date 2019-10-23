@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
-import { isConstructSignatureDeclaration } from 'typescript';
+import { isConstructSignatureDeclaration, visitLexicalEnvironment } from 'typescript';
 const ffi = require('ffi');
-const libPath = '../native/target/release/libthread_count';
+const libPath = '../native/target/release/libnative';
 
 const ref = require('ref');
 const ArrayType = require('ref-array');
@@ -15,15 +15,12 @@ const libWeb = ffi.Library(libPath, {
   'vadd': ['int32', [Int32Array, Int32Array, Int32Array]],
   'vmul': ['int32', [Int32Array, Int32Array, Int32Array]],
   'vsub': ['int32', [Int32Array, Int32Array, Int32Array]],
+  'vstore': ['int32', [Int32Array, Int32Array]]
 });
 
-const { add, vadd, vmul, vsub} = libWeb;
+const { add, vadd, vmul, vsub, vstore} = libWeb;
 // const array = [1,2,3,4];
-// const array1 = new Int32Array(4);
-// array1[0] = 1;
-// array1[1] = 2;
-// array1[2] = 3;
-// array1[3] = 4;
+// const array1 = [1,2,3,4];
 // const array2 = new Int32Array(4);
 
 // console.log(array[0]);
@@ -32,10 +29,16 @@ const { add, vadd, vmul, vsub} = libWeb;
 // (function(js_array, js_array1, js_array2){
 //   console.log("length", js_array.length)
 //   let a = vadd(js_array, js_array1, js_array2);
+//   // console.log("should tr 5")
+//   // console.log(a);
 //   console.log(array2[0]);
 //   console.log(array2[1]);
 //   console.log(array2[2]);
 //   console.log(array2[3]);
+//   let p = new Int32Array(4);
+//   vstore(array, p);
+//   console.log(p[0]);
+//   console.log(p[1]);
 // })(array, array1, array2);
 
 
@@ -194,15 +197,14 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "add": {
-    let a = get(env, instr.args[0]);
-    let b = get(env, instr.args[1]);
-    let vecA = new Int32Array(1);
-    vecA[0] = a;
-    let vecB = new Int32Array(1);
-    vecB[0] = b;
+    let l = getInt(instr, env, 0)
+    let r = getInt(instr, env, 1)
+    let vecA = [l];
+    let vecB = [r];
     let vecC = new Int32Array(1);
-    add(vecA, vecB, vecC);
-    env.set(instr.dest, vecC[0]);
+    let a = add(vecA, vecB, vecC);
+    // let c = a + b;
+    env.set(instr.dest, vecC[0] );
     return NEXT;
   }
 
@@ -373,14 +375,15 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "vstore": {
-    
-    // serialized version
-    // let val = getVec(instr, env, 0);
-    // let addr = getInt(instr, env, 1);
-    // for (let i = 0; i < fixedVecSize; i++) {
-    //   setMem(val[i], addr + i);
-    // }
-
+      // serialized version
+      let val = getVec(instr, env, 0);
+      let addr = getInt(instr, env, 1);
+      let c = new Int32Array(4);
+      c = val;
+      vstore(val, addr);
+      for (let i = 0; i < fixedVecSize; i++) {
+        setMem(c[i], addr + i);
+      }
     return NEXT;
   }
  

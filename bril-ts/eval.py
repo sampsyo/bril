@@ -19,7 +19,6 @@ for i in range(num_runs):
   os.system("node brili.js  < ../examples/test1.json")
   print("--- %s seconds ---" % (time.time() - start_time))
 
-
 # average
 avg = sum / num_runs
 print ('avg time(ms) {0}'.format(avg))
