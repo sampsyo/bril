@@ -7,36 +7,36 @@ const libPath = '../native/target/release/libthread_count';
 
 const ref = require('ref');
 const ArrayType = require('ref-array');
-const IntArray = ArrayType(ref.types.int32);
+const Int32Array = ArrayType(ref.types.int32);
 const ByteArray = ArrayType(ref.types.uint8);
 
 const libWeb = ffi.Library(libPath, {
-  'add': [ 'int32', [ 'int32', 'int32' ] ],
-  'vadd': ['int32', [IntArray, IntArray, IntArray]],
-  'vmul': ['int32', [IntArray, IntArray, IntArray]],
-  'vsub': ['int32', [IntArray, IntArray, IntArray]],
+  'add':  ['int32', [Int32Array, Int32Array, Int32Array]],
+  'vadd': ['int32', [Int32Array, Int32Array, Int32Array]],
+  'vmul': ['int32', [Int32Array, Int32Array, Int32Array]],
+  'vsub': ['int32', [Int32Array, Int32Array, Int32Array]],
 });
 
 const { add, vadd, vmul, vsub} = libWeb;
-const array = [1,2,3,4];
-const array1 = new IntArray(4);
-array1[0] = 1;
-array1[1] = 2;
-array1[2] = 3;
-array1[3] = 4;
-const array2 = new IntArray(4);
+// const array = [1,2,3,4];
+// const array1 = new Int32Array(4);
+// array1[0] = 1;
+// array1[1] = 2;
+// array1[2] = 3;
+// array1[3] = 4;
+// const array2 = new Int32Array(4);
 
-console.log(array[0]);
+// console.log(array[0]);
 
 
-(function(js_array, js_array1, js_array2){
-  console.log("length", js_array.length)
-  let a = vmul(js_array, js_array1, js_array2);
-  console.log(array2[0]);
-  console.log(array2[1]);
-  console.log(array2[2]);
-  console.log(array2[3]);
-})(array, array1, array2);
+// (function(js_array, js_array1, js_array2){
+//   console.log("length", js_array.length)
+//   let a = vadd(js_array, js_array1, js_array2);
+//   console.log(array2[0]);
+//   console.log(array2[1]);
+//   console.log(array2[2]);
+//   console.log(array2[3]);
+// })(array, array1, array2);
 
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
@@ -194,12 +194,15 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   }
 
   case "add": {
-    let l = getInt(instr, env, 0);
-    let r = getInt(instr, env, 1);
-
-    // let val = add(l, r);
-    let val = l + r;
-    env.set(instr.dest, val);
+    let a = get(env, instr.args[0]);
+    let b = get(env, instr.args[1]);
+    let vecA = new Int32Array(1);
+    vecA[0] = a;
+    let vecB = new Int32Array(1);
+    vecB[0] = b;
+    let vecC = new Int32Array(1);
+    add(vecA, vecB, vecC);
+    env.set(instr.dest, vecC[0]);
     return NEXT;
   }
 
@@ -318,9 +321,10 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let vecA = getVec(instr, env, 0);
     let vecB = getVec(instr, env, 1);
     let vecC = new Int32Array(fixedVecSize);
-    for (let i = 0; i < fixedVecSize; i++) {
-      vecC[i] = vecA[i] + vecB[i];
-    }
+    vadd(vecA, vecB, vecC);
+    // for (let i = 0; i < fixedVecSize; i++) {
+    //   vecC[i] = vecA[i] + vecB[i];
+    // }
     env.set(instr.dest, vecC);    
 
     return NEXT;
@@ -332,9 +336,10 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let vecA = getVec(instr, env, 0);
     let vecB = getVec(instr, env, 1);
     let vecC = new Int32Array(fixedVecSize);
-    for (let i = 0; i < fixedVecSize; i++) {
-      vecC[i] = vecA[i] * vecB[i];
-    }
+    // for (let i = 0; i < fixedVecSize; i++) {
+    //   vecC[i] = vecA[i] * vecB[i];
+    // }
+    vmul(vecA, vecB, vecC);
     env.set(instr.dest, vecC);    
 
     return NEXT;
@@ -346,9 +351,10 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
     let vecA = getVec(instr, env, 0);
     let vecB = getVec(instr, env, 1);
     let vecC = new Int32Array(fixedVecSize);
-    for (let i = 0; i < fixedVecSize; i++) {
-      vecC[i] = vecA[i] - vecB[i];
-    }
+    // for (let i = 0; i < fixedVecSize; i++) {
+    //   vecC[i] = vecA[i] - vecB[i];
+    // }
+    vsub(vecA, vecB, vecC);
     env.set(instr.dest, vecC);    
 
     return NEXT;
@@ -369,11 +375,11 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
   case "vstore": {
     
     // serialized version
-    let val = getVec(instr, env, 0);
-    let addr = getInt(instr, env, 1);
-    for (let i = 0; i < fixedVecSize; i++) {
-      setMem(val[i], addr + i);
-    }
+    // let val = getVec(instr, env, 0);
+    // let addr = getInt(instr, env, 1);
+    // for (let i = 0; i < fixedVecSize; i++) {
+    //   setMem(val[i], addr + i);
+    // }
 
     return NEXT;
   }
