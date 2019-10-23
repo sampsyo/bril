@@ -23,7 +23,7 @@ let a = 8;
 let x = 0;
 let y = 8;
 let z = 1;
-let n = 10;
+let n = 100000;
 for (let i = n; i > 0; i = i - 1) {
     x = y + z;
     a = a + x * x;
@@ -46,20 +46,16 @@ v16: int = mul v14 v15; #using the updated x for x*x
 v17: int = add v13 v16; #a=a+x*x
 a: int = id v17;
 ```
-Assuming the cost of `x=y+z` was `c` we reduced the computation in the program by `(n-1)*c`. To benchmark this, we timed our optimized version:
+Assuming the cost of `x=y+z` was `c` we reduced the computation in the program by `(n-1)*c`. To benchmark this, we timed our optimized version using [hyperfine](https://github.com/sharkdp/hyperfine) which helps set warmup times (for warming up the cache) and number of execution runs to perform:
 ```
-time ts2bril codemotion1.ts | loopReduce | brili
+hyperfine --warmup 1 'brili < opt_codemotion'
 
-real    0m0.844s
-user    0m1.314s
-sys    0m0.122s
+Time (mean ± σ):     163.8 ms ±   3.2 ms
 ```
-to the unoptimized version of the code:
+The unoptimized version of the code yields:
 ```
-time ts2bril codemotion1.ts | brili
+hyperfine --warmup 1 'brili < orig_codemotion'
 
-real    0m0.781s
-user    0m1.218s
-sys    0m0.105s
+Time (mean ± σ):     216.8 ms ±   4.5 ms
 ```
-It is evident that we have slowed down the program. We have become the monsters we set out to defeat.
+
