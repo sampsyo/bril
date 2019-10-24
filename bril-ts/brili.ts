@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import { readStdin, unreachable } from './util';
+import {readStdin, unreachable} from './util';
 
-const argCounts: { [key in bril.OpCode]: number | null } = {
+const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
   mul: 2,
   sub: 2,
   div: 2,
   id: 1,
   lt: 2,
-
   le: 2,
   gt: 2,
   ge: 2,
@@ -24,31 +23,7 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   nop: 0,
 };
 
-const constCost = 1;
-const opCosts: { [key in bril.OpCode]: number } = {
-  add: 1,
-  mul: 1,
-  sub: 1,
-  div: 1,
-  id: 1,
-  lt: 1,
-  le: 1,
-  gt: 1,
-  ge: 1,
-  eq: 1,
-  not: 1,
-  and: 1,
-  or: 1,
-  print: 0,  // Any number of arguments.
-  br: 1,
-  jmp: 1,
-  ret: 1,
-  nop: 1,
-};
-const groupCost = 1;
-
-type Value = boolean | BigInt;
-type Env = Map<bril.Ident, Value>;
+type Env = Map<bril.Ident, bril.Value>;
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -70,7 +45,7 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getInt(instr: bril.Operation, env: Env, index: number) {
   let val = get(env, instr.args[index]);
-  if (typeof val !== 'bigint') {
+  if (typeof val !== 'number') {
     throw `${instr.op} argument ${index} must be a number`;
   }
   return val;
@@ -86,20 +61,22 @@ function getBool(instr: bril.Operation, env: Env, index: number) {
 
 /**
  * The thing to do after interpreting an instruction: either transfer
- * control to a label, go to the next instruction, end the function, or
- * signal the failure of a Group cond instruction.
+ * control to a label, go to the next instruction, or end thefunction.
  */
-type Action = { "label": bril.Ident } | { "next": true } | { "end": true };
-let NEXT: Action = { "next": true };
-let END: Action = { "end": true };
+type Action =
+  {"label": bril.Ident} |
+  {"next": true} |
+  {"end": true};
+let NEXT: Action = {"next": true};
+let END: Action = {"end": true};
 
 /**
- * Interpret a micro-instruction in a given environment, possibly updating the
+ * Interpret an instruction in a given environment, possibly updating the
  * environment. If the instruction branches to a new label, return that label;
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalMicroInstr(instr: bril.MicroInstruction, env: Env): [Action, number] {
+function evalInstr(instr: bril.Instruction, env: Env): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -111,187 +88,125 @@ function evalMicroInstr(instr: bril.MicroInstruction, env: Env): [Action, number
   }
 
   switch (instr.op) {
-    case "const":
-      // Ensure that JSON ints get represented appropriately.
-      let value: Value;
-      if (typeof instr.value === "number") {
-        value = BigInt(instr.value);
-      } else {
-        value = instr.value;
-      }
+  case "const":
+    env.set(instr.dest, instr.value);
+    return NEXT;
 
-      env.set(instr.dest, value);
-      return [NEXT, constCost];
+  case "id": {
+    let val = get(env, instr.args[0]);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
 
-    case "id": {
-      let val = get(env, instr.args[0]);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
+  case "add": {
+    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "mul": {
+    let val = getInt(instr, env, 0) * getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "sub": {
+    let val = getInt(instr, env, 0) - getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "div": {
+    let val = getInt(instr, env, 0) / getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "le": {
+    let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "lt": {
+    let val = getInt(instr, env, 0) < getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "gt": {
+    let val = getInt(instr, env, 0) > getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "ge": {
+    let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "eq": {
+    let val = getInt(instr, env, 0) === getInt(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "not": {
+    let val = !getBool(instr, env, 0);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "and": {
+    let val = getBool(instr, env, 0) && getBool(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "or": {
+    let val = getBool(instr, env, 0) || getBool(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "print": {
+    let values = instr.args.map(i => get(env, i));
+    console.log(...values);
+    return NEXT;
+  }
+
+  case "jmp": {
+    return {"label": instr.args[0]};
+  }
+
+  case "br": {
+    let cond = getBool(instr, env, 0);
+    if (cond) {
+      return {"label": instr.args[1]};
+    } else {
+      return {"label": instr.args[2]};
     }
+  }
+  
+  case "ret": {
+    return END;
+  }
 
-    case "add": {
-      let val = getInt(instr, env, 0) + getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "mul": {
-      let val = getInt(instr, env, 0) * getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "sub": {
-      let val = getInt(instr, env, 0) - getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "div": {
-      let val = getInt(instr, env, 0) / getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "le": {
-      let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "lt": {
-      let val = getInt(instr, env, 0) < getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "gt": {
-      let val = getInt(instr, env, 0) > getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "ge": {
-      let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "eq": {
-      let val = getInt(instr, env, 0) === getInt(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "not": {
-      let val = !getBool(instr, env, 0);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "and": {
-      let val = getBool(instr, env, 0) && getBool(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "or": {
-      let val = getBool(instr, env, 0) || getBool(instr, env, 1);
-      env.set(instr.dest, val);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "print": {
-      let values = instr.args.map(i => get(env, i).toString());
-      console.log(...values);
-      return [NEXT, opCosts[instr.op]];
-    }
-
-    case "jmp": {
-      return [{ "label": instr.args[0] }, opCosts[instr.op]];
-    }
-
-    case "br": {
-      let cond = getBool(instr, env, 0);
-      if (cond) {
-        return [{ "label": instr.args[1] }, opCosts[instr.op]];
-      } else {
-        return [{ "label": instr.args[2] }, opCosts[instr.op]];
-      }
-    }
-
-    case "ret": {
-      return [END, opCosts[instr.op]];
-    }
-
-    case "nop": {
-      return [NEXT, opCosts[instr.op]];
-    }
+  case "nop": {
+    return NEXT;
+  }
   }
   unreachable(instr);
   throw `unhandled opcode ${(instr as any).op}`;
 }
 
-/**
- * Returns true if all the writes in group are to distinct locations
- * and false otherwise.
- */
-function noConflicts(group: bril.Group): Boolean {
-  // Set of registers written to.
-  let reads: Set<bril.Ident> = new Set();
-  // Set of registers read from.
-  let writes: Set<bril.Ident> = new Set();
-
-  for (let instr of [...group.conds, ...group.instrs]) {
-    // Add all reads to set of reads
-    if ('args' in instr) {
-      instr.args.forEach(arg => reads.add(arg));
-    }
-
-    if (writes.has(instr.dest) || reads.has(instr.dest)) {
-      return false;
-    }
-
-    writes.add(instr.dest);
-  }
-  return true;
-}
-
-function evalInstr(instr: bril.Instruction, env: Env): [Action, number] {
-  if ('op' in instr) { // is a micro instruction
-    let [act, cost] = evalMicroInstr(instr, env);
-    return [act, cost];
-  } else { // is a group
-    if (noConflicts(instr)) {
-      // Evaluate the pre condition for group instruction.
-      for (let cond of instr.conds) {
-        // Copy the instruction
-        let condCopy = Object.assign({}, cond);
-        cond.dest = "INVALID";
-        evalMicroInstr(cond, env);
-        // If the condition was false, the instruction failed.
-        if (!get(env, "INVALID"))
-          return [{ "label": instr.failLabel }, groupCost]
-      }
-      for (let inst of instr.instrs) {
-        evalMicroInstr(inst, env);
-      }
-      return [NEXT, groupCost];
-    } else {
-      throw `Group is not resource compatible`
-    }
-  }
-}
-
-function evalFunc(func: bril.Function): number {
+function evalFunc(func: bril.Function) {
   let env: Env = new Map();
-  let totCost = 0;
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
-    // if line is not a label
-    if (!('label' in line)) {
-      let [action, instrCost] = evalInstr(line, env);
-      totCost += instrCost;
+    if ('op' in line) {
+      let action = evalInstr(line, env);
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -305,21 +220,18 @@ function evalFunc(func: bril.Function): number {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return totCost;
+        return;
       }
     }
   }
-  return totCost;
 }
 
 function evalProg(prog: bril.Program) {
-  let cost = 0;
   for (let func of prog.functions) {
     if (func.name === "main") {
-      cost += evalFunc(func);
+      evalFunc(func);
     }
   }
-  console.error("Cost: ", cost);
 }
 
 async function main() {

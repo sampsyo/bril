@@ -26,8 +26,8 @@ export interface EffectOperation {
  */
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
-  "id" | "nop" |
-  "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+      "id" | "nop" |
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -54,62 +54,10 @@ export interface Constant {
 export type Operation = EffectOperation | ValueOperation;
 
 /**
- * A group is a list of instructions and represents a VLIW (Very Long Instruction Word):
- * multiple instructions that can run at the same time. The first list represents
- * set of conditions to be executed. The execution jumps to `failLabel` if
- * the conditional is false.
- */
-export type Group = {
-  conds: ValueOperation[];
-  instrs: (ValueOperation | Constant)[];
-  failLabel: Ident;
-}
-
-/**
- * Micro-instructions can be operations (which have arguments) or constants (which
+ * Instructions can be operations (which have arguments) or constants (which
  * don't). Both produce a value in a destination variable.
  */
-export type MicroInstruction = Operation | Constant;
-
-/**
- * Represents a thing that can execute at the same time. It is either a single MicroInstruction
- * or a group which is an Array of MicroInstructions.
- */
-export type Instruction = Group | MicroInstruction;
-
-
-export function logInstr(instr: Instruction | Label) {
-  if ("failLabel" in instr) {
-    console.log(instr);
-  } else if ("label" in instr) {
-    console.log(instr.label)
-  } else {
-    switch (instr.op) {
-      case "br":
-        console.log("  br", instr.args[0], instr.args[1], instr.args[2]);
-        break;
-      case "jmp":
-        console.log("  jmp", instr.args[0]);
-        break;
-      case "ret":
-        console.log("  ret");
-        break;
-      case "const":
-        console.log(" ", instr.dest, "=", "const", instr.value);
-        break;
-      default:
-        if ("dest" in instr) {
-          console.log(" ", instr.dest, "=", instr.op, instr.args);
-        } else {
-          console.log(instr);
-        }
-    }
-  }
-}
-
-export function logInstrs(instrs: (Label | Instruction)[]) {
-  instrs.forEach((v) => logInstr(v));
-}
+export type Instruction = Operation | Constant;
 
 /**
  * Both constants and value operations produce results.

@@ -5,11 +5,10 @@
   "private": true,
   "bin": {
     "ts2bril": "build/ts2bril.js",
-    "brili": "build/brili.js",
-    "bril-sbo": "build/superblock-scheduling.js"
+    "brili": "build/brili.js"
   },
   "scripts": {
-    "build": "tsc && chmod a+x build/ts2bril.js build/brili.js build/superblock-scheduling.js"
+    "build": "tsc && chmod a+x build/ts2bril.js build/brili.js"
   },
   "dependencies": {
     "@types/node": "^11.13.5",
