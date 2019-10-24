@@ -59,7 +59,7 @@ def check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
 
     # Redundant phi nodes are those that are identical to ones we 
     # already computed: those in the hash table
-    redundant = canonicalized in exprs_to_value_nums
+    redundant = canonicalized in exprs_to_value_nums and len(exprs_to_value_nums[canonicalized])
     if redundant:
         # Use the previous value number we already calculated
         value_number = exprs_to_value_nums[canonicalized][-1]
@@ -113,7 +113,7 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_o
                 # TODO: maybe "simplify" expr
 
                 # Check if we already have a value number for this expression
-                if canonicalized in exprs_to_value_nums:
+                if canonicalized in exprs_to_value_nums and len(exprs_to_value_nums[canonicalized]):
                     value_number = exprs_to_value_nums[canonicalized][-1]
                     vars_to_value_nums[instr['dest']] = value_number
                     instrs_to_remove[block_name].append(instr)
