@@ -572,7 +572,10 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
             toRemove.push(v);
     while (toRemove.length != 0) {
         let v = toRemove.pop() as string;
-        let [def, defBlock] = defs.get(v) as SSAWorkListItem;
+        let arr = defs.get(v);
+        if (arr == undefined)
+            continue;
+        let [def, defBlock] = arr;
         let insts = defBlock.instructions;
         insts.splice(insts.indexOf(def), 1);
         if ("args" in def)
