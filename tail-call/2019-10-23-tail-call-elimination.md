@@ -95,18 +95,54 @@ don't necessarily match those declared by the function, so we need to map the
 function's arguments to the values of the `push`ed arguments.
 
 To return a value, a special variable name is set in the environment in the
-previous stack frame so it can be retrieved by the caller. In retrospect,
-implementing it this way didn't require the new `retval` keyword to be created,
-but doing so helps
+previous stack frame so it can be retrieved by the caller using `retval`.
 
 ### Extending the TypeScript Frontend
-For the majority of this, I referred to Alexa and Greg's implementation[]()
+For the majority of this, I referred to [Alexa and Greg's implementation](https://github.com/sampsyo/bril/pull/16).
+There were some differences however because I have separate instructions for
+passing arguments to a function. So, whenever a function call was found in the
+AST, the arguments needed to be converted to Bril instructions first, then those
+would be used in a `push`. Additionally, a `retval` would need to be created
+afterwards if in the AST, the function call was assigned to a variable.
+
 
 ### Identifying and Eliminating Tail Calls
 
 
+This doesn't take into account more complex cases where there isn't an explicit
+return of a function call, but the value returned only comes from the same
+created. For example:
+```
+function foo(n: number): number {
+  ...
+  if (b) {
+    result = foo(n-1);
+  } else {
+    result = foo(n-2);
+  }
+  return result;
+}
+```
+
+Since this doesn't fit our definition of a *tail call**, we opt not to handle
+this case.
+
 ## Evaluation
-TODO: HAVE GRAPHS SHOWING THE RUNTIME/SPACE USAGE
+TODO: HAVE GRAPHS/TABLES SHOWING THE RUNTIME/SPACE USAGE
+
+**Percentage Decrease in Memory Usage Using TCE**
+|            |   n = 1  |  n = 100 | n = 10000 | n = 100000 |
+|:----------:|:--------:|:--------:|:---------:|:----------:|
+|    loop    | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
+|  factorial | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
+| mutual_rec | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
+
+**Percentage Decrease in Execution Time Using TCE**
+|            |   n = 1  |  n = 100 | n = 10000 | n = 100000 |
+|:----------:|:--------:|:--------:|:---------:|:----------:|
+|    loop    | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
+|  factorial | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
+| mutual_rec | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
 
 ## Hardest Parts to Get Right
 Finding the right level of abstraction for the IR was difficult. I decided to
