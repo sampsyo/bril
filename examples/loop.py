@@ -74,13 +74,14 @@ def invloop(blocks,rdef_var_ins,rdef_var_outs,natloop):
       elif "dest" in instr and "args" in instr:
         # for each argument, either one of the following has to be true:
         # 1) all reaching defs of the argument are outside the loop
-        # * there is exactly one reaching def for the argument in the loop
+        # 2) there is exactly one reaching def for the argument in the loop
+        #    and it is loop invariant
         instr_loop_invariant = True
         for arg in instr["args"]:
           var = instr["dest"]
 
           # condition 1
-          var_rdefs = list(filter(lambda rdef: rdef[2] == var, \
+          var_rdefs = list(filter(lambda rdef: rdef[2] == arg, \
               rdef_var_ins[blockname]))
         
           var_rdefs_blocks = \
@@ -103,7 +104,11 @@ def invloop(blocks,rdef_var_ins,rdef_var_outs,natloop):
       else:
         boolmap_block.append(False)
     
+    old_boolmap_block = boolmap[blockname]
     boolmap[blockname] = boolmap_block
+
+    if old_boolmap_block != boolmap_block:
+      worklist.append(blockname)
 
   return boolmap
 
