@@ -15,8 +15,8 @@ export class Builder {
   /**
    * Create a new, empty function into which further code will be generated.
    */
-  buildFunction(name: string) {
-    let func: bril.Function = { name, instrs: [], ret_type: "TODO", args: [] };
+    buildFunction(name: string, ret_type: bril.Type, args: bril.Arg[]) {
+    let func: bril.Function = { name, instrs: [], ret_type, args };
     this.program.functions.push(func);
     this.curFunction = func;
     this.nextFresh = 0;
