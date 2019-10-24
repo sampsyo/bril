@@ -206,22 +206,24 @@ these can be found at (TODO: INSERT LINK HERE).
 **Percentage Change in Memory Usage Using TCE**
 |            |   n = 1  |  n = 100 | n = 10000 | n = 100000 |
 |:----------:|:--------:|:--------:|:---------:|:----------:|
-|    loop    |   +0.1%  |          |           |            |
+|    loop    |   +0.1%  |   -2.7%  |   -31.1%  |   -79.5%   |
 |  factorial |   +0.2%  |   -2.5%  |   -79.1%  |     X      |
-| mutual_rec |          |          |           |            |
+| mutual_rec |   +0.2%  |   +13.8% |   -31.2%  |   -78.4%   |
 
 **Percentage Change in Execution Time Using TCE**
 |            |   n = 1  |  n = 100 | n = 10000 | n = 100000 |
 |:----------:|:--------:|:--------:|:---------:|:----------:|
 |    loop    |  +2.1%   |   +2.2%  |   -10%    |   -29.8%   |
 |  factorial |  +1.1%   |   +5.5%  |   -1.6%   |      X     |
-| mutual_rec |          |          |           |            |
+| mutual_rec |  +1.1%   |   -1%    |   +5.7%   |   +5.07%   |
 
 To get the execution time and peak memory usage, I use `/usr/bin/time -l` (which prints the contents of rusage).
 To make sure the measurements are meaningful, I chose a maximum `n` value so
-that the tests took a few seconds.
+that the tests took a few seconds. Here we can clearly see that with large values
+of `n`, the programs with TCE use considerably less memory. However, it is unclear
+whether there is a benefit to the execution time of the program since the values
+vary quite a bit.
 
 ## Hardest Parts to Get Right
 Finding the right level of abstraction for the IR was difficult. I decided to
 make it closely resemble x86 because that is familiar...
-
