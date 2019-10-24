@@ -2,6 +2,7 @@ import json
 import sys
 
 from collections import defaultdict, namedtuple
+from functools import reduce, partial
 
 from cfg import block_map, block_successors, add_terminators
 from dom import get_dom
@@ -18,6 +19,17 @@ def canonicalize(instr):
     else:
         return value
 
+def reverse_post_order(start_node, succ):
+  def explore(path, visited, node):
+    if (node in visited) or (node in path):
+      return visited
+    else:
+      new_path = [node] + path
+      edges = succ[node]
+
+      visited = reduce(partial(explore, new_path), edges, visited)
+      return [node] + visited
+  return explore([], [], start_node)
 
 def check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
     # Meaningless phi nodes are those whose arguments all already have
@@ -48,9 +60,6 @@ def check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
     # Redundant phi nodes are those that are identical to ones we 
     # already computed: those in the hash table
     redundant = canonicalized in exprs_to_value_nums
-    if not redundant:
-        sys.stderr.write(json.dumps(instr, indent=2) + "\n")
-
     if redundant:
         # Use the previous value number we already calculated
         value_number = exprs_to_value_nums[canonicalized][-1]
@@ -60,7 +69,7 @@ def check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
     return False
 
 # From Briggs, Cooper, and Simpson, 1997.
-def dominator_value_numbering(block_name, blocks, succ, dom_tree):
+def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_order):
 
     # Maps variable names to value numbers (in this case, also names)
     vars_to_value_nums = {}
@@ -126,15 +135,13 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree):
 
                     instr['args'][i] = vars_to_value_nums[arg]
 
-                # TODO: is this chill?
-                if check_removeable_phi(instr,  vars_to_value_nums, exprs_to_value_nums):
-                    instrs_to_remove[succ_name].append(instr)
 
         for name, instrs in instrs_to_remove.items():
             for instr in instrs:
                 blocks[name].remove(instr)
 
-        for child_name in dom_tree[block_name]:
+        ordered_children = [b for b in reverse_post_order if b in dom_tree[block_name]]
+        for child_name in ordered_children:
             dvn(child_name)
 
         # Clean up hashtable for this scope
@@ -151,8 +158,9 @@ def global_value_numbering(bril):
         succ = {name: block_successors(block) for name, block in blocks.items()}
 
         dom_tree = get_dominator_tree(blocks, succ)
+        order = reverse_post_order(next(iter(blocks)), succ)
 
-        dominator_value_numbering(next(iter(blocks)), blocks, succ, dom_tree)
+        dominator_value_numbering(next(iter(blocks)), blocks, succ, dom_tree, order)
         func['instrs'] = block_map_to_instrs(blocks)
 
     return json.dumps(bril, indent=4)
