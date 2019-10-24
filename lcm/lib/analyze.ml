@@ -6,32 +6,29 @@ module Expr = struct
   type t = Bril.value_expr [@@deriving sexp, compare]
 end
 
-module Var = struct
-  type t = Ident.var [@@deriving sexp, compare]
-end
-
-module VarSet = Set.Make(Var)
 module ExprMap = Map.Make(Expr)
-type expr_locs = VarSet.t ExprMap.t
+type expr_typs = Bril.typ ExprMap.t
 
 let merge x y =
-  let combine ~key:_ = VarSet.union in
+  let combine ~key:_ x y =
+    if x = y then x else failwith "multiple types?"
+  in
   Map.merge_skewed ~combine x y 
 
 let merge_list =
   List.fold ~f:merge ~init:ExprMap.empty
 
-let exprs instr : expr_locs =
+let exprs instr : expr_typs =
   match instr with
-  | Cfg.ValueInstr { op; dest; _ } ->
-     ExprMap.singleton op @@ VarSet.singleton dest
+  | Cfg.ValueInstr { op; typ; _ } ->
+     ExprMap.singleton op typ
   | _ -> 
      ExprMap.empty
 
 let aggregate_expressions_block (b, _) =
   merge_list @@ List.map ~f:exprs b.body
 
-let aggregate_expression_locs graph =
+let aggregate_expression_typs graph =
   let do_vtx block exprs =
     merge exprs (aggregate_expressions_block block)
   in
@@ -197,13 +194,9 @@ module Analyze (EXPRS: Exprs) = struct
       (struct
         let attr_name = "earliest"
         let analyze ((_, src_attrs), _, (_, dst_attrs)) =
-          Printf.printf "running Earliest.analyze";
           let ant_in_dst = Cfg.Attrs.get dst_attrs "anticipatability_in" in
           let avail_out_src = Cfg.Attrs.get src_attrs "availability_out" in
           let entry_cond = Bitv.bw_and ant_in_dst (Bitv.bw_not avail_out_src) in
-          print_string @@ Bitv.M.to_string entry_cond;
-          print_string @@ Bitv.M.to_string @@ Cfg.Attrs.get src_attrs "entry";
-          Out_channel.newline stdout;
           if Bitv.all_zeros @@ Cfg.Attrs.get src_attrs "entry"
           then Bitv.bw_and
                  entry_cond

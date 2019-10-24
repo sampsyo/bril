@@ -29,12 +29,9 @@ let expr_loc exprs expr =
   "_lcm_tmp" ^ string_of_int (index_of expr exprs)
   |> Ident.var_of_string 
 
-(* uh oh! *)
-let typ_of _ : Bril.typ = Bril.Int
-
-let make_computation exprs expr =
+let make_computation expr_typs exprs expr =
   let loc = expr_loc exprs expr in
-  ValueInstr { op = expr; dest = loc; typ = typ_of expr }
+  ValueInstr { op = expr; dest = loc; typ = Map.find_exn expr_typs expr }
 
 let unify_expression_locations exprs graph =
   let fix_computation = function
@@ -87,9 +84,9 @@ let replace_block old_block new_block graph =
       else b)
   graph
 
-let insert_computations_at exprs exprs_to_compute edge graph =
+let insert_computations_at expr_typs exprs exprs_to_compute edge graph =
   let (src, _, dst) = edge in
-  let instrs = List.map ~f:(make_computation exprs) exprs_to_compute in
+  let instrs = List.map ~f:(make_computation expr_typs exprs) exprs_to_compute in
   let new_block = 
     { lbl = Ident.fresh_lbl "lcm_inserted_block";
       body = instrs;
@@ -115,9 +112,7 @@ let insert_computations_at exprs exprs_to_compute edge graph =
   let graph = replace_block src src' graph in
   CFG.add_edge_e graph in_edge
 
-  
-
-let insert_computations exprs graph =
+let insert_computations expr_typs exprs graph =
   CFG.fold_edges_e
     (fun edge graph' ->
       let (_, attrs, _) = edge in
@@ -125,6 +120,6 @@ let insert_computations exprs graph =
         interp_bitv exprs @@ Attrs.get attrs "insert"
       in
       if List.length exprs_to_insert > 0
-      then insert_computations_at exprs exprs_to_insert edge graph'
+      then insert_computations_at expr_typs exprs exprs_to_insert edge graph'
       else graph')
     graph graph;
