@@ -136,8 +136,9 @@ function foo(n: number): number {
 }
 ```
 
-To do this, we first do a global copy propagation. Then, for a value `v` that is
-`return`ed, we search backwards through the CFG until we find a `retval` that
+To do this, we first do a global copy propagation. The dataflow analysis for
+copy propagation that I used can be found [here](http://www.csd.uwo.ca/~moreno/CS447/Lectures/CodeOptimization.html/node8.html).
+Then, for a value `v` that is `return`ed, we search backwards through the CFG until we find a `retval` that
 corresponds to `v`, and make sure that it has not been modified along any of
 these backwards paths, and the `reval` comes from a call to the same function.
 In the above example, the corresponding Bril code looks something as follows:
@@ -188,6 +189,9 @@ endif.6:
 Note that the extra instructions can simply be removed by a DCE pass, so we don't
 worry about that.
 
+*Unfortunately, I couldn't get this to work properly because my copy propagation
+pass had bugs.*
+
 ## Evaluation
 To evaluate that the tail call elimination is working and actually gives us an
 improvement, we benchmark some recursive functions that use tail recursion, and
@@ -226,4 +230,8 @@ vary quite a bit.
 
 ## Hardest Parts to Get Right
 Finding the right level of abstraction for the IR was difficult. I decided to
-make it closely resemble x86 because that is familiar...
+make it closely resemble x86 because that is familiar and is what matched the
+theory the most. The other difficult part was eliminating tail calls that
+weren't as simple as just `return foo()`. This required other optimizations and
+careful consideration to make sure that indeed the function call could actually
+be optimized to just a jump.

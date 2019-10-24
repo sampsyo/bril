@@ -52,6 +52,8 @@ def add_terminators(blocks):
     to all blocks (avoiding "fall-through" control flow transfers).
     """
     for i, block in enumerate(blocks.values()):
+        if not block:
+            continue
         if block[-1]['op'] not in TERMINATORS:
             if i == len(blocks) - 1:
                 # In the last block, return.
@@ -70,6 +72,8 @@ def edges(blocks):
     preds = {name: [] for name in blocks}
     succs = {name: [] for name in blocks}
     for name, block in blocks.items():
+        if not block:
+            continue
         for succ in successors(block[-1]):
             succs[name].append(succ)
             preds[succ].append(name)
