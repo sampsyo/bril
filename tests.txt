@@ -1,1 +1,6 @@
 fib
+funcs_blocks
+factorial
+loop
+power
+

@@ -54,6 +54,8 @@ if __name__ == '__main__':
     with open(test_file) as tests, open(out_file, 'w') as output:
         for line in tests:
             prefix = line.strip()
+            if not prefix:
+                continue
             bril_file, profile_file = f'workload/{prefix}.bril', f'workload/{prefix}.in'
             uo, of, ob, ofb = optimize(bril_file, profile_file)
             output.write(f'{uo} {of} {ob} {ofb}\n' )

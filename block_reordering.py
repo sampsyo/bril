@@ -12,15 +12,19 @@ import form_blocks
 
 Edge = collections.namedtuple('Edge', ['s', 't'])
 
-def coalesce(graph, coalesced_map):
+def coalesce(graph, coalesced_map, first_block):
     edges = sorted(graph, key=graph.get, reverse=True)  # decreasing order
     chains = [c for _, c in coalesced_map.items()]
     sources = [c[-1] for c in chains]
     targets = [c[0] for c in chains]
+    if first_block in targets:
+        targets.remove(first_block)  # first block is entry point of function
     for e in edges:
         if e.s in sources and e.t in targets:
             s_key, s_chain = [(k, v) for k, v in coalesced_map.items() if e.s in v][0]
             t_key, t_chain = [(k, v) for k, v in coalesced_map.items() if e.t in v][0]
+            if s_key == t_key:
+                continue
             new_key = '{} -> {}'.format(s_key, t_key)
             new_chain = s_chain + t_chain
             coalesced_map.pop(s_key)
@@ -29,9 +33,15 @@ def coalesce(graph, coalesced_map):
             return coalesced_map
     return None
 
-def combine_chains(cmap, precedence):
+def combine_chains(cmap, precedence, first_block):
     final_order = list()
     precedence = sorted(precedence, key=precedence.get, reverse=True)
+    first = [(name, chain) for name, chain in cmap.items() if chain[0] == first_block]
+    assert len(first) == 1
+    first_name, first_chain = first[0]
+    final_order.append(first_chain)
+    cmap.pop(first_name)
+    precedence = [p for p in precedence if p[1] != first_name]
     for s, t in precedence:
         if s in cmap and t in cmap:
             final_order.append(cmap.pop(s))
@@ -58,6 +68,9 @@ def reorder(program, profile_out):
     program = copy.deepcopy(program)
     basic_block_flows = profile_out['basic_block_flows']
     for function in program['functions']:
+        blocks = cfg.block_map(form_blocks.form_blocks(function['instrs']))
+        cfg.add_terminators(blocks)
+        first_block = next(iter(blocks.items()))[0]
         function_name = function['name']
         block_edges = [e for e in basic_block_flows if e['function'] == function_name]
         if len(block_edges) == 0:
@@ -65,7 +78,7 @@ def reorder(program, profile_out):
         graph, nodes = json_to_graph(block_edges)
         coalesced_map = {node: [node] for node in nodes}
         while True:
-            new_map = coalesce(graph, coalesced_map)
+            new_map = coalesce(graph, coalesced_map, first_block)
             if not new_map:
                 break
             coalesced_map = new_map
@@ -79,9 +92,7 @@ def reorder(program, profile_out):
                     for dest, w in dests:
                         if dest in dest_chain:
                             precedence[(name, dest_name)] = precedence.get((name, dest_name), 0) + 1
-        basic_block_order = combine_chains(coalesced_map, precedence)
-        blocks = cfg.block_map(form_blocks.form_blocks(function['instrs']))
-        cfg.add_terminators(blocks)
+        basic_block_order = combine_chains(coalesced_map, precedence, first_block)
         instrs = []
         preds, succs = cfg.edges(blocks)
         for i, label in enumerate(basic_block_order):

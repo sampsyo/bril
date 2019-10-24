@@ -1,0 +1,15 @@
+main n {
+  r: int = const 1;
+  i: int = const 1;
+  one: int = const 1;
+start:
+  cmp: bool = gt i n;
+  br cmp there here;
+there:
+  print r;
+  ret ;
+here:
+  r: int = mul r i;
+  i: int = add i one;
+  jmp start;
+}

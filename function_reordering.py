@@ -48,6 +48,8 @@ def coalesce_nodes(hot_node, graph, coalesced_map):
 
 def reorder(program, profile_out):
     call_graph = profile_out['call_graph']
+    if len(call_graph) == 0:
+        return program
     coalesced_map = dict()
     graph = json_to_graph(call_graph)
     while len(graph) > 0:
@@ -56,7 +58,7 @@ def reorder(program, profile_out):
     assert len(coalesced_map) == 1
     function_order = coalesced_map[list(coalesced_map)[0]]
     new_program = copy.deepcopy(program)
-    new_program['functions'] = sorted(program['functions'], key=lambda f: function_order.index(f['name']))
+    new_program['functions'] = sorted(program['functions'], key=lambda f: function_order.index(f['name']) if f['name'] in function_order else len(function_order))
     return new_program
 
 

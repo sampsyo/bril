@@ -29,4 +29,4 @@ if __name__ == '__main__':
     bril_file = sys.argv[1]
     with open(bril_file) as f:
         program = json.loads(briltxt.parse_bril(f.read()))
-    print(annotate(program))
+    print(json.dumps(annotate(program), indent=2, sort_keys=True))

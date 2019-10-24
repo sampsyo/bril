@@ -1,0 +1,32 @@
+main i j {
+  v0: bool = le i j;
+  br v0 d c;
+a:
+  call a i;
+b:
+  call b j;
+c:
+  call c j i;
+  ret;
+d:
+  call d i j;
+}
+
+a i {
+  print i;
+}
+
+b i {
+  print i;
+}
+
+c i j {
+  v1: int = add i j;
+  print v1;
+}
+
+d i j {
+  v2: int = sub j i;
+  print v2;
+}
+

@@ -1,0 +1,31 @@
+multiply a b : int {
+  zero: int = const 0;
+  one: int = const 1;
+  curr: int = id zero;
+start:
+  b_zero: bool = eq b zero;
+  br b_zero end cont;
+end:
+  ret curr;
+cont:
+  curr: int = add curr a;
+  b: int = sub b one;
+  jmp start;
+}
+
+
+main base exp {
+  zero: int = const 0;
+  one: int = const 1;
+  val: int = const 1;
+start:
+  exp_zero: bool = eq exp zero;
+  br exp_zero end cont;
+end:
+  print val;
+  ret;
+cont:
+  val: int = call multiply val base;
+  exp: int = sub exp one;
+  jmp start;
+}
