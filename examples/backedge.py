@@ -81,7 +81,6 @@ def findNameOfBlockWithStatement(blocks, targetStmt):
         for stmt in block:
             if stmt is targetStmt:
                 return name
-    assert("Henry" == "Has Messed Up")
 
 def findLoopInfo(bril, loops):
     blocks, in_cprop, out_cprop = run_df_return(bril, ANALYSES['cprop'])
@@ -98,7 +97,6 @@ def findLoopInfo(bril, loops):
         br_cond_var = branch_stmt["args"][0]
         br_cond_var_stmt = out_rd[branch_blockname][br_cond_var]
         br_cond_var_stmt_blockname = findNameOfBlockWithStatement(blocks, br_cond_var_stmt)
-        # TODO have this so that iv and bound are ordered like this i < n 
         br_cond_var_stmt_op = br_cond_var_stmt['op']
         assert(br_cond_var_stmt_op in valid_op)
 
@@ -138,12 +136,9 @@ def filterEligibleLoops(loop_infos, blocks, in_cprop):
     for li in loop_infos:
         loop = li[0]
         info = li[1]
-        # print(loop)
         if info['delta_val'] != 1:
-            # print("FAIL1")
             continue
         if blocks[loop[-1]][-1]['op'] != 'br':
-            # print("FAIL2")
             continue
         loaded_vars = []
         offset_vars = [] #in the form const + i
@@ -154,16 +149,12 @@ def filterEligibleLoops(loop_infos, blocks, in_cprop):
                 loaded_vars.append(inst['dest'])
             elif inst['op'] == 'sw':
                 data_var = inst['args'][0]
-                # print(data_var, in_cprop[blockName][data_var])
-                # TODO Cprop here is messed up...
                 if data_var not in loaded_vars and in_cprop[blockName][data_var] == '?' or data_var == info['iv']:
-                    # print("FAIL3", inst, "LOADED: ", loaded_vars)
                     dip = True
                     break
                 
             elif inst['op'] == 'print':
                 if inst['args'][0] in loaded_vars:
-                    # print("FAIL4")
                     dip = True
                     break
             elif len(inst['args']) == 2:
@@ -192,8 +183,6 @@ def findBasePointers(blocks, loop, in_cprop, iv, in_rd):
         loadstore_bases.append(base_var)
         pointer_stmt_blockname = findNameOfBlockWithStatement(blocks, pointer_stmt)
         base_val = in_cprop[pointer_stmt_blockname][base_var]
-        # TODO: check this asertion
-        # assert(base_val != '?')
         loadstore_base_vals.append(base_val)
 
     return {'loadstore_stmts': loadstores,
@@ -215,17 +204,9 @@ def annihilateBlock(blocks, targetBlock):
             if arg == targetBlock:
                 pred_exit_instr['args'][index] = succ_block_name
         blocks.pop(targetBlock)
-    else:
-        assert("DONT" == "USE")
-        curr_exit_instr = blocks[targetBlock][-1]
-        curr_exit_target = curr_exit_instr['args'][0]
-        succ_block_name = succs[targetBlock][0]
-        blocks[curr_exit_target] = blocks[succs[targetBlock][0]]
         
 
 def loopToOneBlock(blocks, loop):
-    #Assert br is last instruction of loop
-    # TODO: remove this restricting with smarter logic
     assert(blocks[loop[-1]][-1]['op'] == 'br') 
     br_stmt = blocks[loop[-1]][-1]
     while len(loop) > 2:
@@ -239,7 +220,6 @@ def loopToOneBlock(blocks, loop):
     blocks[loop[0]][-1] = br_stmt
     blocks.pop(blockName)
 
-# TODO: this only works for br at very end. E.g. a do-while loop
 def numIterations(initial_val, delta_op, bound_val, cond_op):
     num = 0
     i = initial_val
@@ -266,20 +246,13 @@ def stripMine(filtered_loopInfos, blocks):
     for li in filtered_loopInfos:
         loops.append(li[0])
     for i in range(len(loops)):
-        #TODO: remove by having pre-checks
-        # if i != 1:
-            # continue
         loop_info = filtered_loopInfos[i][1]
-
-        # TODO check that br is very last instr in loop
 
         num_iterations = numIterations(loop_info['iv_val'], loop_info['delta_op'], loop_info['bound_val'], loop_info['cond_op'])
 
         # Makes loop into 1 big block
         loopToOneBlock(blocks, loops[i])
         loopBlock = blocks[loops[i][0]]
-
-        #TODO: boolean must be false when loop isn't done
 
         # Duplicate loop and connect to bottom if (n mod 4 != 0)
         if num_iterations % 4 != 0:
@@ -292,7 +265,6 @@ def stripMine(filtered_loopInfos, blocks):
             blocks[new_block_name] = new_block_stmts
 
         loaded_vars = set()
-        # TODO: Dependency precheck
         serial_vars = []
         # Traverse loop, change loads to vload(i)
         #Assert single-block loops
@@ -315,7 +287,6 @@ def stripMine(filtered_loopInfos, blocks):
                 blocks[block_name][0] = {'dest': loop_info["bound_var"], 'op': 'const', 'type': 'int', 'value': n_mod_four}
             elif 'op' in current_insn and current_insn['op'] == 'sw':
                 current_insn["op"] = 'vstore'
-            # TODO: don't add to serial_vars if the args are a constant and the iv
             elif 'op' in current_insn and current_insn['op'] == 'add':
                 if current_insn['args'][0] in loaded_vars and current_insn['args'][1] in loaded_vars:
                     current_insn["op"] = 'vadd'
@@ -338,9 +309,6 @@ def stripMine(filtered_loopInfos, blocks):
                     serial_vars.append(current_insn)
             index +=1
 
-        # TODO assert that no serial vars follow delta stmt
-        # print("SERIAL VARS: ", serial_vars)
-
         delta_index = next(ind for ind in range(len(blocks[loops[i][0]])) if blocks[loops[i][0]][ind] is loop_info['delta_stmt'])
         
 
@@ -356,33 +324,16 @@ def stripMine(filtered_loopInfos, blocks):
         for inst in serial_vars:
             loopBlock.insert(delta_index + 1, inst)
 
-    # TODO Quad all other instructions. If they use i, do i+1, i+2, i+3 (depending on add)
-    # First only handle add case
-
-    # TODO Do we need to change loop info struct?
-
     return blocks
 
 if __name__ == '__main__':
     bril = json.load(sys.stdin)
     res, blocks = backedge(bril)
     loops = findLoops(res, blocks)
-    # for item in loops[1]:
-    #     for item1 in blocks[item]:
-    #         print(item1)
     loop_infos, in_cprop = findLoopInfo(bril, loops)
-    # for loop, info in loop_infos:
-    #     print("LOOP: ", loop)
-    #     print("INFO: ", info, '\n')
-    
     filtered_loopInfos = filterEligibleLoops(loop_infos, blocks, in_cprop)
     
     blocks = stripMine(filtered_loopInfos, blocks)
-    # print("@@@@@@@@@DONE@@@@@@@@")
-    # for block in blocks:
-    #     print('{}:'.format(block))
-    #     for inst in blocks[block]:
-    #         print('   ',inst)
 
     for func in bril['functions']:
         func['instrs'] = []

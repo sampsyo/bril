@@ -187,7 +187,7 @@ ANALYSES = {
     ),
 
 
-    #.......
+    #Reaching Definitions
     'reachingDefs': Analysis(
         True,
         init=lambda blocks: set(),
