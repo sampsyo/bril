@@ -251,13 +251,15 @@ function dominanceFrontier(block: BasicBlock): Set<BasicBlock> {
 // Inserts phi functions where needed for SSA.
 function insertPhis(blocks: BasicBlock[]) {
     let defs = new Map<string, Set<BasicBlock>>();
+    let types = new Map<string, bril.Type>();
     for (let block of blocks)
         for (let inst of block.instructions)
             if ("dest" in inst) {
                 let set = defs.get(inst.dest)
-                if (set == undefined)
+                if (set == undefined) {
                     defs.set(inst.dest, new Set([block]));
-                else
+                    types.set(inst.dest, inst.type);
+                } else
                     set.add(block);
             }
     for (let v of defs.keys()) {
@@ -275,7 +277,7 @@ function insertPhis(blocks: BasicBlock[]) {
                         op: "phi",
                         args: new Array(fBlock.predecessors.length).fill(v),
                         dest: v,
-                        type: "int" // TODO type?
+                        type: types.get(v) as bril.Type
                     });
                     vDefs.push(fBlock);
                 }
@@ -285,9 +287,9 @@ function insertPhis(blocks: BasicBlock[]) {
 }
 
 // Renames all variables such that each definition is to a unique variable.
-// Returns a map from variables to all their uses.
+// Returns a map from variables to all their uses, and a map to their def.
 function renameVariables(blocks: BasicBlock[]):
-        Map<string, SSAWorkListItem[]> {
+        [Map<string, SSAWorkListItem[]>, Map<string, SSAWorkListItem>] {
     let stacks = new Map<string, string[]>();
     let defCounts = new Map<string, number>();
     let def = new Map<string, SSAWorkListItem>();
@@ -382,7 +384,7 @@ function renameVariables(blocks: BasicBlock[]):
             }
         }
     }
-    return out;
+    return [out, def];
 }
 
 // greatest lower bound of x and y in the lattice
@@ -508,13 +510,81 @@ function sccp(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>):
     return out;
 }
 
+// Performs optimizations based on SCC analysis results: removes branches determined
+// to have a constant condition, removes unreachable blocks, replaces operations with
+// consts where possible, removes unused variables.
+function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>,
+        defs: Map<string, SSAWorkListItem>, values: Map<string, LatticeElement>) {
+
+    for (let block of blocks) {
+        if (block.inEdgeExecutable.some(b => b)) {
+            if (block.successors.length != 2)
+                continue;
+            let insts = block.instructions;
+            let branch = insts[insts.length - 1] as bril.EffectOperation;
+            let val = values.get(branch.args[0]);
+            if (typeof val != "boolean")
+                continue;
+            insts.pop();
+            let removedSucc = block.successors[val ? 1 : 0];
+            let remainingSucc = block.successors[val ? 0 : 1];
+            block.successors = [remainingSucc];
+            removedSucc.predecessors.splice(removedSucc.predecessors.indexOf(block), 1);
+        } else {
+            for (let [v, u] of uses)
+                uses.set(v, u.filter(([i, b]) => b != block));
+            for (let [v, [i, b]] of defs)
+                if (b == block)
+                    defs.delete(v);
+            for (let succ of block.successors)
+                succ.predecessors.splice(succ.predecessors.indexOf(block), 1);
+        }
+    }
+
+    for (let [v, val] of values) {
+        if (val == "bottom" || val == "top")
+            continue;
+        let [def, defBlock] = defs.get(v) as SSAWorkListItem;
+        if (def.op == "const")
+            continue;
+        for (let arg of def.args) {
+            let u = uses.get(arg) as SSAWorkListItem[];
+            uses.set(arg, u.splice(u.findIndex(([i, b]) => i == def, 1)));
+        }
+        let insts = defBlock.instructions;
+        let type = (def as bril.ValueOperation | PhiOperation).type;
+        let newDef: bril.Constant = {op: "const", value: val, dest: v, type: type};
+        insts[insts.indexOf(def)] = newDef;
+        defs.set(v, [newDef, defBlock]);
+    }
+
+    let toRemove: string[] = [];
+    for (let [v, u] of uses)
+        if (u.length == 0)
+            toRemove.push(v);
+    while (toRemove.length != 0) {
+        let v = toRemove.pop() as string;
+        let [def, defBlock] = defs.get(v) as SSAWorkListItem;
+        let insts = defBlock.instructions;
+        insts.splice(insts.indexOf(def), 1);
+        if ("args" in def)
+            for (let arg of def.args) {
+                let u = uses.get(arg) as SSAWorkListItem[];
+                uses.set(arg, u.splice(u.findIndex(([i, b]) => i == def), 1));
+                if (u.length == 0)
+                    toRemove.push(arg);
+            }
+    }
+}
+
 async function main() {
     let prog: bril.Program = JSON.parse(await readStdin());
     let blocks = cfg(basicBlocks(prog.functions[0]));
     dominatorTree(blocks);
     insertPhis(blocks);
-    let uses = renameVariables(blocks);
-    console.log(sccp(blocks, uses));
+    let [uses, defs] = renameVariables(blocks);
+    let values = sccp(blocks, uses);
+    replaceConstants(blocks, uses, defs, values);
 }
 
 process.on('unhandledRejection', e => { throw e });
