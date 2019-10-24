@@ -170,7 +170,7 @@ if __name__ == '__main__':
     for func in bril['functions']:
         simple_tce_func(func)
 
-    copy_prop(bril)
-    complex_tce(bril)
+    #copy_prop(bril)
+    #complex_tce(bril)
 
     json.dump(bril, sys.stdout, indent=2, sort_keys=True)
