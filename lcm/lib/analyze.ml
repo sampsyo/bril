@@ -85,7 +85,8 @@ module Analyze (EXPRS: Exprs) = struct
       let mark v =
         let (_, block_attrs) = v in
         let data =
-          if List.length (CFG.pred graph v) > 0
+          (* fix width of bit vector *)
+          if Bitv.all_zeros @@ Attrs.get block_attrs "entry"
           then zeros
           else ones
         in

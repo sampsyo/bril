@@ -107,12 +107,25 @@ let add_all_edges map graph blocks =
 let cfgify_dirs (dirs : Bril.directive list) =
   let pre_blocks = blockify dirs in
   let blocks = normalize_blocks pre_blocks in
-  let attr (b : Cfg.basic_block) =
+  let attr is_entry (b : Cfg.basic_block) =
     let a = Cfg.Attrs.create () in
-    let key = "cfg_default_" ^ (Ident.string_of_lbl b.lbl) in
-    Hashtbl.set ~key:key ~data:(Bitv.init 1 (fun _ -> true)) a;
+    (* for debugging *)
+    let key = "cfg_default_attrs_" ^ (Ident.string_of_lbl b.lbl) in
+    let one = Bitv.init 1 (fun _ -> true) in
+    let zero = Bitv.init 1 (fun _ -> false) in
+    Hashtbl.set ~key:key ~data:one a;
+    if is_entry
+    then Hashtbl.set ~key:"entry" ~data:one a
+    else Hashtbl.set ~key:"entry" ~data:zero a;
     a
   in
-  let blocks = List.map ~f:(fun b -> b, attr b) blocks in
+  let blocks =
+    match blocks with
+    | [] -> []
+    | entry :: rest ->
+       let entry = entry, attr true entry in
+       let rest = List.map ~f:(fun b -> b, attr false b) rest in
+       entry :: rest
+  in
   let graph, map = List.fold ~init:Cfg.empty ~f:Cfg.add_block blocks in
   add_all_edges map graph blocks

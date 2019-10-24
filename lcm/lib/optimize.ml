@@ -107,7 +107,7 @@ let insert_computations_at expr_typs exprs exprs_to_compute edge graph =
             true_lbl = fix_lbl true_lbl;
             false_lbl = fix_lbl false_lbl }
   in
-  let src' = { (fst src) with term = src_term' }, Attrs.create () in
+  let src' = { (fst src) with term = src_term' }, snd src in
   let in_edge = (src', Attrs.create (), new_vtx) in
   let graph = replace_block src src' graph in
   CFG.add_edge_e graph in_edge

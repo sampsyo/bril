@@ -41,7 +41,9 @@ let go dot_before dot_after file () =
     |> Optimize.delete_computations expressions
     |> Optimize.insert_computations expr_typs expressions
   in
-  Cfg.dump_to_dot graph dot_after
+  Cfg.dump_to_dot graph dot_after;
+  let prog = Print.decfg graph in
+  Parser.print_bril Out_channel.stdout prog
 
 let open_in_opt = function
   | Some path -> In_channel.create path
