@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
+prog=""
 if [ $# -eq 1 ]; then
   echo "Interpreting with no optimization"
-  ts2bril "$1" | brili
+  prog=$(ts2bril "$1")
 elif [ $# -eq 2 ]; then
   echo "Interpreting with optimization"
-  ts2bril "$1" | python ../tce.py | brili
+  prog=$(ts2bril "$1" | python ../tce.py)
 else
   echo "Wrong arguments. Usage: ./test.sh prog.bril [tce]"
+  exit
 fi
+/usr/bin/time -l brili < "$prog"

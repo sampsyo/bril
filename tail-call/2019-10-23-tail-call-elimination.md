@@ -105,9 +105,21 @@ AST, the arguments needed to be converted to Bril instructions first, then those
 would be used in a `push`. Additionally, a `retval` would need to be created
 afterwards if in the AST, the function call was assigned to a variable.
 
-
 ### Identifying and Eliminating Tail Calls
-
+The simple definition of a *tail call* would be an immediate return of a call
+to a function. The translation from the TypeScript frontend of something like
+```
+return foo(n)
+```
+to Bril would be
+```
+push n
+call foo
+v: int = retval;
+ret v
+```
+Thus we just need to look for `call`s that are immediately and optionally
+followed by `reval`, and immediately followed by a `ret`.
 
 This doesn't take into account more complex cases where there isn't an explicit
 return of a function call, but the value returned only comes from the same
@@ -124,28 +136,92 @@ function foo(n: number): number {
 }
 ```
 
-Since this doesn't fit our definition of a *tail call**, we opt not to handle
-this case.
+To do this, we first do a global copy propagation. Then, for a value `v` that is
+`return`ed, we search backwards through the CFG until we find a `retval` that
+corresponds to `v`, and make sure that it has not been modified along any of
+these backwards paths, and the `reval` comes from a call to the same function.
+In the above example, the corresponding Bril code looks something as follows:
+```
+then.6:
+  ...
+  call foo;
+  v17: int = retval ;
+  result: int = id v17;
+  jmp endif.6;
+else.6:
+  ...
+  call foo;
+  v21: int = retval ;
+  result: int = id v21;
+endif.6:
+  v22: int = id result;
+  ret v22;
+```
+After copy propagation, it looks like this:
+```
+then.6:
+  ...
+  call foo;
+  result: int = retval;
+  jmp endif.6;
+else.6:
+  ...
+  call foo;
+  result: int = retval;
+endif.6:
+  ret result;
+```
+
+Then we can analyze the CFG backwards to see that indeed we can replace
+the calls to a `jmp`.
+```
+then.6:
+  ...
+  jmp foo;
+  jmp endif.6;
+else.6:
+  ...
+  jmp foo;
+endif.6:
+  ret result;
+```
+Note that the extra instructions can simply be removed by a DCE pass, so we don't
+worry about that.
 
 ## Evaluation
-TODO: HAVE GRAPHS/TABLES SHOWING THE RUNTIME/SPACE USAGE
+To evaluate that the tail call elimination is working and actually gives us an
+improvement, we benchmark some recursive functions that use tail recursion, and
+show the difference in execution time and memory usage between an optimized and
+unoptimized Bril program.
 
-**Percentage Decrease in Memory Usage Using TCE**
+The table entries show how much change was observed, as a percentage, by doing
+tail call elimination (TCE). For example, an entry of -10% means the optimized program
+used 10% less memory/time than the unoptimized program. An `X` means that the output of the program was too
+big to handle. `n` is the argument passed to the recursive function.
+`loop` is a Bril program that simply loops `n` times using recursion. `factorial`
+is a tail recursive implementation of factorials. `mutual_rec` is a program that
+checks whether a program is even or odd in a mutually recursive way. The code for
+these can be found at (TODO: INSERT LINK HERE).
+
+**Percentage Change in Memory Usage Using TCE**
 |            |   n = 1  |  n = 100 | n = 10000 | n = 100000 |
 |:----------:|:--------:|:--------:|:---------:|:----------:|
-|    loop    | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
-|  factorial | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
-| mutual_rec | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
+|    loop    |   +0.1%  |          |           |            |
+|  factorial |   +0.2%  |   -2.5%  |   -79.1%  |     X      |
+| mutual_rec |          |          |           |            |
 
-**Percentage Decrease in Execution Time Using TCE**
+**Percentage Change in Execution Time Using TCE**
 |            |   n = 1  |  n = 100 | n = 10000 | n = 100000 |
 |:----------:|:--------:|:--------:|:---------:|:----------:|
-|    loop    | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
-|  factorial | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
-| mutual_rec | (+0, +0) | (+0, +0) |  (+0, +0) |  (+0, +0)  |
+|    loop    |  +2.1%   |   +2.2%  |   -10%    |   -29.8%   |
+|  factorial |  +1.1%   |   +5.5%  |   -1.6%   |      X     |
+| mutual_rec |          |          |           |            |
+
+To get the execution time and peak memory usage, I use `/usr/bin/time -l` (which prints the contents of rusage).
+To make sure the measurements are meaningful, I chose a maximum `n` value so
+that the tests took a few seconds.
 
 ## Hardest Parts to Get Right
 Finding the right level of abstraction for the IR was difficult. I decided to
 make it closely resemble x86 because that is familiar...
 
-## Possible Extensions

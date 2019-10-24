@@ -7,7 +7,7 @@ function fact(n: number, acc: number): number {
 }
 
 function main(): void {
-    let n = 8;
+    let n = 100000;
     let result = fact(n, 1);
     console.log(result);
 }

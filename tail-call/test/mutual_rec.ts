@@ -20,13 +20,6 @@ function isEven(n: number): number {
 
 function main(): void {
     let n1 = 100000;
-    let n2 = 100001;
     let n1_is_even = isEven(n1);
-    let n2_is_even = isEven(n2);
-    let n1_is_odd = isOdd(n1);
-    let n2_is_odd = isOdd(n2);
     console.log(n1_is_even);
-    console.log(n2_is_even);
-    console.log(n1_is_odd);
-    console.log(n2_is_odd);
 }
