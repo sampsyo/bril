@@ -42,12 +42,13 @@ def optimize(bril_file, profile_file):
     print('Functions:  ', f_improvement)
     print('Blocks:     ', b_improvement)
     print('F + B:      ', fb_improvement)
-    return (p['ip_jumps'] for p in (uo_profile, of_profile, ob_profile, ofb_profile))
+    return (1.00, f_improvement, b_improvement, fb_improvement)
 
 
 if __name__ == '__main__':
     test_file = sys.argv[1]
     out_file = sys.argv[2]
+    sample = int(sys.argv[3])
     if os.path.exists(out_file):
         print('Output file exists! Exiting.')
         sys.exit(1)
@@ -56,7 +57,7 @@ if __name__ == '__main__':
             prefix = line.strip()
             if not prefix:
                 continue
-            bril_file, profile_file = f'workload/{prefix}.bril', f'workload/{prefix}.in'
+            bril_file, profile_file = f'workload/{prefix}.bril', f'workload/{prefix}{sample}.in'
             uo, of, ob, ofb = optimize(bril_file, profile_file)
-            output.write(f'{uo} {of} {ob} {ofb}\n' )
+            output.write(f'{uo}\t{of}\t{ob}\t{ofb}\n' )
     print('Completed testing.')
