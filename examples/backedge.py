@@ -243,18 +243,22 @@ def loopToOneBlock(blocks, loop):
 def numIterations(initial_val, delta_op, bound_val, cond_op):
     num = 0
     i = initial_val
-    num += 1 if delta_op == 'add' else -1
-    temp = ["eq", "lt", "gt", "ge", "le"]
-    if cond_op == 'eq':
-        if i == bound_val: return num
-    elif cond_op == 'lt':
-        if i < bound_val: return num
-    elif cond_op == 'gt':
-        if i > bound_val: return num
-    elif cond_op == 'ge':
-        if i >= bound_val: return num
-    elif cond_op == 'le':
-        if i <= bound_val: return num
+    while True:
+        i += 1 if delta_op == 'add' else -1
+        num+=1
+        if cond_op == 'eq':
+            if i == bound_val: return num
+        elif cond_op == 'lt':
+            if i < bound_val: return num
+        elif cond_op == 'gt':
+            if i > bound_val: return num
+        elif cond_op == 'ge':
+            if i >= bound_val: return num
+        elif cond_op == 'le':
+            if i <= bound_val: return num
+
+def insertBlockAfter(firstBlockName, newBlock, blocks):
+    old_target = blocks[firstBlockName][-1]['args']
     
 
 def stripMine(filtered_loopInfos, blocks):
@@ -268,17 +272,25 @@ def stripMine(filtered_loopInfos, blocks):
         loop_info = filtered_loopInfos[i][1]
 
         # TODO check that br is very last instr in loop
-        # TODO duplicate loop in case n mod 4 != 0
-        # Duplicate loop and connect to bottom if (n mod 4 != 0)
-        if (loop_info['bound_val'] % 4 != 0):
-            print("gotta duplicate the loop")
-            assert("TODO" == "NOT DONE")
 
-        # Add this assignment to top of loop
-        four = {'dest': 'four', 'op': 'const', 'type': 'int', 'value': 4}
+        num_iterations = numIterations(loop_info['iv_val'], loop_info['delta_op'], loop_info['bound_val'], loop_info['cond_op'])
 
         # Makes loop into 1 big block
         loopToOneBlock(blocks, loops[i])
+        loopBlock = blocks[loops[i][0]]
+
+        #TODO: boolean must be false when loop isn't done
+
+        # Duplicate loop and connect to bottom if (n mod 4 != 0)
+        if num_iterations % 4 != 0:
+            branch_targs = loopBlock[-1]['args']
+            cond_var = loopBlock[-1]['args'][0]
+            branch_exit_targ = branch_targs[0] if branch_targs[0] != loops[i][0] else branch_targs[1]
+            new_block_name = loops[i][0] + "COPY"
+            new_block_stmts = [stmt for stmt in loopBlock[:-1]]
+            new_block_stmts.append({'op':'br', 'args':[cond_var, branch_exit_targ, new_block_name]})
+            blocks[new_block_name] = new_block_stmts
+
         loaded_vars = set()
         # TODO: Dependency precheck
         serial_vars = []
@@ -293,13 +305,7 @@ def stripMine(filtered_loopInfos, blocks):
             if 'op' in current_insn and current_insn['op'] == 'lw':
                 current_insn["op"] = 'vload'
                 loaded_vars.add(current_insn["dest"])
-            # Change increment to i = i + 4 
             elif current_insn is loop_info['delta_stmt']:
-                # arg0 = current_insn['args'][0]
-                # if arg0 != loop_info['iv']: current_insn['args'][0] = 'four'
-                # arg1 = current_insn['args'][1]
-                # if arg1 != loop_info['iv']: current_insn['args'][1] = 'four'
-                # current_block.insert(index, four)
                 index+=1
             # New Bound Variable Value
             elif current_insn is loop_info['bound_var_def']:
@@ -336,7 +342,7 @@ def stripMine(filtered_loopInfos, blocks):
         # print("SERIAL VARS: ", serial_vars)
 
         delta_index = next(ind for ind in range(len(blocks[loops[i][0]])) if blocks[loops[i][0]][ind] is loop_info['delta_stmt'])
-        loopBlock = blocks[loops[i][0]]
+        
 
         loopBlock.insert(delta_index+1, loop_info['delta_stmt'])
         for inst in serial_vars:
