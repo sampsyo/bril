@@ -1,4 +1,6 @@
 import os, subprocess, time, argparse, re
+import plotly.graph_objects as go
+import numpy as np
 
 parser = argparse.ArgumentParser(description='Time brili execution')
 parser.add_argument('--prog', default='/Users/katyvoor/cs6120/p2/bril/vvadd.bril', help='Path to bril file we want to time')
@@ -6,56 +8,66 @@ parser.add_argument('--brili', default='/Users/katyvoor/cs6120/p2/bril/bril-ts/'
 args = parser.parse_args()
 
 # number of times to average of runs
-num_runs = 10
+num_runs = 30
 os.chdir(args.brili)
-
+x0 = []
+x1 = []
+y0 = []
+y1 = []
 sum = 0.0
+size = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+std0 = []
+std1 = []
 
-for i in range(num_runs):
+for p in size:
+  optstd = []
+  std = []
+  sum = 0.0
+  for i in range(num_runs):
+    start_time = time.time()
+    os.system("node brili.js  < ../test/proj2/vvadd{}.json".format(p))
+    end = time.time()
+    std.append(end - start_time)
+    std1.append(end - start_time)
+    sum = sum + end - start_time
 
-  start_time = time.time()
-  os.system("node brili.js  < ../examples/test1.json")
-  print("--- %s seconds ---" % (time.time() - start_time))
-  sum = sum + time.time() - start_time
+  st_dev = np.std(std)
+  # average
+  avg1 = sum / num_runs
+  print(avg1)
+  x1.append(p)
+  y1.append(avg1)
 
-# average
-avg1 = sum / num_runs
-print ('avg time(ms) {0}'.format(avg1))
+  sum = 0.0
+  psum = 0.0
+  for i in range(num_runs):
+    start_time = time.time()
+    os.system("node brili.js  < ../test/proj2/vvadd{}o.json".format(p))
+    end = time.time()
+    optstd.append(end - start_time)
+    std0.append(end - start_time)
+    sum = sum + end - start_time
+  st_dev = np.std(optstd)
+  avg = sum / num_runs
+  x0.append(p)
+  y0.append(avg)
 
-sum = 0.0
 
-for i in range(num_runs):
+# Create traces
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x0, y=y0,
+                    mode='lines+markers',
+                    name='lines+markers',text="serial",
+                    error_y=dict(
+            type='data', # value of error bar given in data coordinates
+            array=std1,
+            visible=True)))
+fig.add_trace(go.Scatter(x=x1, y=y1,
+                    mode='lines+markers',
+                    name='lines+markers',text="vector",
+                     error_y=dict(
+            type='data', # value of error bar given in data coordinates
+            array=std0,
+            visible=True)))
 
-  start_time = time.time()
-  os.system("node brili.js  < ../examples/test.json")
-  print("--- %s seconds ---" % (time.time() - start_time))
-  sum = sum + time.time() - start_time
-
-# average
-avg = sum / num_runs
-print("serial")
-print ('avg time(ms) {0}'.format(avg1))
-print("vector")
-print ('avg time(ms) {0}'.format(avg))
-
-# importing the required module 
-import matplotlib.pyplot as plt 
-  
-# x axis values 
-x = [1,2,3] 
-# corresponding y axis values 
-y = [2,4,1] 
-  
-# plotting the points  
-plt.plot(x, y) 
-  
-# naming the x axis 
-plt.xlabel('x - axis') 
-# naming the y axis 
-plt.ylabel('y - axis') 
-  
-# giving a title to my graph 
-plt.title('My first graph!') 
-  
-# function to show the plot 
-plt.show() 
+fig.show()
