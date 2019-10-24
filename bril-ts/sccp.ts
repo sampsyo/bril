@@ -290,7 +290,8 @@ function renameVariables(blocks: BasicBlock[]):
         Map<string, SSAWorkListItem[]> {
     let stacks = new Map<string, string[]>();
     let defCounts = new Map<string, number>();
-    let out = new Map<string, [SSAInstruction, BasicBlock][]>();
+    let def = new Map<string, SSAWorkListItem>();
+    let out = new Map<string, SSAWorkListItem[]>();
 
     function getStack(x: string): string[] {
         if (stacks.has(x))
@@ -301,7 +302,7 @@ function renameVariables(blocks: BasicBlock[]):
     }
 
     function rename(block: BasicBlock) {
-        let pushCounts = new Map<string, number>()
+        let pushCounts = new Map<string, number>();
 
         for (let inst of block.instructions) {
             if ("args" in inst)
@@ -311,7 +312,10 @@ function renameVariables(blocks: BasicBlock[]):
                         break;
                     case "br":
                         let s = getStack(inst.args[0]);
-                        inst.args[0] = s[s.length - 1];
+                        let newArg = s[s.length - 1];
+                        let uses = out.get(newArg) as [SSAInstruction, BasicBlock][];
+                        inst.args[0] = newArg;
+                        uses.push([inst, block]);
                         break;
                     default:
                         inst.args.forEach((arg, i, args) => {
@@ -330,6 +334,7 @@ function renameVariables(blocks: BasicBlock[]):
                 defCounts.set(dest, defs + 1);
                 pushCounts.set(dest, pushes + 1);
                 getStack(dest).push(newDest);
+                def.set(newDest, [inst, block]);
                 out.set(newDest, []);
                 inst.dest = newDest;
             }
@@ -341,7 +346,11 @@ function renameVariables(blocks: BasicBlock[]):
                 if (inst.op != "phi")
                     break;
                 let s = getStack(inst.args[pred]);
-                inst.args[pred] = s[s.length - 1];
+                let newArg = s[s.length - 1];
+                let uses = out.get(newArg);
+                inst.args[pred] = newArg;
+                if (uses != undefined)
+                    uses.push([inst, succ]);
             }
         }
         for (let child of block.children)
@@ -350,6 +359,29 @@ function renameVariables(blocks: BasicBlock[]):
     }
 
     rename(blocks[0]);
+
+    // remove variables that have no uses
+    let toRemove: string[] = [];
+    out.forEach((v, k) => {
+        if (v.length == 0)
+            toRemove.push(k);
+    });
+    while (toRemove.length != 0) {
+        let rem = toRemove.pop() as string;
+        let [i, b] = def.get(rem) as SSAWorkListItem;
+        out.delete(rem);
+        b.instructions.splice(b.instructions.indexOf(i), 1);
+        if ("args" in i) {
+            for (let arg of i.args) {
+                if (arg != undefined) {
+                    let uses = out.get(arg) as SSAWorkListItem[];
+                    uses.splice(uses.findIndex(u => u[0] == i), 1);
+                    if (uses.length == 0)
+                        toRemove.push(arg);
+                }
+            }
+        }
+    }
     return out;
 }
 
@@ -411,7 +443,11 @@ function sccp(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>):
         let executables = inst.args.filter((a, i) => executable[i]);
         let elems = executables.map(v => out.get(v)) as LatticeElement[];
         let glb = elems.reduce(meet, "top");
-        out.set(inst.dest, glb);
+        if (glb != out.get(inst.dest)) {
+            out.set(inst.dest, glb);
+            for (let use of uses.get(inst.dest) as SSAWorkListItem[])
+                worklist.push(use);
+        }
     }
 
     function visitExpression(inst: SSAInstruction, block: BasicBlock) {
@@ -424,12 +460,16 @@ function sccp(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>):
                 worklist.push([block, block.successors[1]]);
             break;
         case "const": // set lattice element to const value
-            out.set(inst.dest, inst.value);
+            if (out.get(inst.dest) != inst.value) {
+                out.set(inst.dest, inst.value);
+                for (let use of uses.get(inst.dest) as SSAWorkListItem[])
+                    worklist.push(use);
+            }
             break;
         case "print": // do nothing
         case "nop":
             break;
-        default:
+        default: // value operation
             let valOp = inst as bril.ValueOperation
             let updated = evaluateExpression(valOp);
             if (out.get(valOp.dest) != updated) {
@@ -475,7 +515,6 @@ async function main() {
     insertPhis(blocks);
     let uses = renameVariables(blocks);
     console.log(sccp(blocks, uses));
-    //console.log(JSON.stringify(blocks.map(b => b.instructions), undefined, 2));
 }
 
 process.on('unhandledRejection', e => { throw e });
