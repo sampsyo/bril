@@ -4,7 +4,6 @@ open Cfg
 let find_entry graph =
   let found =
     CFG.fold_vertex (fun v found ->
-        Printf.printf "\n%s\n" (Ident.string_of_lbl (fst v).lbl);
         match Hashtbl.find (snd v) "entry" with
         | Some e ->
            if not (Bitv.all_zeros e)
