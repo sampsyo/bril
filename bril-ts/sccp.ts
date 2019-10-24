@@ -577,14 +577,115 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
     }
 }
 
+// Converts out of SSA form. This is a hacky version that relies on the
+// above implementation of to-SSA conversion, and properties of SCCP,
+// but produces a more efficient (pre-move coalescing) program than
+// an actual from-SSA.
+function removePhis(blocks: BasicBlock[]) {
+    function removeSubscript(x: string): string {
+        return x.substring(0, x.lastIndexOf("_"));
+    }
+
+    for (let block of blocks) {
+        let insts = block.instructions;
+        for (let i = 0; i < insts.length; i++) {
+            let inst = insts[i];
+            switch (inst.op) {
+            case "phi":
+                insts.splice(i--, 1);
+                continue;
+            case "jmp":
+            case "const":
+                break;
+            case "br":
+                inst.args[0] = removeSubscript(inst.args[0]);
+                break;
+            default:
+                inst.args = inst.args.map(removeSubscript);
+            }
+            if ("dest" in inst)
+                inst.dest = removeSubscript(inst.dest);
+        }
+    }
+}
+
+// Convert CFG back into a list of instructions, inserting
+// branches, jumps, and labels where necessary.
+function flattenCFG(blocks: BasicBlock[]): (bril.Instruction | bril.Label)[] {
+    let placed = new Set<BasicBlock>();
+    let stack = [blocks[0]];
+    let out: (bril.Instruction | bril.Label)[] = [];
+
+    function label(): string {
+        //TODO
+        return "totally_unique_label";
+    }
+
+    function placeBlock(block: BasicBlock) {
+        if (block.label != null)
+            out.push({label: block.label});
+        out = out.concat(block.instructions as bril.Instruction[]);
+        placed.add(block);
+    }
+
+    while (stack.length != 0) {
+        let block = stack.pop() as BasicBlock;
+        if (placed.has(block))
+            continue;
+        placeBlock(block);
+        while (block.successors.length == 1) {
+            let succ = block.successors[0];
+            if (placed.has(succ)) {
+                if (succ.label == null)
+                    succ.label = label();
+                block.instructions.push({op: "jmp", args: [succ.label]});
+                break;
+            }
+            block = succ;
+            placeBlock(block);
+        }
+        if (block.successors.length == 0 && stack.length != 0)
+            out.push({op: "ret", args: []});
+        for (let succ of block.successors)
+            if (!placed.has(succ) && !stack.includes(succ))
+                stack.push(succ);
+    }
+
+    let referencedLabels = new Set<string>();
+    for (let inst of out) {
+        if (!("op" in inst))
+            continue;
+        switch (inst.op) {
+        case "br":
+            referencedLabels.add(inst.args[1]);
+            referencedLabels.add(inst.args[2]);
+            break;
+        case "jmp":
+            referencedLabels.add(inst.args[0]);
+        }
+    }
+    for (let i = 0; i < out.length; i++) {
+        let inst = out[i];
+        if ("label" in inst && !referencedLabels.has(inst.label))
+            out.splice(i--, 1)
+    }
+
+    return out;
+}
+
 async function main() {
     let prog: bril.Program = JSON.parse(await readStdin());
-    let blocks = cfg(basicBlocks(prog.functions[0]));
-    dominatorTree(blocks);
-    insertPhis(blocks);
-    let [uses, defs] = renameVariables(blocks);
-    let values = sccp(blocks, uses);
-    replaceConstants(blocks, uses, defs, values);
+    for (let func of prog.functions) {
+        let blocks = cfg(basicBlocks(func));
+        dominatorTree(blocks);
+        insertPhis(blocks);
+        let [uses, defs] = renameVariables(blocks);
+        let values = sccp(blocks, uses);
+        replaceConstants(blocks, uses, defs, values);
+        removePhis(blocks);
+        func.instrs = flattenCFG(blocks);
+    }
+    console.log(JSON.stringify(prog, undefined, 2));
 }
 
 process.on('unhandledRejection', e => { throw e });
