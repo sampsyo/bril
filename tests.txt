@@ -1,6 +1,7 @@
 fib
 funcs_blocks
+power
+sameer
+fizzbuzz
 factorial
 loop
-power
-

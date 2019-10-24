@@ -1,0 +1,54 @@
+# Return whether a >= b
+ge a b: bool {
+  b: bool = ge a b;
+  ret b;
+}
+
+lt a b: bool {
+  b: bool = lt a  b;
+  ret b;
+}
+
+increment i: int {
+  one: int = const 1;
+  v0: int = add i one;
+  ret v0;
+}
+
+mod n div: int {
+  done: bool = call lt n div;
+  br done end start;
+end:
+  ret n;
+start:
+  i: int = sub n div;
+  i: int = call mod i div;
+  ret i;
+}
+
+divisible n div: bool {
+  mod: int = call mod n div;
+  zero: int = const 0;
+  q: bool = eq mod zero;
+  ret q;
+}
+
+main n {
+  i: int = const 0;
+  three: int = const 3;
+  five: int = const 5;
+  jmp start;
+end:
+  ret;
+start:
+  finished: bool = call ge i n;
+  br finished end start_;
+start_:
+  i: int = call increment i;
+  div_five: int = call divisible i five;
+  div_three: int = call divisible i three;
+  print div_five;
+  print div_three;
+  jmp start;
+}
+

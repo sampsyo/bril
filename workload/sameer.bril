@@ -1,0 +1,29 @@
+main (max:int) {
+  x: int = const 10;
+  y: int = const 2;
+  b: bool = const false;
+  uncondb: bool = const false;
+  c: int = const 0;
+  i: int = const 1;
+loopstart:
+  b: bool = le c max;
+  c: int = add c i;
+  br b continuebranch exitbranch;
+continuebranch:
+  br uncondb if else;
+if:
+  x: int = add x x;
+  print x;
+  jmp end;
+else:
+  y: int = mul y y;
+  print y;
+  jmp end;
+end:
+  print x;
+  print y;
+  jmp loopstart;
+exitbranch:
+  z: int = const 11111;
+  print z;
+}
