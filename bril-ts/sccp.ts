@@ -419,6 +419,10 @@ function sccp(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>):
     let start = new BasicBlock(null, []);
     let worklist: WorkListItem[] = [[start, blocks[0]]];
 
+    function roundTowardZero(x: number): number {
+        return x < 0 ? Math.ceil(x) : Math.floor(x);
+    }
+
     function evaluateExpression(inst: bril.ValueOperation): LatticeElement {
         let argLatElems = inst.args.map(v => out.get(v)) as LatticeElement[];
         if (!["and", "or"].includes(inst.op) && argLatElems.includes("bottom"))
@@ -427,7 +431,11 @@ function sccp(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>):
         case "add": return toInt(argLatElems[0]) + toInt(argLatElems[1]);
         case "mul": return toInt(argLatElems[0]) * toInt(argLatElems[1]);
         case "sub": return toInt(argLatElems[0]) - toInt(argLatElems[1]);
-        case "div": return Math.floor(toInt(argLatElems[0]) / toInt(argLatElems[1]));
+        case "div":
+            if (argLatElems[1] == 0)
+                return "bottom"
+            else
+                return roundTowardZero(toInt(argLatElems[0]) / toInt(argLatElems[1]));
         case "id":  return argLatElems[0];
         case "eq":  return argLatElems[0] == argLatElems[1];
         case "lt":  return toInt(argLatElems[0]) < toInt(argLatElems[1]);
@@ -515,7 +523,6 @@ function sccp(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>):
 // consts where possible, removes unused variables.
 function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListItem[]>,
         defs: Map<string, SSAWorkListItem>, values: Map<string, LatticeElement>) {
-
     for (let block of blocks) {
         if (block.inEdgeExecutable.some(b => b)) {
             if (block.successors.length != 2)
@@ -526,6 +533,8 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
             if (typeof val != "boolean")
                 continue;
             insts.pop();
+            let u = uses.get(branch.args[0]) as SSAWorkListItem[];
+            u.splice(u.findIndex(([i, b]) => i == branch), 1);
             let removedSucc = block.successors[val ? 1 : 0];
             let remainingSucc = block.successors[val ? 0 : 1];
             block.successors = [remainingSucc];
@@ -540,7 +549,6 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
                 succ.predecessors.splice(succ.predecessors.indexOf(block), 1);
         }
     }
-
     for (let [v, val] of values) {
         if (val == "bottom" || val == "top")
             continue;
@@ -549,7 +557,7 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
             continue;
         for (let arg of def.args) {
             let u = uses.get(arg) as SSAWorkListItem[];
-            uses.set(arg, u.splice(u.findIndex(([i, b]) => i == def, 1)));
+            u.splice(u.findIndex(([i, b]) => i == def, 1));
         }
         let insts = defBlock.instructions;
         let type = (def as bril.ValueOperation | PhiOperation).type;
@@ -570,7 +578,7 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
         if ("args" in def)
             for (let arg of def.args) {
                 let u = uses.get(arg) as SSAWorkListItem[];
-                uses.set(arg, u.splice(u.findIndex(([i, b]) => i == def), 1));
+                u.splice(u.findIndex(([i, b]) => i == def), 1);
                 if (u.length == 0)
                     toRemove.push(arg);
             }
