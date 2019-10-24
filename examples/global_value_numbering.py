@@ -82,19 +82,17 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_o
         # Intialize hashtable scope (track changes to be cleaned after this
         # recursive call)
         pushed = defaultdict(int)
-        instrs_to_remove = defaultdict(list)
+        instrs_to_remove = []
 
         for instr in blocks[block_name]:
             # Iterate only through phi nodes, which have been inserted at the
             # start of the block if they exist
             if instr['op'] != 'phi': break
             
-            # TODO: verify that it's okay to discard the destination when
-            # canonicalizing phi nodes
             canonicalized = canonicalize(instr)
 
             if check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
-                instrs_to_remove[block_name].append(instr)
+                instrs_to_remove.append(instr)
             else:
                 vars_to_value_nums[instr['dest']] = instr['dest']
 
@@ -116,11 +114,18 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_o
                 if canonicalized in exprs_to_value_nums and len(exprs_to_value_nums[canonicalized]):
                     value_number = exprs_to_value_nums[canonicalized][-1]
                     vars_to_value_nums[instr['dest']] = value_number
-                    instrs_to_remove[block_name].append(instr)
+                    instrs_to_remove.append(instr)
                 else:
                     vars_to_value_nums[instr['dest']] = instr['dest']
                     exprs_to_value_nums[canonicalized].append(instr['dest'])
                     pushed[canonicalized] += 1
+
+            # Replace arguments to non-phis as needed
+            elif 'args' in instr and instr['op'] != 'phi':
+                for i, arg in enumerate(instr['args']):
+                    if arg in vars_to_value_nums:
+                        instr['args'][i] = vars_to_value_nums[arg]
+
 
         # Iterate through all successor blocks' phi nodes
         for succ_name in succ[block_name]:
@@ -136,9 +141,8 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_o
                     instr['args'][i] = vars_to_value_nums[arg]
 
 
-        for name, instrs in instrs_to_remove.items():
-            for instr in instrs:
-                blocks[name].remove(instr)
+        for instr in instrs_to_remove:
+            blocks[block_name].remove(instr)
 
         ordered_children = [b for b in reverse_post_order if b in dom_tree[block_name]]
         for child_name in ordered_children:
