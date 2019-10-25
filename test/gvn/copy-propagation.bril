@@ -1,0 +1,7 @@
+int main(a : int) {
+entry:
+  b : int = id a;
+  c : int = id b;
+  d : int = id c;
+  ret d;
+}

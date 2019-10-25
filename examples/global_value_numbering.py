@@ -69,10 +69,10 @@ def check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
     return False
 
 # From Briggs, Cooper, and Simpson, 1997.
-def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_order):
+def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
 
     # Maps variable names to value numbers (in this case, also names)
-    vars_to_value_nums = {}
+    vars_to_value_nums = {arg['name'] : arg['name'] for arg in func['args']}
 
     # The core "hashtable" for this algorithm. Maps expressions to value 
     # numbers.
@@ -115,6 +115,10 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_o
                     value_number = exprs_to_value_nums[canonicalized][-1]
                     vars_to_value_nums[instr['dest']] = value_number
                     instrs_to_remove.append(instr)
+                elif instr['op'] == 'id' and instr['args'][0] in vars_to_value_nums:
+                    value_number = vars_to_value_nums[instr['args'][0]]
+                    vars_to_value_nums[instr['dest']] = value_number
+                    instrs_to_remove.append(instr)
                 else:
                     vars_to_value_nums[instr['dest']] = instr['dest']
                     exprs_to_value_nums[canonicalized].append(instr['dest'])
@@ -152,8 +156,8 @@ def dominator_value_numbering(block_name, blocks, succ, dom_tree, reverse_post_o
         for expr, num_pushed in pushed.items():
             exprs_to_value_nums[expr] = exprs_to_value_nums[expr][:-num_pushed]
 
-    # Call recursive helper
-    dvn(block_name)
+    # Call recursive helper on entry block
+    dvn(next(iter(blocks)))
 
 def global_value_numbering(bril): 
     for func in bril['functions']:
@@ -164,7 +168,7 @@ def global_value_numbering(bril):
         dom_tree = get_dominator_tree(blocks, succ)
         order = reverse_post_order(next(iter(blocks)), succ)
 
-        dominator_value_numbering(next(iter(blocks)), blocks, succ, dom_tree, order)
+        dominator_value_numbering(func, blocks, succ, dom_tree, order)
         func['instrs'] = block_map_to_instrs(blocks)
 
     return json.dumps(bril, indent=4)
