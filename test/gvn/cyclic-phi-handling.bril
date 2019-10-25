@@ -1,0 +1,28 @@
+// Ported from llvm/test/Transforms/NewGVN/cyclic-phi-handling.ll
+
+void main(arg : int, arg1 : int) {
+bb:
+  jmp bb3;
+
+// While non-standard, llvm allows mutually dependent phi nodes
+// Ensure we do not infinite loop trying to process them
+bb3:
+  tmp : int = phi arg1 tmp4 bb bb7;
+  tmp4 : int = phi arg tmp bb bb7;
+  tmp5 : int = call foo(tmp4, tmp);
+  zero : int = const 0;
+  tmp6 : int = eq tmp5 zero;
+  tmp7 : bool =  not tmp6;
+  br tmp7 bb7 bb8;
+
+bb7:
+  jmp bb3;
+
+bb8:
+  ret;
+}
+
+int foo(x : int, y : int) {
+    z : int = add x y;
+    ret z;
+}

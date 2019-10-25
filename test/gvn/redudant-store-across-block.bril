@@ -1,0 +1,16 @@
+// Ported from llvm/test/Transforms/NewGVN/deadstore.ll
+
+// Remove redundant store if loaded value is in another block.
+void main(c : bool, p : int) {
+entry:
+  v : int = id p;
+  br c bb1 bb2;
+bb1:
+  jmp bb3;
+bb2:
+  // TODO: should we be able to remove this line???
+  p : int = id v;
+  jmp bb3;
+bb3:
+  ret;
+}

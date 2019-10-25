@@ -1,3 +1,5 @@
+// Ported from http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.36.8877&rep=rep1&type=pdf
+
 void main() {
   a0 : int = const 0;
   b0 : int = const 0;

@@ -1,0 +1,61 @@
+// Ported from /llvm/test/Transforms/NewGVN/equivalent-phi.ll
+
+// We should be able to prove the equivalence of two of the phis, and then use that to eliminate
+// one set of indexing calculations and a load
+
+// CHECK-LABEL: @bar(
+// CHECK-NEXT:  bb:
+// CHECK-NEXT:    br label bb3
+// CHECK:       bb3:
+// CHECK-NEXT:    [[TMP:.*]] = phi i32 [ arg, bb ], [ [[TMP:.*]]15, bb17 ]
+// CHECK-NEXT:    [[TMP4:.*]] = phi i32 [ arg2, bb ], [ [[TMP18:.*]], bb17 ]
+// CHECK-NEXT:    [[TMP6:.*]] = phi i32 [ 0, bb ], [ [[TMP14:.*]], bb17 ]
+// CHECK-NEXT:    [[TMP7:.*]] = sext i32 [[TMP]] to i64
+// CHECK-NEXT:    [[TMP8:.*]] = getelementptr inbounds [1024 x i32], [1024 x i32]* @global, i64 0, i64 [[TMP7]]
+// CHECK-NEXT:    [[TMP9:.*]] = load i32, i32* [[TMP8]], align 4
+// CHECK-NEXT:    [[TMP10:.*]] = add nsw i32 [[TMP6]], [[TMP9]]
+// CHECK-NEXT:    [[TMP14]] = add nsw i32 [[TMP10]], [[TMP9]]
+// CHECK-NEXT:    [[TMP15:.*]] = add nsw i32 [[TMP]], arg1
+// CHECK-NEXT:    br label bb17
+// CHECK:       bb17:
+// CHECK-NEXT:    [[TMP18]] = add i32 [[TMP4]], -1
+// CHECK-NEXT:    [[TMP19:.*]] = icmp ne i32 [[TMP4]], 0
+// CHECK-NEXT:    br i1 [[TMP19]], label bb3, label bb20
+// CHECK:       bb20:
+// CHECK-NEXT:    ret i32 [[TMP14]]
+//
+
+
+int main(arg : int, arg1 : int, arg2 : int) {
+bb:
+  jmp bb3;
+
+bb3:
+  tmp : int = phi arg tmp15 bb bb17;
+  tmp4 : int = phi arg2 tmp18 bb bb17;
+  // Apparently we should be able to get rid of this!
+  tmp5 : int = phi arg tmp16 bb bb17;
+  zero : int = const 0;
+  tmp6 : int = phi zero tmp14 bb bb17;
+  tmp7 : int = id tmp;
+  tmp8 : int = id tmp7;
+  tmp9 : int = id tmp8;
+  tmp10 : int = add tmp6 tmp9;
+  tmp11 : int = id tmp5;
+  tmp12 : int = id tmp11;
+  tmp13 : int = id tmp12;
+  tmp14 : int = add tmp10 tmp13;
+  tmp15 : int = add tmp arg1;
+  tmp16 : int = add tmp5 arg1;
+  jmp bb17;
+
+bb17:
+  neg1 : int = const -1;
+  tmp18 : int = add tmp4 neg1;
+  eq : bool = eq tm4 zero;
+  tmp19 : int = not eq;
+  br tmp19 bb3 bb20;
+
+bb20:
+  ret tmp14;
+}
