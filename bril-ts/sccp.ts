@@ -627,11 +627,6 @@ function flattenCFG(blocks: BasicBlock[]): (bril.Instruction | bril.Label)[] {
     let stack = [blocks[0]];
     let out: (bril.Instruction | bril.Label)[] = [];
 
-    function label(): string {
-        //TODO
-        return "totally_unique_label";
-    }
-
     function placeBlock(block: BasicBlock) {
         if (block.label != null)
             out.push({label: block.label});
@@ -647,9 +642,7 @@ function flattenCFG(blocks: BasicBlock[]): (bril.Instruction | bril.Label)[] {
         while (block.successors.length == 1) {
             let succ = block.successors[0];
             if (placed.has(succ)) {
-                if (succ.label == null)
-                    succ.label = label();
-                block.instructions.push({op: "jmp", args: [succ.label]});
+                out.push({op: "jmp", args: [succ.label as string]});
                 break;
             }
             block = succ;
@@ -702,4 +695,3 @@ async function main() {
 process.on('unhandledRejection', e => { throw e });
 
 main();
-
