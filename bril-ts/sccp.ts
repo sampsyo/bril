@@ -549,6 +549,7 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
                 succ.predecessors.splice(succ.predecessors.indexOf(block), 1);
         }
     }
+
     for (let [v, val] of values) {
         if (val == "bottom" || val == "top")
             continue;
@@ -557,7 +558,7 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
             continue;
         for (let arg of def.args) {
             let u = uses.get(arg) as SSAWorkListItem[];
-            u.splice(u.findIndex(([i, b]) => i == def, 1));
+            u.splice(u.findIndex(([i, b]) => i == def), 1);
         }
         let insts = defBlock.instructions;
         let type = (def as bril.ValueOperation | PhiOperation).type;
