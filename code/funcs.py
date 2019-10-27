@@ -3,7 +3,7 @@ import copy
 from collections import OrderedDict
 import sys, os
 pn = os.path.join(os.path.dirname(__file__), "examples/")
-sys.path.insert(0, "/home/zl679/Desktop/bril/examples")
+sys.path.insert(0, "/Users/Cindy/Nextcloud/Cornell/cs6120/bril/examples")
 from cfg import block_map, successors, add_terminators
 from form_blocks import form_blocks
 from dom import get_dom, get_pred
@@ -223,11 +223,14 @@ def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
     '''
     This function returns:
     blocks: It's a modification to the blocks - input the function. It move 
-    quantlified loop invariants to the preheader blocks of loops.
+    quanlified loop invariants to the preheader blocks of loops.
+    licd: It's a dictionary where key is back edge of each loop and value is 
+    instruction get code motioned.
     '''
-    
+    licd = dict(loop_invariants.keys())
     b_names = list(blocks.keys())
     for back_edge in loop_invariants:
+        licd[back_edge] = []
         #definitions inside the loop (1)
         defs = [ins.get('dest') for b in loops[back_edge]
                 for ins in blocks[b] if ins.get('dest')]
@@ -248,7 +251,8 @@ def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
                     blocks[b_name].remove(instr)
                     instr['comment'] = 'code motion'
                     blocks[pre_header[b_name]].append(instr)
-    return blocks
+                    licd[back_edge].append(instr)
+    return blocks, licd
     
 def blocks_to_func(blocks, func):
     '''
@@ -280,9 +284,9 @@ def loopReduce():
         exits, live_var, dom, oblocks, loops, reach_def, _ = loop_king(func)
         loop_invariants = find_LI(oblocks, loops, reach_def)
         pre_header, new_blocks = create_preheaders(oblocks, loops)
-        code_motion = move_LI(new_blocks, pre_header, loop_invariants, loops, dom, live_var, exits)
+        code_motion, licd = move_LI(new_blocks, pre_header, loop_invariants, loops, dom, live_var, exits)
         bril['functions'][i] = blocks_to_func(code_motion, func)
-    
+        #print(licd)
     print(json.dumps(bril)) 
 #if __name__ == '__main__':
 #    loopReduce()
