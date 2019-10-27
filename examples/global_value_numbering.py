@@ -68,6 +68,17 @@ def check_removeable_phi(instr, vars_to_value_nums, exprs_to_value_nums):
     
     return False
 
+FOLDABLE_OPS = {
+    'add': lambda a, b: a + b,
+    'mul': lambda a, b: a * b,
+    'sub': lambda a, b: a - b,
+    'div': lambda a, b: a // b,
+    'gt': lambda a, b: a > b,
+    'lt': lambda a, b: a < b,
+    'ge': lambda a, b: a >= b,
+    'le': lambda a, b: a <= b,
+}
+
 # From Briggs, Cooper, and Simpson, 1997.
 def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
 
@@ -77,6 +88,9 @@ def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
     # The core "hashtable" for this algorithm. Maps expressions to value 
     # numbers.
     exprs_to_value_nums = defaultdict(list)
+
+    # Map from value numbers to constants for constant propagation/folding
+    value_nums_to_consts = {}
 
     def dvn(block_name):
         # Intialize hashtable scope (track changes to be cleaned after this
@@ -101,8 +115,13 @@ def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
 
         # Loop through all assignments 
         for instr in blocks[block_name]:
+
+            # Add constants to our mapping
+            if instr['op'] == 'const':
+                value_nums_to_consts[instr['dest']] = instr['value']
+
             # Skip phi nodes because we just processed them
-            if 'dest' in instr and 'args' in instr and instr['op'] != 'phi': 
+            if 'dest' in instr and 'args' in instr and instr['op'] != 'phi':
 
                 instr['args'] = [vars_to_value_nums[a] if a in vars_to_value_nums else a for a in instr['args']]
                 
@@ -110,26 +129,42 @@ def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
 
                 # TODO: maybe "simplify" expr
 
+                value_number = None
+
                 # Check if we already have a value number for this expression
                 if canonicalized in exprs_to_value_nums and len(exprs_to_value_nums[canonicalized]):
                     value_number = exprs_to_value_nums[canonicalized][-1]
-                    vars_to_value_nums[instr['dest']] = value_number
                     instrs_to_remove.append(instr)
+                # Basic copy propagation by looking up the first argument
                 elif instr['op'] == 'id' and instr['args'][0] in vars_to_value_nums:
                     value_number = vars_to_value_nums[instr['args'][0]]
-                    vars_to_value_nums[instr['dest']] = value_number
                     instrs_to_remove.append(instr)
                 else:
+                    value_number = instr['dest']
                     vars_to_value_nums[instr['dest']] = instr['dest']
                     exprs_to_value_nums[canonicalized].append(instr['dest'])
                     pushed[canonicalized] += 1
+
+                    if instr['op'] in FOLDABLE_OPS:
+                        sys.stderr.write("foldable!!!\n")
+                        const_args = [value_nums_to_consts[n] for n in instr['args'] if n in value_nums_to_consts]
+                        sys.stderr.write(str(const_args) + " \n")
+                        if len(const_args) == len(instr['args']):
+                            value = FOLDABLE_OPS[instr['op']](*const_args)
+                            instr.update({
+                                'op': 'const',
+                                'value': value,
+                            })
+                            del instr['args']
+                            value_nums_to_consts[value_number] = value
+
+                vars_to_value_nums[instr['dest']] = value_number
 
             # Replace arguments to non-phis as needed
             elif 'args' in instr and instr['op'] != 'phi':
                 for i, arg in enumerate(instr['args']):
                     if arg in vars_to_value_nums:
                         instr['args'][i] = vars_to_value_nums[arg]
-
 
         # Iterate through all successor blocks' phi nodes
         for succ_name in succ[block_name]:
