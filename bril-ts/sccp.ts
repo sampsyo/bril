@@ -557,6 +557,8 @@ function replaceConstants(blocks: BasicBlock[], uses: Map<string, SSAWorkListIte
         if (def.op == "const")
             continue;
         for (let arg of def.args) {
+            if (arg == undefined)
+                continue;
             let u = uses.get(arg) as SSAWorkListItem[];
             u.splice(u.findIndex(([i, b]) => i == def), 1);
         }
