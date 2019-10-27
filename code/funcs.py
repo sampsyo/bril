@@ -227,7 +227,7 @@ def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
     licd: It's a dictionary where key is back edge of each loop and value is 
     instruction get code motioned.
     '''
-    licd = dict(loop_invariants.keys())
+    licd = dict()
     b_names = list(blocks.keys())
     for back_edge in loop_invariants:
         licd[back_edge] = []
