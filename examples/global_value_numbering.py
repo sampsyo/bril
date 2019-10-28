@@ -126,9 +126,6 @@ def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
                 instr['args'] = [vars_to_value_nums[a] if a in vars_to_value_nums else a for a in instr['args']]
                 
                 canonicalized = canonicalize(instr)
-
-                # TODO: maybe "simplify" expr
-
                 value_number = None
 
                 # Check if we already have a value number for this expression
@@ -140,15 +137,15 @@ def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
                     value_number = vars_to_value_nums[instr['args'][0]]
                     instrs_to_remove.append(instr)
                 else:
+                    # Add a "new" value number to our data structures
                     value_number = instr['dest']
                     vars_to_value_nums[instr['dest']] = instr['dest']
                     exprs_to_value_nums[canonicalized].append(instr['dest'])
                     pushed[canonicalized] += 1
 
+                    # Constant folding if possible
                     if instr['op'] in FOLDABLE_OPS:
-                        sys.stderr.write("foldable!!!\n")
                         const_args = [value_nums_to_consts[n] for n in instr['args'] if n in value_nums_to_consts]
-                        sys.stderr.write(str(const_args) + " \n")
                         if len(const_args) == len(instr['args']):
                             value = FOLDABLE_OPS[instr['op']](*const_args)
                             instr.update({

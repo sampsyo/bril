@@ -1,0 +1,37 @@
+// Ported from http://www.cs.tau.ac.il/~msagiv/courses/pa07/lecture2-notes-update.pdf
+
+int main() {
+entry:
+  z : int = const 3;
+  x : int = const 1;
+  y : int = const 0;
+  jmp check;
+
+check:
+  zero : int = const 0;
+  xgt : bool = gt x zero;
+  br xgt loop end;
+
+loop:
+  one : int = const 1;
+  xisone : bool = eq x one;
+  br xisone ifb elseb;
+
+ifb:
+  y : int = const 7;
+  jmp afterb;
+
+elseb:
+  four : int = const 4;
+  y : int = add z four;
+  jmp afterb;
+
+afterb:
+  x : int = const 3;
+  print y;
+  jmp check;
+
+end: 
+  ret;
+  
+}
