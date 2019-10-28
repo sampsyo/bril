@@ -1,0 +1,31 @@
+// Ported from http://users.csc.calpoly.edu/~akeen/courses/csc431/handouts/assignments/sccp.mini
+
+void main(x : int, y : int, dd : int) {
+entry:
+  zero : int = const 0;
+  one : int = const 1;
+  ninetynine : int = const 99;
+  jmp bb1;
+bb1:
+  a : int = add y one;
+  a : int = add x one;
+  jmp bb2;
+bb2:
+  a : int = const 3;
+  b : int = const 4;
+  jmp bb3;
+bb3:
+  c : int = add a b;
+  d : int = add b c;
+  d : int = mul b c;
+  a : int = sub ninetynine a;
+  print a;
+  print b;
+  print c;
+  print d;
+  d : int = div b zero;
+  print d;
+  d : int = id dd;
+  b : int = add d one;
+  print b;
+}

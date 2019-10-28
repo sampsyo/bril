@@ -147,13 +147,17 @@ def dominator_value_numbering(func, blocks, succ, dom_tree, reverse_post_order):
                     if instr['op'] in FOLDABLE_OPS:
                         const_args = [value_nums_to_consts[n] for n in instr['args'] if n in value_nums_to_consts]
                         if len(const_args) == len(instr['args']):
-                            value = FOLDABLE_OPS[instr['op']](*const_args)
-                            instr.update({
-                                'op': 'const',
-                                'value': value,
-                            })
-                            del instr['args']
-                            value_nums_to_consts[value_number] = value
+                            try:
+                                value = FOLDABLE_OPS[instr['op']](*const_args)
+                                instr.update({
+                                    'op': 'const',
+                                    'value': value,
+                                })
+                                del instr['args']
+                                value_nums_to_consts[value_number] = value
+                            except:
+                                # There must have been a dynamic error!
+                                pass
 
                 vars_to_value_nums[instr['dest']] = value_number
 
