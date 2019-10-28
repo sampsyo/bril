@@ -2,5 +2,7 @@ int main(x : int, y : int) {
     z : int = add x y;
     z2 : int = add x y;
     z3 : int = add y x;
+    print z2;
+    print z3;
     ret z;
 }
