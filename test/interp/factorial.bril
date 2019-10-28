@@ -1,3 +1,5 @@
+// ARGS: 10
+
 void main(x : int) {
   result : int = call factorial(x);
   print result;
