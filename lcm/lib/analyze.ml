@@ -20,6 +20,8 @@ let merge_list =
 
 let exprs instr : expr_typs =
   match instr with
+  | Cfg.ValueInstr { op = Id _; _ } ->
+     ExprMap.empty
   | Cfg.ValueInstr { op; typ; _ } ->
      ExprMap.singleton op typ
   | _ -> 
@@ -80,21 +82,15 @@ module Analyze (EXPRS: Exprs) = struct
   let ones = EXPRS.build ~f:(fun _ -> true)
   let zeros = EXPRS.build ~f:(fun _ -> false)
 
-  module Entry : Analysis.Analysis = struct
-    let run graph =
-      let mark v =
-        let (_, block_attrs) = v in
-        let data =
-          (* fix width of bit vector *)
+  module Entry : Analysis.Analysis =
+    MakeBlockLocal
+      (struct
+        let attr_name = "entry"
+        let analyze (_, block_attrs) =
           if Bitv.all_zeros @@ Attrs.get block_attrs "entry"
           then zeros
           else ones
-        in
-        Hashtbl.set ~key:"entry" block_attrs ~data
-      in
-      CFG.iter_vertex mark graph;
-      graph
-  end
+      end)
 
   module Exit : Analysis.Analysis = struct
     let run graph =

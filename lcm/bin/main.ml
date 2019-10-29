@@ -8,11 +8,15 @@ let go dot_before dot_after file () =
   let prog = Parser.parse_bril file in
   let fn = List.hd_exn prog in
   let graph = Cfgify.cfgify_dirs fn.body in
-  match dot_before with
-  | Some dot_before -> Cfg.dump_to_dot graph dot_before
-  | None -> ();
+  (if Cfg.CFG.nb_vertex graph <= 1 then failwith "1 or fewer basic blocks, not optimizing!\n");
+  begin match dot_before with
+  | Some dot_before ->
+     Cfg.dump_to_dot graph dot_before
+  | None -> ()
+  end;
   let expr_typs = Analyze.aggregate_expression_typs graph in
   let expressions = Analyze.ExprMap.keys expr_typs in
+  (if List.length expressions < 1 then failwith "no expressions to optimize!");
   let graph = Optimize.unify_expression_locations expressions graph in
   let module Exprs = struct
       let expressions = expressions
@@ -43,9 +47,10 @@ let go dot_before dot_after file () =
     |> Optimize.delete_computations expressions
     |> Optimize.insert_computations expr_typs expressions
   in
-  match dot_after with
+  begin match dot_after with
   | Some dot_after -> Cfg.dump_to_dot graph dot_after
-  | None -> ();
+  | None -> ()
+  end;
   let prog = Print.decfg graph in
   Parser.print_bril Out_channel.stdout prog
 
