@@ -33,7 +33,11 @@ let blockify (instrs: Bril.directive list) =
        end
     | [] ->
        if List.length cur_block.pre_body > 0 || cur_block.pre_term <> None
-       then [cur_block]
+       then
+         let cur_block =
+           { cur_block with pre_body = List.rev cur_block.pre_body }
+         in
+         [cur_block]
        else []
   and continue cur_block instrs lbl =
     let cur_block =
