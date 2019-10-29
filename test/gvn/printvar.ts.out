@@ -1,0 +1,7 @@
+void main() {
+b1:
+  v01: int = const 5;
+  x1: int = id v01;
+  print x1;
+  ret ;
+}

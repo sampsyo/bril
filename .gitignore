@@ -5,3 +5,5 @@ yarn.lock
 .hypothesis/
 .pytest_cache/
 hypothesis_*
+*.pyc
+*.pdf

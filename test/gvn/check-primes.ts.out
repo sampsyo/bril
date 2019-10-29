@@ -1,0 +1,72 @@
+void main() {
+b1:
+  v01: int = const 50;
+  n1: int = id v01;
+  v21: int = const 1;
+  i1: int = id v21;
+  jmp copy1;
+for.cond.1:
+  v51: bool = lt i2 n1;
+  br v51 for.body.1 for.end.1;
+for.body.1:
+  isPrime1: bool = call checkPrime(i2);
+  br isPrime1 then.7 else.7;
+then.7:
+  v91: int = const 1;
+  print v91;
+  jmp endif.7;
+else.7:
+  v111: int = const 0;
+  print v111;
+  jmp endif.7;
+endif.7:
+  v141: int = const 1;
+  v151: int = add i2 v141;
+  jmp copy2;
+for.end.1:
+  ret ;
+copy1:
+  i2: int = id i1;
+  jmp for.cond.1;
+copy2:
+  i2: int = id v151;
+  jmp for.cond.1;
+}
+bool checkPrime(x : int) {
+b1:
+  v25: int = const 1;
+  v31: bool = le x v25;
+  br v31 then.0 else.0;
+then.0:
+  ret v41;
+else.0:
+  jmp endif.0;
+endif.0:
+  v61: int = const 2;
+  i1: int = id v61;
+  jmp copy1;
+for.cond.5:
+  v91: bool = lt i2 x;
+  br v91 for.body.5 for.end.5;
+for.body.5:
+  v121: int = div x i2;
+  v151: int = mul v121 i2;
+  v171: bool = eq v151 x;
+  br v171 then.18 else.18;
+then.18:
+  ret v201;
+else.18:
+  jmp endif.18;
+endif.18:
+  v221: int = const 1;
+  v231: int = add i2 v221;
+  jmp copy2;
+for.end.5:
+  ret v241;
+copy1:
+  i2: int = id i1;
+  jmp for.cond.5;
+copy2:
+  i2: int = id v231;
+  jmp for.cond.5;
+}

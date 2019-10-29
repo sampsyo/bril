@@ -1,0 +1,61 @@
+void main() {
+b1:
+  v21: int = const -5;
+  v31: int = const 8;
+  v41: int = const 21;
+  call quadratic(v21, v31, v41);
+  ret ;
+}
+int sqrt(x : int) {
+b1:
+  v18: int = const 1;
+  i1: int = id v18;
+  jmp copy1;
+for.cond.0:
+  v41: int = const 1;
+  v51: int = sub x v41;
+  v61: bool = lt i2 v51;
+  br v61 for.body.0 for.end.0;
+for.body.0:
+  v101: int = mul i2 i2;
+  v121: bool = ge v101 x;
+  br v121 then.7 else.7;
+then.7:
+  ret i2;
+else.7:
+  jmp endif.7;
+endif.7:
+  v151: int = const 1;
+  v161: int = add i2 v151;
+  jmp copy2;
+for.end.0:
+  ret v171;
+copy1:
+  i2: int = id i1;
+  jmp for.cond.0;
+copy2:
+  i2: int = id v161;
+  jmp for.cond.0;
+}
+void quadratic(a : int, b : int, c : int) {
+b1:
+  v210: int = mul b b;
+  v32: int = const 4;
+  v51: int = mul v32 a;
+  v71: int = mul v51 c;
+  v81: int = sub v210 v71;
+  v91: int = const 2;
+  v111: int = mul v91 a;
+  v121: int = const 0;
+  v141: int = sub v121 b;
+  v161: int = call sqrt(v81);
+  v171: int = add v141 v161;
+  v181: int = const 0;
+  v201: int = sub v181 b;
+  v231: int = sub v201 v161;
+  v261: int = div v171 v111;
+  print v261;
+  v301: int = div v231 v111;
+  print v301;
+  ret ;
+}

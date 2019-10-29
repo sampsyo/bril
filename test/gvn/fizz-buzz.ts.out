@@ -1,0 +1,57 @@
+void main() {
+b1:
+  v110: int = const 1;
+  index1: int = id v110;
+  jmp copy1;
+for.cond.0:
+  v33: int = const 101;
+  v44: bool = lt index2 v33;
+  br v44 for.body.0 for.end.0;
+for.body.0:
+  v61: int = const 3;
+  v71: int = div index2 v61;
+  v91: int = const 3;
+  v101: int = mul v71 v91;
+  v121: bool = eq v101 index2;
+  v141: int = const 5;
+  v151: int = div index2 v141;
+  v171: int = const 5;
+  v181: int = mul v151 v171;
+  v201: bool = eq v181 index2;
+  br v121 then.21 else.21;
+then.21:
+  br v201 then.23 else.23;
+then.23:
+  v271: int = const -1;
+  print v271;
+  jmp endif.23;
+else.23:
+  v311: int = const -2;
+  print v311;
+  jmp endif.23;
+endif.23:
+  jmp endif.21;
+else.21:
+  br v201 then.33 else.33;
+then.33:
+  v371: int = const -3;
+  print v371;
+  jmp endif.33;
+else.33:
+  print index2;
+  jmp endif.33;
+endif.33:
+  jmp endif.21;
+endif.21:
+  v421: int = const 1;
+  v431: int = add index2 v421;
+  jmp copy2;
+for.end.0:
+  ret ;
+copy1:
+  index2: int = id index1;
+  jmp for.cond.0;
+copy2:
+  index2: int = id v431;
+  jmp for.cond.0;
+}

@@ -1,0 +1,20 @@
+void main() {
+b1:
+  v01: int = const 5;
+  x1: int = id v01;
+  f1: int = call fac(x1);
+  print f1;
+  ret ;
+}
+int fac(x : int) {
+b1:
+  v21: int = const 1;
+  v31: bool = le x v21;
+  br v31 then.0 else.0;
+then.0:
+  ret v41;
+else.0:
+  jmp endif.0;
+endif.0:
+  ret v101;
+}

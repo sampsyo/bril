@@ -1,0 +1,28 @@
+void main() {
+b1:
+  v01: int = const 8;
+  value1: int = id v01;
+  v15: int = const 1;
+  result1: int = id v15;
+  jmp copy1;
+for.cond.2:
+  v51: int = const 0;
+  v61: bool = gt i2 v51;
+  br v61 for.body.2 for.end.2;
+for.body.2:
+  v91: int = mul result2 i2;
+  v111: int = const 1;
+  v121: int = sub i2 v111;
+  jmp copy2;
+for.end.2:
+  print result2;
+  ret ;
+copy1:
+  result2: int = id result1;
+  i2: int = id value1;
+  jmp for.cond.2;
+copy2:
+  result2: int = id v91;
+  i2: int = id v121;
+  jmp for.cond.2;
+}

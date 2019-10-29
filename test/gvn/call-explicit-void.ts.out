@@ -1,0 +1,12 @@
+void main() {
+b1:
+  v01: int = const 5;
+  x1: int = id v01;
+  call callPrint(x1);
+  ret ;
+}
+void callPrint(x : int) {
+b1:
+  print x;
+  ret ;
+}

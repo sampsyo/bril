@@ -1,0 +1,16 @@
+void main() {
+b1:
+  v01: bool = const true;
+  x1: bool = id v01;
+  br x1 then.1 else.1;
+then.1:
+  v31: int = const 1;
+  print v31;
+  jmp endif.1;
+else.1:
+  v51: int = const 2;
+  print v51;
+  jmp endif.1;
+endif.1:
+  ret ;
+}

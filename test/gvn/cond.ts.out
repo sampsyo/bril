@@ -1,0 +1,20 @@
+void main() {
+b1:
+  v01: int = const 5;
+  value1: int = id v01;
+  v31: int = const 3;
+  v41: int = add value1 v31;
+  v51: int = const 6;
+  v61: bool = lt v41 v51;
+  br v61 then.1 else.1;
+then.1:
+  v71: int = const 1;
+  print v71;
+  jmp endif.1;
+else.1:
+  v91: int = const 2;
+  print v91;
+  jmp endif.1;
+endif.1:
+  ret ;
+}
