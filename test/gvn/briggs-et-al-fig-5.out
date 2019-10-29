@@ -1,0 +1,17 @@
+void main() {
+b1:
+  jmp B1;
+B1:
+  cond1: bool = const true;
+  br cond1 B2 B3;
+B2:
+  jmp copy1;
+B3:
+  jmp copy2;
+B4:
+  ret ;
+copy1:
+  jmp B4;
+copy2:
+  jmp B4;
+}

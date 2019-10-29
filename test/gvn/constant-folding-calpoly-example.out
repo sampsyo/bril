@@ -1,0 +1,24 @@
+void main(x : int, y : int, dd : int) {
+entry:
+  zero1: int = const 0;
+  one1: int = const 1;
+  jmp bb1;
+bb1:
+  jmp bb2;
+bb2:
+  b1: int = const 4;
+  jmp bb3;
+bb3:
+  c1: int = const 7;
+  d2: int = const 28;
+  a4: int = const 96;
+  print a4;
+  print b1;
+  print c1;
+  print d2;
+  d3: int = div b1 zero1;
+  print d3;
+  b2: int = add dd one1;
+  print b2;
+  ret ;
+}

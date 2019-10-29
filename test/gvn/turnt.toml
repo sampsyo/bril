@@ -1,0 +1,1 @@
+command = "cat {filename} | bril2json | python ../../examples/bril2ssa.py | python ../../examples/global_value_numbering.py | python ../../examples/ssa2bril.py | python ../../examples/tdce.py | bril2txt"

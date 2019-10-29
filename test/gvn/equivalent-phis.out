@@ -1,0 +1,27 @@
+int main(arg : int, arg1 : int, arg2 : int) {
+bb:
+  jmp copy1;
+bb3:
+  zero1: int = const 0;
+  tmp151: int = add tmp1 arg1;
+  tmp161: int = add tmp51 arg1;
+  jmp bb17;
+bb17:
+  neg11: int = const -1;
+  tmp181: int = add tmp41 neg11;
+  eq1: bool = eq tm4 zero1;
+  tmp191: int = not eq1;
+  br tmp191 copy2 bb20;
+bb20:
+  ret tmp141;
+copy1:
+  tmp1: int = id arg;
+  tmp41: int = id arg2;
+  tmp51: int = id arg;
+  jmp bb3;
+copy2:
+  tmp1: int = id tmp151;
+  tmp41: int = id tmp181;
+  tmp51: int = id tmp161;
+  jmp bb3;
+}

@@ -1,0 +1,37 @@
+int main() {
+entry:
+  x1: int = const 1;
+  jmp copy1;
+check:
+  zero1: int = const 0;
+  xgt1: bool = gt x2 zero1;
+  br xgt1 loop end;
+loop:
+  one1: int = const 1;
+  xisone1: bool = eq x2 one1;
+  br xisone1 ifb elseb;
+ifb:
+  y3: int = const 7;
+  jmp copy3;
+elseb:
+  y5: int = const 7;
+  jmp copy4;
+afterb:
+  x3: int = const 3;
+  print y4;
+  jmp copy2;
+end:
+  ret ;
+copy1:
+  x2: int = id x1;
+  jmp check;
+copy2:
+  x2: int = id x3;
+  jmp check;
+copy3:
+  y4: int = id y3;
+  jmp afterb;
+copy4:
+  y4: int = id y5;
+  jmp afterb;
+}

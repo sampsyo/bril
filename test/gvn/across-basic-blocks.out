@@ -1,0 +1,9 @@
+void main(x : int, y : int) {
+entry:
+  z11: int = add x y;
+  jmp block;
+block:
+  print z11;
+  print z11;
+  ret ;
+}

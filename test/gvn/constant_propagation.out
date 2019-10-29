@@ -1,0 +1,4 @@
+int main() {
+entry:
+  ret c1;
+}

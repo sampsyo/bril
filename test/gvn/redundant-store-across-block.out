@@ -1,0 +1,10 @@
+void main(c : bool, p : int) {
+entry:
+  br c bb1 bb2;
+bb1:
+  jmp bb3;
+bb2:
+  jmp bb3;
+bb3:
+  ret ;
+}

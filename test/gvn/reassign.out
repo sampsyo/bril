@@ -1,0 +1,6 @@
+void main() {
+b1:
+  a2: int = const 42;
+  print a2;
+  ret ;
+}

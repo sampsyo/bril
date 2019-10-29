@@ -1,0 +1,8 @@
+void main() {
+entry:
+  zero1: int = const 0;
+  one1: int = const 1;
+  baddiv1: int = div one1 zero1;
+  print baddiv1;
+  ret ;
+}

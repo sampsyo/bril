@@ -1,7 +1,8 @@
 TESTS := test/parse/*.bril \
 	test/print/*.json \
 	test/interp*/*.bril \
-	test/ts*/*.ts
+	test/ts*/*.ts \
+	test/gvn/*.bril
 
 EXAMPLE_TESTS :=  examples/*_test/*.bril 
 
@@ -20,12 +21,6 @@ test_examples_save:
 .PHONY: save
 save:
 	turnt --save $(TESTS)
-
-.PHONY: ts
-ts:
-	cd bril-ts ; \
-	yarn ; \
-	yarn build ; \
 
 .PHONY: book
 book:

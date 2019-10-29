@@ -1,0 +1,26 @@
+void main(arg : int, arg1 : int) {
+bb:
+  jmp copy1;
+bb3:
+  tmp51: int = call foo(tmp41, tmp1);
+  zero1: int = const 0;
+  tmp61: int = eq tmp51 zero1;
+  tmp71: bool = not tmp61;
+  br tmp71 bb7 bb8;
+bb7:
+  jmp copy2;
+bb8:
+  ret ;
+copy1:
+  tmp1: int = id arg1;
+  tmp41: int = id arg;
+  jmp bb3;
+copy2:
+  tmp1: int = id tmp41;
+  tmp41: int = id tmp1;
+  jmp bb3;
+}
+int foo(x : int, y : int) {
+b1:
+  ret z1;
+}

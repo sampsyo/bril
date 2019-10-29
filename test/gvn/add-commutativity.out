@@ -1,0 +1,7 @@
+int main(x : int, y : int) {
+b1:
+  z1: int = add x y;
+  print z1;
+  print z1;
+  ret z1;
+}
