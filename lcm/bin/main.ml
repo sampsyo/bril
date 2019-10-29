@@ -8,7 +8,9 @@ let go dot_before dot_after file () =
   let prog = Parser.parse_bril file in
   let fn = List.hd_exn prog in
   let graph = Cfgify.cfgify_dirs fn.body in
-  Cfg.dump_to_dot graph dot_before;
+  match dot_before with
+  | Some dot_before -> Cfg.dump_to_dot graph dot_before
+  | None -> ();
   let expr_typs = Analyze.aggregate_expression_typs graph in
   let expressions = Analyze.ExprMap.keys expr_typs in
   let graph = Optimize.unify_expression_locations expressions graph in
@@ -41,7 +43,9 @@ let go dot_before dot_after file () =
     |> Optimize.delete_computations expressions
     |> Optimize.insert_computations expr_typs expressions
   in
-  Cfg.dump_to_dot graph dot_after;
+  match dot_after with
+  | Some dot_after -> Cfg.dump_to_dot graph dot_after
+  | None -> ();
   let prog = Print.decfg graph in
   Parser.print_bril Out_channel.stdout prog
 
@@ -53,7 +57,7 @@ let command =
   let spec =
     let open Command.Spec in
     empty
-    +> flag "-dot" (required string) ~doc:"<base> Output CFG to base-before.dot and base-after.dot files"
+    +> flag "-dot" (optional string) ~doc:"<base> Output CFG to base-before.dot and base-after.dot files"
     +> anon (maybe ("brilfile" %:string))
   in
   Command.basic_spec
@@ -61,8 +65,14 @@ let command =
     spec
     (fun dot_path bril_path ->
       let bril = open_in_opt bril_path in
-      let dot_before = Out_channel.create @@ dot_path ^ "-before.dot" in
-      let dot_after = Out_channel.create @@ dot_path ^ "-after.dot"in
+      let dot_before, dot_after =
+        match dot_path with
+        | Some dot_path ->
+           let dot_before = Out_channel.create @@ dot_path ^ "-before.dot" in
+           let dot_after = Out_channel.create @@ dot_path ^ "-after.dot"in
+           Some dot_before, Some dot_after
+        | None -> None, None
+      in
       go dot_before dot_after bril)
 
 let () =

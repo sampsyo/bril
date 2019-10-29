@@ -1,12 +1,16 @@
 #!/bin/sh
+SVG_VIEWER=firefox
 set -e
 cd "`dirname $0`"
-f="$1"
 opam install "."
 cd "../test/lcm/"
-bril2json <"$f.bril" >"$f.json"
-lcm -dot "$f" "$f.json"
-dot -Tsvg -o "$f-before.svg" "$f-before.dot"
-dot -Tsvg -o "$f-after.svg" "$f-after.dot"
-open "$f-before.svg"
-open "$f-after.svg"
+for f in "$@"
+do
+  echo "Optimizing example $f.bril"
+  bril2json <"$f.bril" >"$f.json"
+  lcm -dot "$f" "$f.json"
+  dot -Tsvg -o "$f-before.svg" "$f-before.dot"
+  dot -Tsvg -o "$f-after.svg" "$f-after.dot"
+  $SVG_VIEWER "$f-before.svg"
+  $SVG_VIEWER "$f-after.svg"
+done
