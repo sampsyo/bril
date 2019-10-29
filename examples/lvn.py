@@ -204,9 +204,11 @@ def _fold(num2const, value):
     if value.op in FOLDABLE_OPS:
         try:
             const_args = [num2const[n] for n in value.args]
+            return FOLDABLE_OPS[value.op](*const_args)
         except KeyError:  # At least one argument is not a constant.
             return None
-        return FOLDABLE_OPS[value.op](*const_args)
+        except ZeroDivisionError: # If we hit a dynamic error, bail!
+            return None
     else:
         return None
 
