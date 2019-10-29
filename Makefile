@@ -3,9 +3,19 @@ TESTS := test/parse/*.bril \
 	test/interp/*.bril \
 	test/ts/*.ts
 
+EXAMPLE_TESTS :=  examples/*_test/*.bril 
+
 .PHONY: test
 test:
 	turnt $(TESTS)
+
+.PHONY: test_examples
+test_examples:
+	turnt $(EXAMPLE_TESTS)
+
+.PHONY: test_examples_save
+test_examples_save:
+	turnt --save $(EXAMPLE_TESTS)
 
 .PHONY: save
 save:
@@ -15,6 +25,12 @@ save:
 book:
 	rm -rf book
 	mdbook build
+
+.PHONY: ts
+ts:
+	cd bril-ts ; \
+	yarn ; \
+	yarn build ; \
 
 .PHONY: deploy
 RSYNCARGS := --compress --recursive --checksum --itemize-changes \
