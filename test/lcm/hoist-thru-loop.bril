@@ -1,9 +1,13 @@
 main {
   x: int = const 9;
   y: int = const 2;
+  i: int = const 0;
+  one: int = const 1;
+  hundred: int = const 100;
 loop_head:
-  b: bool = const false;
+  b: bool = lt i hundred;
   z: int = add x y;
+  hundred: int = sub hundred one;
   br b loop_head loop_done;
 loop_done:
   print z;

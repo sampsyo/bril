@@ -63,7 +63,7 @@ module CFG = struct
   let default_vertex_attributes _ = []
 
   let vertex_attributes (block, _) : Graph.Graphviz.DotAttributes.vertex list =
-    let text =
+    let _ =
       let label = Ident.string_of_lbl block.lbl in
       let body = Sexp.to_string ([%sexp_of: instruction list] block.body) in
       let term = Sexp.to_string ([%sexp_of: Bril.term_op] block.term) in
@@ -71,7 +71,8 @@ module CFG = struct
     in
     
     [`Shape `Box;
-     `Label text]
+     (*`Label text;*)
+     `Fontname "terminus"]
 
   let default_edge_attributes _ = []
   let edge_attributes _ = []

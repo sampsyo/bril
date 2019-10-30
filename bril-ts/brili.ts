@@ -211,10 +211,17 @@ function evalInstr(instr: bril.Instruction, env: Env): Action {
 }
 
 function evalFunc(func: bril.Function) {
+  let ops = 0;
+  let computations = 0;
   let env: Env = new Map();
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
+      ops++;
+      if (!["const", "id", "print", "jmp", "br",
+            "nop", "ret"].includes(line.op)) {
+        computations++;
+      }
       let action = evalInstr(line, env);
 
       if ('label' in action) {
@@ -229,16 +236,21 @@ function evalFunc(func: bril.Function) {
           throw `label ${action.label} not found`;
         }
       } else if ('end' in action) {
-        return;
+        return [ops, computations];
       }
     }
   }
+  return [ops, computations];
 }
 
 function evalProg(prog: bril.Program) {
+  let ops = 0;
+  let computations = 0;
   for (let func of prog.functions) {
     if (func.name === "main") {
-      evalFunc(func);
+      [ops, computations] = evalFunc(func);
+      let msg = ops.toString() + "," + computations.toString();
+      process.stderr.write(msg);
     }
   }
 }

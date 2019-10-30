@@ -1,0 +1,25 @@
+main {
+entry:
+  i: int = const 0;
+  j: int = const 0;
+  one: int = const 1;
+  max: int = const 100;
+  
+  x: int = const 1;
+  b_inner: bool = const true;
+  b_outer: bool = const true;
+loop_body:
+  b_outer: bool = lt i max;
+  i: int = add i one;
+  z: int = add x x;
+inner_body:
+  b_inner: bool = lt j max;
+  j: int = add j one;
+  z: int = add x x;
+  br b_inner inner_body inner_done;
+inner_done:
+  br b_outer loop_body loop_done;
+loop_done:
+  print z;
+  ret;
+}

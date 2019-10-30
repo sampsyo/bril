@@ -1,6 +1,7 @@
 ../test/lcm/dont-hoist-thru-loop
 ../test/lcm/two-blocks
 ../test/lcm/hoist-thru-loop
+../test/lcm/simple
 ../examples/lvn_test/nonlocal
 ../examples/dom_test/loopcond
 ../examples/df_test/cond

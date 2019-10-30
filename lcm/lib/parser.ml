@@ -193,7 +193,7 @@ let parse_instruction (opcode: string) (props: (string * Yojson.Basic.t) list) :
         ConstInstr (parse_const_op dest value typ)
      | _ -> parse_err "need dest, value, and type for const operation"
      end
-  | _ -> parse_err "unkown opcode encountered"
+  | op -> parse_err (Printf.sprintf "unkown opcode %s encountered" op)
 
 let print_instruction : Bril.instruction -> Yojson.Basic.t = 
   function
