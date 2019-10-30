@@ -1,0 +1,7 @@
+for f in perf/opt_*
+do
+    echo "Timing ${f##*/opt_}"
+    hyperfine --warmup 3 'brili < '${f/opt_/}''
+    echo "Timing ${f##*/}"
+    hyperfine --warmup 3 'brili < '$f''
+done

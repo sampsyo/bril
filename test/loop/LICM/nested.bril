@@ -1,0 +1,43 @@
+main {
+  v0: int = const 8;
+  value: int = id v0;
+  v1: int = const 1;
+  result: int = id v1;
+  v3: int = id value;
+  i: int = id v3;
+  v5: int = const 0;
+  v8: int = id value;
+  v21: int = const 1;
+for.cond.2:
+  v4: int = id i;
+  v6: bool = gt v4 v5;
+  br v6 for.body.2 for.end.2;
+for.body.2:
+  j: int = id v8;
+  v10: int = id i;
+  v13: int = id i;
+  v18: int = const 1;
+for.cond.7:
+  v9: int = id j;
+  v11: bool = gt v9 v10;
+  br v11 for.body.7 for.end.7;
+for.body.7:
+  v12: int = id result;
+  v14: int = mul v12 v13;
+  v15: int = id j;
+  v16: int = sub v14 v15;
+  result: int = id v16;
+  v17: int = id j;
+  v19: int = sub v17 v18;
+  j: int = id v19;
+  jmp for.cond.7;
+for.end.7:
+  v20: int = id i;
+  v22: int = sub v20 v21;
+  i: int = id v22;
+  jmp for.cond.2;
+for.end.2:
+  v23: int = id result;
+  print v23;
+  v24: int = const 0;
+}
