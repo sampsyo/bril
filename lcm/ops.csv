@@ -1,0 +1,9 @@
+program,ops (before lcm),computations (before lcm),ops (after lcm),computations (after lcm)
+test/lcm/dont-hoist-thru-loop,8,1,11,1
+test/lcm/two-blocks,5,1,8,1
+test/lcm/hoist-thru-loop,412,303,617,203
+test/lcm/simple,1217,906,1925,605
+examples/lvn_test/nonlocal,7,3,12,3
+examples/dom_test/loopcond,117,46,165,46
+examples/df_test/cond,9,1,12,1
+examples/df_test/fact,62,25,89,25
