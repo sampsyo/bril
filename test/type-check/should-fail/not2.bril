@@ -1,0 +1,6 @@
+main{
+
+    v1: bool = const true;
+    v2: int  = not v1;
+
+}

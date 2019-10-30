@@ -1,0 +1,13 @@
+main{
+
+    v1: int = const 2;
+    v2: int = const 3;
+    v3: int = add v1 v2;
+    v4: int = const 6;
+    v5: bool = eq v3 v4;
+    br v4 here there;
+    here:
+    jmp there;
+    there:
+    print v4;
+}

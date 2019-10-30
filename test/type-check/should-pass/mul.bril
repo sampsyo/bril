@@ -1,0 +1,7 @@
+#To test if subtraction works.
+main { 
+  v0: int = const 9;
+  v1: int = const -10;
+  res: int = mul v0 v1;
+  print res;
+}

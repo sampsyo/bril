@@ -1,0 +1,9 @@
+#To test jmp to somewhere works
+main {
+  a: int = const 4;
+  b: int = const 2;
+  jmp somewhere;
+somewhere:
+  prod: int = add a b;
+  print prod;
+}

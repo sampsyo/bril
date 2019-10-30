@@ -1,0 +1,7 @@
+main{
+
+    v0: int = const 5;
+    v0: bool = const true;
+    print v0;
+
+}

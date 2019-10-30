@@ -1,0 +1,16 @@
+#Labels are repeated
+main{
+
+    v0: int = const 1;
+    v1: int = const 3;
+    v3: int = add v1 v2;
+    jmp doubletrap;
+    v4: int = const 4;
+    print v4;
+    doubletrap:
+    check: bool =  eq v3 v4;
+    print check;
+    doubletrap:
+    v5: int = const 5;
+    print v5;
+}
