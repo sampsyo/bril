@@ -1,0 +1,2 @@
+start_time=`date +%s`
+ts2bril codemotion1.ts | loopReduce | brili && echo run time is $(expr `date +%s` - $start_time) s

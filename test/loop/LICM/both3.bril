@@ -1,0 +1,63 @@
+main {
+  v0: int = const 8;
+  value: int = id v0;
+  v1: int = const 1;
+  x: int = id v1;
+  v2: int = const 10;
+  y: int = id v2;
+  v3: int = const 5;
+  z: int = id v3;
+  v4: int = const 1;
+  result: int = id v4;
+  v6: int = id value;
+  i: int = id v6;
+  v8: int = const 0;
+  v10: int = id y;
+  v11: int = id z;
+  v12: int = add v10 v11;
+  x: int = id v12;
+  v15: int = const 5;
+  v18: int = const 8;
+  v20: int = const 9;
+  v24: int = id y;
+  v25: int = id z;
+  v26: int = mul v24 v25;
+  v29: int = const 6;
+  v33: int = id x;
+  v34: int = id x;
+  v35: int = mul v33 v34;
+  v38: int = const 1;
+for.cond.5:
+  v7: int = id i;
+  v9: bool = gt v7 v8;
+  br v9 for.body.5 for.end.5;
+for.body.5:
+  v14: int = id i;
+  v16: bool = gt v14 v15;
+  br v16 then.13 else.13;
+then.13:
+  v17: int = id result;
+  v19: int = mul v17 v18;
+  v21: int = id i;
+  v22: int = mul v20 v21;
+  v23: int = add v19 v22;
+  v27: int = add v23 v26;
+  result: int = id v27;
+  jmp endif.13;
+else.13:
+  v28: int = id result;
+  v30: int = id i;
+  v31: int = mul v29 v30;
+  v32: int = add v28 v31;
+  v36: int = add v32 v35;
+  result: int = id v36;
+endif.13:
+  v37: int = id i;
+  v39: int = sub v37 v38;
+  i: int = id v39;
+  jmp for.cond.5;
+for.end.5:
+  v40: int = id result;
+  print v40;
+  v41: int = const 0;
+}

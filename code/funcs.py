@@ -246,7 +246,7 @@ def move_LI(blocks, pre_header, loop_invariants, loops, dom, live_var, exits):
                     all([b_name in dom[e] for e in edest])
                 ):
                     blocks[b_name].remove(instr)
-                    instr['comment'] = 'code motion'
+                    #instr['comment'] = 'code motion'
                     blocks[pre_header[b_name]].append(instr)
     return blocks
     
