@@ -4,7 +4,7 @@ import os
 import copy
 from collections import OrderedDict
 
-sys.path.insert(0, "examples/")
+sys.path.insert(0, "../../examples/")
 from cfg import block_map, successors, add_terminators
 from form_blocks import form_blocks
 from dom import get_dom, get_pred
@@ -210,7 +210,7 @@ def strength_red(blocks, pre_header, constants, loop_invariant, basic_var, induc
 
 
 
-def strengthRed():
+def loop_opt():
 	bril = json.load(sys.stdin)
 
 	for i, func in enumerate(bril['functions']):
@@ -232,4 +232,4 @@ def strengthRed():
 	return
 
 if __name__ == '__main__':
-	strengthRed()
+	loop_opt()

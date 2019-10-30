@@ -2,8 +2,7 @@ import json
 import copy
 from collections import OrderedDict
 import sys, os
-pn = os.path.join(os.path.dirname(__file__), "examples/")
-sys.path.insert(0, "/Users/Cindy/Nextcloud/Cornell/cs6120/bril/examples")
+sys.path.insert(0, "../examples")
 from cfg import block_map, successors, add_terminators
 from form_blocks import form_blocks
 from dom import get_dom, get_pred
@@ -291,10 +290,4 @@ def loopReduce():
 #if __name__ == '__main__':
 #    loopReduce()
    
-   
-   
-<<<<<<< HEAD
-   
-=======
-   
->>>>>>> 038a2958ac699023486278d620088c0b5f8c9e06
+ 
