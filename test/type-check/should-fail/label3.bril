@@ -1,0 +1,16 @@
+#multiple labels present, one missing
+
+main{
+
+    v0: int = const 1;
+    v1: int = const 3;
+    jmp l1;
+    l2:
+    v4: int = const 4;
+    print v4;
+    jmp l3;
+    l1:
+    v3: int = add v1 v2;
+    jmp l2;
+    
+}

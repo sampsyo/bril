@@ -1,0 +1,7 @@
+#To test if subtraction works.
+main { 
+  v0: int = const 4;
+  v1: int = const 5;
+  res: int = sub v0 v1;
+  print res;
+}

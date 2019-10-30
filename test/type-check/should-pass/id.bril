@@ -1,0 +1,9 @@
+#To test if id works
+main {
+  v0: int = const 5;
+  v1: int = id v0;
+  print v1;
+  v2: bool = const false;
+  v3: bool = id v2;
+  print v2;
+}

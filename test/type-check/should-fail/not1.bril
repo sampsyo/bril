@@ -1,0 +1,7 @@
+	#test integer cannot be assigned to bool
+main{
+	
+    v1: int = const 1;
+    v2: bool = not v1;
+    print v2;
+}

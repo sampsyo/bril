@@ -1,0 +1,5 @@
+main{
+
+    a: int =  const true;
+    print a;
+}

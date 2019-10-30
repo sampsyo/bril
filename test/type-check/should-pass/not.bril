@@ -1,0 +1,6 @@
+#To test if not works
+main {
+  v0: bool = const false;
+  v1: bool = not v0;
+  print v1;
+}

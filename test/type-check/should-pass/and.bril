@@ -1,0 +1,14 @@
+#To test if and works.
+main { 
+  b0: bool = const true;
+  b1: bool = const false;
+  b2: bool = and b1 b0;
+  print b2;
+  b1: bool = const true;
+  b2: bool = and b1 b0;
+  print b2;
+  b0: bool = const false;
+  b1: bool = const false;
+  b2: bool = and b1 b0;
+  print b2;
+}

@@ -1,0 +1,7 @@
+#To test if addition works.
+main {
+  v0: int = const 4;
+  v1: int = const 5;
+  res: int = add v0 v1;
+  print res;
+}
