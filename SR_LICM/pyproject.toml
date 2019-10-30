@@ -3,7 +3,7 @@ requires = ["flit"]
 build-backend = "flit.buildapi"
 
 [tool.flit.metadata]
-module = "funcs"
+module = "loop_opt"
 author = "Adrian Sampson"
 author-email = "asampson@cs.cornell.edu"
 home-page = "https://github.com/sampsyo/bril"
@@ -13,4 +13,4 @@ requires = [
 ]
 
 [tool.flit.scripts]
-loopReduce = "funcs:loopReduce"
+loopReduce = "loop_opt:loop_opt"
