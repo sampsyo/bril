@@ -1,4 +1,4 @@
-let value = 8;
+let value = 8000;
 let x = 1;
 let y = 10;
 let z = 5;

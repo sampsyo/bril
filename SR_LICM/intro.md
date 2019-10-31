@@ -297,10 +297,10 @@ Assume the cost of `x = y*z` is `c1` and that of `x = y+z` is `c2`. We reduce th
 
 ```
 hyperfine --warmup 1 'brili < orig_strengthreduction1'
-Time (mean ± σ):     41.2 ms ±   1.6 ms
+Time (mean ± σ):     192.1 ms ±   7.2 ms
 
 hyperfine --warmup 1 'brili < opt_strengthreduction1'
-Time (mean ± σ):     38.3 ms ±   2.1 ms
+Time (mean ± σ):     173.2 ms ±   10.3 ms
 ```
 
 Similarly, `strengthreduction3.ts` has division to be reduced.
@@ -308,10 +308,10 @@ Similarly, `strengthreduction3.ts` has division to be reduced.
 
 ```
 hyperfine --warmup 1 'brili < orig_strengthreduction2'
-Time (mean ± σ):     40.0 ms ±   0.9 ms
+Time (mean ± σ):     61.1 ms ±   2.4 ms
 
 hyperfine --warmup 1 'brili < opt_strengthreduction2'
-Time (mean ± σ):     37.6 ms ±   0.9 ms
+Time (mean ± σ):     56.3 ms ±   5.9 ms
 ```
 
 ### Both Optimizations Examples
@@ -320,18 +320,18 @@ To combine both loop optimizations, namely loop invariant code motion and streng
 
 ```
 hyperfine --warmup 1 'brili < orig_both1'
-Time (mean ± σ):     40.3 ms ±   1.0 ms
+Time (mean ± σ):     655.0 ms ±   8.6 ms
 
 hyperfine --warmup 1 'brili < opt_both1'
-Time (mean ± σ):     40.1 ms ±   0.9 ms
+Time (mean ± σ):     484.1 ms ±   13.7 ms
 ```
 
 ```
 hyperfine --warmup 1 'brili < orig_both2'
-Time (mean ± σ):     40.0 ms ±   1.2 ms
+Time (mean ± σ):     66.2 ms ±   3.3 ms
 
 hyperfine --warmup 1 'brili < opt_both2'
-Time (mean ± σ):     38.4 ms ±   2.8 ms
+Time (mean ± σ):     49.8 ms ±   5.9 ms
 ```
 
 ### Final Results
@@ -340,9 +340,9 @@ Time (mean ± σ):     38.4 ms ±   2.8 ms
 | -------------- | ---------------------------- | ----------------------| ---------- |
 | `codemotion1.ts` |  216.8 ms | 163.8 ms | 1.32x |
 | `codemotion2.ts` |  908.6 ms | 665.4 ms | 1.36x |
-| `strengthreduction1.ts` | 41.2 ms | 38.3 ms | 1.08x |
-| `strengthreduction2.ts` | 40.0 ms | 37.6 ms | 1.06x |
-| `both1.ts` | 40.3 ms | 40.1 ms | 1.00x |
-| `both2.ts` | 40.0 ms | 38.4 ms | 1.04x |
+| `strengthreduction1.ts` | 192.1 ms | 173.2 ms | 1.11x |
+| `strengthreduction2.ts` | 61.1 ms | 56.3 ms | 1.09x |
+| `both1.ts` | 655.0 ms | 484.1 ms | 1.35x |
+| `both2.ts` | 66.2 ms | 49.8 ms | 1.33x |
 
-Based on the evaluation results, we find out that both loop optimization techniques can provide some speedup. Loop invariant code motion can provide up to 1.36x speedup, while strength reduction can only have less than 10% performance improvement. That is due to the fact that multiplication/division does not take significantly more cycles than addition/substraction on modern machines and there are many redundant `id` operations when generating `bril` programs from `ts`. We expect that more speedup can be obtained if exponential operation is optimized.
+Based on the evaluation results, we find out that both loop optimization techniques can provide some speedup. Loop invariant code motion can provide up to 1.36x speedup, while strength reduction can only have about 10% performance improvement. That is due to the fact that multiplication/division does not take significantly more cycles than addition/substraction on modern machines and there are many redundant `id` operations when generating `bril` programs from `ts`. Thus, only limited performance improvement can be obtained We expect that more speedup can be obtained if exponential operation is optimized. Also, note that there are nested loops in `codemotion2.ts` and `both1.ts`, thus their runtime are much longer than the rest.
