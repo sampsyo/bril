@@ -59,10 +59,11 @@ def inductionVar(blocks, loops, licd, reach_def):
 		temp_trace = []
 		for item in induction_var[loop]:
 			for instr in blocks[body]:	# traverse definition
-				if instr['dest'] == item:
-					trace[loop][item] = [instr['op']] + instr['args']
-					temp_trace = temp_trace + instr['args']
-					break
+				if instr['op'] not in BRANCH_OP:
+					if instr['dest'] == item:
+						trace[loop][item] = [instr['op']] + instr['args']
+						temp_trace = temp_trace + instr['args']
+						break
 		# print('trace:', trace)
 		# print('temp:', temp_trace)
 
@@ -120,14 +121,14 @@ def strength_red(blocks, pre_header, constants, loop_invariant, basic_var, induc
 	'''
 	b_names = list(blocks.keys())
 	names = reach_def[b_names[-1]].keys()
-	# print('name:', names)
-	# print('block names:', b_names)
-	# print('loop:', loops)
-	# print('constants:', constants)
-	# print('loop invariant', loop_invariant)
-	# print('basic var:', basic_var)
-	# print('induction var:', induction_var)
-	# print('trace:', trace)
+	print('name:', names)
+	print('block names:', b_names)
+	print('loop:', loops)
+	print('constants:', constants)
+	print('loop invariant', loop_invariant)
+	print('basic var:', basic_var)
+	print('induction var:', induction_var)
+	print('trace:', trace)
 
 	for loop in loops:
 		# print(loop[1])
@@ -149,19 +150,22 @@ def strength_red(blocks, pre_header, constants, loop_invariant, basic_var, induc
 						temp.append(trace[loop][current_var][i+1])
 				else:
 					result.append(trace[loop][current_var])
-			# print('result', result)
+			print('result', result)
 
 			for i in range(len(result)):
 				temp = result[i][1:]
 				while temp:
 					current_var = temp.pop()
+					# print(temp)
+					# print('\t', current_var)
 					if current_var in basic_var[loop]:
 						current_basic = current_var
+						break
 					elif current_var in constants[loop] or current_var in loop_invariant[loop]:
 						continue
 					else:
 						temp = temp + trace[loop][current_var][1:]
-				# print('current_basic',current_basic)
+				print('current_basic',current_basic)
 
 				temp = [current_basic]
 				while temp:
@@ -176,36 +180,49 @@ def strength_red(blocks, pre_header, constants, loop_invariant, basic_var, induc
 						flag = 'add'
 						delta = trace[loop][current_var][-1]
 						break
-
-				tmp_name = fresh('s', names)
-				new_name = fresh('s', names.append(tmp_name))
+				# print(flag)
+				tmp_name = fresh('t', names)
+				# print(tmp_name)
+				new_name = fresh('s', names)
+				# print(new_name)
 				if flag == 'sub':
 					var_def = {"op": "add", "args": [current_basic, delta], "dest": tmp_name, "type": "int"}
 				else:
 					var_def = {"op": "sub", "args": [current_basic, delta], "dest": tmp_name, "type": "int"}
 				var_def["comment"] = "strength reduction"
-				blocks[pre_header[loop]].append(var_def)
+				# print(pre_header)
+				blocks[pre_header[loop[0]]].append(var_def)
 
 				if result[i][1] in constants[loop]:
-					new_def = {"op": result[i][0], "args": [result[i][1], var_def], "dest": new_name, "type": "int"}
+					new_def = {"op": result[i][0], "args": [result[i][1], tmp_name], "dest": new_name, "type": "int"}
 				else:
-					new_def = {"op": result[i][1], "args": [var_def, result[i][2]], "dest": new_name, "type": "int"}
+					new_def = {"op": result[i][0], "args": [tmp_name, result[i][2]], "dest": new_name, "type": "int"}
 				new_def["comment"] = "strength reduction"
-				blocks[pre_header[loop]].append(new_def)
+				blocks[pre_header[loop[0]]].append(new_def)
+				# print(blocks[pre_header[loop[0]]])
+				# print(loop)
+				dest = None
+				ind = -1
 
-				for instr in blocks[pre_header[loop]+2]:
+				# print(blocks[loop[0]])
+				for instr in blocks[loop[0]]:
+					ind += 1
+					# print(ind)
+					# print('i\t', instr['args'])
+					# print(result[i][1:])
 					if instr['args'] == result[i][1:]:
-						ind = blocks[pre_header[loop]+2].index(instr)
-						dest = blocks[pre_header[loop]+2][ind]['dest']
-						blocks[pre_header[loop]+2][ind]['dest'] = new_name
-						blocks[pre_header[loop]+2][ind]['op'] = flag
-						blocks[pre_header[loop]+2][ind]['args'] = [new_name, delta]
-						blocks[pre_header[loop]+2][ind]['comment'] = 'strength reduction'
+
+						# ind = blocks[pre_header[loop[0]]].index(instr)
+						dest = blocks[loop[0]][ind]['dest']
+						blocks[loop[0]][ind]['dest'] = new_name
+						blocks[loop[0]][ind]['op'] = flag
+						blocks[loop[0]][ind]['args'] = [new_name, delta]
+						blocks[loop[0]][ind]['comment'] = 'strength reduction'
 					elif dest in instr['args']:
-						ind = blocks[pre_header[loop]+2].index(instr)
-						args_ind = blocks[pre_header[loop]+2][ind]['args'].index(dest)
-						blocks[pre_header[loop]+2][ind]['args'][args_ind] = new_name
-						blocks[pre_header[loop]+2][ind]['comment'] = 'strength reduction'
+						# ind = blocks[pre_header[loop[0]]].index(instr)
+						args_ind = blocks[loop[0]][ind]['args'].index(dest)
+						blocks[loop[0]][ind]['args'][args_ind] = new_name
+						blocks[loop[0]][ind]['comment'] = 'strength reduction'
 	return blocks
 
 
