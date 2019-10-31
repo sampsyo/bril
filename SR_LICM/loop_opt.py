@@ -121,14 +121,14 @@ def strength_red(blocks, pre_header, constants, loop_invariant, basic_var, induc
 	'''
 	b_names = list(blocks.keys())
 	names = reach_def[b_names[-1]].keys()
-	print('name:', names)
-	print('block names:', b_names)
-	print('loop:', loops)
-	print('constants:', constants)
-	print('loop invariant', loop_invariant)
-	print('basic var:', basic_var)
-	print('induction var:', induction_var)
-	print('trace:', trace)
+	# print('name:', names)
+	# print('block names:', b_names)
+	# print('loop:', loops)
+	# print('constants:', constants)
+	# print('loop invariant', loop_invariant)
+	# print('basic var:', basic_var)
+	# print('induction var:', induction_var)
+	# print('trace:', trace)
 
 	for loop in loops:
 		# print(loop[1])
@@ -150,7 +150,7 @@ def strength_red(blocks, pre_header, constants, loop_invariant, basic_var, induc
 						temp.append(trace[loop][current_var][i+1])
 				else:
 					result.append(trace[loop][current_var])
-			print('result', result)
+			# print('result', result)
 
 			for i in range(len(result)):
 				temp = result[i][1:]
@@ -165,7 +165,7 @@ def strength_red(blocks, pre_header, constants, loop_invariant, basic_var, induc
 						continue
 					else:
 						temp = temp + trace[loop][current_var][1:]
-				print('current_basic',current_basic)
+				# print('current_basic',current_basic)
 
 				temp = [current_basic]
 				while temp:
@@ -240,8 +240,8 @@ def loop_opt():
 
 		# print(reach_def)
 		# print()
-		constants, loop_invariant, basic_var, induction_var, trace = inductionVar(oblocks, loops, licd, reach_def)
-		pre_header, new_blocks = create_preheaders(oblocks, loops)
+		constants, loop_invariant, basic_var, induction_var, trace = inductionVar(code_motion, loops, licd, reach_def)
+		pre_header, new_blocks = create_preheaders(code_motion, loops)
 		# print('blocks', new_blocks)
 		st = strength_red(new_blocks, pre_header, constants, loop_invariant, basic_var, induction_var, trace, loops, reach_def)
 		bril['functions'][i] = blocks_to_func(st, func)
