@@ -340,4 +340,8 @@ Time (mean ± σ):     38.4 ms ±   2.8 ms
 | -------------- | ---------------------------- | ----------------------| ---------- |
 | `codemotion1.ts` |  216.8 ms | 163.8 ms | 1.32x |
 | `codemotion2.ts` |  908.6 ms | 665.4 ms | 1.36x |
+| `strengthreduction1.ts` | 41.2 ms | 38.3 ms | 1.08x |
+| `strengthreduction2.ts` | 40.0 ms | 37.6 ms | 1.06x |
+| `both1.ts` | 40.3 ms | 40.1 ms | 1.00x |
+| `both2.ts` | 40.0 ms | 38.4 ms | 1.04x |
 
