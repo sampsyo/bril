@@ -281,11 +281,58 @@ Time (mean ± σ):     665.4 ms ±  11.9 ms
 
 
 ### Strength Reduction Examples
+The program `strengthreduction1.ts` has the following loop code:
 
+```
+let a = 8;
+let n = 10;
+for (let i = n; i > 0; i = i - 1) {
+    a = a*i;
+}
+```
+
+Since both `a` and `i` are induction variables and `i` is the basic induction variable, the multiplication of `a` can be reduced to addition by defining a `a'` variable outside the loop. The result code will act like `a = a + a - 8`.
+
+Assume the cost of `x = y*z` is `c1` and that of `x = y+z` is `c2`. We reduce the computation in the program by `n*(c1-c2) - c1`. To benchmark this, we timed our optimized version as in Loop Invariant Code Motion. The results are
+
+```
+hyperfine --warmup 1 'brili < orig_strengthreduction1'
+Time (mean ± σ):     41.2 ms ±   1.6 ms
+
+hyperfine --warmup 1 'brili < opt_strengthreduction1'
+Time (mean ± σ):     38.3 ms ±   2.1 ms
+```
+
+Similarly, `strengthreduction3.ts` has division to be reduced.
+
+
+```
+hyperfine --warmup 1 'brili < orig_strengthreduction2'
+Time (mean ± σ):     40.0 ms ±   0.9 ms
+
+hyperfine --warmup 1 'brili < opt_strengthreduction2'
+Time (mean ± σ):     37.6 ms ±   0.9 ms
+```
 
 ### Both Optimizations Examples
 
+To combine both loop optimizations, namely loop invariant code motion and strength reduction, we run tests `both1` and `both2` following the same evaluation method. The results are as follows.
 
+```
+hyperfine --warmup 1 'brili < orig_both1'
+Time (mean ± σ):     40.3 ms ±   1.0 ms
+
+hyperfine --warmup 1 'brili < opt_both1'
+Time (mean ± σ):     40.1 ms ±   0.9 ms
+```
+
+```
+hyperfine --warmup 1 'brili < orig_both2'
+Time (mean ± σ):     40.0 ms ±   1.2 ms
+
+hyperfine --warmup 1 'brili < opt_both2'
+Time (mean ± σ):     38.4 ms ±   2.8 ms
+```
 
 ### Final Results
 

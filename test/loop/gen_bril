@@ -2,7 +2,7 @@ for f in *.ts
 do
     echo $f
     ts2bril $f > perf/${f%.ts}
-    ts2bril $f | python3 ../../code/loop_opt.py > perf/opt_${f%.ts}
+    ts2bril $f | python3 ../../SR_LICM/loop_opt.py > perf/opt_${f%.ts}
 
 done
 
