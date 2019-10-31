@@ -345,3 +345,4 @@ Time (mean ± σ):     38.4 ms ±   2.8 ms
 | `both1.ts` | 40.3 ms | 40.1 ms | 1.00x |
 | `both2.ts` | 40.0 ms | 38.4 ms | 1.04x |
 
+Based on the evaluation results, we find out that both loop optimization techniques can provide some speedup. Loop invariant code motion can provide up to 1.36x speedup, while strength reduction can only have less than 10% performance improvement. That is due to the fact that multiplication/division does not take significantly more cycles than addition/substraction on modern machines and there are many redundant `id` operations when generating `bril` programs from `ts`. We expect that more speedup can be obtained if exponential operation is optimized.
