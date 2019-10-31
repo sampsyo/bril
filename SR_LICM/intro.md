@@ -1,6 +1,6 @@
 ## Goal
 
-The goal of the project is to replace expensive operations like multiplies with equivalent cheaper operations like additions. This is done with the help of loop invariant code motion and induction variable analysis. 
+The goal of the project is to replace expensive operations like multiplications with equivalent cheaper operations like additions. This is done with the help of loop invariant code motion and induction variable analysis. 
 
 ## Design
 
