@@ -1,0 +1,13 @@
+void main() {
+  v0: int = const 1;
+  x: int = id v0;
+  v1: int = const 2;
+  y: int = id v1;
+  v2: int = id x;
+  v3: int = id y;
+  z: int = call add2(v2, v3);
+  z: int = id z;
+}
+int add2(x : int, y : int) {
+  ret ;
+}

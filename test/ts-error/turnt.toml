@@ -1,0 +1,5 @@
+command = "ts2bril {filename} | bril2txt > {filename}.bril; cat  {filename}.bril | bril2json | brili"
+output.bril = "{filename}.bril"
+output.out = "-"
+return_code = 2
+output.err = "2"

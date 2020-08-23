@@ -15,8 +15,13 @@ export class Builder {
   /**
    * Create a new, empty function into which further code will be generated.
    */
-  buildFunction(name: string) {
-    let func: bril.Function = { name, instrs: [] };
+  buildFunction(name: string, args: bril.Argument[], type?: bril.Type) {
+    let func: bril.Function;
+    if (type === undefined) {
+      func = { name: name, instrs: [], args: args};
+    } else {
+      func = { name: name, instrs: [], args: args, type: type};
+    }
     this.program.functions.push(func);
     this.curFunction = func;
     this.nextFresh = 0;
@@ -40,6 +45,27 @@ export class Builder {
    */
   buildEffect(op: bril.EffectOpCode, args: string[]) {
     let instr: bril.EffectOperation = { op, args };
+    this.insert(instr);
+    return instr;
+  }
+
+  /**
+   * Build a call operation that does write to a destination.
+   */
+  buildValueCallOperation(op: bril.CallOpCode, name : string, args: string[],
+                     type: bril.Type, dest?: string) : bril.ValueCallOperation {
+    dest = dest || this.freshVar();
+    let instr : bril.ValueCallOperation = { op, name, args, dest, type };
+    this.insert(instr);
+    return instr;
+  }
+
+  /**
+   * Build a call operation that does not write to a destination.
+   */
+  buildEffectCallOperation(op: bril.CallOpCode, name : string, args: string[])
+    : bril.EffectCallOperation {
+    let instr : bril.EffectCallOperation = { op, name, args };
     this.insert(instr);
     return instr;
   }

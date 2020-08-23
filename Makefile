@@ -1,7 +1,7 @@
 TESTS := test/parse/*.bril \
 	test/print/*.json \
-	test/interp/*.bril \
-	test/ts/*.ts
+	test/interp*/*.bril \
+	test/ts*/*.ts
 
 EXAMPLE_TESTS :=  examples/*_test/*.bril 
 
@@ -21,6 +21,12 @@ test_examples_save:
 save:
 	turnt --save $(TESTS)
 
+.PHONY: ts
+ts:
+	cd bril-ts ; \
+	yarn ; \
+	yarn build ; \
+
 .PHONY: book
 book:
 	rm -rf book
@@ -38,3 +44,4 @@ RSYNCARGS := --compress --recursive --checksum --itemize-changes \
 DEST := courses:coursewww/capra.cs.cornell.edu/htdocs/bril
 deploy: book
 	rsync $(RSYNCARGS) ./book/ $(DEST)
+

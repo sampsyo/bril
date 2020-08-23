@@ -1,0 +1,5 @@
+// ARGS: 1 2
+void main(x : int, y: int) {
+    v : int = add x y;
+    print v;
+}

@@ -28,13 +28,14 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
     throw "unimplemented type " + checker.typeToString(tsType);
   }
 }
-
 /**
  * Compile a complete TypeScript AST to a Bril program.
  */
 function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
-  builder.buildFunction("main");
+
+  // Main has no return type
+  builder.buildFunction("main", []);
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
     switch (expr.kind) {
@@ -61,7 +62,6 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
       let kind = bin.operatorToken.kind;
-
       // Handle assignments.
       switch (kind) {
       case ts.SyntaxKind.EqualsToken:
@@ -93,9 +93,25 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         builder.buildEffect("print", values.map(v => v.dest));
         return builder.buildInt(0);  // Expressions must produce values.
       } else {
-        throw "function calls unsupported";
-      }
+        // Recursively translate arguments
+        let values = call.arguments.map(emitExpr);
 
+        // Check if effect statement, i.e., a call that is not a subexpression
+        if (call.parent.kind === ts.SyntaxKind.ExpressionStatement) {
+          builder.buildEffectCallOperation('call', call.expression.getText(), 
+            values.map(v => v.dest));
+          return builder.buildInt(0);  // Expressions must produce values
+        } else {
+          let decl = call.parent as ts.VariableDeclaration;
+          let type = brilType(decl, checker);
+          let name = (decl.name != undefined) ? decl.name.getText() : undefined;
+          return builder.buildValueCallOperation('call', 
+            call.expression.getText(), 
+            values.map(v => v.dest), 
+            type, 
+            name);
+        } 
+      }
     default:
       throw `unsupported expression kind: ${expr.getText()}`;
     }
@@ -191,6 +207,54 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         builder.buildEffect("jmp", [condLab]);
         builder.buildLabel(endLab);
 
+        break;
+      }
+
+      case ts.SyntaxKind.FunctionDeclaration: 
+        let funcDef = node as ts.FunctionDeclaration;
+        if (funcDef.name === undefined) {
+          throw `no anonymous functions!`
+        }
+        let name : string = funcDef.name.getText();
+        let args : bril.Argument[] = [];
+
+        for (let p of funcDef.parameters) {
+          let argName = p.name.getText();
+          let typeString = "";
+          if (p.type) {
+            typeString = brilType(p, checker);
+          }
+          args.push({name: argName, type: typeString} as bril.Argument);
+        }
+
+        // The type checker gives a full function type;
+        // we want only the return type.
+        if (funcDef.type && funcDef.type.getText() !== 'void') {
+          let retType : bril.Type;
+          if (funcDef.type.getText() === 'number') {
+            retType = "int";
+          } else if (funcDef.type.getText() === 'boolean') {
+            retType = "bool";
+          } else {
+            throw `unsupported type for function return: ${funcDef.type}`;
+          }
+          builder.buildFunction(name, args, retType);
+        } else {
+          builder.buildFunction(name, args);
+        }
+        if (funcDef.body) {
+          emit(funcDef.body);
+        }
+        break;
+
+      case ts.SyntaxKind.ReturnStatement: {
+        let retstmt = node as ts.ReturnStatement;
+        if (retstmt.expression) {
+          let val = emitExpr(retstmt.expression);
+          builder.buildEffect("ret", [val.dest]);
+        } else {
+          builder.buildEffect("ret", []);
+        }
         break;
       }
 

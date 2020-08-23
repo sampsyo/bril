@@ -1,0 +1,10 @@
+void main() {
+    v : int = const 2;
+    call print4();
+    print v;
+}
+void print4() {
+    v : int = const 4;
+    print v;
+    ret;
+}
