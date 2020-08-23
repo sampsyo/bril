@@ -20,7 +20,7 @@ GRAMMAR = """
 start: func*
 
 func: CNAME ["(" arg_list? ")"] [":" type] "{" instr* "}"
-?arg_list: arg*
+arg_list: arg*
 arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
