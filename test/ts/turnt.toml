@@ -1,3 +1,1 @@
-command = "ts2bril {filename} | bril2txt > {filename}.bril; cat {filename}.bril | bril2json | brili"
-output.out = "{filename}.bril"
-output.interp = "-"
+command = "ts2bril {filename} | brili"

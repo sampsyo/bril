@@ -27,7 +27,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
-  ret: null, // Should be 0 or 1
+  ret: null,  // (Should be 0 or 1.)
   nop: 0,
   call: null,
 };
@@ -53,7 +53,7 @@ function get(env: Env, ident: bril.Ident) {
   return val;
 }
 
-function findFunc(func : bril.Ident, funcs: bril.Function[]) {
+function findFunc(func: bril.Ident, funcs: bril.Function[]) {
   let matches = funcs.filter(function (f: bril.Function) {
     return f.name === func;
   });
@@ -121,23 +121,24 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
 
   let newEnv: Env = new Map();
 
-  // check arity of arguments and definition
+  // Check arity of arguments and definition.
   if (func.args.length !== funcArgs.length) {
     throw new BriliError(`function expected ${func.args.length} arguments, got ${funcArgs.length}`);
   }
 
   for (let i = 0; i < func.args.length; i++) {
-    // Look up the variable in the current (calling) environment
-    let value = get(env, instr.args[i]);
+    // Look up the variable in the current (calling) environment.
+    let value = get(env, funcArgs[i]);
 
     // Check argument types
     if (brilTypeToDynamicType[func.args[i].type] !== typeof value) {
       throw new BriliError(`function argument type mismatch`);
     }
 
-    // Set the value of the arg in the new (function) environemt
+    // Set the value of the arg in the new (function) environemt.
     newEnv.set(func.args[i].name, value);
   }
+  
   // Dynamically check the function's return value and type
   let retVal = evalFuncInEnv(func, funcs, newEnv);
   if (!('dest' in instr)) {  // `instr` is a `ValueOperation`.
@@ -401,7 +402,7 @@ async function main() {
   }
   catch(e) {
     if(e instanceof BriliError) {
-      console.error(`Brili interpreter error: ${e.message}`) 
+      console.error(`error: ${e.message}`) 
       process.exit(2);
     } else {
       throw e;

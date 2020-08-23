@@ -8,15 +8,3 @@ void main() {
   v3: int = id x;
   v4: int = id y;
   v5: int = id z;
-  call addboth(v3, v4, v5);
-  v6: int = const 0;
-}
-void addboth(x : int, y : int) {
-  v0: int = id x;
-  v1: int = id y;
-  v2: int = add v0 v1;
-  z: int = id v2;
-  v3: int = id z;
-  print v3;
-  v4: int = const 0;
-}

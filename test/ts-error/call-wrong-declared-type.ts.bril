@@ -5,14 +5,3 @@ void main() {
   y: int = id v1;
   v2: int = id x;
   v3: int = id y;
-  z: int = call addboth(v2, v3);
-  z: int = id z;
-}
-bool addboth(x : int, y : int) {
-  v0: int = id x;
-  v1: int = id y;
-  v2: int = add v0 v1;
-  w: int = id v2;
-  v3: int = id w;
-  ret v3;
-}

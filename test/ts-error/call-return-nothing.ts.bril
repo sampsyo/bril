@@ -5,9 +5,3 @@ void main() {
   y: int = id v1;
   v2: int = id x;
   v3: int = id y;
-  call add2(v2, v3);
-  v4: int = const 0;
-}
-int add2(x : int, y : int) {
-  ret ;
-}
