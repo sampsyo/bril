@@ -16,7 +16,8 @@
           "op": "print"
         }
       ],
-      "name": "main"
+      "name": "main",
+      "type": "void"
     }
   ]
 }

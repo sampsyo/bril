@@ -54,15 +54,12 @@ class JSONTransformer(lark.Transformer):
     def func(self, items):
         name, args, typ = items[:3]
         instrs = items[3:]
-        func = {
+        return {
             'name': str(name),
             'instrs': instrs,
+            'type': typ or 'void',
+            'args': args or [],
         }
-        if typ:
-            func['type'] = typ
-        if args is not None:
-            func['args'] = args
-        return func
 
     def arg(self, items):
         name = items.pop(0)

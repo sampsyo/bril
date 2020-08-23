@@ -10,7 +10,8 @@
           "value": 42
         }
       ],
-      "name": "main"
+      "name": "main",
+      "type": "void"
     }
   ]
 }
