@@ -17,25 +17,17 @@ __version__ = '0.0.1'
 # Text format parser.
 
 GRAMMAR = """
-start: (legacy_func | func)*
+start: func*
 
-legacy_func: CNAME "{" instr_list "}"
-func: type CNAME "(" arg_list ")" "{" instr_list "}"
-
-arg_list: | arg ("," arg)*
-
+func: CNAME "(" arg_list ")" ":" type "{" instr_list "}"
+?arg_list: arg*
 arg: IDENT ":" type
+?instr_list: instr*
+?instr: const | vop | eop | label
 
-param_list: | IDENT ("," IDENT)*
-
-instr_list: instr*
-
-?instr: call | const | vop | eop | label 
-
-const.5: IDENT ":" type "=" "const" lit ";"
-vop.4: IDENT ":" type "=" CNAME IDENT* ";"
-eop.3: CNAME IDENT* ";"
-call.2: [IDENT ":" type "="] "call" IDENT "(" param_list ")" ";"
+const.4: IDENT ":" type "=" "const" lit ";"
+vop.3: IDENT ":" type "=" CNAME IDENT* ";"
+eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
 lit: SIGNED_INT  -> int
@@ -60,36 +52,14 @@ class JSONTransformer(lark.Transformer):
     def start(self, items):
         return {'functions': items}
 
-    def legacy_func(self, items):
-        name = items.pop(0)
-        instr_list = items.pop(0)
+    def func(self, items):
+        name, args, typ, instrs = items
         return {
             'name': str(name),
-            'args': [],
-            'instrs': instr_list,
+            'type': typ,
+            'args': args,
+            'instrs': instrs,
         }
-
-    def func(self, items):
-        typ = items.pop(0)
-        name = items.pop(0)
-        arg_list = items.pop(0)
-        instr_list = items.pop(0)
-        if typ == 'void':
-            return {
-                'name': str(name),
-                'args': arg_list,
-                'instrs': instr_list,
-            }
-        else:
-            return {
-                'name': str(name),
-                'type': typ,
-                'args': arg_list,
-                'instrs': instr_list,
-            }
-
-    def arg_list(self, items):
-        return items
 
     def arg(self, items):
         name = items.pop(0)
@@ -98,31 +68,6 @@ class JSONTransformer(lark.Transformer):
             'name': name,
             'type': typ,
         }
-
-    def instr_list(self, items):
-        return items
-
-    def call(self, items):
-        obj = {}
-        if len(items) == 4:
-            dest = items.pop(0)
-            typ = items.pop(0)
-            obj.update({
-                'dest': str(dest),
-                'type': typ,
-            })
-
-        name = items.pop(0)
-        args = items.pop(0)
-        obj.update({
-            'op': 'call',
-            'name': name,
-            'args': args,
-        })
-        return obj
-
-    def param_list(self, items):
-        return items
 
     def const(self, items):
         dest = items.pop(0)
@@ -173,9 +118,6 @@ class JSONTransformer(lark.Transformer):
 
 
 def parse_bril(txt):
-    # Strip comments (must be entire line) from Bril before parsing
-    lines = [l for l in txt.split("\n") if not l.strip().startswith("//")]
-    txt = "\n".join(lines)
     parser = lark.Lark(GRAMMAR)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
@@ -191,21 +133,6 @@ def instr_to_string(instr):
             instr['type'],
             str(instr['value']).lower(),
         )
-    elif instr['op'] == 'call':
-        if 'dest' in instr:
-            return '{}: {} = {} {}({})'.format(
-                instr['dest'],
-                instr['type'],
-                instr['op'],
-                instr['name'],
-                ', '.join(instr['args']),
-            )
-        else: 
-            return '{} {}({})'.format(
-                instr['op'],
-                instr['name'],
-                ', '.join(instr['args']),
-            )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(
             instr['dest'],
@@ -227,13 +154,21 @@ def print_instr(instr):
 def print_label(label):
     print('{}:'.format(label['label']))
 
+
 def print_args(args):
-    return '{}'.format(', '.join(['{} : {}'.format(arg['name'], arg['type']) for arg in args]))
+    return ', '.join(
+        '{}: {}'.format(arg['name'], arg['type'])
+        for arg in args
+    )
 
 
 def print_func(func):
     typ = func['type'] if 'type' in func else 'void'
-    print('{} {}({}) {{'.format(typ, func['name'], print_args(func['args'])))
+    print('{} ({}): {} {{'.format(
+        func['name'],
+        print_args(func['args']),
+        typ,
+    ))
     for instr_or_label in func['instrs']:
         if 'label' in instr_or_label:
             print_label(instr_or_label)
@@ -245,6 +180,7 @@ def print_func(func):
 def print_prog(prog):
     for func in prog['functions']:
         print_func(func)
+
 
 # Command-line entry points.
 
