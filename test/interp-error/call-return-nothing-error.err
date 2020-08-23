@@ -1,1 +1,1 @@
-Brili interpreter error: non-void function (type: int) doesn't return anything
+error: non-void function (type: int) doesn't return anything
