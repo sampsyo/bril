@@ -1,4 +1,4 @@
-void main() {
+main {
   v0: int = const 8;
   value: int = id v0;
   v1: int = const 1;
