@@ -104,7 +104,6 @@ type Action =
   {"next": true} |
   {"end": ReturnValue};
 let NEXT: Action = {"next": true};
-let END: Action = {"end": true};
 
 /**
  * Interpet a call instruction.
@@ -140,7 +139,7 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
   }
 
   // Dynamically check the function's return value and type
-  let retVal = evalFuncInEnv(func, funcs, newEnv);
+  let retVal = evalFunc(func, funcs, newEnv);
   if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
      // Expected void function
     if (retVal !== null) {
@@ -323,7 +322,7 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
   throw new BriliError(`unhandled opcode ${(instr as any).op}`);
 }
 
-function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env)
+function evalFunc(func: bril.Function, funcs: bril.Function[], env: Env)
   : ReturnValue {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
@@ -347,6 +346,7 @@ function evalFuncInEnv(func: bril.Function, funcs: bril.Function[], env: Env)
     }
   }
 
+  // Reached the end of the function without hitting `ret`.
   return null;
 }
 
@@ -391,7 +391,7 @@ function evalProg(prog: bril.Program) {
     let expected = main.args;
     let args : string[] = process.argv.slice(2, process.argv.length);
     let newEnv = parseMainArguments(expected, args);
-    evalFuncInEnv(main, prog.functions, newEnv);
+    evalFunc(main, prog.functions, newEnv);
   }
 }
 
@@ -401,7 +401,7 @@ async function main() {
     evalProg(prog);
   }
   catch(e) {
-    if(e instanceof BriliError) {
+    if (e instanceof BriliError) {
       console.error(`error: ${e.message}`) 
       process.exit(2);
     } else {

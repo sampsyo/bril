@@ -28,14 +28,13 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
     throw "unimplemented type " + checker.typeToString(tsType);
   }
 }
+
 /**
  * Compile a complete TypeScript AST to a Bril program.
  */
 function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
-
-  // Main has no return type
-  builder.buildFunction("main", []);
+  builder.buildFunction("main", []);  // Main has no return type.
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
     switch (expr.kind) {
@@ -62,6 +61,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.BinaryExpression:
       let bin = expr as ts.BinaryExpression;
       let kind = bin.operatorToken.kind;
+
       // Handle assignments.
       switch (kind) {
       case ts.SyntaxKind.EqualsToken:
@@ -93,7 +93,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         builder.buildEffect("print", values.map(v => v.dest));
         return builder.buildInt(0);  // Expressions must produce values.
       } else {
-        // Recursively translate arguments
+        // Recursively translate arguments.
         let values = call.arguments.map(emitExpr);
 
         // Check if effect statement, i.e., a call that is not a subexpression
@@ -214,10 +214,10 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       case ts.SyntaxKind.FunctionDeclaration: 
         let funcDef = node as ts.FunctionDeclaration;
         if (funcDef.name === undefined) {
-          throw `no anonymous functions!`
+          throw `no anonymous functions!`;
         }
-        let name : string = funcDef.name.getText();
-        let args : bril.Argument[] = [];
+        let name: string = funcDef.name.getText();
+        let args: bril.Argument[] = [];
 
         for (let p of funcDef.parameters) {
           let argName = p.name.getText();
@@ -231,7 +231,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         // The type checker gives a full function type;
         // we want only the return type.
         if (funcDef.type && funcDef.type.getText() !== 'void') {
-          let retType : bril.Type;
+          let retType: bril.Type;
           if (funcDef.type.getText() === 'number') {
             retType = "int";
           } else if (funcDef.type.getText() === 'boolean') {

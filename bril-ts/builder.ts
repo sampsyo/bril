@@ -18,9 +18,9 @@ export class Builder {
   buildFunction(name: string, args: bril.Argument[], type?: bril.Type) {
     let func: bril.Function;
     if (type === undefined) {
-      func = { name: name, instrs: [], args: args};
+      func = {name: name, instrs: [], args: args};
     } else {
-      func = { name: name, instrs: [], args: args, type: type};
+      func = {name: name, instrs: [], args: args, type: type};
     }
     this.program.functions.push(func);
     this.curFunction = func;
