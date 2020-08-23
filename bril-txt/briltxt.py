@@ -54,12 +54,14 @@ class JSONTransformer(lark.Transformer):
     def func(self, items):
         name, args, typ = items[:3]
         instrs = items[3:]
-        return {
+        func = {
             'name': str(name),
             'instrs': instrs,
-            'type': typ or 'void',
             'args': args or [],
         }
+        if typ:
+            func['type'] = typ
+        return func
 
     def arg(self, items):
         name = items.pop(0)
@@ -70,7 +72,7 @@ class JSONTransformer(lark.Transformer):
         }
 
     def arg_list(self, items):
-        return items[0]
+        return items
 
     def const(self, items):
         dest = items.pop(0)

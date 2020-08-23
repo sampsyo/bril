@@ -138,10 +138,10 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
     // Set the value of the arg in the new (function) environemt.
     newEnv.set(func.args[i].name, value);
   }
-  
+
   // Dynamically check the function's return value and type
   let retVal = evalFuncInEnv(func, funcs, newEnv);
-  if (!('dest' in instr)) {  // `instr` is a `ValueOperation`.
+  if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
      // Expected void function
     if (retVal !== null) {
       throw new BriliError(`unexpected value returned without destination`);
@@ -149,7 +149,7 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
     if (func.type !== undefined) {
       throw new BriliError(`non-void function (type: ${func.type}) doesn't return anything`); 
     }
-  } else {  // `instr` is an `EffectOperation`.
+  } else {  // `instr` is a `ValueOperation`.
     // Expected non-void function
     if (instr.type === undefined) {
       throw new BriliError(`function call must include a type if it has a destination`);  
