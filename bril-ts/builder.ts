@@ -50,26 +50,23 @@ export class Builder {
   }
 
   /**
-   * Build a call operation that does write to a destination.
+   * Build a function call operation. If a type is specified, the call
+   * produces a return value.
    */
-  buildValueCallOperation(op: bril.CallOpCode, name : string, args: string[],
-                     type: bril.Type, dest?: string) : bril.ValueCallOperation {
-    dest = dest || this.freshVar();
-    let instr : bril.ValueCallOperation = { op, name, args, dest, type };
-    this.insert(instr);
-    return instr;
+  buildCall(func: string, args: string[],
+            type: bril.Type, dest?: string): bril.ValueOperation;
+  buildCall(func: string, args: string[],
+            type?: undefined, dest?: string): bril.EffectOperation;
+  buildCall(func: string, args: string[],
+            type?: bril.Type, dest?: string): bril.Operation {
+    let allArgs = [func].concat(args);
+    if (type) {
+      return this.buildValue("call", allArgs, type, dest);
+    } else {
+      return this.buildEffect("call", allArgs);
+    }
   }
-
-  /**
-   * Build a call operation that does not write to a destination.
-   */
-  buildEffectCallOperation(op: bril.CallOpCode, name : string, args: string[])
-    : bril.EffectCallOperation {
-    let instr : bril.EffectCallOperation = { op, name, args };
-    this.insert(instr);
-    return instr;
-  }
-
+  
   /**
    * Build a constant instruction. As above, the destination name is optional.
    */

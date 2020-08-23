@@ -16,7 +16,7 @@ export type Type = "int" | "bool";
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret";
+  op: "br" | "jmp" | "print" | "ret" | "call";
   args: Ident[];
 }
 
@@ -27,38 +27,12 @@ export interface EffectOperation {
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
-      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
+      "call";
   args: Ident[];
   dest: Ident;
   type: Type;
 }
-
-/**
- * An operation that calls another Bril function which has a return type and 
- * stores the result in the destination variable.
- */
-export interface ValueCallOperation {
-  op: "call";
-  name: Ident;
-  args: Ident[];
-  dest: Ident;
-  type: Type; 
-}
-
-/**
- * An operation that calls another Bril function with a void return type.
- */
-export interface EffectCallOperation {
-  op: "call";
-  name: Ident;
-  args: Ident[];
-}
-
-
-/**
- * An operation that calls another Bril function.
- */
-export type CallOperation = ValueCallOperation | EffectCallOperation;
 
 /**
  * The type of Bril values that may appear in constants.
@@ -78,7 +52,7 @@ export interface Constant {
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
-export type Operation = EffectOperation | ValueOperation | CallOperation;
+export type Operation = EffectOperation | ValueOperation;
 
 /**
  * Instructions can be operations (which have arguments) or constants (which
@@ -89,7 +63,7 @@ export type Instruction = Operation | Constant;
 /**
  * Both constants and value operations produce results.
  */
-export type ValueInstruction = Constant | ValueOperation | ValueCallOperation;
+export type ValueInstruction = Constant | ValueOperation;
 
 /**
  * The valid opcodes for value-producing instructions.
@@ -102,14 +76,9 @@ export type ValueOpCode = ValueOperation["op"];
 export type EffectOpCode = EffectOperation["op"];
 
 /**
- * The valid opcode for call operations.
- */
-export type CallOpCode = CallOperation["op"];
-
-/**
  * All valid operation opcodes.
  */
-export type OpCode = ValueOpCode | EffectOpCode | CallOpCode;
+export type OpCode = ValueOpCode | EffectOpCode;
 
 /**
  * Jump labels just mark a position with a name.

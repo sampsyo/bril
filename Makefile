@@ -3,7 +3,7 @@ TESTS := test/parse/*.bril \
 	test/interp*/*.bril \
 	test/ts*/*.ts
 
-EXAMPLE_TESTS :=  examples/*_test/*.bril 
+EXAMPLE_TESTS :=  examples/*_test/*.bril
 
 .PHONY: test
 test:
@@ -25,18 +25,12 @@ save:
 ts:
 	cd bril-ts ; \
 	yarn ; \
-	yarn build ; \
+	yarn build
 
 .PHONY: book
 book:
 	rm -rf book
 	mdbook build
-
-.PHONY: ts
-ts:
-	cd bril-ts ; \
-	yarn ; \
-	yarn build ; \
 
 .PHONY: deploy
 RSYNCARGS := --compress --recursive --checksum --itemize-changes \
@@ -44,4 +38,3 @@ RSYNCARGS := --compress --recursive --checksum --itemize-changes \
 DEST := courses:coursewww/capra.cs.cornell.edu/htdocs/bril
 deploy: book
 	rsync $(RSYNCARGS) ./book/ $(DEST)
-

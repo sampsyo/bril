@@ -98,18 +98,19 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
         // Check if effect statement, i.e., a call that is not a subexpression
         if (call.parent.kind === ts.SyntaxKind.ExpressionStatement) {
-          builder.buildEffectCallOperation('call', call.expression.getText(), 
+          builder.buildCall(call.expression.getText(), 
             values.map(v => v.dest));
           return builder.buildInt(0);  // Expressions must produce values
         } else {
           let decl = call.parent as ts.VariableDeclaration;
           let type = brilType(decl, checker);
           let name = (decl.name != undefined) ? decl.name.getText() : undefined;
-          return builder.buildValueCallOperation('call', 
+          return builder.buildCall(
             call.expression.getText(), 
             values.map(v => v.dest), 
             type, 
-            name);
+            name,
+          );
         } 
       }
     default:

@@ -109,18 +109,21 @@ let END: Action = {"end": true};
 /**
  * Interpet a call instruction.
  */
-function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[])
+function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
   : Action {
-  let func = findFunc(instr.name, funcs);
+  let funcName = instr.args[0];
+  let funcArgs = instr.args.slice(1);
+
+  let func = findFunc(funcName, funcs);
   if (func === null) {
-    throw new BriliError(`undefined function ${instr.name}`);
+    throw new BriliError(`undefined function ${funcName}`);
   }
 
   let newEnv: Env = new Map();
 
   // check arity of arguments and definition
-  if (func.args.length !== instr.args.length) {
-    throw new BriliError(`function expected ${func.args.length} arguments, got ${instr.args.length}`);
+  if (func.args.length !== funcArgs.length) {
+    throw new BriliError(`function expected ${func.args.length} arguments, got ${funcArgs.length}`);
   }
 
   for (let i = 0; i < func.args.length; i++) {
@@ -135,12 +138,9 @@ function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[])
     // Set the value of the arg in the new (function) environemt
     newEnv.set(func.args[i].name, value);
   }
-
-  let valueCall : bril.ValueCallOperation = instr as bril.ValueCallOperation;
-
   // Dynamically check the function's return value and type
   let retVal = evalFuncInEnv(func, funcs, newEnv);
-  if (valueCall.dest === undefined && valueCall.type === undefined) {
+  if (!('dest' in instr)) {  // `instr` is a `ValueOperation`.
      // Expected void function
     if (retVal !== null) {
       throw new BriliError(`unexpected value returned without destination`);
@@ -148,24 +148,24 @@ function evalCall(instr: bril.CallOperation, env: Env, funcs: bril.Function[])
     if (func.type !== undefined) {
       throw new BriliError(`non-void function (type: ${func.type}) doesn't return anything`); 
     }
-  } else {
+  } else {  // `instr` is an `EffectOperation`.
     // Expected non-void function
-    if (valueCall.type === undefined) {
+    if (instr.type === undefined) {
       throw new BriliError(`function call must include a type if it has a destination`);  
     }
-    if (valueCall.dest === undefined) {
+    if (instr.dest === undefined) {
       throw new BriliError(`function call must include a destination if it has a type`);  
     }
     if (retVal === null) {
       throw new BriliError(`non-void function (type: ${func.type}) doesn't return anything`);
     }
-    if (brilTypeToDynamicType[valueCall.type] !== typeof retVal) {
+    if (brilTypeToDynamicType[instr.type] !== typeof retVal) {
       throw new BriliError(`type of value returned by function does not match destination type`);
     }
-    if (func.type !== valueCall.type ) {
+    if (func.type !== instr.type ) {
       throw new BriliError(`type of value returned by function does not match declaration`);
     }
-    env.set(valueCall.dest, retVal);
+    env.set(instr.dest, retVal);
   }
   return NEXT;
 }
