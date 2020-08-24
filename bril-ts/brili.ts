@@ -2,12 +2,22 @@
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 
+/**
+ * An interpreter error to print to the console.
+ */
 class BriliError extends Error {
-    constructor(message?: string) {
-        super(message);
-        Object.setPrototypeOf(this, new.target.prototype);
-        this.name = BriliError.name;
-    }
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.name = BriliError.name;
+  }
+}
+
+/**
+ * Create an interpreter error object to throw.
+ */
+function error(message: string): BriliError {
+  return new BriliError(message);
 }
 
 const argCounts: {[key in bril.OpCode]: number | null} = {
@@ -48,7 +58,7 @@ const brilTypeToDynamicType: {[key in bril.Type] : string} = {
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
   if (typeof val === 'undefined') {
-    throw new BriliError(`undefined variable ${ident}`);
+    throw error(`undefined variable ${ident}`);
   }
   return val;
 }
@@ -59,9 +69,9 @@ function findFunc(func: bril.Ident, funcs: bril.Function[]) {
   });
 
   if (matches.length == 0) {
-    throw new BriliError(`no function of name ${func} found`);
+    throw error(`no function of name ${func} found`);
   } else if (matches.length > 1) {
-    throw new BriliError(`multiple functions of name ${func} found`);
+    throw error(`multiple functions of name ${func} found`);
   }
 
   return matches[0];
@@ -73,7 +83,7 @@ function findFunc(func: bril.Ident, funcs: bril.Function[]) {
  */
 function checkArgs(instr: bril.Operation, count: number) {
   if (instr.args.length != count) {
-    throw new BriliError(`${instr.op} takes ${count} argument(s); got ${instr.args.length}`);
+    throw error(`${instr.op} takes ${count} argument(s); got ${instr.args.length}`);
   }
 }
 
@@ -82,7 +92,7 @@ function getArgument(instr: bril.Operation, env: Env, index: number,
   let val = get(env, instr.args[index]);
   let brilTyp = brilTypeToDynamicType[typ];
   if (brilTyp !== typeof val) {
-    throw new BriliError(`${instr.op} argument ${index} must be a {brilTyp}`);
+    throw error(`${instr.op} argument ${index} must be a {brilTyp}`);
   }
   return val;
 }
@@ -115,14 +125,14 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
 
   let func = findFunc(funcName, funcs);
   if (func === null) {
-    throw new BriliError(`undefined function ${funcName}`);
+    throw error(`undefined function ${funcName}`);
   }
 
   let newEnv: Env = new Map();
 
   // Check arity of arguments and definition.
   if (func.args.length !== funcArgs.length) {
-    throw new BriliError(`function expected ${func.args.length} arguments, got ${funcArgs.length}`);
+    throw error(`function expected ${func.args.length} arguments, got ${funcArgs.length}`);
   }
 
   for (let i = 0; i < func.args.length; i++) {
@@ -131,7 +141,7 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
 
     // Check argument types
     if (brilTypeToDynamicType[func.args[i].type] !== typeof value) {
-      throw new BriliError(`function argument type mismatch`);
+      throw error(`function argument type mismatch`);
     }
 
     // Set the value of the arg in the new (function) environemt.
@@ -143,27 +153,27 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
   if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
      // Expected void function
     if (retVal !== null) {
-      throw new BriliError(`unexpected value returned without destination`);
+      throw error(`unexpected value returned without destination`);
     }
     if (func.type !== undefined) {
-      throw new BriliError(`non-void function (type: ${func.type}) doesn't return anything`); 
+      throw error(`non-void function (type: ${func.type}) doesn't return anything`); 
     }
   } else {  // `instr` is a `ValueOperation`.
     // Expected non-void function
     if (instr.type === undefined) {
-      throw new BriliError(`function call must include a type if it has a destination`);  
+      throw error(`function call must include a type if it has a destination`);  
     }
     if (instr.dest === undefined) {
-      throw new BriliError(`function call must include a destination if it has a type`);  
+      throw error(`function call must include a destination if it has a type`);  
     }
     if (retVal === null) {
-      throw new BriliError(`non-void function (type: ${func.type}) doesn't return anything`);
+      throw error(`non-void function (type: ${func.type}) doesn't return anything`);
     }
     if (brilTypeToDynamicType[instr.type] !== typeof retVal) {
-      throw new BriliError(`type of value returned by function does not match destination type`);
+      throw error(`type of value returned by function does not match destination type`);
     }
     if (func.type !== instr.type ) {
-      throw new BriliError(`type of value returned by function does not match declaration`);
+      throw error(`type of value returned by function does not match declaration`);
     }
     env.set(instr.dest, retVal);
   }
@@ -181,7 +191,7 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
     if (count === undefined) {
-      throw new BriliError("unknown opcode " + instr.op);
+      throw error("unknown opcode " + instr.op);
     } else if (count !== null) {
       checkArgs(instr, count);
     }
@@ -305,7 +315,7 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
       let val = get(env, instr.args[0]);
       return {"end": val};
     } else {
-      throw new BriliError(`ret takes 0 or 1 argument(s); got ${argCount}`);
+      throw error(`ret takes 0 or 1 argument(s); got ${argCount}`);
     }
   }
 
@@ -319,7 +329,7 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
   
   }
   unreachable(instr);
-  throw new BriliError(`unhandled opcode ${(instr as any).op}`);
+  throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
 function evalFunc(func: bril.Function, funcs: bril.Function[], env: Env)
@@ -338,7 +348,7 @@ function evalFunc(func: bril.Function, funcs: bril.Function[], env: Env)
           }
         }
         if (i === func.instrs.length) {
-          throw new BriliError(`label ${action.label} not found`);
+          throw error(`label ${action.label} not found`);
         }
       } else if ('end' in action) {
         return action.end;
@@ -356,7 +366,7 @@ function parseBool(s : string) : boolean {
   } else if (s === 'false') {
     return false;
   } else {
-    throw new BriliError(`boolean argument to main must be 'true'/'false'; got ${s}`);
+    throw error(`boolean argument to main must be 'true'/'false'; got ${s}`);
   }
 }
 
@@ -364,7 +374,7 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
   let newEnv: Env = new Map();
 
   if (args.length !== expected.length) {
-    throw new BriliError(`mismatched main argument arity: expected ${expected.length}; got ${args.length}`);
+    throw error(`mismatched main argument arity: expected ${expected.length}; got ${args.length}`);
   }
 
   for (let i = 0; i < args.length; i++) {
