@@ -13,7 +13,7 @@ export type Ident = string;
 export type Type = "int" | "bool" | PointerType;
 
 /**
- * The types to which a pointer may be pointing;
+ * The type for pointers to allocated memory regions.
  */
 export type PointerType = {
   "ptr": Type | PointerType;
@@ -47,7 +47,6 @@ export interface ValueOperation {
  * The type of Bril values that may appear in constants.
  */
 export type Value = number | boolean;
-
 
 /**
  * An instruction that places a literal value into a variable.
@@ -84,7 +83,6 @@ export type ValueOpCode = ValueOperation["op"];
  * The valid opcodes for effecting operations.
  */
 export type EffectOpCode = EffectOperation["op"];
-
 
 /**
  * All valid operation opcodes.

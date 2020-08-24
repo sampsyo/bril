@@ -40,6 +40,3 @@ RSYNCARGS := --compress --recursive --checksum --itemize-changes \
 DEST := courses:coursewww/capra.cs.cornell.edu/htdocs/bril
 deploy: book
 	rsync $(RSYNCARGS) ./book/ $(DEST)
-.PHONY: build
-build:
-	cd bril-ts; yarn build

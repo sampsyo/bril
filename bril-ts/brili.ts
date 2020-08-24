@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
-import { BigIntLiteral } from 'typescript';
 
 /**
  * An interpreter error to print to the console.
@@ -134,7 +133,7 @@ type Pointer = {
   type: bril.Type;
 }
 
-type Value = boolean | Pointer | BigInt;
+type Value = boolean | BigInt | Pointer;
 type ReturnValue = Value | null;
 type Env = Map<bril.Ident, Value>;
 
@@ -176,9 +175,9 @@ function findFunc(func: bril.Ident, funcs: bril.Function[]) {
 
 function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): Pointer {
   if (typeof ptrType != 'object') {
-    throw `unspecified pointer type ${ptrType}`
+    throw error(`unspecified pointer type ${ptrType}`);
   } else if (amt <= 0) {
-    throw `must allocate a positive amount of memory: ${amt} <= 0`
+    throw error(`must allocate a positive amount of memory: ${amt} <= 0`);
   } else {
     let loc = heap.alloc(amt)
     let dataType = ptrType.ptr;
@@ -216,11 +215,11 @@ function getArgument(instr: bril.Operation, env: Env, index: number,
   return val;
 }
 
-function getInt(instr: bril.Operation, env: Env, index: number) : bigint {
+function getInt(instr: bril.Operation, env: Env, index: number): bigint {
   return getArgument(instr, env, index, 'int') as bigint;
 }
 
-function getBool(instr: bril.Operation, env: Env, index: number) : boolean {
+function getBool(instr: bril.Operation, env: Env, index: number): boolean {
   return getArgument(instr, env, index, 'bool') as boolean;
 }
 
@@ -458,24 +457,24 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
   }
 
   case "free": {
-    let val = getPtr(instr, env, 0)
+    let val = getPtr(instr, env, 0);
     heap.free(val.loc);
     return NEXT;
   }
 
   case "store": {
-    let target = getPtr(instr, env, 0)
+    let target = getPtr(instr, env, 0);
     switch (target.type) {
       case "int": {
-        heap.write(target.loc, getInt(instr, env, 1))
+        heap.write(target.loc, getInt(instr, env, 1));
         break;
       }
       case "bool": {
-        heap.write(target.loc, getBool(instr, env, 1))
+        heap.write(target.loc, getBool(instr, env, 1));
         break;
       }
       default: {
-        heap.write(target.loc, getPtr(instr, env, 1))
+        heap.write(target.loc, getPtr(instr, env, 1));
         break;
       }
     }
@@ -483,12 +482,12 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
   }
 
   case "load": {
-    let ptr = getPtr(instr, env, 0)
-    let val = heap.read(ptr.loc)
-    if (val == undefined || val == null) {
+    let ptr = getPtr(instr, env, 0);
+    let val = heap.read(ptr.loc);
+    if (!val) {
       throw error(`Pointer ${instr.args[0]} points to uninitialized data`);
     } else {
-      env.set(instr.dest, val)
+      env.set(instr.dest, val);
     }
     return NEXT;
   }
@@ -499,6 +498,7 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
     env.set(instr.dest, { loc: ptr.loc.add(Number(val)), type: ptr.type })
     return NEXT;
   }
+
   }
   unreachable(instr);
   throw error(`unhandled opcode ${(instr as any).op}`);
@@ -532,7 +532,7 @@ function evalFunc(func: bril.Function, funcs: bril.Function[], heap: Heap<Value>
   return null;
 }
 
-function parseBool(s : string) : boolean {
+function parseBool(s: string): boolean {
   if (s === 'true') {
     return true;
   } else if (s === 'false') {
