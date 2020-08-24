@@ -96,8 +96,8 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       }
 
       // Handle "normal" value operators.
-      let op;
-      let type;
+      let op: bril.ValueOpCode;
+      let type: bril.Type;
       if (brilType(bin.left, checker) === "float" ||
           brilType(bin.right, checker) === "float") {
         // Floating point operators.
