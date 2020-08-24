@@ -2,7 +2,7 @@ build/
 book/
 node_modules/
 yarn.lock
-hypothesis/
+.hypothesis/
 .pytest_cache/
 hypothesis_*
 __pycache__
