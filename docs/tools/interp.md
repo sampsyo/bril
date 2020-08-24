@@ -5,6 +5,8 @@ Interpreter
 It is written in [TypeScript][].
 You can find `brili` in the `bril-ts` directory in the Bril repository.
 
+The interpreter supports [core Bril](../lang/core.md) along with the [memory](../lang/memory.md) and [floating point](../lang/float.md) extensions.
+
 Install
 -------
 
