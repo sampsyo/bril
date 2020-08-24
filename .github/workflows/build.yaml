@@ -46,3 +46,12 @@ jobs:
               run: pip install turnt
             - name: Tests
               run: PATH=$PATH:`yarn global bin` make test TURNTARGS=-v
+
+    style:
+        name: Style
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: TrueBrain/actions-flake8@master
+              with:
+                path: bril-txt
