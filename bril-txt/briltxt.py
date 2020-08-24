@@ -19,28 +19,25 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: func*
 
-func: CNAME ["(" arg_list? ")"] [":" type] "{" instr* "}"
+func: CNAME ["(" arg_list? ")"] [tyann] "{" instr* "}"
 arg_list: | arg ("," arg)*
 arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
-type_decl.5: ":" type
-const.4: IDENT [type_decl] "=" "const" lit ";"
-vop.3: IDENT [type_decl] "=" CNAME IDENT* ";"
+const.4: IDENT [tyann] "=" "const" lit ";"
+vop.3: IDENT [tyann] "=" CNAME IDENT* ";"
 eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
+
+?tyann.5: ":" type
 
 lit: SIGNED_INT  -> int
   | BOOL         -> bool
   | DECIMAL      -> float
 
-<<<<<<< HEAD
-type: /int/ | /bool/
-=======
 type: "ptr<" ptrtype ">" | basetype
 ptrtype: type
 basetype: CNAME
->>>>>>> master
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -85,8 +82,7 @@ class JSONTransformer(lark.Transformer):
 
     def const(self, items):
         dest = items.pop(0)
-        type = items.pop(0).children[0] \
-            if isinstance(items[0], lark.tree.Tree) else None
+        type = items.pop(0)
         val = items.pop(0)
         res = {
             'op': 'const',
@@ -99,8 +95,7 @@ class JSONTransformer(lark.Transformer):
 
     def vop(self, items):
         dest = items.pop(0)
-        type = items.pop(0).children[0] \
-            if isinstance(items[0], lark.tree.Tree) else None
+        type = items.pop(0)
         op = items.pop(0)
         res = {
             'op': str(op),
@@ -165,7 +160,7 @@ def type_to_str(type):
 def instr_to_string(instr):
     if instr['op'] == 'const':
         tyann = ': {}'.format(type_to_str(instr['type'])) \
-            if 'type' in instr else '',
+            if 'type' in instr else ''
         return '{}{} = const {}'.format(
             instr['dest'],
             tyann,
