@@ -184,7 +184,7 @@ function findFunc(func: bril.Ident, funcs: readonly bril.Function[]) {
   return matches[0];
 }
 
-function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): Pointer {
+function alloc(ptrType: bril.ParamType, amt:number, heap:Heap<Value>): Pointer {
   if (typeof ptrType != 'object') {
     throw error(`unspecified pointer type ${ptrType}`);
   } else if (amt <= 0) {

@@ -8,16 +8,19 @@
 export type Ident = string;
 
 /**
- * Value types.
+ * Primitive types.
  */
-export type Type = "int" | "bool" | "float" | PointerType;
+export type PrimType = "int" | "bool" | "float";
 
 /**
- * The type for pointers to allocated memory regions.
+ * Parameterized types. (We only have pointers for now.)
  */
-export type PointerType = {
-  "ptr": Type | PointerType;
-}
+export type ParamType = {"ptr": Type};
+
+/**
+ * Value types.
+ */
+export type Type = PrimType | ParamType;
 
 /**
  * An instruction that does not produce any result.
