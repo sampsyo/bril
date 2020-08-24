@@ -1,17 +1,18 @@
 {
   "functions": [
     {
+      "args": [],
       "instrs": [
         {
           "dest": "v0",
           "op": "const",
-          "type": "double",
+          "type": "float",
           "value": 1.1
         },
         {
           "dest": "v1",
           "op": "const",
-          "type": "double",
+          "type": "float",
           "value": 0.02
         },
         {
@@ -27,7 +28,7 @@
           ],
           "dest": "v3",
           "op": "fadd",
-          "type": "double"
+          "type": "float"
         },
         {
           "args": [
