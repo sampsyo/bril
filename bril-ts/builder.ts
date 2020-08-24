@@ -92,6 +92,13 @@ export class Builder {
   }
 
   /**
+   * Build a constant floating-point value.
+   */
+  buildFloat(value: number, dest?: string) {
+    return this.buildConst(value, "float", dest);
+  }
+
+  /**
    * Add a label to the function at the current position.
    */
   buildLabel(name: string) {

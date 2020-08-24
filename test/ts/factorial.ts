@@ -1,11 +1,11 @@
-var x : number = 5;
-var f : number = fac(x);
+var x: bigint = 5n;
+var f: bigint = fac(x);
 console.log(f);
 
-function fac(x : number) : number {
-    if (x <= 1) {
-        return 1;
+function fac(x: bigint): bigint {
+    if (x <= 1n) {
+        return 1n;
     }
-    var result = x * fac(x - 1);
-    return result; 
+    var result = x * fac(x - 1n);
+    return result;
 }

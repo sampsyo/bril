@@ -2,7 +2,6 @@
 import * as ts from 'typescript';
 import * as bril from './bril';
 import {Builder} from './builder';
-import {readStdin} from './util';
 
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.PlusToken,               ["add", "int"]],
@@ -17,13 +16,29 @@ const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.EqualsEqualsEqualsToken, ["eq",  "bool"]],
 ]);
 
+const opTokensFloat = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
+  [ts.SyntaxKind.PlusToken,               ["fadd", "float"]],
+  [ts.SyntaxKind.AsteriskToken,           ["fmul", "float"]],
+  [ts.SyntaxKind.MinusToken,              ["fsub", "float"]],
+  [ts.SyntaxKind.SlashToken,              ["fdiv", "float"]],
+  [ts.SyntaxKind.LessThanToken,           ["flt",  "bool"]],
+  [ts.SyntaxKind.LessThanEqualsToken,     ["fle",  "bool"]],
+  [ts.SyntaxKind.GreaterThanToken,        ["fgt",  "bool"]],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  ["fge",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsToken,       ["feq",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, ["feq",  "bool"]],
+]);
+
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
   if (tsType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral)) {
-    return "int";
+    return "float";
   } else if (tsType.flags &
              (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral)) {
     return "bool";
+  } else if (tsType.flags &
+             (ts.TypeFlags.BigInt | ts.TypeFlags.BigIntLiteral)) {
+    return "int";
   } else {
     throw "unimplemented type " + checker.typeToString(tsType);
   }
@@ -40,6 +55,12 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
+      let val = parseFloat(lit.text);
+      return builder.buildFloat(val);
+    }
+
+    case ts.SyntaxKind.BigIntLiteral: {
+      let lit = expr as ts.BigIntLiteral;
       let val = parseInt(lit.text);
       return builder.buildInt(val);
     }
@@ -75,11 +96,24 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       }
 
       // Handle "normal" value operators.
-      let p = opTokens.get(kind);
-      if (!p) {
-        throw `unhandled binary operator kind ${kind}`;
+      let op: bril.ValueOpCode;
+      let type: bril.Type;
+      if (brilType(bin.left, checker) === "float" ||
+          brilType(bin.right, checker) === "float") {
+        // Floating point operators.
+        let p = opTokensFloat.get(kind);
+        if (!p) {
+          throw `unhandled FP binary operator kind ${kind}`;
+        }
+        [op, type] = p;
+      } else {
+        // Non-float.
+        let p = opTokens.get(kind);
+        if (!p) {
+          throw `unhandled binary operator kind ${kind}`;
+        }
+        [op, type] = p;
       }
-      let [op, type] = p;
 
       let lhs = emitExpr(bin.left);
       let rhs = emitExpr(bin.right);
@@ -230,9 +264,11 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         if (funcDef.type && funcDef.type.getText() !== 'void') {
           let retType: bril.Type;
           if (funcDef.type.getText() === 'number') {
-            retType = "int";
+            retType = "float";
           } else if (funcDef.type.getText() === 'boolean') {
             retType = "bool";
+          } else if (funcDef.type.getText() === 'bigint') {
+            retType = "int";
           } else {
             throw `unsupported type for function return: ${funcDef.type}`;
           }

@@ -1,6 +1,6 @@
-var x : number = 5;
+var x: bigint = 5n;
 callPrint(x);
 
-function callPrint(x : number) {
+function callPrint(x: bigint) {
     console.log(x);
 }

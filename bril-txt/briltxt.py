@@ -30,7 +30,8 @@ eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
 lit: SIGNED_INT  -> int
-  | BOOL     -> bool
+  | BOOL         -> bool
+  | DECIMAL      -> float
 
 type: "ptr<" ptrtype ">" | basetype
 ptrtype: type
@@ -40,6 +41,7 @@ IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
 
 %import common.SIGNED_INT
+%import common.DECIMAL
 %import common.WS
 %import common.CNAME
 %import common.LETTER
@@ -128,6 +130,9 @@ class JSONTransformer(lark.Transformer):
 
     def basetype(self, items):
         return str(items[0])
+
+    def float(self, items):
+        return float(items[0])
 
 
 def parse_bril(txt):

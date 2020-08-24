@@ -10,7 +10,7 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool" | PointerType;
+export type Type = "int" | "bool" | "float" | PointerType;
 
 /**
  * The type for pointers to allocated memory regions.
@@ -37,7 +37,9 @@ export interface ValueOperation {
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
       "call" |
-      "load" | "ptradd" | "alloc";
+      "load" | "ptradd" | "alloc" |
+      "fadd" | "fmul" | "fsub" | "fdiv" |
+      "feq" | "flt" | "fle" | "fgt" | "fge";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -57,6 +59,7 @@ export interface Constant {
   dest: Ident;
   type: Type;
 }
+
 
 /**
  * Operations take arguments, which come from previously-assigned identifiers.

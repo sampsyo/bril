@@ -1,6 +1,6 @@
-var y : number = 1 + getTwo();
+var y = 1n + getTwo();
 console.log(y);
 
-function getTwo() : number {
-    return 2;
+function getTwo(): bigint {
+    return 2n;
 }

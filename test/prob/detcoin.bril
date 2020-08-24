@@ -1,0 +1,5 @@
+main {
+  c: bool = flip;
+  obv c;
+  print c;
+}

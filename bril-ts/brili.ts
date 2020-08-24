@@ -115,6 +115,15 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   not: 1,
   and: 2,
   or: 2,
+  fadd: 2,
+  fmul: 2,
+  fsub: 2,
+  fdiv: 2,
+  flt: 2,
+  fle: 2,
+  fgt: 2,
+  fge: 2,
+  feq: 2,
   print: null,  // Any number of arguments.
   br: 3,
   jmp: 1,
@@ -133,7 +142,7 @@ type Pointer = {
   type: bril.Type;
 }
 
-type Value = boolean | BigInt | Pointer;
+type Value = boolean | BigInt | Pointer | number;
 type ReturnValue = Value | null;
 type Env = Map<bril.Ident, Value>;
 
@@ -145,7 +154,9 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
     return typeof val === "bigint";
   } else if (typ === "bool") {
     return typeof val === "boolean";
-  } else if ("ptr" in typ) {
+  } else if (typ === "float") {
+    return typeof val === "number";
+  } else if (typeof typ === "object" && typ.hasOwnProperty("ptr")) {
     return val instanceof Key;
   }
   throw error(`unknown type ${typ}`);
@@ -207,10 +218,10 @@ function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
 }
 
 function getArgument(instr: bril.Operation, env: Env, index: number, 
-  typ : bril.Type) {
+  typ: bril.Type) {
   let val = get(env, instr.args[index]);
   if (!typeCheck(val, typ)) {
-    throw error(`${instr.op} argument ${index} must be a {brilTyp}`);
+    throw error(`${instr.op} argument ${index} must be a ${typ}`);
   }
   return val;
 }
@@ -221,6 +232,10 @@ function getInt(instr: bril.Operation, env: Env, index: number): bigint {
 
 function getBool(instr: bril.Operation, env: Env, index: number): boolean {
   return getArgument(instr, env, index, 'bool') as boolean;
+}
+
+function getFloat(instr: bril.Operation, env: Env, index: number): number {
+  return getArgument(instr, env, index, 'float') as number;
 }
 
 /**
@@ -317,10 +332,13 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
 
   switch (instr.op) {
   case "const":
-    // Ensure that JSON ints get represented appropriately.
+    // Interpret JSON numbers as either ints or floats.
     let value: Value;
     if (typeof instr.value === "number") {
-      value = BigInt(instr.value);
+      if (instr.type === "float")
+        value = instr.value;
+      else
+        value = BigInt(Math.floor(instr.value))
     } else {
       value = instr.value;
     }
@@ -402,6 +420,60 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
 
   case "or": {
     let val = getBool(instr, env, 0) || getBool(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fadd": {
+    let val = getFloat(instr, env, 0) + getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fsub": {
+    let val = getFloat(instr, env, 0) - getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fmul": {
+    let val = getFloat(instr, env, 0) * getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fdiv": {
+    let val = getFloat(instr, env, 0) / getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fle": {
+    let val = getFloat(instr, env, 0) <= getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "flt": {
+    let val = getFloat(instr, env, 0) < getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fgt": {
+    let val = getFloat(instr, env, 0) > getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "fge": {
+    let val = getFloat(instr, env, 0) >= getFloat(instr, env, 1);
+    env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "feq": {
+    let val = getFloat(instr, env, 0) === getFloat(instr, env, 1);
     env.set(instr.dest, val);
     return NEXT;
   }
