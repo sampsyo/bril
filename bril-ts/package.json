@@ -5,11 +5,10 @@
   "private": true,
   "bin": {
     "ts2bril": "build/ts2bril.js",
-    "brili": "build/brili.js",
-    "xbrili" : "build/xbrili.js"
+    "brili": "build/brili.js"
   },
   "scripts": {
-    "build": "tsc && chmod a+x build/ts2bril.js build/brili.js build/xbrili.js"
+    "build": "tsc && chmod a+x build/ts2bril.js build/brili.js"
   },
   "dependencies": {
     "@types/node": "^11.13.5",
