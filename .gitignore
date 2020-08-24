@@ -2,6 +2,4 @@ build/
 book/
 node_modules/
 yarn.lock
-.hypothesis/
-.pytest_cache/
-hypothesis_*
+__pycache__

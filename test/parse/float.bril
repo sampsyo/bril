@@ -1,0 +1,7 @@
+main {
+  v0: double = const 1.1;
+  v1: double = const .02;
+  v2: float = const 0.3;
+  v3: double = fadd v0 v1;
+  v4: float = fmult v2 v2;
+}

@@ -1,0 +1,45 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "double",
+          "value": 1.1
+        },
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "double",
+          "value": 0.02
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "float",
+          "value": 0.3
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "v3",
+          "op": "fadd",
+          "type": "double"
+        },
+        {
+          "args": [
+            "v2",
+            "v2"
+          ],
+          "dest": "v4",
+          "op": "fmult",
+          "type": "float"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

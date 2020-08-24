@@ -5,16 +5,16 @@ import {Builder} from './builder';
 import {readStdin} from './util';
 
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
-  [ts.SyntaxKind.PlusToken,               ["add", "int"]],
-  [ts.SyntaxKind.AsteriskToken,           ["mul", "int"]],
-  [ts.SyntaxKind.MinusToken,              ["sub", "int"]],
-  [ts.SyntaxKind.SlashToken,              ["div", "int"]],
-  [ts.SyntaxKind.LessThanToken,           ["lt",  "bool"]],
-  [ts.SyntaxKind.LessThanEqualsToken,     ["le",  "bool"]],
-  [ts.SyntaxKind.GreaterThanToken,        ["gt",  "bool"]],
-  [ts.SyntaxKind.GreaterThanEqualsToken,  ["ge",  "bool"]],
-  [ts.SyntaxKind.EqualsEqualsToken,       ["eq",  "bool"]],
-  [ts.SyntaxKind.EqualsEqualsEqualsToken, ["eq",  "bool"]],
+  [ts.SyntaxKind.PlusToken,               ["fadd", "double"]],
+  [ts.SyntaxKind.AsteriskToken,           ["fmul", "double"]],
+  [ts.SyntaxKind.MinusToken,              ["fsub", "double"]],
+  [ts.SyntaxKind.SlashToken,              ["fdiv", "double"]],
+  [ts.SyntaxKind.LessThanToken,           ["flt",  "bool"]],
+  [ts.SyntaxKind.LessThanEqualsToken,     ["fle",  "bool"]],
+  [ts.SyntaxKind.GreaterThanToken,        ["fgt",  "bool"]],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  ["fge",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsToken,       ["feq",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, ["feq",  "bool"]],
 ]);
 
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
@@ -40,7 +40,13 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     switch (expr.kind) {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
-      let val = parseInt(lit.text);
+      let val = parseFloat(lit.text);
+      return builder.buildDouble(val);
+    }
+
+    case ts.SyntaxKind.BigIntLiteral: {
+      let lit = expr as ts.NumericLiteral;
+      let val = parseFloat(lit.text);
       return builder.buildInt(val);
     }
 
