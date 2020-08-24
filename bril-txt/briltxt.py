@@ -20,7 +20,7 @@ GRAMMAR = """
 start: func*
 
 func: CNAME ["(" arg_list? ")"] [":" type] "{" instr* "}"
-arg_list: arg*
+arg_list: | arg ("," arg)*
 arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
@@ -162,7 +162,7 @@ def print_label(label):
 
 def args_to_string(args):
     if args:
-        return '({})'.format(' '.join(
+        return '({})'.format(', '.join(
             '{}: {}'.format(arg['name'], arg['type'])
             for arg in args
         ))

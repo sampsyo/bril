@@ -11,7 +11,7 @@ main {
   print v4;
   v5: int = const 0;
 }
-add2(x: int y: int): int {
+add2(x: int, y: int): int {
   v0: int = id x;
   v1: int = id y;
   v2: int = add v0 v1;
