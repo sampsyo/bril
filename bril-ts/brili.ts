@@ -470,7 +470,7 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
         heap.write(target.loc, getBool(instr, env, 1))
         break;
       }
-      case "ptr": {
+      default: {
         heap.write(target.loc, getPtr(instr, env, 1))
         break;
       }
