@@ -12,7 +12,7 @@ You can read [more about the memory extension][memblog] from its creators, Drew 
 Types
 -----
 
-The memory extension adds one new form of type to Bril, whose syntax is an object:
+The memory extension adds a parameterized `ptr` type to Bril:
 
     {"ptr": <Type>}
 
