@@ -1,18 +1,12 @@
-# Bril Language Reference
+Syntax Reference
+================
 
 Bril programs are JSON objects that directly represent abstract syntax.
-
-This language reference has two sections:
-[*Syntax*](#syntax) describes the structure of Bril programs
-and [*Operations*](#operations) lists all the built-in kinds of instructions and what they do.
-
-
-## Syntax
-
-This section describes the syntax elements that make up Bril programs.
+This chapter exhaustively describes the structure of that syntax.
 All objects are JSON values of one sort or another.
 
-### Program
+Program
+-------
 
     { "functions": [<Function>, ...] }
 
@@ -24,7 +18,8 @@ It has one key:
 There should be at least one function with the name `main`.
 When execution starts, this function will be invoked.
 
-### Type
+Type
+----
 
     "int"
     "bool"
@@ -36,7 +31,8 @@ There are two value types in Bril:
 
 In a Bril program, a Type is either of the two strings that name the type.
 
-### Function
+Function
+--------
 
     {
       "name": "<string>",
@@ -55,7 +51,8 @@ There are four fields:
 
 When a function runs, it creates an activation record and transfers control to the first instruction in the sequence.
 
-### Label
+Label
+-----
 
     { "label": "<string>" }
 
@@ -64,7 +61,8 @@ It only has one key:
 
 * `label`, a string. This is the name that jump and branch instructions will use to transfer control to this position and proceed to execute the following instruction.
 
-### Instruction
+Instruction
+-----------
 
     { "op": "<string>", ... }
 
@@ -82,7 +80,7 @@ Depending on the opcode, the instruction might also have:
 
 There are three kinds of instructions: constants, value operations, and effect operations.
 
-#### Constant
+### Constant
 
     { "op": "const", "dest": "<string>", "type": <Type>,
       "value": ... }
@@ -95,7 +93,7 @@ It has the `dest` and `type` fields described above, and also:
   This is either a JSON number or a JSON Boolean value.
   The `type` field must match—i.e., it must be "int" or "bool", respectively.
 
-#### Value Operation
+### Value Operation
 
     { "op": "<string>", "dest": "<string>", "type": <Type>,
       "args": ["<string>", ...] }
@@ -107,7 +105,7 @@ Like a Constant, it has the `dest` and `type` fields described above, and also:
   The strings are names interpreted according to the operation.
   They may refer to variables or labels.
 
-#### Effect Operation
+### Effect Operation
 
     { "op": "<string>", "args": ["<string>", ...] }
 
@@ -115,54 +113,3 @@ An Effect Operation is like a Value Operation but it does not produce a value.
 It also has an `args` field for its arguments.
 
 
-## Operations
-
-This section lists the opcodes for Bril instructions.
-
-### Arithmetic
-
-These instructions are the obvious binary integer arithmetic operations.
-They all take two arguments, which must be names of variables of type `int`, and produce a result of type `int`:
-
-* `add`: x + y.
-* `mul`: x × y.
-* `sub`: x - y.
-* `div`: x ÷ y.
-
-### Comparison
-
-These instructions compare integers.
-They all take two arguments of type `int` and produce a result of type `bool`:
-
-* `eq`: Equal.
-* `lt`: Less than.
-* `gt`: Greater than.
-* `le`: Less than or equal to.
-* `ge`: Greater than or equal to.
-
-### Logic
-
-These are the basic Boolean logic operators.
-They take arguments of type `bool` and produce a result of type `bool`:
-
-* `not` (1 argument)
-* `and` (2 arguments)
-* `or` (2 arguments)
-
-### Control
-
-These are the control flow operations.
-Unlike most other instructions, they can take *labels* as arguments instead of just variable names:
-
-* `jmp`: Unconditional jump. One argument: the label to jump to. 
-* `br`: Conditional branch. Three arguments: a variable of type `bool` and two labels. If the variable is true, transfer control to the first label; otherwise, go to the second label.
-* `call`: Function invocation. The first argument is the function to call; remaining arguments are function parameters. The `call` instruction can be a Value Operation or an Effect Operation, depending on whether the function returns a value.
-* `ret`: Function return. Stop executing the current activation record and return to the parent (or exit the program if this is the top-level main activation record). It has one optional argument: the return value for the function.
-
-Only `call` may (optionally) produce a result; the rest appear only as Effect Operations.
-
-### Miscellaneous
-
-* `id`: A type-insensitive identity. Takes one argument, which is a variable of any type, and produces the same value (which must have the same type, obvi).
-* `print`: Output values to the console. Takes any number of arguments of any type and does not produce a result.
-* `nop`: Do nothing. Takes no arguments and produces no result.
