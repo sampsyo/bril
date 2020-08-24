@@ -3,7 +3,7 @@ TESTS := test/parse/*.bril \
 	test/interp*/*.bril \
 	test/ts*/*.ts \
 	test/mem/*.bril \
-	test/fail/*.t
+	test/fail/*.bril
 
 EXAMPLE_TESTS :=  examples/*_test/*.bril
 
