@@ -3,6 +3,6 @@
 [Introduction](intro.md)
 
 - [Language Reference](langref.md)
-- [Tools](tools.md)
-    - [Interpreter](interp.md)
-    - [Text Representation](text.md)
+- [Tools](tools/README.md)
+    - [Interpreter](tools/interp.md)
+    - [Text Representation](tools/text.md)
