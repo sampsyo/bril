@@ -10,13 +10,21 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | "ptr";
+
+/**
+ * The types to which a pointer may be pointing;
+ */
+export type PointerType = {
+  "ptr" : Type | PointerType;
+}
 
 /**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret" | "call";
+  op: "br" | "jmp" | "print" | "ret" | "call" |
+    "store" | "free";
   args: Ident[];
 }
 
@@ -28,16 +36,25 @@ export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
-      "call";
+      "call" |
+      "load" | "ptradd";
   args: Ident[];
   dest: Ident;
   type: Type;
+}
+
+export interface PointerValueOperation {
+  op: "alloc";
+  args: Ident[];
+  dest: Ident;
+  type: PointerType;
 }
 
 /**
  * The type of Bril values that may appear in constants.
  */
 export type Value = number | boolean;
+
 
 /**
  * An instruction that places a literal value into a variable.
@@ -52,7 +69,7 @@ export interface Constant {
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
-export type Operation = EffectOperation | ValueOperation;
+export type Operation = EffectOperation | ValueOperation | PointerValueOperation;
 
 /**
  * Instructions can be operations (which have arguments) or constants (which
@@ -69,16 +86,18 @@ export type ValueInstruction = Constant | ValueOperation;
  * The valid opcodes for value-producing instructions.
  */
 export type ValueOpCode = ValueOperation["op"];
+export type PointerValueOpCode = PointerValueOperation["op"];
 
 /**
  * The valid opcodes for effecting operations.
  */
 export type EffectOpCode = EffectOperation["op"];
 
+
 /**
  * All valid operation opcodes.
  */
-export type OpCode = ValueOpCode | EffectOpCode;
+export type OpCode = ValueOpCode | EffectOpCode | PointerValueOpCode;
 
 /**
  * Jump labels just mark a position with a name.

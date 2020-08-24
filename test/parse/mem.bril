@@ -1,0 +1,23 @@
+main {
+  c1: int = const 1;
+  v0: ptr<int> = alloc c1;
+  x1: int = const 3;
+  print x1;
+  store v0 x1;
+  x1: int = const 4;
+  print x1;
+  x1: int = load v0;
+  print x1;
+  free v0;
+  v1: ptr<ptr<bool>> = alloc c1;
+  vx: ptr<bool> = alloc c1;
+  store v1 vx;
+  ab: ptr<bool> = load v1;
+  print ab;
+  v2: bool = const false;
+  store vx v2;
+  v3: ptr<bool> = load vx;
+  print v3;
+  free vx;
+  free v1;
+}
