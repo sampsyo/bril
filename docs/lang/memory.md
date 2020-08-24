@@ -1,6 +1,14 @@
 Manually Managed Memory
 =======================
 
+While core Bril only has simple scalar stack values, the memory extension adds a manually managed heap of array-like allocations.
+You can create regions, like with `malloc` in C, and it is the program's responsibility to delete them, like with `free`.
+Programs can manipulate pointers within these regions; a pointer indicates a particular offset within a particular allocated region.
+
+You can read [more about the memory extension][memblog] from its creators, Drew Zagieboylo and Ryan Doenges.
+
+[memblog]: ThreadPoolExecutor
+
 Types
 -----
 
@@ -13,12 +21,18 @@ A pointer value represents a reference to a specific offset within a uniformly-t
 Operations
 ----------
 
-These are the operations for using heap memory, which stores data that persists between
-function lifetimes. These operations require the program to manually allocate heap memory for use
-and to free it when they are done.
+These re the operations that manipulate memory allocations:
 
-* `alloc arg1`: Allocate. Allocates `arg1` memory cells on the heap and produces a pointer to the first cell. `arg1` must be an integer.
-* `free arg1`: Free (de-allocate). Releases all of the memory cells pointed to by `arg1`; those cells may no longer be read or written to. `arg1` must be a pointer which corresponds to a pointer produced by `alloc`, which has not already been freed.
-* `store arg1 arg2`: Store. This writes the data, `arg2`, into the memory cell pointed to by `arg1`. `arg1` must be a valid pointer which is meant to store data of the same type as `arg2` (e.g. if `arg2` is an `int`, `arg1` must be a `ptr<int>`).
-* `load arg1`: Load. This reads the data from the memory cell pointed to by `arg1` and produces that value. `arg1` must be a valid pointer.
-* `ptradd arg1 arg2`: Pointer Addition. This takes the pointer `arg1` and produces a new pointer that refers to the data `arg2` memory cells further into the allocation. `arg1` must be a pointer and `arg2` must be an integer (it may be negative).
+* `alloc`: Create a new memory region. One argument: the number of values to allocate (an integer). The result type is a pointer; the type of the instruction decides the type of the memory region to allocate. For example, this instruction allocates a region of integers:
+
+      {
+          "op": "alloc",
+          "args": ["size"],
+          "dest": "myptr",
+          "type": {"ptr": "int"}
+      }
+
+* `free`: Delete an allocation. One argument: a pointer produced by `alloc`. No return value. It is an error to access or free a region that has already been freed.
+* `store`: Write into a memory region. Two arguments: a pointer and a value. The pointer type must agree with the value type (e.g., if the second argument is an `int`, the first argument must be a `ptr<int>`). No return value.
+* `load`: Read from memory. One argument: a pointer. The return type is the pointed-to type for that pointer.
+* `ptradd`: Adjust the offset for a pointer, producing a new pointer to a different location in the same memory region. Two arguments: a pointer and an offset (an integer, which may be negative). The return type is the same as the original pointer type.
