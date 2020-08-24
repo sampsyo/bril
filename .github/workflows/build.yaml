@@ -45,4 +45,4 @@ jobs:
             - name: Install Turnt
               run: pip install turnt
             - name: Tests
-              run: make test TURNTARGS=-v
+              run: PATH=$PATH:`yarn global bin` make test TURNTARGS=-v
