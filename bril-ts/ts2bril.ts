@@ -96,11 +96,24 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
       }
 
       // Handle "normal" value operators.
-      let p = opTokens.get(kind);
-      if (!p) {
-        throw `unhandled binary operator kind ${kind}`;
+      let op;
+      let type;
+      if (brilType(bin.left, checker) === "float" ||
+          brilType(bin.right, checker) === "float") {
+        // Floating point operators.
+        let p = opTokensFloat.get(kind);
+        if (!p) {
+          throw `unhandled FP binary operator kind ${kind}`;
+        }
+        [op, type] = p;
+      } else {
+        // Non-float.
+        let p = opTokens.get(kind);
+        if (!p) {
+          throw `unhandled binary operator kind ${kind}`;
+        }
+        [op, type] = p;
       }
-      let [op, type] = p;
 
       let lhs = emitExpr(bin.left);
       let rhs = emitExpr(bin.right);
