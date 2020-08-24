@@ -5,23 +5,9 @@ TESTS := test/parse/*.bril \
 	test/mem/*.bril \
 	test/fail/*.bril
 
-EXAMPLE_TESTS :=  examples/*_test/*.bril
-
 .PHONY: test
 test:
 	turnt $(TURNTARGS) $(TESTS)
-
-.PHONY: test_examples
-test_examples:
-	turnt $(EXAMPLE_TESTS)
-
-.PHONY: test_examples_save
-test_examples_save:
-	turnt --save $(EXAMPLE_TESTS)
-
-.PHONY: save
-save:
-	turnt --save $(TESTS)
 
 .PHONY: book
 book:
