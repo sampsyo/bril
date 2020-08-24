@@ -10,13 +10,21 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | PointerType;
+
+/**
+ * The type for pointers to allocated memory regions.
+ */
+export type PointerType = {
+  "ptr": Type | PointerType;
+}
 
 /**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret" | "call";
+  op: "br" | "jmp" | "print" | "ret" | "call" |
+    "store" | "free";
   args: Ident[];
 }
 
@@ -28,7 +36,8 @@ export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
-      "call";
+      "call" |
+      "load" | "ptradd" | "alloc";
   args: Ident[];
   dest: Ident;
   type: Type;

@@ -20,6 +20,87 @@ function error(message: string): BriliError {
   return new BriliError(message);
 }
 
+/**
+ * An abstract key class used to access the heap.
+ * This allows for "pointer arithmetic" on keys,
+ * while still allowing lookups based on the based pointer of each allocation.
+ */
+export class Key {
+    readonly base: number;
+    readonly offset: number;
+
+    constructor(b:number, o:number) {
+        this.base = b;
+        this.offset = o;
+    }
+
+    add(offset:number) {
+        return new Key(this.base, this.offset + offset);
+    }
+}
+
+/**
+ * A Heap maps Keys to arrays of a given type.
+ */
+export class Heap<X> {
+
+    private readonly storage: Map<number, X[]>
+    constructor() {
+        this.storage = new Map()
+    }
+
+    isEmpty(): boolean {
+        return this.storage.size == 0;
+    }
+
+    private count = 0;
+    private getNewBase():number {
+        let val = this.count;
+        this.count++;
+        return val;
+    }
+
+    private freeKey(key:Key) {
+        return;
+    }
+
+    alloc(amt:number): Key {
+        if (amt <= 0) {
+            throw error(`cannot allocate ${amt} entries`);
+        }
+        let base = this.getNewBase();
+        this.storage.set(base, new Array(amt))
+        return new Key(base, 0);
+    }
+
+    free(key: Key) {
+        if (this.storage.has(key.base) && key.offset == 0) {
+            this.freeKey(key);
+            this.storage.delete(key.base);
+        } else {
+            throw error(`Tried to free illegal memory location base: ${key.base}, offset: ${key.offset}. Offset must be 0.`);
+        }
+    }
+
+    write(key: Key, val: X) {
+        let data = this.storage.get(key.base);
+        if (data && data.length > key.offset && key.offset >= 0) {
+            data[key.offset] = val;
+        } else {
+            throw error(`Uninitialized heap location ${key.base} and/or illegal offset ${key.offset}`);
+        }
+    }
+
+    read(key: Key): X {
+        let data = this.storage.get(key.base);
+        if (data && data.length > key.offset && key.offset >= 0) {
+            return data[key.offset];
+        } else {
+            throw error(`Uninitialized heap location ${key.base} and/or illegal offset ${key.offset}`);
+        }
+    }
+}
+
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
   mul: 2,
@@ -40,20 +121,35 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   ret: null,  // (Should be 0 or 1.)
   nop: 0,
   call: null,
+  alloc: 1,
+  free: 1,
+  store: 2,
+  load: 1,
+  ptradd: 2,
 };
 
-type Value = boolean | BigInt;
+type Pointer = {
+  loc: Key;
+  type: bril.Type;
+}
+
+type Value = boolean | BigInt | Pointer;
 type ReturnValue = Value | null;
 type Env = Map<bril.Ident, Value>;
 
 /**
- * We need a correspondence between Bril's understanding of a type and the 
- * interpreter's underlying representation type 
+ * Check whether a run-time value matches the given static type.
  */
-const brilTypeToDynamicType: {[key in bril.Type] : string} = {
-  'int' : 'bigint',
-  'bool': 'boolean',
-};
+function typeCheck(val: Value, typ: bril.Type): boolean {
+  if (typ === "int") {
+    return typeof val === "bigint";
+  } else if (typ === "bool") {
+    return typeof val === "boolean";
+  } else if ("ptr" in typ) {
+    return val instanceof Key;
+  }
+  throw error(`unknown type ${typ}`);
+}
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -77,6 +173,21 @@ function findFunc(func: bril.Ident, funcs: bril.Function[]) {
   return matches[0];
 }
 
+function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): Pointer {
+  if (typeof ptrType != 'object') {
+    throw error(`unspecified pointer type ${ptrType}`);
+  } else if (amt <= 0) {
+    throw error(`must allocate a positive amount of memory: ${amt} <= 0`);
+  } else {
+    let loc = heap.alloc(amt)
+    let dataType = ptrType.ptr;
+    return {
+      loc: loc,
+      type: dataType
+    }
+  }
+}
+
 /**
  * Ensure that the instruction has exactly `count` arguments,
  * throw an exception otherwise.
@@ -87,21 +198,28 @@ function checkArgs(instr: bril.Operation, count: number) {
   }
 }
 
+function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
+  let val = get(env, instr.args[index]);
+  if (typeof val !== 'object' || val instanceof BigInt) {
+    throw `${instr.op} argument ${index} must be a Pointer`;
+  }
+  return val;
+}
+
 function getArgument(instr: bril.Operation, env: Env, index: number, 
   typ : bril.Type) {
   let val = get(env, instr.args[index]);
-  let brilTyp = brilTypeToDynamicType[typ];
-  if (brilTyp !== typeof val) {
+  if (!typeCheck(val, typ)) {
     throw error(`${instr.op} argument ${index} must be a {brilTyp}`);
   }
   return val;
 }
 
-function getInt(instr: bril.Operation, env: Env, index: number) : bigint {
+function getInt(instr: bril.Operation, env: Env, index: number): bigint {
   return getArgument(instr, env, index, 'int') as bigint;
 }
 
-function getBool(instr: bril.Operation, env: Env, index: number) : boolean {
+function getBool(instr: bril.Operation, env: Env, index: number): boolean {
   return getArgument(instr, env, index, 'bool') as boolean;
 }
 
@@ -118,7 +236,7 @@ let NEXT: Action = {"next": true};
 /**
  * Interpet a call instruction.
  */
-function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
+function evalCall(instr: bril.Operation, env: Env, heap: Heap<Value>, funcs: bril.Function[])
   : Action {
   let funcName = instr.args[0];
   let funcArgs = instr.args.slice(1);
@@ -140,7 +258,7 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
     let value = get(env, funcArgs[i]);
 
     // Check argument types
-    if (brilTypeToDynamicType[func.args[i].type] !== typeof value) {
+    if (!typeCheck(value, func.args[i].type)) {
       throw error(`function argument type mismatch`);
     }
 
@@ -149,7 +267,7 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
   }
 
   // Dynamically check the function's return value and type
-  let retVal = evalFunc(func, funcs, newEnv);
+  let retVal = evalFunc(func, funcs, heap, newEnv);
   if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
      // Expected void function
     if (retVal !== null) {
@@ -169,7 +287,7 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
     if (retVal === null) {
       throw error(`non-void function (type: ${func.type}) doesn't return anything`);
     }
-    if (brilTypeToDynamicType[instr.type] !== typeof retVal) {
+    if (!typeCheck(retVal, instr.type)) {
       throw error(`type of value returned by function does not match destination type`);
     }
     if (func.type !== instr.type ) {
@@ -186,7 +304,7 @@ function evalCall(instr: bril.Operation, env: Env, funcs: bril.Function[])
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): Action {
+function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: bril.Function[]): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -324,20 +442,74 @@ function evalInstr(instr: bril.Instruction, env: Env, funcs: bril.Function[]): A
   }
 
   case "call": {
-    return evalCall(instr, env, funcs);
+    return evalCall(instr, env, heap, funcs);
   }
-  
+
+  case "alloc": {
+    let amt = getInt(instr, env, 0);
+    let typ = instr.type;
+    if (!(typeof typ === "object" && typ.hasOwnProperty('ptr'))) {
+      throw error(`cannot allocate non-pointer type ${instr.type}`);
+    }
+    let ptr = alloc(typ, Number(amt), heap);
+    env.set(instr.dest, ptr);
+    return NEXT;
+  }
+
+  case "free": {
+    let val = getPtr(instr, env, 0);
+    heap.free(val.loc);
+    return NEXT;
+  }
+
+  case "store": {
+    let target = getPtr(instr, env, 0);
+    switch (target.type) {
+      case "int": {
+        heap.write(target.loc, getInt(instr, env, 1));
+        break;
+      }
+      case "bool": {
+        heap.write(target.loc, getBool(instr, env, 1));
+        break;
+      }
+      default: {
+        heap.write(target.loc, getPtr(instr, env, 1));
+        break;
+      }
+    }
+    return NEXT;
+  }
+
+  case "load": {
+    let ptr = getPtr(instr, env, 0);
+    let val = heap.read(ptr.loc);
+    if (val === undefined || val === null) {
+      throw error(`Pointer ${instr.args[0]} points to uninitialized data`);
+    } else {
+      env.set(instr.dest, val);
+    }
+    return NEXT;
+  }
+
+  case "ptradd": {
+    let ptr = getPtr(instr, env, 0)
+    let val = getInt(instr, env, 1)
+    env.set(instr.dest, { loc: ptr.loc.add(Number(val)), type: ptr.type })
+    return NEXT;
+  }
+
   }
   unreachable(instr);
   throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
-function evalFunc(func: bril.Function, funcs: bril.Function[], env: Env)
+function evalFunc(func: bril.Function, funcs: bril.Function[], heap: Heap<Value>, env: Env)
   : ReturnValue {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env, funcs);
+      let action = evalInstr(line, env, heap, funcs);
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -360,7 +532,7 @@ function evalFunc(func: bril.Function, funcs: bril.Function[], env: Env)
   return null;
 }
 
-function parseBool(s : string) : boolean {
+function parseBool(s: string): boolean {
   if (s === 'true') {
     return true;
   } else if (s === 'false') {
@@ -394,6 +566,7 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
 }
 
 function evalProg(prog: bril.Program) {
+  let heap = new Heap<Value>()
   let main = findFunc("main", prog.functions);
   if (main === null) {
     console.log(`warning: no main function defined, doing nothing`);
@@ -401,7 +574,10 @@ function evalProg(prog: bril.Program) {
     let expected = main.args;
     let args : string[] = process.argv.slice(2, process.argv.length);
     let newEnv = parseMainArguments(expected, args);
-    evalFunc(main, prog.functions, newEnv);
+    evalFunc(main, prog.functions, heap, newEnv);
+  }
+  if (!heap.isEmpty()) {
+    throw error(`Some memory locations have not been freed by end of execution.`);
   }
 }
 

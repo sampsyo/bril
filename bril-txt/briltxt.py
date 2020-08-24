@@ -32,7 +32,9 @@ label.1: IDENT ":"
 lit: SIGNED_INT  -> int
   | BOOL     -> bool
 
-type: CNAME
+type: "ptr<" ptrtype ">" | basetype
+ptrtype: type
+basetype: CNAME
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -119,6 +121,12 @@ class JSONTransformer(lark.Transformer):
             return False
 
     def type(self, items):
+        return items[0]
+
+    def ptrtype(self, items):
+        return {'ptr': items[0]}
+
+    def basetype(self, items):
         return str(items[0])
 
 
@@ -131,17 +139,24 @@ def parse_bril(txt):
 
 # Text format pretty-printer.
 
+def type_to_str(type):
+    if ('ptr' in type):
+        return 'ptr<{}>'.format(type_to_str(type['ptr']))
+    else:
+        return type
+
+
 def instr_to_string(instr):
     if instr['op'] == 'const':
         return '{}: {} = const {}'.format(
             instr['dest'],
-            instr['type'],
+            type_to_str(instr['type']),
             str(instr['value']).lower(),
         )
     elif 'dest' in instr:
         return '{}: {} = {} {}'.format(
             instr['dest'],
-            instr['type'],
+            type_to_str(instr['type']),
             instr['op'],
             ' '.join(instr['args']),
         )

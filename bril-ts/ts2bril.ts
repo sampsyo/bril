@@ -221,11 +221,8 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
         for (let p of funcDef.parameters) {
           let argName = p.name.getText();
-          let typeString = "";
-          if (p.type) {
-            typeString = brilType(p, checker);
-          }
-          args.push({name: argName, type: typeString} as bril.Argument);
+          let argType = brilType(p, checker);
+          args.push({name: argName, type: argType} as bril.Argument);
         }
 
         // The type checker gives a full function type;

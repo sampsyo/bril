@@ -21,15 +21,8 @@ When execution starts, this function will be invoked.
 Type
 ----
 
-    "int"
-    "bool"
-
-There are two value types in Bril:
-
-* `int`: 64-bit, two's complement, signed integers.
-* `bool`: True or false.
-
-In a Bril program, a Type is either of the two strings that name the type.
+Types are JSON values.
+The semantics chapters list the particular types that are available---for example, [core Bril](core.md) defines the basic types `"int"` and `"bool"`.
 
 Function
 --------
@@ -111,5 +104,3 @@ Like a Constant, it has the `dest` and `type` fields described above, and also:
 
 An Effect Operation is like a Value Operation but it does not produce a value.
 It also has an `args` field for its arguments.
-
-

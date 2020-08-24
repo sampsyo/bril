@@ -1,0 +1,163 @@
+{
+  "functions": [
+    {
+      "args": [],
+      "instrs": [
+        {
+          "dest": "c1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "c1"
+          ],
+          "dest": "v0",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "dest": "x1",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [
+            "x1"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "v0",
+            "x1"
+          ],
+          "op": "store"
+        },
+        {
+          "dest": "x1",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "args": [
+            "x1"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "x1",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x1"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "op": "free"
+        },
+        {
+          "args": [
+            "c1"
+          ],
+          "dest": "v1",
+          "op": "alloc",
+          "type": {
+            "ptr": {
+              "ptr": "bool"
+            }
+          }
+        },
+        {
+          "args": [
+            "c1"
+          ],
+          "dest": "vx",
+          "op": "alloc",
+          "type": {
+            "ptr": "bool"
+          }
+        },
+        {
+          "args": [
+            "v1",
+            "vx"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "ab",
+          "op": "load",
+          "type": {
+            "ptr": "bool"
+          }
+        },
+        {
+          "args": [
+            "ab"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "vx",
+            "v2"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "vx"
+          ],
+          "dest": "v3",
+          "op": "load",
+          "type": {
+            "ptr": "bool"
+          }
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "vx"
+          ],
+          "op": "free"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

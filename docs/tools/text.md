@@ -14,7 +14,9 @@ For example, this Bril program in JSON:
           { "op": "const", "type": "int", "dest": "v0", "value": 1 },
           { "op": "const", "type": "int", "dest": "v1", "value": 2 },
           { "op": "add", "type": "int", "dest": "v2", "args": ["v0", "v1"] },
-          { "op": "print", "args": ["v2"] }
+          { "op": "print", "args": ["v2"] },
+          { "op": "alloc", "type": { "ptr" : "int" }, "dest": "v3", "args": ["v0"] },
+          { "op": "free", "args": ["v3"] },
         ]
       }]
     }
@@ -26,4 +28,6 @@ Gets represented in text like this:
       v1: int = const 2;
       v2: int = add v0 v1;
       print v2;
+      v3: ptr<int> = alloc v0;
+      free v3;
     }

@@ -1,7 +1,9 @@
 TESTS := test/parse/*.bril \
 	test/print/*.json \
 	test/interp*/*.bril \
-	test/ts*/*.ts
+	test/ts*/*.ts \
+	test/mem/*.bril \
+	test/fail/*.bril
 
 EXAMPLE_TESTS :=  examples/*_test/*.bril
 
