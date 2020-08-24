@@ -4,6 +4,19 @@ Core Language
 This section describes the *core* Bril instructions.
 Any self-respecting Bril tool must support all of these operations; other extensions are more optional.
 
+Types
+-----
+
+Core Bril defines two simple types, both named as JSON strings:
+
+    "int"
+    "bool"
+
+The types are like you'd expect:
+
+* `int`: 64-bit, two's complement, signed integers.
+* `bool`: True or false.
+
 Arithmetic
 ----------
 

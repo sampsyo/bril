@@ -1,6 +1,18 @@
 Manually Managed Memory
 =======================
 
+Types
+-----
+
+The memory extension adds one new form of type to Bril, whose syntax is an object:
+
+    {"ptr": <Type>}
+
+A pointer value represents a reference to a specific offset within a uniformly-typed region of values.
+
+Operations
+----------
+
 These are the operations for using heap memory, which stores data that persists between
 function lifetimes. These operations require the program to manually allocate heap memory for use
 and to free it when they are done.

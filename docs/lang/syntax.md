@@ -21,19 +21,8 @@ When execution starts, this function will be invoked.
 Type
 ----
 
-    "int"
-    "bool"
-    { "ptr" : <Type> }
-
-There are three value types in Bril:
-
-* `int`: 64-bit, two's complement, signed integers.
-* `bool`: True or false.
-* `ptr<TYPE>`: A pointer to a memory cell which contains data of type TYPE.
-
-In a Bril program, a Type is either a string, or an object.
-Base types, such as `int` and `bool` are strings which name themselves.
-Pointer types are objects with the key `"ptr"` and a value which is itself another Type.
+Types are JSON values.
+The semantics chapters list the particular types that are available---for example, [core Bril](core.md) defines the basic types `"int"` and `"bool"`.
 
 Function
 --------
