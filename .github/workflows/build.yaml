@@ -1,0 +1,57 @@
+on:
+    push:
+        branches:
+           - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+
+            - name: Get yarn cache directory path
+              id: yarn-cache-dir-path
+              run: echo "::set-output name=dir::$(yarn cache dir)"
+            - uses: actions/cache@v2
+              id: yarn-cache
+              with:
+                path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+
+            - uses: actions/cache@v2
+              with:
+                path: ~/.cache/pip
+                key: ${{ runner.os }}-pip
+
+            - uses: actions/setup-node@v2-beta
+              with:
+                  node-version: '12'
+            - name: Install TypeScript tools
+              run: cd bril-ts ; yarn ; yarn build ; yarn link
+
+            - uses: actions/setup-python@v2
+              with:
+                  python-version: 3.8
+            - name: Install Flit
+              run: pip install flit
+            - name: Install Python tools
+              run: cd bril-txt ; flit install --symlink
+
+            - name: Install Turnt
+              run: pip install turnt
+            - name: Tests
+              run: PATH=$PATH:`yarn global bin` make test TURNTARGS=-v
+
+    style:
+        name: Style
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: TrueBrain/actions-flake8@master
+              with:
+                path: bril-txt

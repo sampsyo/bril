@@ -1,2 +1,2 @@
-var x = 5;
+var x = 5n;
 console.log(x);

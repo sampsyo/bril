@@ -1,0 +1,7 @@
+main {
+  v0: float = const 40.2;
+  v1: float = const 1.8;
+  v2: float = fadd v0 v1;
+  print v2;
+  v3: int = const 0;
+}

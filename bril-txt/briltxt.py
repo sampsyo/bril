@@ -19,8 +19,9 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: func*
 
-func: CNAME "{" instr* "}"
-
+func: CNAME ["(" arg_list? ")"] [":" type] "{" instr* "}"
+arg_list: | arg ("," arg)*
+arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
 type_decl.5: ":" type
@@ -30,14 +31,22 @@ eop.2: CNAME IDENT* ";"
 label.1: IDENT ":"
 
 lit: SIGNED_INT  -> int
-  | BOOL     -> bool
+  | BOOL         -> bool
+  | DECIMAL      -> float
 
+<<<<<<< HEAD
 type: /int/ | /bool/
+=======
+type: "ptr<" ptrtype ">" | basetype
+ptrtype: type
+basetype: CNAME
+>>>>>>> master
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
 
 %import common.SIGNED_INT
+%import common.DECIMAL
 %import common.WS
 %import common.CNAME
 %import common.LETTER
@@ -52,13 +61,32 @@ class JSONTransformer(lark.Transformer):
         return {'functions': items}
 
     def func(self, items):
+        name, args, typ = items[:3]
+        instrs = items[3:]
+        func = {
+            'name': str(name),
+            'instrs': instrs,
+            'args': args or [],
+        }
+        if typ:
+            func['type'] = typ
+        return func
+
+    def arg(self, items):
         name = items.pop(0)
-        return {'name': str(name), 'instrs': items}
+        typ = items.pop(0)
+        return {
+            'name': name,
+            'type': typ,
+        }
+
+    def arg_list(self, items):
+        return items
 
     def const(self, items):
         dest = items.pop(0)
         type = items.pop(0).children[0] \
-               if isinstance(items[0], lark.tree.Tree) else None
+            if isinstance(items[0], lark.tree.Tree) else None
         val = items.pop(0)
         res = {
             'op': 'const',
@@ -72,7 +100,7 @@ class JSONTransformer(lark.Transformer):
     def vop(self, items):
         dest = items.pop(0)
         type = items.pop(0).children[0] \
-               if isinstance(items[0], lark.tree.Tree) else None
+            if isinstance(items[0], lark.tree.Tree) else None
         op = items.pop(0)
         res = {
             'op': str(op),
@@ -106,11 +134,20 @@ class JSONTransformer(lark.Transformer):
             return False
 
     def type(self, items):
+        return items[0]
+
+    def ptrtype(self, items):
+        return {'ptr': items[0]}
+
+    def basetype(self, items):
         return str(items[0])
+
+    def float(self, items):
+        return float(items[0])
 
 
 def parse_bril(txt):
-    parser = lark.Lark(GRAMMAR)
+    parser = lark.Lark(GRAMMAR, maybe_placeholders=True)
     tree = parser.parse(txt)
     data = JSONTransformer().transform(tree)
     return json.dumps(data, indent=2, sort_keys=True)
@@ -118,17 +155,28 @@ def parse_bril(txt):
 
 # Text format pretty-printer.
 
+def type_to_str(type):
+    if ('ptr' in type):
+        return 'ptr<{}>'.format(type_to_str(type['ptr']))
+    else:
+        return type
+
+
 def instr_to_string(instr):
     if instr['op'] == 'const':
+        tyann = ': {}'.format(type_to_str(instr['type'])) \
+            if 'type' in instr else '',
         return '{}{} = const {}'.format(
             instr['dest'],
-            ': {}'.format(instr['type']) if 'type' in instr else '',
+            tyann,
             str(instr['value']).lower(),
         )
     elif 'dest' in instr:
+        tyann = ': {}'.format(type_to_str(instr['type'])) \
+            if 'type' in instr else ''
         return '{}{} = {} {}'.format(
             instr['dest'],
-            ': {}'.format(instr['type']) if 'type' in instr else '',
+            tyann,
             instr['op'],
             ' '.join(instr['args']),
         )
@@ -147,8 +195,23 @@ def print_label(label):
     print('{}:'.format(label['label']))
 
 
+def args_to_string(args):
+    if args:
+        return '({})'.format(', '.join(
+            '{}: {}'.format(arg['name'], arg['type'])
+            for arg in args
+        ))
+    else:
+        return ''
+
+
 def print_func(func):
-    print('{} {{'.format(func['name']))
+    typ = func.get('type', 'void')
+    print('{}{}{} {{'.format(
+        func['name'],
+        args_to_string(func.get('args', [])),
+        ': {}'.format(typ) if typ != 'void' else '',
+    ))
     for instr_or_label in func['instrs']:
         if 'label' in instr_or_label:
             print_label(instr_or_label)

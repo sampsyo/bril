@@ -1,0 +1,11 @@
+main {
+    call f;
+}
+f {
+    v: int = const 1;
+    print v;
+}
+f {
+    v: int = const 2;
+    print v;
+}

@@ -1,0 +1,13 @@
+main {
+  v0: int = const 1;
+  v1: int = call getTwo;
+  v2: int = add v0 v1;
+  y: int = id v2;
+  v3: int = id y;
+  print v3;
+  v4: int = const 0;
+}
+getTwo: int {
+  v0: int = const 2;
+  ret v0;
+}

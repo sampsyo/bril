@@ -1,0 +1,9 @@
+main {
+  a3: bool = flip;
+  a2: bool = flip;
+  print a3 a2;
+
+  a1: bool = or a3 a2;
+  obv a1;
+  print a1;
+}

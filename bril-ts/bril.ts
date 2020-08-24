@@ -10,13 +10,21 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool";
+export type Type = "int" | "bool" | "float" | PointerType;
+
+/**
+ * The type for pointers to allocated memory regions.
+ */
+export type PointerType = {
+  "ptr": Type | PointerType;
+}
 
 /**
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret";
+  op: "br" | "jmp" | "print" | "ret" | "call" |
+    "store" | "free";
   args: Ident[];
 }
 
@@ -27,7 +35,11 @@ export interface EffectOperation {
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
-      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
+      "call" |
+      "load" | "ptradd" | "alloc" |
+      "fadd" | "fmul" | "fsub" | "fdiv" |
+      "feq" | "flt" | "fle" | "fgt" | "fge";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -47,6 +59,7 @@ export interface Constant {
   dest: Ident;
   type: Type;
 }
+
 
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
@@ -86,12 +99,22 @@ export interface Label {
   label: Ident;
 }
 
+/*
+ * An argument has a name and a type.
+ */
+export interface Argument {
+  name: Ident;
+  type: Type;
+}
+
 /**
  * A function consists of a sequence of instructions.
  */
 export interface Function {
   name: Ident;
+  args: Argument[];
   instrs: (Instruction | Label)[];
+  type?: Type;
 }
 
 /**

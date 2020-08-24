@@ -1,0 +1,19 @@
+main {
+  v0: int = const 1;
+  x: int = id v0;
+  v1: int = const 2;
+  y: int = id v1;
+  v2: int = id x;
+  v3: int = id y;
+  v: int = call add2 v2 v3;
+  v: int = id v;
+  v4: int = id v;
+  print v4;
+  v5: int = const 0;
+}
+add2(x: int, y: int): int {
+  v0: int = id x;
+  v1: int = id y;
+  v2: int = add v0 v1;
+  ret v2;
+}
