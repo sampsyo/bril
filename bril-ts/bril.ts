@@ -37,17 +37,10 @@ export interface ValueOperation {
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
       "call" |
-      "load" | "ptradd";
+      "load" | "ptradd" | "alloc";
   args: Ident[];
   dest: Ident;
   type: Type;
-}
-
-export interface PointerValueOperation {
-  op: "alloc";
-  args: Ident[];
-  dest: Ident;
-  type: PointerType;
 }
 
 /**
@@ -69,7 +62,7 @@ export interface Constant {
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
-export type Operation = EffectOperation | ValueOperation | PointerValueOperation;
+export type Operation = EffectOperation | ValueOperation;
 
 /**
  * Instructions can be operations (which have arguments) or constants (which
@@ -86,7 +79,6 @@ export type ValueInstruction = Constant | ValueOperation;
  * The valid opcodes for value-producing instructions.
  */
 export type ValueOpCode = ValueOperation["op"];
-export type PointerValueOpCode = PointerValueOperation["op"];
 
 /**
  * The valid opcodes for effecting operations.
@@ -97,7 +89,7 @@ export type EffectOpCode = EffectOperation["op"];
 /**
  * All valid operation opcodes.
  */
-export type OpCode = ValueOpCode | EffectOpCode | PointerValueOpCode;
+export type OpCode = ValueOpCode | EffectOpCode;
 
 /**
  * Jump labels just mark a position with a name.

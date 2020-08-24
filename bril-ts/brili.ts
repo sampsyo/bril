@@ -447,8 +447,12 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
   }
 
   case "alloc": {
-    let amt = getInt(instr, env, 0)
-    let ptr = alloc(instr.type, Number(amt), heap)
+    let amt = getInt(instr, env, 0);
+    let typ = instr.type;
+    if (!(typeof typ === "object" && typ.hasOwnProperty('ptr'))) {
+      throw error(`cannot allocate non-pointer type ${instr.type}`);
+    }
+    let ptr = alloc(typ, Number(amt), heap);
     env.set(instr.dest, ptr);
     return NEXT;
   }
