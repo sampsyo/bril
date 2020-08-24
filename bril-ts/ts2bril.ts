@@ -2,13 +2,25 @@
 import * as ts from 'typescript';
 import * as bril from './bril';
 import {Builder} from './builder';
-import {readStdin} from './util';
 
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
-  [ts.SyntaxKind.PlusToken,               ["fadd", "double"]],
-  [ts.SyntaxKind.AsteriskToken,           ["fmul", "double"]],
-  [ts.SyntaxKind.MinusToken,              ["fsub", "double"]],
-  [ts.SyntaxKind.SlashToken,              ["fdiv", "double"]],
+  [ts.SyntaxKind.PlusToken,               ["add", "int"]],
+  [ts.SyntaxKind.AsteriskToken,           ["mul", "int"]],
+  [ts.SyntaxKind.MinusToken,              ["sub", "int"]],
+  [ts.SyntaxKind.SlashToken,              ["div", "int"]],
+  [ts.SyntaxKind.LessThanToken,           ["lt",  "bool"]],
+  [ts.SyntaxKind.LessThanEqualsToken,     ["le",  "bool"]],
+  [ts.SyntaxKind.GreaterThanToken,        ["gt",  "bool"]],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  ["ge",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsToken,       ["eq",  "bool"]],
+  [ts.SyntaxKind.EqualsEqualsEqualsToken, ["eq",  "bool"]],
+]);
+
+const opTokensFloat = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
+  [ts.SyntaxKind.PlusToken,               ["fadd", "float"]],
+  [ts.SyntaxKind.AsteriskToken,           ["fmul", "float"]],
+  [ts.SyntaxKind.MinusToken,              ["fsub", "float"]],
+  [ts.SyntaxKind.SlashToken,              ["fdiv", "float"]],
   [ts.SyntaxKind.LessThanToken,           ["flt",  "bool"]],
   [ts.SyntaxKind.LessThanEqualsToken,     ["fle",  "bool"]],
   [ts.SyntaxKind.GreaterThanToken,        ["fgt",  "bool"]],
@@ -41,12 +53,12 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.NumericLiteral: {
       let lit = expr as ts.NumericLiteral;
       let val = parseFloat(lit.text);
-      return builder.buildDouble(val);
+      return builder.buildFloat(val);
     }
 
     case ts.SyntaxKind.BigIntLiteral: {
-      let lit = expr as ts.NumericLiteral;
-      let val = parseFloat(lit.text);
+      let lit = expr as ts.BigIntLiteral;
+      let val = parseInt(lit.text);
       return builder.buildInt(val);
     }
 

@@ -142,7 +142,7 @@ type Pointer = {
   type: bril.Type;
 }
 
-type Value = boolean | BigInt | Pointer;
+type Value = boolean | BigInt | Pointer | number;
 type ReturnValue = Value | null;
 type Env = Map<bril.Ident, Value>;
 
@@ -154,7 +154,9 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
     return typeof val === "bigint";
   } else if (typ === "bool") {
     return typeof val === "boolean";
-  } else if ("ptr" in typ) {
+  } else if (typ === "float") {
+    return typeof val === "number";
+  } else if (typeof typ === "object" && typ.hasOwnProperty("ptr")) {
     return val instanceof Key;
   }
   throw error(`unknown type ${typ}`);
@@ -669,27 +671,4 @@ async function main() {
 // Make unhandled promise rejections terminate.
 process.on('unhandledRejection', e => { throw e });
 
-type Args = { 'envdump' : boolean, 'noprint' : boolean }
-let argu : {[k: string]: any}  = { 'envdump' : false, 'noprint' : false };
-
-process.argv.forEach((val, index) => {
-  if(index > 1 && val.startsWith('--')) {
-    let parts : string[] = val.substr(2).split('=');
-    
-    if( parts.length == 1 ) {
-      argu[parts[0]] = true;
-    }
-
-    // switch(parts[0]) {
-    //   case "print-env": {
-    //     argu['vret'] = true;
-    //     break;
-    //   }
-    //   case "disable": {
-    //     argu["disable-print"] = true 
-    //     break;
-    //   }
-    // }
-  }
-});
-main(argu as Args);
+main();
