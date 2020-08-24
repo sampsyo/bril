@@ -33,9 +33,8 @@ lit: SIGNED_INT  -> int
   | BOOL         -> bool
   | DECIMAL      -> float
 
-type: "ptr<" ptrtype ">" | basetype
-ptrtype: type
-basetype: CNAME
+type: CNAME "<" type ">" -> paramtype
+    | CNAME              -> primtype
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -122,13 +121,10 @@ class JSONTransformer(lark.Transformer):
         else:
             return False
 
-    def type(self, items):
-        return items[0]
+    def paramtype(self, items):
+        return {items[0]: items[1]}
 
-    def ptrtype(self, items):
-        return {'ptr': items[0]}
-
-    def basetype(self, items):
+    def primtype(self, items):
         return str(items[0])
 
     def float(self, items):
@@ -145,8 +141,10 @@ def parse_bril(txt):
 # Text format pretty-printer.
 
 def type_to_str(type):
-    if ('ptr' in type):
-        return 'ptr<{}>'.format(type_to_str(type['ptr']))
+    if isinstance(type, dict):
+        assert len(type) == 1
+        key, value = next(iter(type.items()))
+        return '{}<{}>'.format(key, type_to_str(value))
     else:
         return type
 
