@@ -484,7 +484,7 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
   case "load": {
     let ptr = getPtr(instr, env, 0);
     let val = heap.read(ptr.loc);
-    if (!val) {
+    if (val === undefined || val === null) {
       throw error(`Pointer ${instr.args[0]} points to uninitialized data`);
     } else {
       env.set(instr.dest, val);
