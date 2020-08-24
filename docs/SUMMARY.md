@@ -12,3 +12,4 @@
     - [Text Representation](tools/text.md)
     - [TypeScript Compiler](tools/ts2bril.md)
     - [Fast Interpreter](tools/brilirs.md)
+    - [Editor Plugin](tools/plugin.md)
