@@ -32,10 +32,13 @@ const opTokensFloat = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
 function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   let tsType = checker.getTypeAtLocation(node);
   if (tsType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral)) {
-    return "int";
+    return "float";
   } else if (tsType.flags &
              (ts.TypeFlags.Boolean | ts.TypeFlags.BooleanLiteral)) {
     return "bool";
+  } else if (tsType.flags &
+             (ts.TypeFlags.BigInt | ts.TypeFlags.BigIntLiteral)) {
+    return "int";
   } else {
     throw "unimplemented type " + checker.typeToString(tsType);
   }
@@ -248,9 +251,11 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         if (funcDef.type && funcDef.type.getText() !== 'void') {
           let retType: bril.Type;
           if (funcDef.type.getText() === 'number') {
-            retType = "int";
+            retType = "float";
           } else if (funcDef.type.getText() === 'boolean') {
             retType = "bool";
+          } else if (funcDef.type.getText() === 'bigint') {
+            retType = "int";
           } else {
             throw `unsupported type for function return: ${funcDef.type}`;
           }

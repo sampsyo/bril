@@ -1,6 +1,6 @@
-var value = 5;
-if (value + 3 < 6) {
-  console.log(1);
+var value = 5n;
+if (value + 3n < 6n) {
+  console.log(1n);
 } else {
-  console.log(2);
+  console.log(2n);
 }
