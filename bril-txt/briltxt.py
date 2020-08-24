@@ -124,9 +124,7 @@ class JSONTransformer(lark.Transformer):
         return items[0]
 
     def ptrtype(self, items):
-        return {
-            'ptr' : items[0]
-        }
+        return {'ptr': items[0]}
 
     def basetype(self, items):
         return str(items[0])
@@ -146,6 +144,7 @@ def type_to_str(type):
         return 'ptr<{}>'.format(type_to_str(type['ptr']))
     else:
         return type
+
 
 def instr_to_string(instr):
     if instr['op'] == 'const':
