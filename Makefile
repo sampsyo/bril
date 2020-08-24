@@ -21,16 +21,16 @@ test_examples_save:
 save:
 	turnt --save $(TESTS)
 
+.PHONY: book
+book:
+	rm -rf book
+	mdbook build
+
 .PHONY: ts
 ts:
 	cd bril-ts ; \
 	yarn ; \
 	yarn build
-
-.PHONY: book
-book:
-	rm -rf book
-	mdbook build
 
 .PHONY: deploy
 RSYNCARGS := --compress --recursive --checksum --itemize-changes \
