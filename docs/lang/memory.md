@@ -7,7 +7,7 @@ Programs can manipulate pointers within these regions; a pointer indicates a par
 
 You can read [more about the memory extension][memblog] from its creators, Drew Zagieboylo and Ryan Doenges.
 
-[memblog]: ThreadPoolExecutor
+[memblog]: https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/manually-managed-memory/
 
 Types
 -----
