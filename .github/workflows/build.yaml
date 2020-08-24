@@ -42,5 +42,7 @@ jobs:
             - name: Install Python tools
               run: cd bril-txt ; flit install --symlink
 
+            - name: Install Turnt
+              run: pip install turnt
             - name: Tests
               run: make test
