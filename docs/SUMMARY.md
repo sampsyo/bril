@@ -10,3 +10,4 @@
 - [Tools](tools/README.md)
     - [Interpreter](tools/interp.md)
     - [Text Representation](tools/text.md)
+    - [TypeScript Compiler](tools/ts2bril.md)
