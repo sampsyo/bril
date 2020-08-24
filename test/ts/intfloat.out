@@ -1,4 +1,0 @@
-main {
-  v0: int = const 1;
-  value: int = id v0;
-}
