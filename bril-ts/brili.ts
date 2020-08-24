@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
+import { BigIntLiteral } from 'typescript';
 
 /**
  * An interpreter error to print to the console.
@@ -138,14 +139,18 @@ type ReturnValue = Value | null;
 type Env = Map<bril.Ident, Value>;
 
 /**
- * We need a correspondence between Bril's understanding of a type and the 
- * interpreter's underlying representation type 
+ * Check whether a run-time value matches the given static type.
  */
-const brilTypeToDynamicType: {[key in bril.Type] : string} = {
-  'int' : 'bigint',
-  'bool': 'boolean',
-  'ptr': 'Key',
-};
+function typeCheck(val: Value, typ: bril.Type): boolean {
+  if (typ === "int") {
+    return typeof val === "bigint";
+  } else if (typ === "bool") {
+    return typeof val === "boolean";
+  } else if ("ptr" in typ) {
+    return val instanceof Key;
+  }
+  throw error(`unknown type ${typ}`);
+}
 
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
@@ -177,9 +182,6 @@ function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): Pointer
   } else {
     let loc = heap.alloc(amt)
     let dataType = ptrType.ptr;
-    if (dataType !== "int" && dataType !== "bool") {
-      dataType = "ptr";
-    }
     return {
       loc: loc,
       type: dataType
@@ -208,8 +210,7 @@ function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
 function getArgument(instr: bril.Operation, env: Env, index: number, 
   typ : bril.Type) {
   let val = get(env, instr.args[index]);
-  let brilTyp = brilTypeToDynamicType[typ];
-  if (brilTyp !== typeof val) {
+  if (!typeCheck(val, typ)) {
     throw error(`${instr.op} argument ${index} must be a {brilTyp}`);
   }
   return val;
@@ -258,7 +259,7 @@ function evalCall(instr: bril.Operation, env: Env, heap: Heap<Value>, funcs: bri
     let value = get(env, funcArgs[i]);
 
     // Check argument types
-    if (brilTypeToDynamicType[func.args[i].type] !== typeof value) {
+    if (!typeCheck(value, func.args[i].type)) {
       throw error(`function argument type mismatch`);
     }
 
@@ -287,7 +288,7 @@ function evalCall(instr: bril.Operation, env: Env, heap: Heap<Value>, funcs: bri
     if (retVal === null) {
       throw error(`non-void function (type: ${func.type}) doesn't return anything`);
     }
-    if (brilTypeToDynamicType[instr.type] !== typeof retVal) {
+    if (!typeCheck(retVal, instr.type)) {
       throw error(`type of value returned by function does not match destination type`);
     }
     if (func.type !== instr.type ) {

@@ -10,13 +10,13 @@ export type Ident = string;
 /**
  * Value types.
  */
-export type Type = "int" | "bool" | "ptr";
+export type Type = "int" | "bool" | PointerType;
 
 /**
  * The types to which a pointer may be pointing;
  */
 export type PointerType = {
-  "ptr" : Type | PointerType;
+  "ptr": Type | PointerType;
 }
 
 /**
