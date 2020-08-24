@@ -332,7 +332,7 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
 
   switch (instr.op) {
   case "const":
-    // Ensure that JSON ints get represented appropriately.
+    // Interpret JSON numbers as either ints or floats.
     let value: Value;
     if (typeof instr.value === "number") {
       if (instr.type === "float")

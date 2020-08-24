@@ -64,7 +64,7 @@ export interface Constant {
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
-export type Operation = EffectOperation | ValueOperation ;
+export type Operation = EffectOperation | ValueOperation;
 
 /**
  * Instructions can be operations (which have arguments) or constants (which
