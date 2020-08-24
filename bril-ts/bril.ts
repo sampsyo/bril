@@ -16,7 +16,7 @@ export type Type = "int" | "bool";
  * An instruction that does not produce any result.
  */
 export interface EffectOperation {
-  op: "br" | "jmp" | "print" | "ret";
+  op: "br" | "jmp" | "print" | "ret" | "call";
   args: Ident[];
 }
 
@@ -27,7 +27,8 @@ export interface EffectOperation {
 export interface ValueOperation {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
-      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or";
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
+      "call";
   args: Ident[];
   dest: Ident;
   type: Type;
@@ -86,12 +87,22 @@ export interface Label {
   label: Ident;
 }
 
+/*
+ * An argument has a name and a type.
+ */
+export interface Argument {
+  name: Ident;
+  type: Type;
+}
+
 /**
  * A function consists of a sequence of instructions.
  */
 export interface Function {
   name: Ident;
+  args: Argument[];
   instrs: (Instruction | Label)[];
+  type?: Type;
 }
 
 /**

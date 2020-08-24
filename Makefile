@@ -1,9 +1,9 @@
 TESTS := test/parse/*.bril \
 	test/print/*.json \
-	test/interp/*.bril \
-	test/ts/*.ts
+	test/interp*/*.bril \
+	test/ts*/*.ts
 
-EXAMPLE_TESTS :=  examples/*_test/*.bril 
+EXAMPLE_TESTS :=  examples/*_test/*.bril
 
 .PHONY: test
 test:
@@ -30,7 +30,7 @@ book:
 ts:
 	cd bril-ts ; \
 	yarn ; \
-	yarn build ; \
+	yarn build
 
 .PHONY: deploy
 RSYNCARGS := --compress --recursive --checksum --itemize-changes \

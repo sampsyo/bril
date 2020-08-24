@@ -38,15 +38,22 @@ In a Bril program, a Type is either of the two strings that name the type.
 
 ### Function
 
-    { "name": "<string>", "instrs": [<Instruction>, ...] }
+    {
+      "name": "<string>",
+      "args": [{"name": "<string>", "type": <Type>}, ...],
+      "type": <Type>?,
+      "instrs": [<Instruction>, ...]
+    }
 
 A Function object represents a (first-order) procedure consisting of a sequence of instructions.
-There are two fields:
+There are four fields:
 
 * `name`, a string.
+* `args`, a list of arguments, which consist of a `name` and a `type`.
+* Optionally, `type`, a Type object: the function's return type, if any.
 * `instrs`, a list of Label and Instruction objects.
 
-When a function runs, it creates an empty activation record and transfers control to the first instruction in the sequence.
+When a function runs, it creates an activation record and transfers control to the first instruction in the sequence.
 
 ### Label
 
@@ -149,9 +156,10 @@ Unlike most other instructions, they can take *labels* as arguments instead of j
 
 * `jmp`: Unconditional jump. One argument: the label to jump to. 
 * `br`: Conditional branch. Three arguments: a variable of type `bool` and two labels. If the variable is true, transfer control to the first label; otherwise, go to the second label.
-* `ret`: Function return. Stop executing the current activation record and return to the parent (or exit the program if this is the top-level main activation record). No arguments.
+* `call`: Function invocation. The first argument is the function to call; remaining arguments are function parameters. The `call` instruction can be a Value Operation or an Effect Operation, depending on whether the function returns a value.
+* `ret`: Function return. Stop executing the current activation record and return to the parent (or exit the program if this is the top-level main activation record). It has one optional argument: the return value for the function.
 
-None of these operations produce results (i.e., they appear as Effect Operations).
+Only `call` may (optionally) produce a result; the rest appear only as Effect Operations.
 
 ### Miscellaneous
 

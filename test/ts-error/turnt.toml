@@ -1,0 +1,3 @@
+command = "ts2bril {filename} | brili"
+return_code = 2
+output.err = "2"
