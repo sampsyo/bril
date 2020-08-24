@@ -7,7 +7,7 @@ EXAMPLE_TESTS :=  examples/*_test/*.bril
 
 .PHONY: test
 test:
-	turnt $(TESTS)
+	turnt $(TURNTARGS) $(TESTS)
 
 .PHONY: test_examples
 test_examples:
