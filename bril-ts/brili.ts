@@ -218,10 +218,10 @@ function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
 }
 
 function getArgument(instr: bril.Operation, env: Env, index: number, 
-  typ : bril.Type) {
+  typ: bril.Type) {
   let val = get(env, instr.args[index]);
   if (!typeCheck(val, typ)) {
-    throw error(`${instr.op} argument ${index} must be a {brilTyp}`);
+    throw error(`${instr.op} argument ${index} must be a ${typ}`);
   }
   return val;
 }
