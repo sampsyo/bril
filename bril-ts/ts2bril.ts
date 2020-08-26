@@ -76,7 +76,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     case ts.SyntaxKind.Identifier: {
       let ident = expr as ts.Identifier;
       let type = brilType(ident, checker);
-      return builder.buildValue("id", [ident.text], type);
+      return builder.buildValue("id", type, [ident.text]);
     }
 
     case ts.SyntaxKind.BinaryExpression:
@@ -92,7 +92,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         let dest = bin.left as ts.Identifier;
         let rhs = emitExpr(bin.right);
         let type = brilType(dest, checker);
-        return builder.buildValue("id", [rhs.dest], type, dest.text);
+        return builder.buildValue("id", type, [rhs.dest], undefined, undefined, dest.text);
       }
 
       // Handle "normal" value operators.
@@ -117,7 +117,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
       let lhs = emitExpr(bin.left);
       let rhs = emitExpr(bin.right);
-      return builder.buildValue(op, [lhs.dest, rhs.dest], type);
+      return builder.buildValue(op, type, [lhs.dest, rhs.dest]);
 
     // Support call instructions---but only for printing, for now.
     case ts.SyntaxKind.CallExpression:
@@ -173,7 +173,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         if (decl.initializer) {
           let init = emitExpr(decl.initializer);
           let type = brilType(decl, checker);
-          builder.buildValue("id", [init.dest], type, decl.name.getText());
+          builder.buildValue("id", type, [init.dest], undefined, undefined, decl.name.getText());
         }
         break;
       }
@@ -197,12 +197,12 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
         // Branch.
         let cond = emitExpr(if_.expression);
-        builder.buildEffect("br", [cond.dest, thenLab, elseLab]);
+        builder.buildEffect("br", [cond.dest], undefined, [thenLab, elseLab]);
 
         // Statement chunks.
         builder.buildLabel(thenLab);
         emit(if_.thenStatement);
-        builder.buildEffect("jmp", [endLab]);
+        builder.buildEffect("jmp", [], undefined, [endLab]);
         builder.buildLabel(elseLab);
         if (if_.elseStatement) {
           emit(if_.elseStatement);
@@ -231,7 +231,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         builder.buildLabel(condLab);
         if (for_.condition) {
           let cond = emitExpr(for_.condition);
-          builder.buildEffect("br", [cond.dest, bodyLab, endLab]);
+          builder.buildEffect("br", [cond.dest], undefined, [bodyLab, endLab]);
         }
 
         builder.buildLabel(bodyLab);
@@ -239,7 +239,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         if (for_.incrementor) {
           emitExpr(for_.incrementor);
         }
-        builder.buildEffect("jmp", [condLab]);
+        builder.buildEffect("jmp", [], undefined, [condLab]);
         builder.buildLabel(endLab);
 
         break;

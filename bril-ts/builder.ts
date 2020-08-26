@@ -32,10 +32,11 @@ export class Builder {
    * Build an operation instruction that produces a result. If the name is
    * omitted, a fresh variable is chosen automatically.
    */
-  buildValue(op: bril.ValueOpCode, args: string[],
-             type: bril.Type, dest?: string) {
+  buildValue(op: bril.ValueOpCode, type: bril.Type,
+             args: string[], funcs?: string[], labels?: string[],
+             dest?: string) {
     dest = dest || this.freshVar();
-    let instr: bril.ValueOperation = { op, args, dest, type };
+    let instr: bril.ValueOperation = { op, dest, type, args, funcs, labels };
     this.insert(instr);
     return instr;
   }
@@ -43,8 +44,9 @@ export class Builder {
   /**
    * Build a non-value-producing (side-effecting) operation instruction.
    */
-  buildEffect(op: bril.EffectOpCode, args: string[]) {
-    let instr: bril.EffectOperation = { op, args };
+  buildEffect(op: bril.EffectOpCode,
+              args: string[], funcs?: string[], labels?: string[]) {
+    let instr: bril.EffectOperation = { op, args, funcs, labels };
     this.insert(instr);
     return instr;
   }
@@ -59,11 +61,10 @@ export class Builder {
             type?: undefined, dest?: string): bril.EffectOperation;
   buildCall(func: string, args: string[],
             type?: bril.Type, dest?: string): bril.Operation {
-    let allArgs = [func].concat(args);
     if (type) {
-      return this.buildValue("call", allArgs, type, dest);
+      return this.buildValue("call", type, args, [func], undefined, dest);
     } else {
-      return this.buildEffect("call", allArgs);
+      return this.buildEffect("call", args, [func], undefined);
     }
   }
   
