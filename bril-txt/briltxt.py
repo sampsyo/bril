@@ -25,9 +25,11 @@ arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
 const.4: IDENT ":" type "=" "const" lit ";"
-vop.3: IDENT ":" type "=" IDENT LABEL* FUNC* IDENT* ";"
-eop.2: IDENT LABEL* FUNC* IDENT* ";"
+vop.3: IDENT ":" type "=" op ";"
+eop.2: op ";"
 label.1: LABEL ":"
+
+op: IDENT (FUNC | LABEL | IDENT)*
 
 lit: SIGNED_INT  -> int
   | BOOL         -> bool
@@ -56,14 +58,11 @@ class JSONTransformer(lark.Transformer):
     def start(self, items):
         return {'functions': items}
 
-    def FUNC(self, token):
-        return str(token)[1:]  # Strip `@`.
-
     def func(self, items):
         name, args, typ = items[:3]
         instrs = items[3:]
         func = {
-            'name': name,
+            'name': str(name)[1:],  # Strip `@`.
             'instrs': instrs,
             'args': args or [],
         }
@@ -83,9 +82,7 @@ class JSONTransformer(lark.Transformer):
         return items
 
     def const(self, items):
-        dest = items.pop(0)
-        type = items.pop(0)
-        val = items.pop(0)
+        dest, type, val = items
         return {
             'op': 'const',
             'dest': str(dest),
@@ -94,29 +91,48 @@ class JSONTransformer(lark.Transformer):
         }
 
     def vop(self, items):
-        dest = items.pop(0)
-        type = items.pop(0)
-        op = items.pop(0)
-        return {
-            'op': str(op),
+        dest, type, op = items
+        out = {
             'dest': str(dest),
             'type': type,
             'args': [str(t) for t in items],
          }
+        out.update(op)
+        return out
+
+    def op(self, items):
+        opcode = items.pop(0)
+
+        funcs = []
+        labels = []
+        args = []
+        for item in items:
+            if item.type == 'FUNC':
+                funcs.append(str(item)[1:])
+            elif item.type == 'LABEL':
+                labels.append(str(item)[1:])
+            else:
+                args.append(str(item))
+
+        out = {
+            'op': opcode,
+            'args': args,
+        }
+        if funcs:
+            out['funcs'] = funcs
+        if labels:
+            out['labels'] = labels
+        return out
 
     def eop(self, items):
-        op = items.pop(0)
-        return {
-            'op': str(op),
-            'args': [str(t) for t in items],
-         }
-
-    def LABEL(self, token):
-        return str(token)[1:]  # Strip `.`.
+        op, = items
+        return op
 
     def label(self, items):
         name, = items
-        return {'label': name}
+        return {
+            'label': str(name)[1:]  # Strip `.`.
+        }
 
     def int(self, items):
         return int(str(items[0]))
