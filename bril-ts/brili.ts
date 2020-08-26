@@ -610,8 +610,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
-function evalFunc(func: bril.Function, state: State)
-  : ReturnValue {
+function evalFunc(func: bril.Function, state: State): ReturnValue {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
@@ -675,13 +674,21 @@ function evalProg(prog: bril.Program) {
   let heap = new Heap<Value>()
   let main = findFunc("main", prog.functions);
   if (main === null) {
-    console.log(`warning: no main function defined, doing nothing`);
-  } else {
-    let expected = main.args || [];
-    let args: string[] = process.argv.slice(2, process.argv.length);
-    let newEnv = parseMainArguments(expected, args);
-    evalFunc(main, {funcs: prog.functions, heap, env: newEnv});
+    console.warn(`no main function defined, doing nothing`);
+    return;
   }
+
+  let expected = main.args || [];
+  let args: string[] = process.argv.slice(2, process.argv.length);
+  let newEnv = parseMainArguments(expected, args);
+
+  let state: State = {
+    funcs: prog.functions,
+    heap,
+    env: newEnv,
+  }
+  evalFunc(main, state);
+
   if (!heap.isEmpty()) {
     throw error(`Some memory locations have not been freed by end of execution.`);
   }
