@@ -181,7 +181,7 @@ def print_instr(instr):
 
 
 def print_label(label):
-    print('{}:'.format(label['label']))
+    print('.{}:'.format(label['label']))
 
 
 def args_to_string(args):
@@ -196,7 +196,7 @@ def args_to_string(args):
 
 def print_func(func):
     typ = func.get('type', 'void')
-    print('{}{}{} {{'.format(
+    print('@{}{}{} {{'.format(
         func['name'],
         args_to_string(func.get('args', [])),
         ': {}'.format(typ) if typ != 'void' else '',
