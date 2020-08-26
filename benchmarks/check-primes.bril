@@ -1,6 +1,5 @@
-@main {
-  v0: int = const 50;
-  n: int = id v0;
+# ARGS: 50
+@main(n: int) {
   v2: int = const 1;
   i: int = id v2;
 .for.cond.1:

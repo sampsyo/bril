@@ -1,11 +1,6 @@
-@main {
-  v0: int = const 0;
-  v1: int = const 5;
-  v2: int = sub v0 v1;
-  v3: int = const 8;
-  v4: int = const 21;
-  call @quadratic v2 v3 v4;
-  v5: int = const 0;
+# ARGS: -5 8 21
+@main(a: int, b: int, c: int) {
+  call @quadratic a b c;
 }
 
 @sqrt(x: int): int {

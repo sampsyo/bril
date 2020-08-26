@@ -1,10 +1,10 @@
-@main {
+# ARGS: 101
+@main(input: int) {
   v1: int = const 1;
   index: int = id v1;
 .for.cond.0:
   v2: int = id index;
-  v3: int = const 101;
-  v4: bool = lt v2 v3;
+  v4: bool = lt v2 input;
   br v4 .for.body.0 .for.end.0;
 .for.body.0:
   v5: int = id index;
