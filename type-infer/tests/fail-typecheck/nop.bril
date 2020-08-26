@@ -1,0 +1,9 @@
+# RETURN: 1
+#
+@main {
+  nop;
+  v: bool = const 5;
+  nop;
+  print v;
+  nop;
+}

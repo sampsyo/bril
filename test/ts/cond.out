@@ -6,7 +6,7 @@
   v4: int = add v2 v3;
   v5: int = const 6;
   v6: bool = lt v4 v5;
-  br .then.1 .else.1 v6;
+  br v6 .then.1 .else.1;
 .then.1:
   v7: int = const 1;
   print v7;

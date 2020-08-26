@@ -1,0 +1,18 @@
+# RETURN: 1
+#
+@main {
+  one = const 1;
+  n = const 5;
+  res = const 1;
+  i = id n;
+.cond:
+  b = gt i one;
+  br b .body .end;
+.body:
+  res: bool = mul res i;
+  i = sub i one;
+  jmp .cond;
+.end:
+  print res;
+  ret;
+}

@@ -1,0 +1,11 @@
+# RETURN: 1
+#
+@main {
+  v: int = const 4;
+  b: int = const false;
+  br b .there .here;
+.here:
+  v: int = const 2;
+.there:
+  print v;
+}

@@ -1,0 +1,16 @@
+@main {
+  one: int = const 1;
+  n: int = const 5;
+  res: int = const 1;
+  i: int = id n;
+.cond:
+  b: bool = gt i one;
+  br b .body .end;
+.body:
+  res: int = mul res i;
+  i: int = sub i one;
+  jmp .cond;
+.end:
+  print res;
+  ret;
+}

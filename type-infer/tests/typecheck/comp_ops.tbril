@@ -1,0 +1,16 @@
+@main {
+  a1: int = const 1;
+  b1: int = const 2;
+  c1: bool = eq a1 b1;
+  d1: bool = lt a1 b1;
+  e1: bool = gt a1 b1;
+  f1: bool = le a1 b1;
+  g1: bool = ge a1 b1;
+  a2: int = const 1;
+  b2: int = const 2;
+  c2: bool = eq a2 b2;
+  d2: bool = lt a2 b2;
+  e2: bool = gt a2 b2;
+  f2: bool = le a2 b2;
+  g2: bool = ge a2 b2;
+}

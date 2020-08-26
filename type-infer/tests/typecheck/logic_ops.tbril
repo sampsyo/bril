@@ -1,0 +1,12 @@
+@main {
+  F1: bool = const false;
+  T1: bool = const true;
+  a1: bool = not F1;
+  b1: bool = and a1 T1;
+  c1: bool = or a1 b1;
+  F2: bool = const false;
+  T2: bool = const true;
+  a2: bool = not F2;
+  b2: bool = and a2 T2;
+  c2: bool = or a2 b2;
+}

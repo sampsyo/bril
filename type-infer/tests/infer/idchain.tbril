@@ -1,0 +1,18 @@
+@main {
+  jmp .l1;
+.l5:
+  d: int = id c;
+  ret;
+.l4:
+  c: int = id b;
+  jmp .l5;
+.l3:
+  b: int = id a;
+  jmp .l4;
+.l2:
+  a: int = id z;
+  jmp .l3;
+.l1:
+  z: int = const 0;
+  jmp .l2;
+}

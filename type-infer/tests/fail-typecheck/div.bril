@@ -1,0 +1,8 @@
+# RETURN: 1
+#
+@main {
+  v0: int = const 9;
+  v1: int = const -20;
+  res: bool = div v0 v1;
+  print res;
+}

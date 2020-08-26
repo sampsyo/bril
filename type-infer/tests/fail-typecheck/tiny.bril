@@ -1,0 +1,6 @@
+# RETURN: 1
+#
+@main {
+  v: bool = const 5;
+  print v;
+}

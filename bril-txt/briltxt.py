@@ -19,17 +19,19 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: func*
 
-func: FUNC ["(" arg_list? ")"] [":" type] "{" instr* "}"
+func: FUNC ["(" arg_list? ")"] [tyann] "{" instr* "}"
 arg_list: | arg ("," arg)*
 arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
-const.4: IDENT ":" type "=" "const" lit ";"
-vop.3: IDENT ":" type "=" op ";"
+const.4: IDENT [tyann] "=" "const" lit ";"
+vop.3: IDENT [tyann] "=" op ";"
 eop.2: op ";"
 label.1: LABEL ":"
 
 op: IDENT (FUNC | LABEL | IDENT)*
+
+?tyann: ":" type
 
 lit: SIGNED_INT  -> int
   | BOOL         -> bool
@@ -84,19 +86,20 @@ class JSONTransformer(lark.Transformer):
 
     def const(self, items):
         dest, type, val = items
-        return {
+        out = {
             'op': 'const',
             'dest': str(dest),
-            'type': type,
             'value': val,
         }
+        if type:
+            out['type'] = type
+        return out
 
     def vop(self, items):
         dest, type, op = items
-        out = {
-            'dest': str(dest),
-            'type': type,
-         }
+        out = {'dest': str(dest)}
+        if type:
+            out['type'] = type
         out.update(op)
         return out
 
@@ -172,9 +175,11 @@ def type_to_str(type):
 
 def instr_to_string(instr):
     if instr['op'] == 'const':
-        return '{}: {} = const {}'.format(
+        tyann = ': {}'.format(type_to_str(instr['type'])) \
+            if 'type' in instr else ''
+        return '{}{} = const {}'.format(
             instr['dest'],
-            type_to_str(instr['type']),
+            tyann,
             str(instr['value']).lower(),
         )
     else:
@@ -183,16 +188,18 @@ def instr_to_string(instr):
             rhs += ' {}'.format(' '.join(
                 '@{}'.format(f) for f in instr['funcs']
             ))
+        if instr.get('args'):
+            rhs += ' {}'.format(' '.join(instr['args']))
         if instr.get('labels'):
             rhs += ' {}'.format(' '.join(
                 '.{}'.format(f) for f in instr['labels']
             ))
-        if instr.get('args'):
-            rhs += ' {}'.format(' '.join(instr['args']))
         if 'dest' in instr:
-            return '{}: {} = {}'.format(
+            tyann = ': {}'.format(type_to_str(instr['type'])) \
+                if 'type' in instr else ''
+            return '{}{} = {}'.format(
                 instr['dest'],
-                type_to_str(instr['type']),
+                tyann,
                 rhs,
             )
         else:

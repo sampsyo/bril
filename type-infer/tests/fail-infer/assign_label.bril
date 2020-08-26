@@ -1,0 +1,5 @@
+@main {
+.label:
+  x: int = const 5;
+  label = const 5;
+}

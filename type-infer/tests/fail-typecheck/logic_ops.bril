@@ -1,0 +1,14 @@
+# RETURN: 1
+#
+@main {
+  F1 = const false;
+  T1 = const true;
+  a1 = not F1;
+  b1 = and a1 T1;
+  c1 = or a1 b1;
+  F2: int = const false;
+  T2 = const true;
+  a2: int = not F2;
+  b2 = and a2 T2;
+  c2: bool = or a2 b2;
+}

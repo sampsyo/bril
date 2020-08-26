@@ -1,0 +1,10 @@
+# RETURN: 0
+@main {
+  jmp x;
+.earlier:
+  x = id y;
+  ret;
+.later:
+  y = const 5;
+  jmp .earlier;
+}

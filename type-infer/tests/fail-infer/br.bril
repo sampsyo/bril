@@ -1,0 +1,10 @@
+# RETURN: 1
+@main {
+  v: int = const 4;
+  b: bool = const 1;
+  br b .there .here;
+.here:
+  v: int = const 2;
+.there:
+  print v;
+}

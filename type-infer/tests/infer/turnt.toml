@@ -1,0 +1,2 @@
+command = "cat {filename} | bril2json | python ../../infer.py | bril2txt"
+output.tbril = "-"

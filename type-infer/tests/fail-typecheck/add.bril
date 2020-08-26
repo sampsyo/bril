@@ -1,0 +1,8 @@
+# RETURN: 1
+# OUT: err 2
+@main {
+  v0: bool = const 1;
+  v1 = const 2;
+  v2 = add v0 v1;
+  print v2;
+}

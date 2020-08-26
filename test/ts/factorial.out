@@ -12,7 +12,7 @@
   v1: int = id x;
   v2: int = const 1;
   v3: bool = le v1 v2;
-  br .then.0 .else.0 v3;
+  br v3 .then.0 .else.0;
 .then.0:
   v4: int = const 1;
   ret v4;

@@ -1,0 +1,14 @@
+@main {
+  a1 = const 1;
+  b1 = const 2;
+  c1 = add a1 b1;
+  d1 = mul c1 b1;
+  e1 = sub d1 c1;
+  f1 = div e1 d1;
+  a2 = const 1;
+  b2: int = const 2;
+  c2 = add a2 b2;
+  d2: int = mul c2 b2;
+  e2: int = sub d2 c2;
+  f2 = div e2 d2;
+}

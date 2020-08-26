@@ -1,0 +1,13 @@
+# RETURN: 1
+#
+@foo {
+  a: bool = const 1;
+  b = const 2;
+  c = add a b;
+}
+@main {
+  f = const false;
+  t = const true;
+  b = or f t;
+  print f t b;
+}

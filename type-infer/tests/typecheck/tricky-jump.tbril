@@ -1,0 +1,9 @@
+@main {
+  jmp .later;
+.earlier:
+  x: int = id y;
+  ret;
+.later:
+  y: int = const 5;
+  jmp .earlier;
+}
