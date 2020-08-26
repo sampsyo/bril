@@ -204,23 +204,27 @@ function alloc(ptrType: bril.ParamType, amt:number, heap:Heap<Value>): Pointer {
  * throw an exception otherwise.
  */
 function checkArgs(instr: bril.Operation, count: number) {
-  if (instr.args.length != count) {
-    throw error(`${instr.op} takes ${count} argument(s); got ${instr.args.length}`);
+  let found = instr.args ? instr.args.length : 0;
+  if (found != count) {
+    throw error(`${instr.op} takes ${count} argument(s); got ${found}`);
   }
 }
 
 function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
-  let val = get(env, instr.args[index]);
+  let val = getArgument(instr, env, index);
   if (typeof val !== 'object' || val instanceof BigInt) {
     throw `${instr.op} argument ${index} must be a Pointer`;
   }
   return val;
 }
 
-function getArgument(instr: bril.Operation, env: Env, index: number, 
-  typ: bril.Type) {
-  let val = get(env, instr.args[index]);
-  if (!typeCheck(val, typ)) {
+function getArgument(instr: bril.Operation, env: Env, index: number, typ?: bril.Type) {
+  let args = instr.args || [];
+  if (args.length <= index) {
+    throw error(`${instr.op} expected at least ${index+1} arguments; got ${args.length}`);
+  }
+  let val = get(env, args[index]);
+  if (typ && !typeCheck(val, typ)) {
     throw error(`${instr.op} argument ${index} must be a ${typ}`);
   }
   return val;
@@ -240,20 +244,20 @@ function getFloat(instr: bril.Operation, env: Env, index: number): number {
 
 function getLabel(instr: bril.Operation, index: number): bril.Ident {
   if (!instr.labels) {
-    throw error(`missing labels; expected at least ${index}`);
+    throw error(`missing labels; expected at least ${index+1}`);
   }
   if (instr.labels.length <= index) {
-    throw error(`expecting ${index} labels; found ${instr.labels.length}`);
+    throw error(`expecting ${index+1} labels; found ${instr.labels.length}`);
   }
   return instr.labels[index];
 }
 
 function getFunc(instr: bril.Operation, index: number): bril.Ident {
   if (!instr.funcs) {
-    throw error(`missing functions; expected at least ${index}`);
+    throw error(`missing functions; expected at least ${index+1}`);
   }
   if (instr.funcs.length <= index) {
-    throw error(`expecting ${index} functions; found ${instr.funcs.length}`);
+    throw error(`expecting ${index+1} functions; found ${instr.funcs.length}`);
   }
   return instr.funcs[index];
 }
@@ -291,21 +295,23 @@ function evalCall(instr: bril.Operation, state: State): Action {
   let newEnv: Env = new Map();
 
   // Check arity of arguments and definition.
-  if (func.args.length !== instr.args.length) {
-    throw error(`function expected ${func.args.length} arguments, got ${instr.args.length}`);
+  let params = func.args || [];
+  let args = instr.args || [];
+  if (params.length !== args.length) {
+    throw error(`function expected ${params.length} arguments, got ${args.length}`);
   }
 
-  for (let i = 0; i < func.args.length; i++) {
+  for (let i = 0; i < params.length; i++) {
     // Look up the variable in the current (calling) environment.
-    let value = get(state.env, instr.args[i]);
+    let value = get(state.env, args[i]);
 
     // Check argument types
-    if (!typeCheck(value, func.args[i].type)) {
+    if (!typeCheck(value, params[i].type)) {
       throw error(`function argument type mismatch`);
     }
 
-    // Set the value of the arg in the new (function) environemt.
-    newEnv.set(func.args[i].name, value);
+    // Set the value of the arg in the new (function) environment.
+    newEnv.set(params[i].name, value);
   }
 
   // Dynamically check the function's return value and type
@@ -374,7 +380,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     return NEXT;
 
   case "id": {
-    let val = get(state.env, instr.args[0]);
+    let val = getArgument(instr, state.env, 0);
     state.env.set(instr.dest, val);
     return NEXT;
   }
@@ -506,7 +512,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
 
   case "print": {
-    let values = instr.args.map(i => get(state.env, i).toString());
+    let args = instr.args || [];
+    let values = args.map(i => get(state.env, i).toString());
     console.log(...values);
     return NEXT;
   }
@@ -525,14 +532,14 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
   
   case "ret": {
-    let argCount = instr.args.length;
-    if (argCount == 0) {
+    let args = instr.args || [];
+    if (args.length == 0) {
       return {"end": null};
-    } else if (argCount == 1) {
-      let val = get(state.env, instr.args[0]);
+    } else if (args.length == 1) {
+      let val = get(state.env, args[0]);
       return {"end": val};
     } else {
-      throw error(`ret takes 0 or 1 argument(s); got ${argCount}`);
+      throw error(`ret takes 0 or 1 argument(s); got ${args.length}`);
     }
   }
 
@@ -584,7 +591,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     let ptr = getPtr(instr, state.env, 0);
     let val = state.heap.read(ptr.loc);
     if (val === undefined || val === null) {
-      throw error(`Pointer ${instr.args[0]} points to uninitialized data`);
+      throw error(`Pointer ${instr.args![0]} points to uninitialized data`);
     } else {
       state.env.set(instr.dest, val);
     }
@@ -670,8 +677,8 @@ function evalProg(prog: bril.Program) {
   if (main === null) {
     console.log(`warning: no main function defined, doing nothing`);
   } else {
-    let expected = main.args;
-    let args : string[] = process.argv.slice(2, process.argv.length);
+    let expected = main.args || [];
+    let args: string[] = process.argv.slice(2, process.argv.length);
     let newEnv = parseMainArguments(expected, args);
     evalFunc(main, {funcs: prog.functions, heap, env: newEnv});
   }

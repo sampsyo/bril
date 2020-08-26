@@ -64,8 +64,9 @@ class JSONTransformer(lark.Transformer):
         func = {
             'name': str(name)[1:],  # Strip `@`.
             'instrs': instrs,
-            'args': args or [],
         }
+        if args:
+            func['args'] = args
         if typ:
             func['type'] = typ
         return func
@@ -116,8 +117,9 @@ class JSONTransformer(lark.Transformer):
 
         out = {
             'op': opcode,
-            'args': args,
         }
+        if args:
+            out['args'] = args
         if funcs:
             out['funcs'] = funcs
         if labels:

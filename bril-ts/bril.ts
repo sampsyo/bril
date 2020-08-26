@@ -26,7 +26,7 @@ export type Type = PrimType | ParamType;
  * Common fields in any operation.
  */
 interface Op {
-  args: Ident[];
+  args?: Ident[];
   funcs?: Ident[];
   labels?: Ident[];
 }
@@ -122,7 +122,7 @@ export interface Argument {
  */
 export interface Function {
   name: Ident;
-  args: Argument[];
+  args?: Argument[];
   instrs: (Instruction | Label)[];
   type?: Type;
 }
