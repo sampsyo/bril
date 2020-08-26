@@ -1,8 +1,8 @@
-main {
+@main {
   a: int = const 4;
   b: int = const 2;
-  jmp end;
+  jmp .end;
   print b;
-end:
+.end:
   print a;
 }
