@@ -4,7 +4,7 @@ import json
 import sys
 from collections import namedtuple
 
-from form_blocks import form_blocks, TERMINATORS
+from form_blocks import form_blocks
 from util import flatten, var_args
 
 # A Value uniquely represents a computation in terms of sub-values.
@@ -172,11 +172,7 @@ def lvn_block(block, lookup, canonicalize, fold):
 
         # Update argument variable names to canonical variables.
         if 'args' in instr:
-            new_args = [num2var[n] for n in argnums]
-            if instr['op'] not in TERMINATORS:
-                instr['args'] = new_args
-            elif instr['op'] == 'br':
-                instr['args'] += instr['args'][1:] + new_args
+            instr['args'] = [num2var[n] for n in argnums]
 
 
 def _lookup(value2num, value):
@@ -207,7 +203,7 @@ def _fold(num2const, value):
             return FOLDABLE_OPS[value.op](*const_args)
         except KeyError:  # At least one argument is not a constant.
             return None
-        except ZeroDivisionError: # If we hit a dynamic error, bail!
+        except ZeroDivisionError:  # If we hit a dynamic error, bail!
             return None
     else:
         return None
