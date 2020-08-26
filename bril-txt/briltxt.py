@@ -19,15 +19,15 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: func*
 
-func: IDENT ["(" arg_list? ")"] [":" type] "{" instr* "}"
+func: FUNC ["(" arg_list? ")"] [":" type] "{" instr* "}"
 arg_list: | arg ("," arg)*
 arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
 const.4: IDENT ":" type "=" "const" lit ";"
-vop.3: IDENT ":" type "=" IDENT IDENT* ";"
-eop.2: IDENT IDENT* ";"
-label.1: IDENT ":"
+vop.3: IDENT ":" type "=" IDENT LABEL* FUNC* IDENT* ";"
+eop.2: IDENT LABEL* FUNC* IDENT* ";"
+label.1: LABEL ":"
 
 lit: SIGNED_INT  -> int
   | BOOL         -> bool
@@ -38,6 +38,8 @@ type: IDENT "<" type ">" -> paramtype
 
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
+FUNC: "@" IDENT
+LABEL: "." IDENT
 COMMENT: /#.*/
 
 %import common.SIGNED_INT
@@ -54,11 +56,14 @@ class JSONTransformer(lark.Transformer):
     def start(self, items):
         return {'functions': items}
 
+    def FUNC(self, token):
+        return str(token)[1:]  # Strip `@`.
+
     def func(self, items):
         name, args, typ = items[:3]
         instrs = items[3:]
         func = {
-            'name': str(name),
+            'name': name,
             'instrs': instrs,
             'args': args or [],
         }
@@ -106,11 +111,12 @@ class JSONTransformer(lark.Transformer):
             'args': [str(t) for t in items],
          }
 
+    def LABEL(self, token):
+        return str(token)[1:]  # Strip `.`.
+
     def label(self, items):
-        name = items.pop(0)
-        return {
-            'label': name,
-        }
+        name, = items
+        return {'label': name}
 
     def int(self, items):
         return int(str(items[0]))

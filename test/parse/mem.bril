@@ -1,4 +1,4 @@
-main {
+@main {
   c1: int = const 1;
   v0: ptr<int> = alloc c1;
   x1: int = const 3;
