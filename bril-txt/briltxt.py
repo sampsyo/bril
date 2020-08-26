@@ -96,13 +96,12 @@ class JSONTransformer(lark.Transformer):
         out = {
             'dest': str(dest),
             'type': type,
-            'args': [str(t) for t in items],
          }
         out.update(op)
         return out
 
     def op(self, items):
-        opcode = items.pop(0)
+        opcode = str(items.pop(0))
 
         funcs = []
         labels = []
@@ -115,9 +114,7 @@ class JSONTransformer(lark.Transformer):
             else:
                 args.append(str(item))
 
-        out = {
-            'op': opcode,
-        }
+        out = {'op': opcode}
         if args:
             out['args'] = args
         if funcs:
