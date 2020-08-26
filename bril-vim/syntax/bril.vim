@@ -12,7 +12,7 @@ endfunction
 function! s:ConcatRegexp(...)
   let r = ''
   for arg in a:000
-    let r = r . '('.arg.')' 
+    let r = r . '('.arg.')'
   endfor
   return r
 endfunction
@@ -20,12 +20,13 @@ endfunction
 " ---------------------------
 " --- Basic syntax groups ---
 " ---------------------------
-"Keywords
-syntax keyword brilMain main contained
-
 " Identifiers
-let identifierRegexp = '\a\w*'
+let identifierRegexp = '(\a|_)\w*'
 call s:DefSynGroup('brilVariable', identifierRegexp, 'contained')
+
+" Tokens
+let funcRegexp = s:ConcatRegexp('\@', identifierRegexp)
+call s:DefSynGroup('brilFuncName', funcRegexp, 'contained')
 
 " Types
 " NOTE: this overlaps with identifiers, but is given higher precedence when declared afterwards.
@@ -90,8 +91,8 @@ call s:DefSynRegion('brilValueInstr', brilTypedVarRegexp, ';', 'oneline containe
 " --- Top Level Syntax Group ---
 " ------------------------------
 " Functions
-let brilFunStartRegexp = s:ConcatRegexp(identifierRegexp, '\s*\{')
-call s:DefSynRegion('brilFun', brilFunStartRegexp, '}', 'contains=brilComment,@brilValue,brilMain,brilValueInstr,brilBranchInstr,brilEffectInstr,brilLabel')
+let brilFunStartRegexp = s:ConcatRegexp(funcRegexp, '\s*\{')
+call s:DefSynRegion('brilFun', brilFunStartRegexp, '}', 'contains=brilComment,@brilValue,brilFuncName,brilValueInstr,brilBranchInstr,brilEffectInstr,brilLabel')
 
 "Infinite look-behind: not efficient, but probably ok for most people nowadays.
 syn sync fromstart
@@ -102,7 +103,7 @@ syn sync fromstart
 highlight default link brilComment Comment
 highlight default link brilLabel Label
 highlight default link brilVariable Identifier
-highlight default link brilMain Function
+highlight default link brilFuncName Function
 highlight default link brilType Type
 highlight default link brilValueOp Operator
 highlight default link brilEffectOp Keyword
