@@ -1,0 +1,10 @@
+@main(arg: int) {
+  five = const 5;
+  ten = const 10;
+  res = add arg five;
+  cond = le res ten;
+  br cond .then .else;
+.then:
+  print res;
+.else:
+}
