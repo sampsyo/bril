@@ -4,7 +4,8 @@ TESTS := test/parse/*.bril \
 	test/ts*/*.ts \
 	test/mem/*.bril \
 	test/fail/*.bril \
-	examples/test/*/*.bril
+	examples/test/*/*.bril \
+	benchmarks/*.bril
 
 .PHONY: test
 test:
