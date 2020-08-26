@@ -23,19 +23,27 @@ export type ParamType = {"ptr": Type};
 export type Type = PrimType | ParamType;
 
 /**
+ * Common fields in any operation.
+ */
+interface Op {
+  args?: Ident[];
+  funcs?: Ident[];
+  labels?: Ident[];
+}
+
+/**
  * An instruction that does not produce any result.
  */
-export interface EffectOperation {
+export interface EffectOperation extends Op {
   op: "br" | "jmp" | "print" | "ret" | "call" |
     "store" | "free";
-  args: Ident[];
 }
 
 /**
  * An operation that produces a value and places its result in the
  * destination variable.
  */
-export interface ValueOperation {
+export interface ValueOperation extends Op {
   op: "add" | "mul" | "sub" | "div" |
       "id" | "nop" |
       "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
@@ -43,7 +51,6 @@ export interface ValueOperation {
       "load" | "ptradd" | "alloc" |
       "fadd" | "fmul" | "fsub" | "fdiv" |
       "feq" | "flt" | "fle" | "fgt" | "fge";
-  args: Ident[];
   dest: Ident;
   type: Type;
 }
@@ -115,7 +122,7 @@ export interface Argument {
  */
 export interface Function {
   name: Ident;
-  args: Argument[];
+  args?: Argument[];
   instrs: (Instruction | Label)[];
   type?: Type;
 }

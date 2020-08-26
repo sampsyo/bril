@@ -33,7 +33,7 @@ Function
 
     {
       "name": "<string>",
-      "args": [{"name": "<string>", "type": <Type>}, ...],
+      "args": [{"name": "<string>", "type": <Type>}, ...]?,
       "type": <Type>?,
       "instrs": [<Instruction>, ...]
     }
@@ -42,7 +42,7 @@ A Function object represents a (first-order) procedure consisting of a sequence 
 There are four fields:
 
 * `name`, a string.
-* `args`, a list of arguments, which consist of a `name` and a `type`.
+* `args`, optionally, a list of arguments, which consist of a `name` and a `type`. Missing `args` is the same as an empty list.
 * Optionally, `type`, a Type object: the function's return type, if any.
 * `instrs`, a list of Label and Instruction objects.
 
@@ -73,14 +73,16 @@ Depending on the opcode, the instruction might also have:
 
 * `dest`, a string: the name of the variable where the operation's result is stored.
 * `type`, a Type object: the type of the destination variable.
-* `args`: a list of strings: the arguments to the operation.
+* `args`, a list of strings: the arguments to the operation. These are names of variables.
+* `funcs`, a list of strings: any names of functions referenced by the instruction.
+* `labels`, a list of strings: any label names referenced by the instruction.
 
 There are three kinds of instructions: constants, value operations, and effect operations.
 
 ### Constant
 
     { "op": "const", "dest": "<string>", "type": <Type>,
-      "value": ... }
+      "value": <literal> }
 
 A Constant is an instruction that produces a literal value.
 Its `op` field must be the string `"const"`.
@@ -93,18 +95,28 @@ It has the `dest` and `type` fields described above, and also:
 ### Value Operation
 
     { "op": "<string>", "dest": "<string>", "type": <Type>,
-      "args": ["<string>", ...] }
+      "args": ["<string>", ...]?,
+      "funcs": ["<string>", ...]?,
+      "labels": ["<srring>", ...]? }
 
 A Value Operation is an instruction that takes arguments, does some computation, and produces a value.
-Like a Constant, it has the `dest` and `type` fields described above, and also:
+Like a Constant, it has the `dest` and `type` fields described above, and also any of these three optional fields:
 
 * `args`, a list of strings.
-  The strings are names interpreted according to the operation.
-  They may refer to variables or labels.
+  These are variable names defined elsewhere in the same function.
+* `funcs`, a list of strings.
+  The names of any functions that this instruction references. For example, [core Bril](core.md)'s call instruction takes one function name.
+* `labels`, a list of strings.
+  The names of any labels within the current function that the instruction references. For example, [core Bril](core.md)'s jump and branch instructions have target labels.
+
+In all three cases, these keys may be missing and the semantics are identical to mapping to an empty list.
 
 ### Effect Operation
 
-    { "op": "<string>", "args": ["<string>", ...] }
+    { "op": "<string>",
+      "args": ["<string>", ...]?,
+      "funcs": ["<string>", ...]?,
+      "labels": ["<srring>", ...]? }
 
 An Effect Operation is like a Value Operation but it does not produce a value.
-It also has an `args` field for its arguments.
+It also has the optional `args`, `funcs`, and `labels` fields.

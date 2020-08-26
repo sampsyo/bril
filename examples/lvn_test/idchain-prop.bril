@@ -1,5 +1,5 @@
 # ARGS: -p
-main {
+@main {
   x: int = const 4;
   copy1: int = id x;
   copy2: int = id copy1;

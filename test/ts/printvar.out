@@ -1,4 +1,4 @@
-main {
+@main {
   v0: int = const 5;
   x: int = id v0;
   v1: int = id x;

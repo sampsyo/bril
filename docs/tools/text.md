@@ -23,7 +23,7 @@ For example, this Bril program in JSON:
 
 Gets represented in text like this:
 
-    main {
+    @main {
       v0: int = const 1;
       v1: int = const 2;
       v2: int = add v0 v1;

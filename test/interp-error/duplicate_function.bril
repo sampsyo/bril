@@ -1,11 +1,11 @@
-main {
-    call f;
+@main {
+    call @f;
 }
-f {
+@f {
     v: int = const 1;
     print v;
 }
-f {
+@f {
     v: int = const 2;
     print v;
 }

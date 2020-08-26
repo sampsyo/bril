@@ -1,8 +1,8 @@
 # ARGS: -p
-main {
+@main {
   x: int = const 4;
-  jmp label;
-label:
+  jmp .label;
+.label:
   copy1: int = id x;
   copy2: int = id copy1;
   copy3: int = id copy2;

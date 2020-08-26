@@ -1,0 +1,25 @@
+{
+  "functions": [
+    {
+      "name": "add5",
+      "args": [{"name": "n", "type": "int"}],
+      "type": "int",
+      "instrs": [
+        { "op": "const", "type": "int", "dest": "five", "value": 5 },
+        { "op": "add", "type": "int", "dest": "sum",
+          "args": ["n", "five"] },
+        { "op": "ret", "args": ["sum"] }
+      ]
+    },
+    {
+      "name": "main",
+      "args": [],
+      "instrs": [
+        { "op": "const", "type": "int", "dest": "a", "value": 9 },
+        { "op": "call", "type": "int", "dest": "b",
+          "funcs": ["add5"], "args": ["a"] },
+        { "op": "print", "args": ["b"] }
+      ]
+    }
+  ]
+}
