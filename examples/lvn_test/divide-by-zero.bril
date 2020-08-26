@@ -1,4 +1,4 @@
-main {
+@main {
 entry:
   zero : int = const 0;
   one : int = const 1;
