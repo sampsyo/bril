@@ -1,7 +1,7 @@
-main {
+@main {
   v: int = const 4;
-  jmp somewhere;
+  jmp .somewhere;
   v: int = const 2;
-somewhere:
+.somewhere:
   print v;
 }

@@ -1,9 +1,9 @@
-main {
-  jmp later;
-earlier:
+@main {
+  jmp .later;
+.earlier:
   x: int = id y;
-  ret ;
-later:
+  ret;
+.later:
   y: int = const 5;
-  jmp earlier;
+  jmp .earlier;
 }

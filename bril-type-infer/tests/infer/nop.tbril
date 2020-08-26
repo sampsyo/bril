@@ -1,7 +1,7 @@
-main {
-  nop ;
+@main {
+  nop;
   v: int = const 5;
-  nop ;
+  nop;
   print v;
-  nop ;
+  nop;
 }

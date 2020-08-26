@@ -1,6 +1,6 @@
-main {
+@main {
   v: int = const 4;
   print v;
-  ret ;
+  ret;
   print v;
 }

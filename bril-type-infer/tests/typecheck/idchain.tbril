@@ -1,18 +1,18 @@
-main {
-  jmp l1;
-l5:
+@main {
+  jmp .l1;
+.l5:
   d: int = id c;
-  ret ;
-l4:
+  ret;
+.l4:
   c: int = id b;
-  jmp l5;
-l3:
+  jmp .l5;
+.l3:
   b: int = id a;
-  jmp l4;
-l2:
+  jmp .l4;
+.l2:
   a: int = id z;
-  jmp l3;
-l1:
+  jmp .l3;
+.l1:
   z: int = const 0;
-  jmp l2;
+  jmp .l2;
 }

@@ -1,4 +1,4 @@
-main {
+@main {
   F1: bool = const false;
   T1: bool = const true;
   a1: bool = not F1;

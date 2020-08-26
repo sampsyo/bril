@@ -1,9 +1,9 @@
-foo {
+@foo {
   a: int = const 1;
   b: int = const 2;
   c: int = add a b;
 }
-main {
+@main {
   f: bool = const false;
   t: bool = const true;
   b: bool = or f t;
