@@ -1,1 +1,3 @@
-command = "bril2json < {filename} | brili {args}"
+command = "bril2json < {filename} | brili -p {args}"
+output.out = "-"
+output.prof = "2"
