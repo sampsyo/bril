@@ -238,6 +238,26 @@ function getFloat(instr: bril.Operation, env: Env, index: number): number {
   return getArgument(instr, env, index, 'float') as number;
 }
 
+function getLabel(instr: bril.Operation, index: number): bril.Ident {
+  if (!instr.labels) {
+    throw error(`missing labels; expected at least ${index}`);
+  }
+  if (instr.labels.length <= index) {
+    throw error(`expecting ${index} labels; found ${instr.labels.length}`);
+  }
+  return instr.labels[index];
+}
+
+function getFunc(instr: bril.Operation, index: number): bril.Ident {
+  if (!instr.funcs) {
+    throw error(`missing functions; expected at least ${index}`);
+  }
+  if (instr.funcs.length <= index) {
+    throw error(`expecting ${index} functions; found ${instr.funcs.length}`);
+  }
+  return instr.funcs[index];
+}
+
 /**
  * The thing to do after interpreting an instruction: either transfer
  * control to a label, go to the next instruction, or end thefunction.
@@ -261,8 +281,7 @@ type State = {
  * Interpet a call instruction.
  */
 function evalCall(instr: bril.Operation, state: State): Action {
-  let funcName = instr.args[0];
-  let funcArgs = instr.args.slice(1);
+  let funcName = getFunc(instr, 0);
 
   let func = findFunc(funcName, state.funcs);
   if (func === null) {
@@ -272,13 +291,13 @@ function evalCall(instr: bril.Operation, state: State): Action {
   let newEnv: Env = new Map();
 
   // Check arity of arguments and definition.
-  if (func.args.length !== funcArgs.length) {
-    throw error(`function expected ${func.args.length} arguments, got ${funcArgs.length}`);
+  if (func.args.length !== instr.args.length) {
+    throw error(`function expected ${func.args.length} arguments, got ${instr.args.length}`);
   }
 
   for (let i = 0; i < func.args.length; i++) {
     // Look up the variable in the current (calling) environment.
-    let value = get(state.env, funcArgs[i]);
+    let value = get(state.env, instr.args[i]);
 
     // Check argument types
     if (!typeCheck(value, func.args[i].type)) {
@@ -493,15 +512,15 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
 
   case "jmp": {
-    return {"label": instr.args[0]};
+    return {"label": getLabel(instr, 0)};
   }
 
   case "br": {
     let cond = getBool(instr, state.env, 0);
     if (cond) {
-      return {"label": instr.args[1]};
+      return {"label": getLabel(instr, 0)};
     } else {
-      return {"label": instr.args[2]};
+      return {"label": getLabel(instr, 1)};
     }
   }
   

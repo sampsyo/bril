@@ -3,6 +3,7 @@
     {
       "name": "add5",
       "args": [{"name": "n", "type": "int"}],
+      "type": "int",
       "instrs": [
         { "op": "const", "type": "int", "dest": "five", "value": 5 },
         { "op": "add", "type": "int", "dest": "sum",
