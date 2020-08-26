@@ -125,8 +125,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   fge: 2,
   feq: 2,
   print: null,  // Any number of arguments.
-  br: 3,
-  jmp: 1,
+  br: 1,
+  jmp: 0,
   ret: null,  // (Should be 0 or 1.)
   nop: 0,
   call: null,

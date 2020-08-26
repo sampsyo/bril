@@ -12,7 +12,7 @@
   i_minus_two: int = add i_minus_one neg_one;
 .loop:
   cond: bool = lt i ten;
-  br .cond .body .done;
+  br cond .body .done;
 .body:
   vals_i: ptr<int> = ptradd vals i;
   vals_i_minus_one: ptr<int> = ptradd vals i_minus_one;
@@ -25,7 +25,7 @@
   i_minus_one: int = add i_minus_one one;
   i_minus_two: int = add i_minus_two one;
   jmp .loop;
-. done:
+.done:
   last: ptr<int> = ptradd vals i_minus_one;
   tmp: int = load last;
   print tmp;
