@@ -74,7 +74,12 @@ def print_dom(bril):
         add_terminators(blocks)
         succ = {name: successors(block[-1]) for name, block in blocks.items()}
         dom = get_dom(succ, list(blocks.keys())[0])
-        print(dom)
+
+        # Format as JSON for stable output.
+        print(json.dumps(
+            {k: sorted(list(v)) for k, v in dom.items()},
+            indent=2, sort_keys=True,
+        ))
 
 
 if __name__ == '__main__':
