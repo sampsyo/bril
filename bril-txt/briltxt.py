@@ -188,12 +188,12 @@ def instr_to_string(instr):
             rhs += ' {}'.format(' '.join(
                 '@{}'.format(f) for f in instr['funcs']
             ))
+        if instr.get('args'):
+            rhs += ' {}'.format(' '.join(instr['args']))
         if instr.get('labels'):
             rhs += ' {}'.format(' '.join(
                 '.{}'.format(f) for f in instr['labels']
             ))
-        if instr.get('args'):
-            rhs += ' {}'.format(' '.join(instr['args']))
         if 'dest' in instr:
             tyann = ': {}'.format(type_to_str(instr['type'])) \
                 if 'type' in instr else ''
