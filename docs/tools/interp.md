@@ -38,3 +38,13 @@ To provide inputs to the main function, you can write them as command-line argum
 
     $ brili 37 5 < add.json
     42
+
+Profiling
+---------
+
+The interpreter has a rudimentary profiling mode.
+Add a `-p` flag to print out a total number of dynamic instructions executed to stderr:
+
+    $ brili -p 37 5 < add.json
+    42
+    total_dyn_inst: 9

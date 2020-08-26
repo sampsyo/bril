@@ -690,8 +690,17 @@ function evalProg(prog: bril.Program) {
     return;
   }
 
-  let expected = main.args || [];
+  // Silly argument parsing to find the `-p` flag.
   let args: string[] = process.argv.slice(2, process.argv.length);
+  let profiling = false;
+  let pidx = args.indexOf('-p');
+  if (pidx > -1) {
+    profiling = true;
+    args.splice(pidx, 1);
+  }
+
+  // Remaining arguments are for the main function.k
+  let expected = main.args || [];
   let newEnv = parseMainArguments(expected, args);
 
   let state: State = {
@@ -705,6 +714,11 @@ function evalProg(prog: bril.Program) {
   if (!heap.isEmpty()) {
     throw error(`Some memory locations have not been freed by end of execution.`);
   }
+
+  if (profiling) {
+    console.error(`total_dyn_inst: ${state.icount}`);
+  }
+
 }
 
 async function main() {
