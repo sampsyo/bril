@@ -1,9 +1,9 @@
-@main {
-  ten: int = const 10;
+# ARGS: 10
+@main(input: int) {
   zero: int = const 0;
   one: int = const 1;
   neg_one: int = const -1;
-  vals: ptr<int> = alloc ten;
+  vals: ptr<int> = alloc input;
   store vals zero;
   vals_i: ptr<int> = ptradd vals one;
   store vals_i one;
@@ -11,7 +11,7 @@
   i_minus_one: int = add i neg_one;
   i_minus_two: int = add i_minus_one neg_one;
 .loop:
-  cond: bool = lt i ten;
+  cond: bool = lt i input;
   br cond .body .done;
 .body:
   vals_i: ptr<int> = ptradd vals i;

@@ -1,6 +1,6 @@
-@main {
-  v0: int = const 8;
-  value: int = id v0;
+# ARGS: 8
+@main(input: int) {
+  value: int = id input;
   v1: int = const 1;
   result: int = id v1;
   v3: int = id value;

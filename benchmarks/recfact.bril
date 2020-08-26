@@ -1,6 +1,6 @@
-@main {
-  v0: int = const 5;
-  x: int = id v0;
+# ARGS: 8
+@main(input: int) {
+  x: int = id input;
   v1: int = id x;
   f: int = call @fac v1;
   f: int = id f;
