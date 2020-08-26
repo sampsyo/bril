@@ -166,11 +166,11 @@ def instr_to_string(instr):
         rhs = instr['op']
         if instr.get('funcs'):
             rhs += ' {}'.format(' '.join(
-                '@{}'.format(f for f in instr['funcs'])
+                '@{}'.format(f) for f in instr['funcs']
             ))
         if instr.get('labels'):
             rhs += ' {}'.format(' '.join(
-                '.{}'.format(f for f in instr['funcs'])
+                '.{}'.format(f) for f in instr['labels']
             ))
         if instr.get('args'):
             rhs += ' {}'.format(' '.join(instr['args']))
