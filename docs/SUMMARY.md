@@ -4,6 +4,7 @@
 
 - [Language Reference](lang/README.md)
     - [Syntax](lang/syntax.md)
+    - [Well Formedness](lang/wellformed.md)
     - [Core](lang/core.md)
     - [Memory](lang/memory.md)
     - [Floating Point](lang/float.md)
