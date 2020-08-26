@@ -136,10 +136,10 @@ def typecheck_func(original_func, typed_func):
                     .format(gamma[instr["dest"]], instr["type"])
                 )
             elif instr["op"] == "jmp":
-                typecheck_label(instr["args"][0], gamma)
+                typecheck_label(instr["labels"][0], gamma)
             elif instr["op"] == "br":
-                typecheck_label(instr["args"][1], gamma)
-                typecheck_label(instr["args"][2], gamma)
+                typecheck_label(instr["labels"][0], gamma)
+                typecheck_label(instr["labels"][1], gamma)
 
 def typecheck(original_bril, typed_bril):
     for i in range(len(original_bril["functions"])):
