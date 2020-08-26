@@ -1,4 +1,4 @@
-main {
+@main {
   nop;
   v: int = const 5;
   nop;
