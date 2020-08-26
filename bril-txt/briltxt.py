@@ -19,22 +19,23 @@ __version__ = '0.0.1'
 GRAMMAR = """
 start: func*
 
-func: CNAME ["(" arg_list? ")"] [":" type] "{" instr* "}"
+func: IDENT ["(" arg_list? ")"] [":" type] "{" instr* "}"
 arg_list: | arg ("," arg)*
 arg: IDENT ":" type
 ?instr: const | vop | eop | label
 
 const.4: IDENT ":" type "=" "const" lit ";"
-vop.3: IDENT ":" type "=" CNAME IDENT* ";"
-eop.2: CNAME IDENT* ";"
+vop.3: IDENT ":" type "=" IDENT IDENT* ";"
+eop.2: IDENT IDENT* ";"
 label.1: IDENT ":"
 
 lit: SIGNED_INT  -> int
   | BOOL         -> bool
   | DECIMAL      -> float
 
-type: CNAME "<" type ">" -> paramtype
-    | CNAME              -> primtype
+type: IDENT "<" type ">" -> paramtype
+    | IDENT              -> primtype
+
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 COMMENT: /#.*/
@@ -42,7 +43,6 @@ COMMENT: /#.*/
 %import common.SIGNED_INT
 %import common.DECIMAL
 %import common.WS
-%import common.CNAME
 %import common.LETTER
 %import common.DIGIT
 %ignore WS
