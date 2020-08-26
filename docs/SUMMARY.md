@@ -13,3 +13,4 @@
     - [TypeScript Compiler](tools/ts2bril.md)
     - [Fast Interpreter](tools/brilirs.md)
     - [Editor Plugin](tools/plugin.md)
+    - [Type Inference](tools/infer.md)
