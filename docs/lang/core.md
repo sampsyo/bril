@@ -49,11 +49,11 @@ Control
 -------
 
 These are the control flow operations.
-Unlike most other instructions, they can take *labels* as arguments instead of just variable names:
+Unlike the value operations above, they take labels and functions in addition to normal arguments.
 
-* `jmp`: Unconditional jump. One argument: the label to jump to. 
-* `br`: Conditional branch. Three arguments: a variable of type `bool` and two labels. If the variable is true, transfer control to the first label; otherwise, go to the second label.
-* `call`: Function invocation. The first argument is the function to call; remaining arguments are function parameters. The `call` instruction can be a Value Operation or an Effect Operation, depending on whether the function returns a value.
+* `jmp`: Unconditional jump. One label: the label to jump to.
+* `br`: Conditional branch. One argument: a variable of type `bool`. Two labels: a true label and a false label. Transfer control to one of the two labels depending on the value of the variable.
+* `call`: Function invocation. Takes the name of the function to call and, as its arguments, the function parameters. The `call` instruction can be a Value Operation or an Effect Operation, depending on whether the function returns a value.
 * `ret`: Function return. Stop executing the current activation record and return to the parent (or exit the program if this is the top-level main activation record). It has one optional argument: the return value for the function.
 
 Only `call` may (optionally) produce a result; the rest appear only as Effect Operations.

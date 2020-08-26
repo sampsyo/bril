@@ -113,7 +113,10 @@ In all three cases, these keys may be missing and the semantics are identical to
 
 ### Effect Operation
 
-    { "op": "<string>", "args": ["<string>", ...] }
+    { "op": "<string>",
+      "args": ["<string>", ...]?,
+      "funcs": ["<string>", ...]?,
+      "labels": ["<srring>", ...]? }
 
 An Effect Operation is like a Value Operation but it does not produce a value.
 It also has the optional `args`, `funcs`, and `labels` fields.
