@@ -162,18 +162,26 @@ def instr_to_string(instr):
             type_to_str(instr['type']),
             str(instr['value']).lower(),
         )
-    elif 'dest' in instr:
-        return '{}: {} = {} {}'.format(
-            instr['dest'],
-            type_to_str(instr['type']),
-            instr['op'],
-            ' '.join(instr['args']),
-        )
     else:
-        return '{} {}'.format(
-            instr['op'],
-            ' '.join(instr['args']),
-        )
+        rhs = instr['op']
+        if instr.get('funcs'):
+            rhs += ' {}'.format(' '.join(
+                '@{}'.format(f for f in instr['funcs'])
+            ))
+        if instr.get('labels'):
+            rhs += ' {}'.format(' '.join(
+                '.{}'.format(f for f in instr['funcs'])
+            ))
+        if instr.get('args'):
+            rhs += ' {}'.format(' '.join(instr['args']))
+        if 'dest' in instr:
+            return '{}: {} = {}'.format(
+                instr['dest'],
+                type_to_str(instr['type']),
+                rhs,
+            )
+        else:
+            return rhs
 
 
 def print_instr(instr):
