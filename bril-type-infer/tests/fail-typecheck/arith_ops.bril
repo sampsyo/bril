@@ -1,6 +1,6 @@
 # RETURN: 1
 #
-main {
+@main {
   a1 = const 1;
   b1 = const 2;
   c1 = add a1 b1;

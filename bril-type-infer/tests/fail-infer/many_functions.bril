@@ -1,10 +1,10 @@
 # RETURN: 1
-foo {
+@foo {
   a = const 1;
   b = const false;
   c = add a b;
 }
-main {
+@main {
   f = const false;
   t = const true;
   b = or f t;

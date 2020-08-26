@@ -1,4 +1,4 @@
-main {
+@main {
   v0 = const 1;
   v1 = const 2;
   v2 = add v0 v1;

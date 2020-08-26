@@ -1,6 +1,6 @@
 # RETURN: 1
 #
-main {
+@main {
   v: bool = const 4;
   print v;
   ret;

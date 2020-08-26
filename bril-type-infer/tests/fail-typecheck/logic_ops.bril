@@ -1,6 +1,6 @@
 # RETURN: 1
 #
-main {
+@main {
   F1 = const false;
   T1 = const true;
   a1 = not F1;
