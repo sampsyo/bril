@@ -279,6 +279,7 @@ type State = {
   readonly env: Env,
   readonly heap: Heap<Value>,
   readonly funcs: readonly bril.Function[],
+  icount: bigint,
 }
 
 /**
@@ -314,8 +315,17 @@ function evalCall(instr: bril.Operation, state: State): Action {
     newEnv.set(params[i].name, value);
   }
 
-  // Dynamically check the function's return value and type
-  let retVal = evalFunc(func, {env: newEnv, heap: state.heap, funcs: state.funcs});
+  // Invoke the interpretr on the function.
+  let newState: State = {
+    env: newEnv,
+    heap: state.heap,
+    funcs: state.funcs,
+    icount: state.icount,
+  }
+  let retVal = evalFunc(func, newState);
+  state.icount = newState.icount;
+
+  // Dynamically check the function's return value and type.
   if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
      // Expected void function
     if (retVal !== null) {
@@ -353,6 +363,8 @@ function evalCall(instr: bril.Operation, state: State): Action {
  * instruction or "end" to terminate the function.
  */
 function evalInstr(instr: bril.Instruction, state: State): Action {
+  state.icount += BigInt(1);
+
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -686,6 +698,7 @@ function evalProg(prog: bril.Program) {
     funcs: prog.functions,
     heap,
     env: newEnv,
+    icount: BigInt(0),
   }
   evalFunc(main, state);
 
