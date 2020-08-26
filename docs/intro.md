@@ -10,7 +10,8 @@ Bril's design tenets include:
 - The tooling is language agnostic. Bril programs are just [JSON][].
 - Bril is typed.
 
-See the [language reference](langref.md) for the complete specification of the core.
+See the [language reference](lang) for the complete language specification and the [tool documentation](tools) for details on the "batteries included" [monorepo][gh].
 
 [cs6120]: https://www.cs.cornell.edu/courses/cs6120/2019fa/
 [json]: https://www.json.org
+[gh]: https://github.com/sampsyo/bril
