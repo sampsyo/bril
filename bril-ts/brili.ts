@@ -125,8 +125,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   fge: 2,
   feq: 2,
   print: null,  // Any number of arguments.
-  br: 3,
-  jmp: 1,
+  br: 1,
+  jmp: 0,
   ret: null,  // (Should be 0 or 1.)
   nop: 0,
   call: null,
@@ -170,7 +170,7 @@ function get(env: Env, ident: bril.Ident) {
   return val;
 }
 
-function findFunc(func: bril.Ident, funcs: bril.Function[]) {
+function findFunc(func: bril.Ident, funcs: readonly bril.Function[]) {
   let matches = funcs.filter(function (f: bril.Function) {
     return f.name === func;
   });
@@ -184,7 +184,7 @@ function findFunc(func: bril.Ident, funcs: bril.Function[]) {
   return matches[0];
 }
 
-function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): Pointer {
+function alloc(ptrType: bril.ParamType, amt:number, heap:Heap<Value>): Pointer {
   if (typeof ptrType != 'object') {
     throw error(`unspecified pointer type ${ptrType}`);
   } else if (amt <= 0) {
@@ -204,23 +204,27 @@ function alloc(ptrType: bril.PointerType, amt:number, heap:Heap<Value>): Pointer
  * throw an exception otherwise.
  */
 function checkArgs(instr: bril.Operation, count: number) {
-  if (instr.args.length != count) {
-    throw error(`${instr.op} takes ${count} argument(s); got ${instr.args.length}`);
+  let found = instr.args ? instr.args.length : 0;
+  if (found != count) {
+    throw error(`${instr.op} takes ${count} argument(s); got ${found}`);
   }
 }
 
 function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
-  let val = get(env, instr.args[index]);
+  let val = getArgument(instr, env, index);
   if (typeof val !== 'object' || val instanceof BigInt) {
     throw `${instr.op} argument ${index} must be a Pointer`;
   }
   return val;
 }
 
-function getArgument(instr: bril.Operation, env: Env, index: number, 
-  typ: bril.Type) {
-  let val = get(env, instr.args[index]);
-  if (!typeCheck(val, typ)) {
+function getArgument(instr: bril.Operation, env: Env, index: number, typ?: bril.Type) {
+  let args = instr.args || [];
+  if (args.length <= index) {
+    throw error(`${instr.op} expected at least ${index+1} arguments; got ${args.length}`);
+  }
+  let val = get(env, args[index]);
+  if (typ && !typeCheck(val, typ)) {
     throw error(`${instr.op} argument ${index} must be a ${typ}`);
   }
   return val;
@@ -238,6 +242,26 @@ function getFloat(instr: bril.Operation, env: Env, index: number): number {
   return getArgument(instr, env, index, 'float') as number;
 }
 
+function getLabel(instr: bril.Operation, index: number): bril.Ident {
+  if (!instr.labels) {
+    throw error(`missing labels; expected at least ${index+1}`);
+  }
+  if (instr.labels.length <= index) {
+    throw error(`expecting ${index+1} labels; found ${instr.labels.length}`);
+  }
+  return instr.labels[index];
+}
+
+function getFunc(instr: bril.Operation, index: number): bril.Ident {
+  if (!instr.funcs) {
+    throw error(`missing functions; expected at least ${index+1}`);
+  }
+  if (instr.funcs.length <= index) {
+    throw error(`expecting ${index+1} functions; found ${instr.funcs.length}`);
+  }
+  return instr.funcs[index];
+}
+
 /**
  * The thing to do after interpreting an instruction: either transfer
  * control to a label, go to the next instruction, or end thefunction.
@@ -249,14 +273,21 @@ type Action =
 let NEXT: Action = {"next": true};
 
 /**
+ * The interpreter state that's threaded through recursive calls.
+ */
+type State = {
+  readonly env: Env,
+  readonly heap: Heap<Value>,
+  readonly funcs: readonly bril.Function[],
+}
+
+/**
  * Interpet a call instruction.
  */
-function evalCall(instr: bril.Operation, env: Env, heap: Heap<Value>, funcs: bril.Function[])
-  : Action {
-  let funcName = instr.args[0];
-  let funcArgs = instr.args.slice(1);
+function evalCall(instr: bril.Operation, state: State): Action {
+  let funcName = getFunc(instr, 0);
 
-  let func = findFunc(funcName, funcs);
+  let func = findFunc(funcName, state.funcs);
   if (func === null) {
     throw error(`undefined function ${funcName}`);
   }
@@ -264,25 +295,27 @@ function evalCall(instr: bril.Operation, env: Env, heap: Heap<Value>, funcs: bri
   let newEnv: Env = new Map();
 
   // Check arity of arguments and definition.
-  if (func.args.length !== funcArgs.length) {
-    throw error(`function expected ${func.args.length} arguments, got ${funcArgs.length}`);
+  let params = func.args || [];
+  let args = instr.args || [];
+  if (params.length !== args.length) {
+    throw error(`function expected ${params.length} arguments, got ${args.length}`);
   }
 
-  for (let i = 0; i < func.args.length; i++) {
+  for (let i = 0; i < params.length; i++) {
     // Look up the variable in the current (calling) environment.
-    let value = get(env, funcArgs[i]);
+    let value = get(state.env, args[i]);
 
     // Check argument types
-    if (!typeCheck(value, func.args[i].type)) {
+    if (!typeCheck(value, params[i].type)) {
       throw error(`function argument type mismatch`);
     }
 
-    // Set the value of the arg in the new (function) environemt.
-    newEnv.set(func.args[i].name, value);
+    // Set the value of the arg in the new (function) environment.
+    newEnv.set(params[i].name, value);
   }
 
   // Dynamically check the function's return value and type
-  let retVal = evalFunc(func, funcs, heap, newEnv);
+  let retVal = evalFunc(func, {env: newEnv, heap: state.heap, funcs: state.funcs});
   if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
      // Expected void function
     if (retVal !== null) {
@@ -308,7 +341,7 @@ function evalCall(instr: bril.Operation, env: Env, heap: Heap<Value>, funcs: bri
     if (func.type !== instr.type ) {
       throw error(`type of value returned by function does not match declaration`);
     }
-    env.set(instr.dest, retVal);
+    state.env.set(instr.dest, retVal);
   }
   return NEXT;
 }
@@ -319,7 +352,7 @@ function evalCall(instr: bril.Operation, env: Env, heap: Heap<Value>, funcs: bri
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: bril.Function[]): Action {
+function evalInstr(instr: bril.Instruction, state: State): Action {
   // Check that we have the right number of arguments.
   if (instr.op !== "const") {
     let count = argCounts[instr.op];
@@ -343,169 +376,170 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
       value = instr.value;
     }
 
-    env.set(instr.dest, value);
+    state.env.set(instr.dest, value);
     return NEXT;
 
   case "id": {
-    let val = get(env, instr.args[0]);
-    env.set(instr.dest, val);
+    let val = getArgument(instr, state.env, 0);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "add": {
-    let val = getInt(instr, env, 0) + getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) + getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "mul": {
-    let val = getInt(instr, env, 0) * getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) * getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "sub": {
-    let val = getInt(instr, env, 0) - getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) - getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "div": {
-    let val = getInt(instr, env, 0) / getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) / getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "le": {
-    let val = getInt(instr, env, 0) <= getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) <= getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "lt": {
-    let val = getInt(instr, env, 0) < getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) < getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "gt": {
-    let val = getInt(instr, env, 0) > getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) > getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "ge": {
-    let val = getInt(instr, env, 0) >= getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) >= getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "eq": {
-    let val = getInt(instr, env, 0) === getInt(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getInt(instr, state.env, 0) === getInt(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "not": {
-    let val = !getBool(instr, env, 0);
-    env.set(instr.dest, val);
+    let val = !getBool(instr, state.env, 0);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "and": {
-    let val = getBool(instr, env, 0) && getBool(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getBool(instr, state.env, 0) && getBool(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "or": {
-    let val = getBool(instr, env, 0) || getBool(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getBool(instr, state.env, 0) || getBool(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "fadd": {
-    let val = getFloat(instr, env, 0) + getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) + getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "fsub": {
-    let val = getFloat(instr, env, 0) - getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) - getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "fmul": {
-    let val = getFloat(instr, env, 0) * getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) * getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "fdiv": {
-    let val = getFloat(instr, env, 0) / getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) / getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "fle": {
-    let val = getFloat(instr, env, 0) <= getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) <= getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "flt": {
-    let val = getFloat(instr, env, 0) < getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) < getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "fgt": {
-    let val = getFloat(instr, env, 0) > getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) > getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "fge": {
-    let val = getFloat(instr, env, 0) >= getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) >= getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "feq": {
-    let val = getFloat(instr, env, 0) === getFloat(instr, env, 1);
-    env.set(instr.dest, val);
+    let val = getFloat(instr, state.env, 0) === getFloat(instr, state.env, 1);
+    state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "print": {
-    let values = instr.args.map(i => get(env, i).toString());
+    let args = instr.args || [];
+    let values = args.map(i => get(state.env, i).toString());
     console.log(...values);
     return NEXT;
   }
 
   case "jmp": {
-    return {"label": instr.args[0]};
+    return {"label": getLabel(instr, 0)};
   }
 
   case "br": {
-    let cond = getBool(instr, env, 0);
+    let cond = getBool(instr, state.env, 0);
     if (cond) {
-      return {"label": instr.args[1]};
+      return {"label": getLabel(instr, 0)};
     } else {
-      return {"label": instr.args[2]};
+      return {"label": getLabel(instr, 1)};
     }
   }
   
   case "ret": {
-    let argCount = instr.args.length;
-    if (argCount == 0) {
+    let args = instr.args || [];
+    if (args.length == 0) {
       return {"end": null};
-    } else if (argCount == 1) {
-      let val = get(env, instr.args[0]);
+    } else if (args.length == 1) {
+      let val = get(state.env, args[0]);
       return {"end": val};
     } else {
-      throw error(`ret takes 0 or 1 argument(s); got ${argCount}`);
+      throw error(`ret takes 0 or 1 argument(s); got ${args.length}`);
     }
   }
 
@@ -514,39 +548,39 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
   }
 
   case "call": {
-    return evalCall(instr, env, heap, funcs);
+    return evalCall(instr, state);
   }
 
   case "alloc": {
-    let amt = getInt(instr, env, 0);
+    let amt = getInt(instr, state.env, 0);
     let typ = instr.type;
     if (!(typeof typ === "object" && typ.hasOwnProperty('ptr'))) {
       throw error(`cannot allocate non-pointer type ${instr.type}`);
     }
-    let ptr = alloc(typ, Number(amt), heap);
-    env.set(instr.dest, ptr);
+    let ptr = alloc(typ, Number(amt), state.heap);
+    state.env.set(instr.dest, ptr);
     return NEXT;
   }
 
   case "free": {
-    let val = getPtr(instr, env, 0);
-    heap.free(val.loc);
+    let val = getPtr(instr, state.env, 0);
+    state.heap.free(val.loc);
     return NEXT;
   }
 
   case "store": {
-    let target = getPtr(instr, env, 0);
+    let target = getPtr(instr, state.env, 0);
     switch (target.type) {
       case "int": {
-        heap.write(target.loc, getInt(instr, env, 1));
+        state.heap.write(target.loc, getInt(instr, state.env, 1));
         break;
       }
       case "bool": {
-        heap.write(target.loc, getBool(instr, env, 1));
+        state.heap.write(target.loc, getBool(instr, state.env, 1));
         break;
       }
       default: {
-        heap.write(target.loc, getPtr(instr, env, 1));
+        state.heap.write(target.loc, getPtr(instr, state.env, 1));
         break;
       }
     }
@@ -554,20 +588,20 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
   }
 
   case "load": {
-    let ptr = getPtr(instr, env, 0);
-    let val = heap.read(ptr.loc);
+    let ptr = getPtr(instr, state.env, 0);
+    let val = state.heap.read(ptr.loc);
     if (val === undefined || val === null) {
-      throw error(`Pointer ${instr.args[0]} points to uninitialized data`);
+      throw error(`Pointer ${instr.args![0]} points to uninitialized data`);
     } else {
-      env.set(instr.dest, val);
+      state.env.set(instr.dest, val);
     }
     return NEXT;
   }
 
   case "ptradd": {
-    let ptr = getPtr(instr, env, 0)
-    let val = getInt(instr, env, 1)
-    env.set(instr.dest, { loc: ptr.loc.add(Number(val)), type: ptr.type })
+    let ptr = getPtr(instr, state.env, 0)
+    let val = getInt(instr, state.env, 1)
+    state.env.set(instr.dest, { loc: ptr.loc.add(Number(val)), type: ptr.type })
     return NEXT;
   }
 
@@ -576,12 +610,12 @@ function evalInstr(instr: bril.Instruction, env: Env, heap:Heap<Value>, funcs: b
   throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
-function evalFunc(func: bril.Function, funcs: bril.Function[], heap: Heap<Value>, env: Env)
+function evalFunc(func: bril.Function, state: State)
   : ReturnValue {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
-      let action = evalInstr(line, env, heap, funcs);
+      let action = evalInstr(line, state);
 
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -643,10 +677,10 @@ function evalProg(prog: bril.Program) {
   if (main === null) {
     console.log(`warning: no main function defined, doing nothing`);
   } else {
-    let expected = main.args;
-    let args : string[] = process.argv.slice(2, process.argv.length);
+    let expected = main.args || [];
+    let args: string[] = process.argv.slice(2, process.argv.length);
     let newEnv = parseMainArguments(expected, args);
-    evalFunc(main, prog.functions, heap, newEnv);
+    evalFunc(main, {funcs: prog.functions, heap, env: newEnv});
   }
   if (!heap.isEmpty()) {
     throw error(`Some memory locations have not been freed by end of execution.`);

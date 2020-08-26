@@ -1,0 +1,9 @@
+@main {
+  x: int = const 4;
+  jmp .label;
+.label:
+  copy1: int = id x;
+  copy2: int = id x;
+  copy3: int = id x;
+  print x;
+}

@@ -1,0 +1,10 @@
+# ARGS: -c
+# (a + b) * (b + a)
+@main {
+  a: int = const 4;
+  b: int = const 2;
+  sum1: int = add a b;
+  sum2: int = add b a;
+  prod: int = mul sum1 sum2;
+  print prod;
+}

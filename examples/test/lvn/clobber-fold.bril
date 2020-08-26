@@ -1,0 +1,21 @@
+# CMD: bril2json < {filename} | python3 ../../lvn.py -f | python3 ../../tdce.py tdce | bril2txt
+#
+@main {
+  a: int = const 4;
+  b: int = const 2;
+
+  # (a + b) * (a + b)
+  sum1: int = add a b;
+  sum2: int = add a b;
+  prod1: int = mul sum1 sum2;
+
+  # Clobber both sums.
+  sum1: int = const 0;
+  sum2: int = const 0;
+
+  # Use the sums again.
+  sum3: int = add a b;
+  prod2: int = mul sum3 sum3;
+
+  print prod2;
+}

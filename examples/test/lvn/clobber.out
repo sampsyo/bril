@@ -1,0 +1,7 @@
+@main {
+  a: int = const 4;
+  b: int = const 2;
+  lvn.2: int = add a b;
+  prod1: int = mul lvn.2 lvn.2;
+  print prod1;
+}

@@ -37,10 +37,8 @@ def successors(instr):
     Raises a ValueError if the instruction is not a terminator (jump,
     branch, or return).
     """
-    if instr['op'] == 'jmp':
-        return instr['args']  # Just one destination.
-    elif instr['op'] == 'br':
-        return instr['args'][1:]  # The first argument is the condition.
+    if instr['op'] in ('jmp', 'br'):
+        return instr['labels']
     elif instr['op'] == 'ret':
         return []  # No successors to an exit block.
     else:
@@ -52,14 +50,17 @@ def add_terminators(blocks):
     to all blocks (avoiding "fall-through" control flow transfers).
     """
     for i, block in enumerate(blocks.values()):
-        if block[-1]['op'] not in TERMINATORS:
+        if not block:
+            dest = list(blocks.keys())[i + 1]
+            block.append({'op': 'jmp', 'labels': [dest]})
+        elif block[-1]['op'] not in TERMINATORS:
             if i == len(blocks) - 1:
                 # In the last block, return.
                 block.append({'op': 'ret', 'args': []})
             else:
                 # Otherwise, jump to the next block.
                 dest = list(blocks.keys())[i + 1]
-                block.append({'op': 'jmp', 'args': [dest]})
+                block.append({'op': 'jmp', 'labels': [dest]})
 
 
 def edges(blocks):

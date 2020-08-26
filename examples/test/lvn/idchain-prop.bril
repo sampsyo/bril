@@ -1,0 +1,8 @@
+# ARGS: -p
+@main {
+  x: int = const 4;
+  copy1: int = id x;
+  copy2: int = id copy1;
+  copy3: int = id copy2;
+  print copy3;
+}

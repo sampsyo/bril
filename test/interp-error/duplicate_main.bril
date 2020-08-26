@@ -1,8 +1,8 @@
-main {
+@main {
     v: int = const 1;
     print v;
 }
-main {
+@main {
     v: int = const 2;
     print v;
 }

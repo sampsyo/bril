@@ -1,0 +1,30 @@
+@main {
+.entry:
+  x: int = const 0;
+  i: int = const 0;
+  one: int = const 1;
+
+.loop:
+  max: int = const 10;
+  cond: bool = lt i max;
+  br cond .body .exit;
+
+.body:
+  mid: int = const 5;
+  cond: bool = lt i mid;
+  br cond .then .endif;
+
+.then:
+  x: int = add x one;
+  jmp .endif;
+
+.endif:
+  factor: int = const 2;
+  x: int = mul x factor;
+
+  i: int = add i one;
+  jmp .loop;
+
+.exit:
+  print x;
+}

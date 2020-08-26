@@ -1,0 +1,31 @@
+{
+  "body": [
+    "body",
+    "entry",
+    "loop"
+  ],
+  "endif": [
+    "body",
+    "endif",
+    "entry",
+    "loop"
+  ],
+  "entry": [
+    "entry"
+  ],
+  "exit": [
+    "entry",
+    "exit",
+    "loop"
+  ],
+  "loop": [
+    "entry",
+    "loop"
+  ],
+  "then": [
+    "body",
+    "entry",
+    "loop",
+    "then"
+  ]
+}

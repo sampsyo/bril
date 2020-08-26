@@ -1,4 +1,4 @@
-main {
+@main {
   v: int = const 4;
   bp: ptr<bool> = alloc v;
   bp2: ptr<bool> = id bp;
