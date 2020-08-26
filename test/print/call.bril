@@ -1,4 +1,4 @@
-@add5(n: int) {
+@add5(n: int): int {
   five: int = const 5;
   sum: int = add n five;
   ret sum;

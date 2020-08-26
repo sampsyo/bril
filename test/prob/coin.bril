@@ -1,4 +1,0 @@
-main {
-  c: bool = flip;
-  print c;
-}

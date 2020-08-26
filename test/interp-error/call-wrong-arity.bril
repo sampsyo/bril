@@ -1,10 +1,10 @@
-main {
+@main {
     x: int = const 1;
     y: int = const 2;
     z: int = const 3;
-    call addboth x y z;
+    call @addboth x y z;
 }
-addboth(x: int, y: int) {
+@addboth(x: int, y: int) {
     w: int = add x y;
     print w;
 }

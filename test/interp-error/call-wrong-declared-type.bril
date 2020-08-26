@@ -1,11 +1,11 @@
-main {
+@main {
     x: int = const 2;
     y: int = const 2;
-    z: int = call add2 x y;
+    z: int = call @add2 x y;
     print y;
     print z;
 }
-add2(x: int, y: int): bool {
+@add2(x: int, y: int): bool {
     w: int = add x y;
     y: int = const 5;
     print w;
