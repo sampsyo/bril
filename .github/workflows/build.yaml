@@ -84,7 +84,7 @@ jobs:
           rsync --compress --recursive --checksum --itemize-changes --delete \
             -e "ssh -p \"$DEPLOY_PORT\" -i pk -o 'UserKnownHostsFile kh'" \
             $DEPLOY_SRC $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DEST
-          ssh -p $DEPLOY_PORT -i -pk -o 'UserKnownHostsFile kh' \
+          ssh -p $DEPLOY_PORT -i pk -o 'UserKnownHostsFile kh' \
             $DEPLOY_USER@$DEPLOY_HOST \
             rsync --compress --recursive --checksum --itemize-changes \
             --delete -e ssh --perms --chmod=Du=rwx,Dgo=rx,Fu=rw,Fog=r \
