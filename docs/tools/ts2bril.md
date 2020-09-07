@@ -21,7 +21,7 @@ Use
 
 Compile a TypeScript program to Bril by giving a filename on the command line:
 
-    $ bril2ts mycode.ts
+    $ ts2bril mycode.ts
 
 The compiler supports both integers (from [core Bril](../lang/core.md)) and [floating point numbers](../lang/float.md).
 Perhaps somewhat surprisingly, plain JavaScript numbers and the TypeScript `number` type map to `float` in Bril.
