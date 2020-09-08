@@ -92,12 +92,12 @@
   table: ptr<bool> = alloc n;
   call @populateTable table n;
   p: int = id two;
-.continue:
+.print.primes.up.to.continue:
   call @markMultiples table n p;
   p: int = call @findNextP table n p;
   finished: bool = eq p zero;
-  br finished .done .continue;
-.done:
+  br finished .print.primes.up.to.done .print.primes.up.to.continue;
+.print.primes.up.to.done:
   call @printUnmarked table n;
   free table;
 }
