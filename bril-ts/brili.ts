@@ -157,7 +157,7 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
   } else if (typ === "float") {
     return typeof val === "number";
   } else if (typeof typ === "object" && typ.hasOwnProperty("ptr")) {
-    return val instanceof Key;
+    return val.hasOwnProperty("loc");
   }
   throw error(`unknown type ${typ}`);
 }
