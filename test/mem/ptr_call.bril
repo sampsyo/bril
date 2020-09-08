@@ -1,0 +1,10 @@
+@funcA(p: ptr<int>) {
+  ret;
+}
+
+@main {
+  five: int = const 5;
+  x: ptr<int> = alloc five;
+  call @funcA x;
+  free x;
+}
