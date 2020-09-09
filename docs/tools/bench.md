@@ -10,12 +10,14 @@ The current benchmarks are:
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `loopfact`: Compute *n!* imperatively using a loop.
+* `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `recfact`: Compute *n!* using recursive function calls.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
+[cgroup]: https://en.wikipedia.org/wiki/Cyclic_group#Cyclically_ordered_groups
 [fizzbuzz]: https://wiki.c2.com/?FizzBuzzTest
 [qf]: https://en.wikipedia.org/wiki/Quadratic_formula
 [gvnblog]: https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/global-value-numbering/
