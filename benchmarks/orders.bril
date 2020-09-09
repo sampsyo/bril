@@ -1,0 +1,94 @@
+# For a cyclic group Zn of integers modulo n with the group operation addition (module n)
+# compute the order of each element u in Zn
+# ord(u) = n/gcd(u,n)=lcm(u,n)/u
+
+# Compute the absolute value of a number
+# if a < 0 then a * -1 else a
+@abs(a: int): int {
+  zero: int = const 0;
+  is_neg: bool = lt a zero;
+  br is_neg .mul_neg_one .abs_res;
+.mul_neg_one:
+  neg_one: int = const -1;
+  a: int = mul a neg_one;
+.abs_res:
+  ret a;
+}
+
+# Compute modulo using a%b = a-b*(a/b)
+@mod(a: int, b: int): int {
+  q: int = div a b;
+  aq: int = mul b q;
+  mod: int = sub a aq;
+  ret mod; 
+}
+
+# Compute gcd using Euclid's algorithm
+# gcd(a,b) = if b = 0 then a else gcd(b, a mod b)
+@gcd(a: int, b: int): int {
+.while.cond:
+  mod: int = call @mod a b;
+  zero: int = const 0;
+  is_term: bool = eq mod zero;
+  br is_term .while.finish .while.body;
+.while.body:
+  a: int = id b;
+  b: int = id mod;
+  jmp .while.cond;
+.while.finish:
+  ret b;
+}
+
+# compute lcm using lcm(a,b) = |a*b|/gcd(a,b)
+# technically both cannot be zero in this program... but w/e
+@lcm(a: int, b: int): int {
+  zero: int = const 0;
+  a_is_zero: bool = eq a zero;
+  br a_is_zero .check_b .is_good;
+.check_b:
+  b_is_zero: bool = eq b zero;
+  br b_is_zero .special_case .is_good;
+.special_case:
+  ret zero;
+.is_good:
+  ab: int = mul a b;
+  ab: int = call @abs ab;
+  gcdab: int = call @gcd a b;
+  lcm: int = div ab gcdab;
+  ret lcm;
+}
+
+# compute the orders of elements [1,n)
+# if use_lcm = true then compute order using lcm
+# else compute order using gcd
+@orders(u: int, n: int, use_lcm: bool) {
+.for.cond:
+  is_term: bool = eq u n;
+  br is_term .for.finish .for.body;
+.for.body:
+  br use_lcm .lcm .gcd;
+.lcm:
+  lcm: int = call @lcm u n;
+  ordu: int = div lcm u;
+  jmp .for.body.print;
+.gcd:
+  gcdun: int = call @gcd u n;
+  ordu: int = div n gcdun;
+.for.body.print:
+  print u ordu;
+  one: int = const 1;
+  u: int = add u one;
+  jmp .for.cond;
+.for.finish:
+  ret;
+}
+
+# ARGS: 96 false
+# u = 0 is special case which we take care of in main
+@main(n: int, use_lcm: bool) {
+  zero: int = const 0;
+  u: int = const 1;
+  n: int = call @abs n;
+  print zero u;
+  call @orders u n use_lcm;
+}
