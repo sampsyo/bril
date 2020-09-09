@@ -12,9 +12,11 @@ The current benchmarks are:
 * `loopfact`: Compute *n!* imperatively using a loop.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `recfact`: Compute *n!* using recursive function calls.
+* `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
 [fizzbuzz]: https://wiki.c2.com/?FizzBuzzTest
 [qf]: https://en.wikipedia.org/wiki/Quadratic_formula
 [gvnblog]: https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/global-value-numbering/
+[sievee]: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
