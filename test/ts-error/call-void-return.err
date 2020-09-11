@@ -1,1 +1,1 @@
-error: type of value returned by function does not match declaration
+error: function with void return type used in value call
