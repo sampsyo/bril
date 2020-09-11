@@ -5,12 +5,12 @@ local optimization.
 import sys
 import json
 from form_blocks import form_blocks
-from util import flatten, var_args
+from util import flatten
 
 
 def trivial_dce_pass(func):
     """Remove instructions from `func` that are never used as arguments
-    to any other function. Return a bool indicating whether we deleted
+    to any other instruction. Return a bool indicating whether we deleted
     anything.
     """
     blocks = list(form_blocks(func['instrs']))
@@ -21,7 +21,7 @@ def trivial_dce_pass(func):
     for block in blocks:
         for instr in block:
             # Mark all the variable arguments as used.
-            used.update(var_args(instr))
+            used.update(instr.get('args', []))
 
     # Delete the instructions that write to unused variables.
     changed = False
@@ -70,7 +70,7 @@ def drop_killed_local(block):
     for i, instr in enumerate(block):
         # Check for uses. Anything we use is no longer a candidate for
         # deletion.
-        for var in var_args(instr):
+        for var in instr.get('args', []):
             if var in last_def:
                 del last_def[var]
 

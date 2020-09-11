@@ -5,7 +5,7 @@ import sys
 from collections import namedtuple
 
 from form_blocks import form_blocks
-from util import flatten, var_args
+from util import flatten
 
 # A Value uniquely represents a computation in terms of sub-values.
 Value = namedtuple('Value', ['op', 'args'])
@@ -57,7 +57,7 @@ def read_first(instrs):
     read = set()
     written = set()
     for instr in instrs:
-        read.update(set(var_args(instr)) - written)
+        read.update(set(instr.get('args', [])) - written)
         if 'dest' in instr:
             written.add(instr['dest'])
     return read
@@ -104,7 +104,7 @@ def lvn_block(block, lookup, canonicalize, fold):
     for instr, last_write in zip(block, last_writes(block)):
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
-        argvars = var_args(instr)
+        argvars = instr.get('args', [])
         argnums = tuple(var2num[var] for var in argvars)
 
         # Value operations are candidates for replacement.

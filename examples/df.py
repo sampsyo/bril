@@ -4,7 +4,6 @@ from collections import namedtuple
 
 from form_blocks import form_blocks
 import cfg
-from util import var_args
 
 # A single dataflow analysis consists of these part:
 # - forward: True for forward, False for backward.
@@ -105,7 +104,7 @@ def use(block):
     defined = set()  # Locally defined.
     used = set()
     for i in block:
-        used.update(v for v in var_args(i) if v not in defined)
+        used.update(v for v in i.get('args', []) if v not in defined)
         if 'dest' in i:
             defined.add(i['dest'])
     return used
