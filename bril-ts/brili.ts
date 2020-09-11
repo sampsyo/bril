@@ -162,6 +162,21 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
   throw error(`unknown type ${typ}`);
 }
 
+/**
+ * Check whether the types are equal.
+ */
+function typeCmp(lhs: bril.Type, rhs: bril.Type): boolean {
+  if (lhs === "int" || lhs == "bool" || lhs == "float") {
+    return lhs == rhs;
+  } else {
+    if (typeof rhs === "object" && rhs.hasOwnProperty("ptr")) {
+      return typeCmp(lhs.ptr, rhs.ptr);
+    } else {
+      return false;
+    }
+  }
+}
+
 function get(env: Env, ident: bril.Ident) {
   let val = env.get(ident);
   if (typeof val === 'undefined') {
@@ -348,7 +363,10 @@ function evalCall(instr: bril.Operation, state: State): Action {
     if (!typeCheck(retVal, instr.type)) {
       throw error(`type of value returned by function does not match destination type`);
     }
-    if (func.type !== instr.type ) {
+    if (func.type === undefined) {
+      throw error(`function with void return type used in value call`);
+    }
+    if (!typeCmp(instr.type, func.type)) {
       throw error(`type of value returned by function does not match declaration`);
     }
     state.env.set(instr.dest, retVal);

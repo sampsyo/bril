@@ -1,0 +1,23 @@
+{
+  "functions": [
+    {
+      "name": "ident",
+      "args": [{"name": "p", "type": {"ptr": "int"}}],
+      "type": {"ptr": "int"},
+      "instrs": [
+        { "op": "ret", "args": ["p"] }
+      ]
+    },
+    {
+      "name": "main",
+      "args": [],
+      "instrs": [
+        { "op": "const", "type": "int", "dest": "a", "value": 9 },
+        { "op": "alloc", "type": {"ptr": "int"}, "args": ["a"], "dest": "b" },
+        { "op": "call", "type": {"ptr": "int"}, "dest": "c",
+          "funcs": ["ident"], "args": ["b"] },
+        { "op": "free", "args": ["b"] }
+      ]
+    }
+  ]
+}

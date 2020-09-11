@@ -1,0 +1,9 @@
+@ident(p: ptr<int>): ptr<int> {
+  ret p;
+}
+@main {
+  a: int = const 9;
+  b: ptr<int> = alloc a;
+  c: ptr<int> = call @ident b;
+  free b;
+}
