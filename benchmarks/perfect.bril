@@ -1,4 +1,4 @@
-# ARGS: 10
+# ARGS: 8128 
 @main(input: int) {
   n: int = id input;
   v0: int = const 0;
