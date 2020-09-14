@@ -1,0 +1,55 @@
+# Use a linear congruential generator to generate random numbers.
+@rand(seq: ptr<int>, m: int) {
+  a: int = const 48271;
+  c: int = const 0;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  next: int = mul next m;
+  next: int = sub axpc next;
+  store seq next;
+}
+
+@randarray(size: int) : ptr<int> {
+  arr: ptr<int> = alloc size;
+  m: int = const 1000;
+  i: int = const 0;
+  one: int = const 1;
+  seq: ptr<int> = alloc one;
+  store seq size;
+.randarray.loop:
+  cond: bool = lt i size;
+  br cond .randarray.body .randarray.done;
+.randarray.body:
+  call @rand seq m;
+  val: int = load seq;
+  loc: ptr<int> = ptradd arr i;
+  store loc val;
+.randarray.loop_end:
+  i: int = add i one;
+  jmp .randarray.loop;
+.randarray.done:
+  free seq;
+  ret arr;
+}
+
+# ARGS: 10
+@main(size: int) {
+  arr: ptr<int> = call @randarray size;
+  one: int = const 1;
+  i: int = const 0;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<int> = ptradd arr i;
+  val: int = load loc;
+  print val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  free arr;
+  ret;
+}
