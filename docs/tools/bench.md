@@ -18,7 +18,7 @@ The current benchmarks are:
 * `ackermann`: Print the value of `Ack(m, n)`, the [two-argument Ackermann-Péter function][ackermann].
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `sqrt`: Implements the [Newton-Raphson Method][newton] of approximating the square root of a number to arbitrary precision
-* `prefect`: Check if input argument is a pefect number.  Returns output as linux style return code. 
+* `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code. 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
 [cgroup]: https://en.wikipedia.org/wiki/Cyclic_group#Cyclically_ordered_groups
