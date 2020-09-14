@@ -19,6 +19,7 @@ The current benchmarks are:
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `sqrt`: Implements the [Newton-Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
+* `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -32,3 +33,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
 [matmul]: https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm#Iterative_algorithm
 [rng]: https://en.wikipedia.org/wiki/Linear_congruential_generator
+[euclidean_into]: https://en.wikipedia.org/wiki/Euclidean_algorithm
