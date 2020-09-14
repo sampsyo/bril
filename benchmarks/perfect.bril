@@ -25,7 +25,7 @@
 .for.end.2:
   comp2: bool = eq sum n;
   br comp2 .if.success .if.failure.end;
-  .if.success
+  .if.success:
    result: int = v1;
   .if.failure.end
   print result;
