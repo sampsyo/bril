@@ -1,3 +1,4 @@
+# ARGS: 42
 @main(input : int) {
   sum : int = const 0;
   two : int = const 2;
