@@ -16,3 +16,4 @@
     - [Editor Plugin](tools/plugin.md)
     - [Type Inference](tools/infer.md)
     - [Benchmarks](tools/bench.md)
+    - [OCaml Library](tools/ocaml.md)
