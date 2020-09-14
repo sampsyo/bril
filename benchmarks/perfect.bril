@@ -29,4 +29,5 @@
    result: int = id 1;
   .if.failure.end
   print result;
+  ret result;
 }
