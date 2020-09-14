@@ -27,7 +27,7 @@
   br comp2 .if.success .if.failure.end;
   .if.success:
    result: int = v1;
-  .if.failure.end
+  .if.failure.end:
   print result;
   ret result;
 }
