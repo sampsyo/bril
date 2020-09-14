@@ -1,0 +1,59 @@
+@main {
+  v0: float = const 327;
+  n: float = id v0;
+  v1: float = const 0.00001;
+  precision: float = id v1;
+  v2: float = id n;
+  x: float = id v2;
+  v3: bool = const true;
+  notdone: bool = id v3;
+.for.cond.4:
+  v5: bool = id notdone;
+  br v5 .for.body.4 .for.end.4;
+.for.body.4:
+  v6: float = id n;
+  v7: float = id x;
+  v8: float = fdiv v6 v7;
+  root: float = id v8;
+  v9: float = id x;
+  v10: float = id root;
+  v11: float = fadd v9 v10;
+  root: float = id v11;
+  v12: float = const 0.5;
+  v13: float = id root;
+  v14: float = fmul v12 v13;
+  root: float = id v14;
+  v15: float = id root;
+  v16: float = id x;
+  v17: float = fsub v15 v16;
+  diff: float = id v17;
+  v19: float = id diff;
+  v20: float = const 0;
+  v21: bool = flt v19 v20;
+  br v21 .then.18 .else.18;
+.then.18:
+  v22: float = const 0;
+  v23: float = id diff;
+  v24: float = fsub v22 v23;
+  diff: float = id v24;
+  jmp .endif.18;
+.else.18:
+.endif.18:
+  v26: float = id diff;
+  v27: float = id precision;
+  v28: bool = flt v26 v27;
+  br v28 .then.25 .else.25;
+.then.25:
+  v29: bool = const false;
+  notdone: bool = id v29;
+  jmp .endif.25;
+.else.25:
+.endif.25:
+  v30: float = id root;
+  x: float = id v30;
+  jmp .for.cond.4;
+.for.end.4:
+  v31: float = id x;
+  print v31;
+  v32: int = const 0;
+}

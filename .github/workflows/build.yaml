@@ -44,6 +44,8 @@ jobs:
 
       - name: Install Turnt
         run: pip install turnt
+      - name: Problem matcher
+        run: echo '::add-matcher::.github/tap-matcher.json'
       - name: Tests
         run: PATH=$PATH:`yarn global bin` make test TURNTARGS=-v
 

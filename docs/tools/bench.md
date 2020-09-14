@@ -14,7 +14,12 @@ The current benchmarks are:
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `recfact`: Compute *n!* using recursive function calls.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
+* `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `ackermann`: Print the value of `Ack(m, n)`, the [two-argument Ackermann-Péter function][ackermann].
+* `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `sqrt`: Implements the [Newton-Raphson Method][newton] of approximating the square root of a number to arbitrary precision
+* `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code. 
+* `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -23,4 +28,8 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [qf]: https://en.wikipedia.org/wiki/Quadratic_formula
 [gvnblog]: https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/global-value-numbering/
 [sievee]: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
+[collatz]: https://en.wikipedia.org/wiki/Collatz_conjecture
 [ackermann]: https://en.wikipedia.org/wiki/Ackermann_function
+[newton]: https://en.wikipedia.org/wiki/Newton%27s_method
+[matmul]: https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm#Iterative_algorithm
+[rng]: https://en.wikipedia.org/wiki/Linear_congruential_generator
