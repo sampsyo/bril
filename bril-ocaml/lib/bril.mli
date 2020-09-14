@@ -56,6 +56,8 @@ type func = {
   args : dest list;
   ret_type : bril_type option;
   body : instr list;
+  blocks : instr list String.Map.t;
+  cfg : string list String.Map.t;
 }
 [@@deriving sexp_of]
 

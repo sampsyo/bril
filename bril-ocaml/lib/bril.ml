@@ -56,10 +56,47 @@ type func = {
   args : dest list;
   ret_type : bril_type option;
   body : instr list;
+  blocks : instr list String.Map.t;
+  cfg : string list String.Map.t;
 }
 [@@deriving sexp_of]
 
 type t = { funcs : func list } [@@deriving sexp_of]
+
+let to_blocks_and_cfg instrs =
+  let block_name i = sprintf "block%d" i in
+  let (name, block, blocks) =
+    List.fold instrs
+      ~init:(block_name 0, [], [])
+      ~f:(fun (name, block, blocks) instr ->
+        match instr with
+        | Label name -> (name, block, blocks)
+        | Jmp _
+        | Br _
+        | Ret _ ->
+            let blocks = (name, List.rev (instr :: block)) :: blocks in
+            (block_name (List.length blocks), [], blocks)
+        | _ -> (name, instr :: block, blocks))
+  in
+  let blocks =
+    (name, List.rev block) :: blocks
+    |> List.rev_filter ~f:(fun (_, block) -> not (List.is_empty block))
+  in
+  let cfg =
+    List.mapi blocks ~f:(fun i (name, block) ->
+        let next =
+          match List.last_exn block with
+          | Jmp label -> [ label ]
+          | Br (_, l1, l2) -> [ l1; l2 ]
+          | Ret _ -> []
+          | _ -> (
+              match List.nth blocks (i + 1) with
+              | None -> []
+              | Some (label, _) -> [ label ] )
+        in
+        (name, next))
+  in
+  (String.Map.of_alist_exn blocks, String.Map.of_alist_exn cfg)
 
 let parse input =
   let json = Yojson.Basic.from_string input in
@@ -138,6 +175,7 @@ let parse input =
     let args = json |> member "args" |> to_list |> List.map ~f:to_arg in
     let ret_type = json |> member "type" |> to_type_option in
     let body = json |> member "instrs" |> to_list |> List.map ~f:to_instr in
-    { name; args; ret_type; body }
+    let (blocks, cfg) = to_blocks_and_cfg body in
+    { name; args; ret_type; body; blocks; cfg }
   in
   { funcs = json |> member "functions" |> to_list |> List.map ~f:to_func }
