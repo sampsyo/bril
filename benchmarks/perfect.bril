@@ -22,7 +22,7 @@
 .for.incre:
   i: int = add i v1;
   jmp .for.cond.1;
-.for.end.2:
+.for.end:
   comp2: bool = eq sum n;
   br comp2 .if.success .if.failure.end;
   .if.success:
