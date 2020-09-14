@@ -29,5 +29,5 @@
    result: int = id v0;
   .if.failure.end:
   print result;
-  ret result;
+  
 }
