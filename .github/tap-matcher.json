@@ -1,17 +1,20 @@
 {
-    "problemMatcher": [{
-        "owner": "turnt",
-        "pattern": [
-            {
+    "problemMatcher": [
+        {
+            "owner": "turnt",
+            "pattern": [{
                 "regexp": "^not ok \\d+ - ([^#\\s]+)\\s+#\\s+(.*)",
                 "message": 1,
                 "file": 2
-            },
-            {
-                "regexp": "^not ok \\d+ - ([^#\\s]+).*",
+            }]
+        },
+        {
+            "owner": "turnt",
+            "pattern": [{
+                "regexp": "^not ok \\d+ - ([^#\\s]+)",
                 "message": 0,
                 "file": 1
-            }
-        ]
-    }]
+            }]
+        }
+    ]
 }
