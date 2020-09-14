@@ -1,10 +1,10 @@
 {
-    "problemMatcher": {
+    "problemMatcher": [{
         "owner": "turnt",
         "pattern": [{
             "regexp": "^(not ok \d+ - ([^#]+).*)",
             "file": 1,
             "message": 0
         }]
-    }
+    }]
 }
