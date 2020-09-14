@@ -1,0 +1,12 @@
+@main {
+  a: int = const 2;
+  b: int = id a;
+  c: bool = eq a b;
+  d: bool = id c;
+}
+
+@f(i: int): bool {
+  zero: int = const 0;
+  b: bool = eq i zero;
+  ret b;
+}

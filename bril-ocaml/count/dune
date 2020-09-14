@@ -1,0 +1,4 @@
+(executable
+  (name count)
+  (libraries bril core yojson)
+  (preprocess (pps ppx_jane)))
