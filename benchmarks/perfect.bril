@@ -6,7 +6,7 @@
   v2: int = const 2;
   sum: int = v1;
   i: int = v2;
-  result: int = id 0;
+  result: int = v0;
 .for.cond.1:
   ii: int = mul i i;
   comp: bool = gt ii n;
@@ -26,7 +26,7 @@
   comp2: bool = eq sum n;
   br comp2 .if.success .if.failure.end;
   .if.success
-   result: int = id 1;
+   result: int = v1;
   .if.failure.end
   print result;
   ret result;
