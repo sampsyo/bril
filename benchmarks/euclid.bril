@@ -1,0 +1,57 @@
+@main {
+  v0: int = const 23789216;
+  x: int = id v0;
+  v1: int = const 1748698766;
+  y: int = id v1;
+  v2: int = id x;
+  v3: int = id y;
+  f: int = call @gcd v2 v3;
+  f: int = id f;
+  v4: int = id f;
+  print v4;
+  v5: int = const 0;
+}
+@mod(r: int, s: int): int {
+  v0: int = id r;
+  v1: int = id r;
+  v2: int = id s;
+  v3: int = div v1 v2;
+  v4: int = id s;
+  v5: int = mul v3 v4;
+  v6: int = sub v0 v5;
+  result: int = id v6;
+  v7: int = id result;
+  ret v7;
+}
+@gcd(a: int, b: int): int {
+  v0: int = const 0;
+  zero: int = id v0;
+  v1: int = id b;
+  v2: int = id zero;
+  v3: bool = eq v1 v2;
+  cond_temp: bool = id v3;
+  v4: bool = not cond_temp;
+  cond: bool = id v4;
+.for.cond.5:
+  v6: bool = id cond;
+  br v6 .for.body.5 .for.end.5;
+.for.body.5:
+  v7: int = id b;
+  temp: int = id v7;
+  v8: int = id a;
+  v9: int = id b;
+  v10: int = call @mod v8 v9;
+  b: int = id v10;
+  v11: int = id temp;
+  a: int = id v11;
+  v12: int = id b;
+  v13: int = id zero;
+  v14: bool = eq v12 v13;
+  cond_temp: bool = id v14;
+  v15: bool = not cond_temp;
+  cond: bool = id v15;
+  jmp .for.cond.5;
+.for.end.5:
+  v16: int = id a;
+  ret v16;
+}
