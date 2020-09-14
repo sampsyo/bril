@@ -1,7 +1,7 @@
 {
     "problemMatcher": [
         {
-            "owner": "turnt",
+            "owner": "turnt-msg",
             "pattern": [{
                 "regexp": "^not ok \\d+ - ([^#\\s]+)\\s+#\\s+(.*)",
                 "message": 1,
@@ -9,7 +9,7 @@
             }]
         },
         {
-            "owner": "turnt",
+            "owner": "turnt-nomsg",
             "pattern": [{
                 "regexp": "^not ok \\d+ - ([^#\\s]+)",
                 "message": 0,
