@@ -1,4 +1,4 @@
-# ARGS: 8128 
+# ARGS: 496 
 @main(input: int) {
   n: int = id input;
   v0: int = const 0;
@@ -10,15 +10,16 @@
 .for.cond.1:
   ii: int = mul i i;
   comp: bool = gt ii n;
-  br comp .for.body .for.end;
+  br comp .for.end .for.body;
 .for.body:
   qut: int = div n i;
   mpt: int = mul qut i;
-  dif: int = sub n qut;
+  dif: int = sub n mpt;
   comp1: bool = eq dif v0;
   br comp1 .if.body .for.incre;
  .if.body:
-  sum: int = add sum v1;
+  sum: int = add sum i;
+  sum: int = add sum qut;
 .for.incre:
   i: int = add i v1;
   jmp .for.cond.1;
@@ -29,5 +30,5 @@
    result: int = id v0;
   .if.failure.end:
   print result;
-  
+  ret v0;
 }
