@@ -5,6 +5,7 @@ import re
 import csv
 import sys
 import os
+from concurrent import futures
 
 ARGS_RE = r'ARGS: (.*)'
 TIMEOUT = 5
@@ -65,40 +66,45 @@ def brench(config_path, file):
     with open(config_path) as f:
         config = tomlkit.loads(f.read())
 
-    # CSV for collected outputs.
-    writer = csv.writer(sys.stdout)
-    writer.writerow(['benchmark', 'run', 'result'])
+    with futures.ThreadPoolExecutor() as pool:
+        # Submit jobs.
+        futs = {}
+        for fn in file:
+            for name, run in config['runs'].items():
+                futs[(fn, name)] = pool.submit(run_bench, run['pipeline'], fn)
 
-    for fn in file:
-        first_out = None
-        for name, run in config['runs'].items():
-            # Actually run the benchmark.
-            try:
-                stdout, stderr = run_bench(run['pipeline'], fn)
-            except subprocess.TimeoutExpired:
-                stdout, stderr = '', ''
-                status = 'timeout'
-            else:
-                status = None
+        # Collect results and print CSV.
+        writer = csv.writer(sys.stdout)
+        writer.writerow(['benchmark', 'run', 'result'])
+        for fn in file:
+            first_out = None
+            for name in config['runs']:
+                try:
+                    stdout, stderr = futs[(fn, name)].result()
+                except subprocess.TimeoutExpired:
+                    stdout, stderr = '', ''
+                    status = 'timeout'
+                else:
+                    status = None
 
-            # Check correctness.
-            if first_out is None:
-                first_out = stdout
-            elif stdout != first_out and not status:
-                status = 'incorrect'
+                # Check correctness.
+                if first_out is None:
+                    first_out = stdout
+                elif stdout != first_out and not status:
+                    status = 'incorrect'
 
-            # Extract the figure of merit.
-            result = get_result([stdout, stderr], config['extract'])
-            if not result:
-                status = 'missing'
+                # Extract the figure of merit.
+                result = get_result([stdout, stderr], config['extract'])
+                if not result:
+                    status = 'missing'
 
-            # Report the result.
-            bench, _ = os.path.splitext(os.path.basename(fn))
-            writer.writerow([
-                bench,
-                name,
-                status if status else result,
-            ])
+                # Report the result.
+                bench, _ = os.path.splitext(os.path.basename(fn))
+                writer.writerow([
+                    bench,
+                    name,
+                    status if status else result,
+                ])
 
 
 if __name__ == '__main__':
