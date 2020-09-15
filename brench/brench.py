@@ -60,13 +60,15 @@ def get_result(strings, extract_re):
 
 @click.command()
 @click.option('-c', '--config', 'config_path',
-              nargs=1, type=click.Path(exists=True))
+              type=click.Path(exists=True))
+@click.option('-j', '--jobs', default=None, type=int,
+              help='parallel threads to use (default: suitable for machine)')
 @click.argument('file', nargs=-1, type=click.Path(exists=True))
-def brench(config_path, file):
+def brench(config_path, file, jobs):
     with open(config_path) as f:
         config = tomlkit.loads(f.read())
 
-    with futures.ThreadPoolExecutor() as pool:
+    with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.
         futs = {}
         for fn in file:
