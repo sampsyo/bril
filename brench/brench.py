@@ -69,11 +69,28 @@ def brench(config_path, file):
     writer.writerow(['benchmark', 'run', 'result'])
 
     for fn in file:
+        first_out = None
         for name, run in config['runs'].items():
+            # Actually run the benchmark.
             stdout, stderr = run_bench(run['pipeline'], fn)
+
+            # Check correctness.
+            if first_out is None:
+                first_out = stdout
+                correct = True
+            else:
+                correct = stdout == first_out
+
+            # Extract the figure of merit.
             result = get_result([stdout, stderr], config['extract'])
+
+            # Report the result.
             bench, _ = os.path.splitext(os.path.basename(fn))
-            writer.writerow([bench, name, result or ''])
+            writer.writerow([
+                bench,
+                name,
+                (result or '') if correct else 'incorrect',
+            ])
 
 
 if __name__ == '__main__':
