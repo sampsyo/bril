@@ -28,6 +28,19 @@ def run_pipe(cmds, input):
     return last_proc.communicate()
 
 
+def run_bench(cmds, fn, extract_re):
+    with open(fn) as f:
+        in_data = f.read()
+    stdout, stderr = run_pipe(cmds, in_data)
+
+    # Look for results.
+    for out in stdout, stderr:
+        match = extract_re.search(out)
+        if match:
+            return match.group(1)
+    return None
+
+
 @click.command()
 @click.option('-c', '--config', 'config_path',
               nargs=1, type=click.Path(exists=True))
@@ -48,18 +61,7 @@ def brench(config_path, file):
             for c in run['pipeline']
         ]
         for fn in file:
-            with open(fn) as f:
-                in_data = f.read()
-            stdout, stderr = run_pipe(cmds, in_data)
-
-            # Look for results.
-            result = None
-            for out in stdout, stderr:
-                match = extract_re.search(out)
-                if match:
-                    result = match.group(1)
-                    break
-
+            result = run_bench(cmds, fn, extract_re)
             writer.writerow([name, fn, result or ''])
 
 
