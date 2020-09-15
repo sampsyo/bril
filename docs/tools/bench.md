@@ -7,6 +7,8 @@ The `bench` directory in the Bril repository contains a fledgling suite of micro
 The current benchmarks are:
 
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
+* `eight-queens`: Counts the number of solutions for *n* queens problem - a generalization of [Eight queens puzzle][eight_queens].
+* `euclid`: Calculates the greatest common divisor between two large numbers using the [Euclidean Algorithm][euclid] with a helper function for the modulo operator.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `loopfact`: Compute *n!* imperatively using a loop.
@@ -21,7 +23,8 @@ The current benchmarks are:
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code. 
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
-* 'euclid': Calculates the greatest common divisor between two large numbers using the [Euclidean Algorithm][euclid] with a helper function for the modulo operator.
+
+
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -37,3 +40,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [rng]: https://en.wikipedia.org/wiki/Linear_congruential_generator
 [euclidean_into]: https://en.wikipedia.org/wiki/Euclidean_algorithm
 [euclid]: https://en.wikipedia.org/wiki/Euclidean_algorithm#Euclidean_division
+[eight_queens]: https://en.wikipedia.org/wiki/Eight_queens_puzzle
