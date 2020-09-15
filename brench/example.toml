@@ -1,3 +1,5 @@
+extract = 'total_dyn_inst: (\d+)'
+
 [runs.baseline]
 pipeline = [
     "bril2json",

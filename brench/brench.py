@@ -1,17 +1,20 @@
 import click
 import tomlkit
 import subprocess
+import re
 
 
 def run_pipe(cmds, input):
     last_proc = None
-    for cmd in cmds:
+    for i, cmd in enumerate(cmds):
         proc = subprocess.Popen(
             cmd,
             shell=True,
             text=True,
             stdin=last_proc.stdout if last_proc else subprocess.PIPE,
             stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+                   if i == len(cmds) - 1 else subprocess.DEVNULL,
         )
         if not last_proc:
             first_proc = proc
@@ -20,8 +23,7 @@ def run_pipe(cmds, input):
     # Send stdin and collect stdout.
     first_proc.stdin.write(input)
     first_proc.stdin.close()
-    stdout, _ = last_proc.communicate()
-    return stdout
+    return last_proc.communicate()
 
 
 @click.command()
@@ -32,6 +34,8 @@ def brench(config_path, file):
     with open(config_path) as f:
         config = tomlkit.loads(f.read())
 
+    extract_re = re.compile(config['extract'])
+
     for name, run in config['runs'].items():
         cmds = [
             c.format(args='5')
@@ -41,8 +45,18 @@ def brench(config_path, file):
         for fn in file:
             with open(fn) as f:
                 in_data = f.read()
-            out_data = run_pipe(cmds, in_data)
-            print(out_data)
+            stdout, stderr = run_pipe(cmds, in_data)
+
+            # Look for results.
+            for out in stdout, stderr:
+                match = extract_re.search(out)
+                if match:
+                    result = match.group(1)
+                    break
+            else:
+                print('no results')
+                continue
+            print(name, result)
 
 
 if __name__ == '__main__':
