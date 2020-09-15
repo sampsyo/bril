@@ -1,3 +1,6 @@
+"""Simple comparative benchmark runner.
+"""
+
 import click
 import tomlkit
 import subprocess
@@ -7,6 +10,8 @@ import sys
 import os
 from concurrent import futures
 import glob
+
+__version__ = '1.0.0'
 
 ARGS_RE = r'ARGS: (.*)'
 TIMEOUT = 5
