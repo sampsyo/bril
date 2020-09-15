@@ -59,26 +59,25 @@ def get_result(strings, extract_re):
 
 
 @click.command()
-@click.option('-c', '--config', 'config_path',
-              type=click.Path(exists=True))
 @click.option('-j', '--jobs', default=None, type=int,
               help='parallel threads to use (default: suitable for machine)')
-@click.argument('file', nargs=-1, type=click.Path(exists=True))
-def brench(config_path, file, jobs):
+@click.argument('config_path', metavar='CONFIG', type=click.Path(exists=True))
+@click.argument('files', nargs=-1, type=click.Path(exists=True))
+def brench(config_path, files, jobs):
     with open(config_path) as f:
         config = tomlkit.loads(f.read())
 
     with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.
         futs = {}
-        for fn in file:
+        for fn in files:
             for name, run in config['runs'].items():
                 futs[(fn, name)] = pool.submit(run_bench, run['pipeline'], fn)
 
         # Collect results and print CSV.
         writer = csv.writer(sys.stdout)
         writer.writerow(['benchmark', 'run', 'result'])
-        for fn in file:
+        for fn in files:
             first_out = None
             for name in config['runs']:
                 try:
