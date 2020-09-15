@@ -4,6 +4,7 @@ import subprocess
 import re
 import csv
 import sys
+import os
 
 ARGS_RE = r'ARGS: (.*)'
 
@@ -64,12 +65,13 @@ def brench(config_path, file):
 
     # CSV for collected outputs.
     writer = csv.writer(sys.stdout)
-    writer.writerow(['run', 'benchmark', 'result'])
+    writer.writerow(['benchmark', 'run', 'result'])
 
-    for name, run in config['runs'].items():
-        for fn in file:
+    for fn in file:
+        for name, run in config['runs'].items():
             result = run_bench(run['pipeline'], fn, config['extract'])
-            writer.writerow([name, fn, result or ''])
+            bench, _ = os.path.splitext(os.path.basename(fn))
+            writer.writerow([bench, name, result or ''])
 
 
 if __name__ == '__main__':
