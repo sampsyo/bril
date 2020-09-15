@@ -37,10 +37,14 @@ def run_pipe(cmds, input):
         )
         procs.append(proc)
 
-    # Send stdin and collect stdout.
-    procs[0].stdin.write(input)
-    procs[0].stdin.close()
-    return procs[-1].communicate(timeout=TIMEOUT)
+    try:
+        # Send stdin and collect stdout.
+        procs[0].stdin.write(input)
+        procs[0].stdin.close()
+        return procs[-1].communicate(timeout=TIMEOUT)
+    finally:
+        for proc in procs:
+            proc.kill()
 
 
 def run_bench(pipeline, fn):
