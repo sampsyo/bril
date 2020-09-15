@@ -31,7 +31,7 @@ def run_pipe(cmds, input):
     return last_proc.communicate()
 
 
-def run_bench(pipeline, fn, extract_re):
+def run_bench(pipeline, fn):
     # Load the benchmark.
     with open(fn) as f:
         in_data = f.read()
@@ -45,11 +45,12 @@ def run_bench(pipeline, fn, extract_re):
         c.format(args=args)
         for c in pipeline
     ]
-    stdout, stderr = run_pipe(cmds, in_data)
+    return run_pipe(cmds, in_data)
 
-    # Look for results.
-    for out in stdout, stderr:
-        match = re.search(extract_re, out)
+
+def get_result(strings, extract_re):
+    for s in strings:
+        match = re.search(extract_re, s)
         if match:
             return match.group(1)
     return None
@@ -69,7 +70,8 @@ def brench(config_path, file):
 
     for fn in file:
         for name, run in config['runs'].items():
-            result = run_bench(run['pipeline'], fn, config['extract'])
+            stdout, stderr = run_bench(run['pipeline'], fn)
+            result = get_result([stdout, stderr], config['extract'])
             bench, _ = os.path.splitext(os.path.basename(fn))
             writer.writerow([bench, name, result or ''])
 
