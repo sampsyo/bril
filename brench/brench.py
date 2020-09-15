@@ -7,6 +7,7 @@ import sys
 import os
 
 ARGS_RE = r'ARGS: (.*)'
+TIMEOUT = 5
 
 
 def run_pipe(cmds, input):
@@ -28,7 +29,7 @@ def run_pipe(cmds, input):
     # Send stdin and collect stdout.
     first_proc.stdin.write(input)
     first_proc.stdin.close()
-    return last_proc.communicate()
+    return last_proc.communicate(timeout=TIMEOUT)
 
 
 def run_bench(pipeline, fn):
@@ -72,7 +73,13 @@ def brench(config_path, file):
         first_out = None
         for name, run in config['runs'].items():
             # Actually run the benchmark.
-            stdout, stderr = run_bench(run['pipeline'], fn)
+            try:
+                stdout, stderr = run_bench(run['pipeline'], fn)
+            except subprocess.TimeoutExpired:
+                stdout, stderr = '', ''
+                timeout = True
+            else:
+                timeout = False
 
             # Check correctness.
             if first_out is None:
@@ -89,6 +96,7 @@ def brench(config_path, file):
             writer.writerow([
                 bench,
                 name,
+                'timeout' if timeout else
                 (result or '') if correct else 'incorrect',
             ])
 
