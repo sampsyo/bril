@@ -24,25 +24,23 @@ def run_pipe(cmds, input):
     the output of each command into the next command in the sequence.
     Collect and return the stdout and stderr from the final command.
     """
-    last_proc = None
-    for i, cmd in enumerate(cmds):
-        last = i == len(cmds) - 1
+    procs = []
+    for cmd in cmds:
+        last = len(procs) == len(cmds) - 1
         proc = subprocess.Popen(
             cmd,
             shell=True,
             text=True,
-            stdin=last_proc.stdout if last_proc else subprocess.PIPE,
+            stdin=procs[-1].stdout if procs else subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE if last else subprocess.DEVNULL,
         )
-        if not last_proc:
-            first_proc = proc
-        last_proc = proc
+        procs.append(proc)
 
     # Send stdin and collect stdout.
-    first_proc.stdin.write(input)
-    first_proc.stdin.close()
-    return last_proc.communicate(timeout=TIMEOUT)
+    procs[0].stdin.write(input)
+    procs[0].stdin.close()
+    return procs[-1].communicate(timeout=TIMEOUT)
 
 
 def run_bench(pipeline, fn):
