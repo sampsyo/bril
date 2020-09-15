@@ -23,6 +23,7 @@ The current benchmarks are:
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `binary-fmt`: Print the binary format for the given positive integer.
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
