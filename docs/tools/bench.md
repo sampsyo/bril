@@ -16,7 +16,7 @@ The current benchmarks are:
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `ackermann`: Print the value of `Ack(m, n)`, the [two-argument Ackermann-Péter function][ackermann].
-* `sum-bit`: Print the number of bits in the binary representation of the input integer.
+* `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `sqrt`: Implements the [Newton-Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
