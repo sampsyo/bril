@@ -77,27 +77,27 @@ def brench(config_path, file):
                 stdout, stderr = run_bench(run['pipeline'], fn)
             except subprocess.TimeoutExpired:
                 stdout, stderr = '', ''
-                timeout = True
+                status = 'timeout'
             else:
-                timeout = False
+                status = None
 
             # Check correctness.
             if first_out is None:
                 first_out = stdout
-                correct = True
-            else:
-                correct = stdout == first_out
+            elif stdout != first_out and not status:
+                status = 'incorrect'
 
             # Extract the figure of merit.
             result = get_result([stdout, stderr], config['extract'])
+            if not result:
+                status = 'missing'
 
             # Report the result.
             bench, _ = os.path.splitext(os.path.basename(fn))
             writer.writerow([
                 bench,
                 name,
-                'timeout' if timeout else
-                (result or '') if correct else 'incorrect',
+                status if status else result,
             ])
 
 
