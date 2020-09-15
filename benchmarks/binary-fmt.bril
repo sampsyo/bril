@@ -1,0 +1,26 @@
+# ARGS: 128
+@main(n: int) {
+	call @printBinary n;
+}
+
+@printBinary(n: int) {
+	zero: int = const 0;
+	cond: bool = eq n zero;
+	br cond .end .rec;
+.rec:
+	two: int = const 2;
+	v0: int = call @mod n two;
+	v1: int = div n two;
+	call @printBinary v1;
+	print v0;
+.end:
+}
+
+@mod(a0: int, a1: int) : int {
+	v0: int = div a0 a1;
+	v1: int = mul v0 a1;
+	v2: int = sub a0 v1;
+	ret v2;
+}
+
+

@@ -1,0 +1,70 @@
+# ARGS: 8
+@main(input: int) {
+  n: int = id input;
+  zero: int = const 0;
+  icount: int = id zero;
+  site: ptr<int> = alloc n;
+  result: int = call @queen zero n icount site;
+  print result;
+  free site;
+}
+@queen(n: int, queens: int, icount: int, site: ptr<int>): int {
+  one: int = const 1;
+  ite: int = id one;
+  ret_cond: bool = eq n queens;
+  br ret_cond .next.ret .for.cond;
+.next.ret:
+  icount: int = add icount one;
+  ret icount;
+.for.cond:
+  for_cond_0: bool = le ite queens;
+  br for_cond_0 .for.body .next.ret.1;
+.for.body:
+  nptr: ptr<int> = ptradd site n;
+  store nptr ite;
+  is_valid: bool = call @valid n site;
+  br is_valid .rec.func .next.loop;
+.rec.func:
+  n_1: int = add n one;
+  icount: int = call @queen n_1 queens icount site;
+.next.loop:
+  ite: int = add ite one;
+  jmp .for.cond;
+.next.ret.1:
+  ret icount;
+}
+@valid(n: int, site: ptr<int>): bool {
+  zero: int = const 0;
+  one: int = const 1;
+  true: bool = eq one one;
+  false: bool = eq zero one; 
+  ite: int = id zero;
+.for.cond:
+  for_cond: bool = lt ite n;
+  br for_cond .for.body .ret.end;
+.for.body:
+  iptr: ptr<int> = ptradd site ite;
+  nptr: ptr<int> = ptradd site n;
+  help_0: int = const 500;
+  vali: int = load iptr;
+  valn: int = load nptr;
+  eq_cond_0: bool = eq vali valn;
+  br eq_cond_0 .true.ret.0 .false.else;
+.true.ret.0:
+  ret false;
+.false.else:
+  sub_0: int = sub vali valn;
+  sub_1: int = sub valn vali;
+  sub_2: int = sub n ite;
+  eq_cond_1: bool = eq sub_0 sub_2;
+  eq_cond_2: bool = eq sub_1 sub_2;
+  eq_cond_12: bool = or eq_cond_1 eq_cond_2;
+  br eq_cond_12 .true.ret.1 .false.loop;
+.true.ret.1:
+  ret false;
+.false.loop:
+  ite: int = add ite one;
+  jmp .for.cond;
+.ret.end:
+  ret true;
+}
