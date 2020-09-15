@@ -13,14 +13,14 @@ TIMEOUT = 5
 def run_pipe(cmds, input):
     last_proc = None
     for i, cmd in enumerate(cmds):
+        last = i == len(cmds) - 1
         proc = subprocess.Popen(
             cmd,
             shell=True,
             text=True,
             stdin=last_proc.stdout if last_proc else subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-                   if i == len(cmds) - 1 else subprocess.DEVNULL,
+            stderr=subprocess.PIPE if last else subprocess.DEVNULL,
         )
         if not last_proc:
             first_proc = proc
