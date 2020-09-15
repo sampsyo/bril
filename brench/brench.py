@@ -5,6 +5,8 @@ import re
 import csv
 import sys
 
+ARGS_RE = r'ARGS: (.*)'
+
 
 def run_pipe(cmds, input):
     last_proc = None
@@ -28,14 +30,25 @@ def run_pipe(cmds, input):
     return last_proc.communicate()
 
 
-def run_bench(cmds, fn, extract_re):
+def run_bench(pipeline, fn, extract_re):
+    # Load the benchmark.
     with open(fn) as f:
         in_data = f.read()
+
+    # Extract arguments.
+    match = re.search(ARGS_RE, in_data)
+    args = match.group(1) if match else ''
+
+    # Run pipeline.
+    cmds = [
+        c.format(args=args)
+        for c in pipeline
+    ]
     stdout, stderr = run_pipe(cmds, in_data)
 
     # Look for results.
     for out in stdout, stderr:
-        match = extract_re.search(out)
+        match = re.search(extract_re, out)
         if match:
             return match.group(1)
     return None
@@ -49,19 +62,13 @@ def brench(config_path, file):
     with open(config_path) as f:
         config = tomlkit.loads(f.read())
 
-    extract_re = re.compile(config['extract'])
-
     # CSV for collected outputs.
     writer = csv.writer(sys.stdout)
     writer.writerow(['run', 'benchmark', 'result'])
 
     for name, run in config['runs'].items():
-        cmds = [
-            c.format(args='5')
-            for c in run['pipeline']
-        ]
         for fn in file:
-            result = run_bench(cmds, fn, extract_re)
+            result = run_bench(run['pipeline'], fn, config['extract'])
             writer.writerow([name, fn, result or ''])
 
 
