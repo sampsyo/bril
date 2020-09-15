@@ -6,6 +6,7 @@ import csv
 import sys
 import os
 from concurrent import futures
+import glob
 
 ARGS_RE = r'ARGS: (.*)'
 TIMEOUT = 5
@@ -66,6 +67,10 @@ def get_result(strings, extract_re):
 def brench(config_path, files, jobs):
     with open(config_path) as f:
         config = tomlkit.loads(f.read())
+
+    # Use configured file list, if none is specified via the CLI.
+    if not files and 'benchmarks' in config:
+        files = glob.glob(config['benchmarks'])
 
     with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.
