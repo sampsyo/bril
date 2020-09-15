@@ -13,6 +13,12 @@ TIMEOUT = 5
 
 
 def run_pipe(cmds, input):
+    """Execute a pipeline of shell commands.
+
+    Send the given input (text) string into the first command, then pipe
+    the output of each command into the next command in the sequence.
+    Collect and return the stdout and stderr from the final command.
+    """
     last_proc = None
     for i, cmd in enumerate(cmds):
         last = i == len(cmds) - 1
@@ -35,6 +41,8 @@ def run_pipe(cmds, input):
 
 
 def run_bench(pipeline, fn):
+    """Run a single benchmark pipeline.
+    """
     # Load the benchmark.
     with open(fn) as f:
         in_data = f.read()
@@ -52,6 +60,8 @@ def run_bench(pipeline, fn):
 
 
 def get_result(strings, extract_re):
+    """Extract a group from a regular expression in any of the strings.
+    """
     for s in strings:
         match = re.search(extract_re, s)
         if match:
@@ -65,6 +75,8 @@ def get_result(strings, extract_re):
 @click.argument('config_path', metavar='CONFIG', type=click.Path(exists=True))
 @click.argument('files', nargs=-1, type=click.Path(exists=True))
 def brench(config_path, files, jobs):
+    """Run a batch of benchmarks and emit a CSV of results.
+    """
     with open(config_path) as f:
         config = tomlkit.loads(f.read())
 
