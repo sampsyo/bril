@@ -13,7 +13,7 @@ Use
 ---
 
 You can include the library by adding it to the `libraries` substanza of your `dune` file.
-The interface for the library can be found in `bril.mli` -- good starting points are `from_string`, `from_file`, and `to_string`.
+The interface for the library can be found in `bril.mli`—good starting points are `from_string`, `from_file`, and `to_string`.
 A small code example for the library lives in the `count` subdirectory.
 
 For Development
