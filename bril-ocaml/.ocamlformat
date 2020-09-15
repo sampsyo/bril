@@ -1,4 +1,5 @@
 break-cases = all
+indicate-multiline-delimiters = no
 margin = 100
 parens-tuple-patterns = always
 type-decl = sparse

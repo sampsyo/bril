@@ -55,7 +55,7 @@ type func = {
   name : func_name;
   args : dest list;
   ret_type : bril_type option;
-  body : instr list;
+  instrs : instr list;
   blocks : instr list String.Map.t;
   cfg : string list String.Map.t;
 }
@@ -63,4 +63,8 @@ type func = {
 
 type t = { funcs : func list } [@@deriving sexp_of]
 
-val parse : string -> t
+val from_file : string -> t
+
+val from_string : string -> t
+
+val to_string : t -> string

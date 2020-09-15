@@ -31,12 +31,34 @@ type binop =
   | Not
   | And
   | Or
-[@@deriving sexp_of]
+[@@deriving sexp_of, equal]
+
+let binops_by_name =
+  [
+    ("add", Add);
+    ("mul", Mul);
+    ("sub", Sub);
+    ("div", Div);
+    ("eq", Eq);
+    ("lt", Lt);
+    ("gt", Gt);
+    ("le", Le);
+    ("ge", Ge);
+    ("not", Not);
+    ("and", And);
+    ("or", Or);
+  ]
+
+let binops_by_op = List.map binops_by_name ~f:(fun (a, b) -> (b, a))
 
 type unop =
   | Not
   | Id
-[@@deriving sexp_of]
+[@@deriving sexp_of, equal]
+
+let unops_by_name = [ ("not", Not); ("id", Id) ]
+
+let unops_by_op = List.map unops_by_name ~f:(fun (a, b) -> (b, a))
 
 type instr =
   | Label of label
@@ -55,7 +77,7 @@ type func = {
   name : func_name;
   args : dest list;
   ret_type : bril_type option;
-  body : instr list;
+  instrs : instr list;
   blocks : instr list String.Map.t;
   cfg : string list String.Map.t;
 }
@@ -92,14 +114,13 @@ let to_blocks_and_cfg instrs =
           | _ -> (
               match List.nth blocks (i + 1) with
               | None -> []
-              | Some (label, _) -> [ label ] )
+              | Some (label, _) -> [ label ])
         in
         (name, next))
   in
   (String.Map.of_alist_exn blocks, String.Map.of_alist_exn cfg)
 
-let parse input =
-  let json = Yojson.Basic.from_string input in
+let from_json json =
   let open Yojson.Basic.Util in
   let has_key json key =
     match json |> member key with
@@ -120,24 +141,7 @@ let parse input =
     | json -> Some (to_type json)
   in
   let to_arg json = (json |> member "name" |> to_string, json |> member "type" |> to_type) in
-  let binops =
-    String.Map.of_alist_exn
-      [
-        ("add", Add);
-        ("mul", Mul);
-        ("sub", Sub);
-        ("div", Div);
-        ("eq", Eq);
-        ("lt", Lt);
-        ("gt", Gt);
-        ("le", Le);
-        ("ge", Ge);
-        ("not", Not);
-        ("and", And);
-        ("or", Or);
-      ]
-  in
-  let unops = String.Map.of_alist_exn [ ("not", Not); ("id", Id) ] in
+
   let to_instr json =
     match json |> member "label" with
     | `String label -> Label label
@@ -147,6 +151,8 @@ let parse input =
         let labels () = json |> member "labels" |> to_list |> List.map ~f:to_string in
         let arg = List.nth_exn (args ()) in
         let label = List.nth_exn (labels ()) in
+        let mem = List.Assoc.mem ~equal:String.equal in
+        let find = List.Assoc.find_exn ~equal:String.equal in
         match json |> member "op" |> to_string with
         | "const" ->
             let const =
@@ -155,8 +161,8 @@ let parse input =
               | BoolType -> Bool (json |> member "value" |> to_bool)
             in
             Const (dest (), const)
-        | op when Map.mem binops op -> Binary (dest (), Map.find_exn binops op, arg 0, arg 1)
-        | op when Map.mem unops op -> Unary (dest (), Map.find_exn unops op, arg 0)
+        | op when mem binops_by_name op -> Binary (dest (), find binops_by_name op, arg 0, arg 1)
+        | op when mem unops_by_name op -> Unary (dest (), find unops_by_name op, arg 0)
         | "jmp" -> Jmp (label 0)
         | "br" -> Br (arg 0, label 0, label 1)
         | "call" ->
@@ -167,15 +173,92 @@ let parse input =
         | "ret" -> Ret (if List.is_empty (args ()) then None else Some (arg 0))
         | "print" -> Print (args ())
         | "nop" -> Nop
-        | op -> failwithf "invalid op: %s" op () )
+        | op -> failwithf "invalid op: %s" op ())
     | json -> failwithf "invalid label: %s" (json |> to_string) ()
   in
   let to_func json =
     let name = json |> member "name" |> to_string in
     let args = json |> member "args" |> to_list |> List.map ~f:to_arg in
     let ret_type = json |> member "type" |> to_type_option in
-    let body = json |> member "instrs" |> to_list |> List.map ~f:to_instr in
-    let (blocks, cfg) = to_blocks_and_cfg body in
-    { name; args; ret_type; body; blocks; cfg }
+    let instrs = json |> member "instrs" |> to_list |> List.map ~f:to_instr in
+    let (blocks, cfg) = to_blocks_and_cfg instrs in
+    { name; args; ret_type; instrs; blocks; cfg }
   in
   { funcs = json |> member "functions" |> to_list |> List.map ~f:to_func }
+
+let from_file filename = from_json (Yojson.Basic.from_file filename)
+
+let from_string string = from_json (Yojson.Basic.from_string string)
+
+let to_string { funcs } =
+  let of_type = function
+    | IntType -> `String "int"
+    | BoolType -> `String "bool"
+  in
+  let of_dest (name, bril_type) = [ ("dest", `String name); ("type", of_type bril_type) ] in
+  let of_instr = function
+    | Label label -> `Assoc [ ("label", `String label) ]
+    | Const (dest, const) ->
+        `Assoc
+          ([
+             ("op", `String "const");
+             ( "value",
+               match const with
+               | Int i -> `Int i
+               | Bool b -> `Bool b );
+           ]
+          @ of_dest dest)
+    | Binary (dest, op, arg1, arg2) ->
+        `Assoc
+          ([
+             ("op", `String (List.Assoc.find_exn binops_by_op op ~equal:equal_binop));
+             ("args", `List [ `String arg1; `String arg2 ]);
+           ]
+          @ of_dest dest)
+    | Unary (dest, op, arg) ->
+        `Assoc
+          ([
+             ("op", `String (List.Assoc.find_exn unops_by_op op ~equal:equal_unop));
+             ("args", `List [ `String arg ]);
+           ]
+          @ of_dest dest)
+    | Jmp label -> `Assoc [ ("op", `String "jmp"); ("labels", `List [ `String label ]) ]
+    | Br (arg, l1, l2) ->
+        `Assoc
+          [
+            ("op", `String "br");
+            ("args", `List [ `String arg ]);
+            ("labels", `List [ `String l1; `String l2 ]);
+          ]
+    | Call (dest, func_name, args) ->
+        `Assoc
+          ([
+             ("op", `String "call");
+             ("funcs", `List [ `String func_name ]);
+             ("args", `List (List.map args ~f:(fun arg -> `String arg)));
+           ]
+          @ Option.value_map dest ~default:[] ~f:of_dest)
+    | Ret arg ->
+        `Assoc
+          [
+            ("op", `String "ret");
+            ("args", Option.value_map arg ~default:`Null ~f:(fun arg -> `List [ `String arg ]));
+          ]
+    | Print args ->
+        `Assoc
+          [ ("op", `String "print"); ("args", `List (List.map args ~f:(fun arg -> `String arg))) ]
+    | Nop -> `Assoc [ ("op", `String "nop") ]
+  in
+  let of_func { name; args; ret_type; instrs; _ } =
+    `Assoc
+      [
+        ("name", `String name);
+        ( "args",
+          `List
+            (List.map args ~f:(fun (name, bril_type) ->
+                 `Assoc [ ("name", `String name); ("type", of_type bril_type) ])) );
+        ("type", Option.value_map ret_type ~default:`Null ~f:of_type);
+        ("instrs", `List (List.map instrs ~f:of_instr));
+      ]
+  in
+  `Assoc [ ("functions", `List (List.map funcs ~f:of_func)) ] |> Yojson.pretty_to_string
