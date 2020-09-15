@@ -17,7 +17,9 @@ def run_pipe(cmds, input):
             first_proc = proc
         last_proc = proc
 
+    # Send stdin and collect stdout.
     first_proc.stdin.write(input)
+    first_proc.stdin.close()
     stdout, _ = last_proc.communicate()
     return stdout
 
@@ -35,7 +37,7 @@ def brench(config_path, file):
             c.format(args='5')
             for c in run['pipeline']
         ]
-        print(cmds)
+        print(name, cmds)
         for fn in file:
             with open(fn) as f:
                 in_data = f.read()
