@@ -1,0 +1,41 @@
+# ARGS: 125
+
+# Checks to see if the given n is the long side of
+# a Pythagorean triple in the most naive way possible.
+# If a pair of sides a and b are found, then they are
+# printed; otherwise, nothing is printed. If there are
+# multiple triples for the given n then all are printed.
+
+@main(n: int) {
+  one: int = const 1;
+
+  n_sq: int = mul n n;
+
+  a: int = id one;
+
+.outer_loop:
+  b: int = id one;
+
+.inner_loop:
+  a_sq: int = mul a a;
+  b_sq: int = mul b b;
+  sum: int = add a_sq b_sq;
+
+  found: bool = eq sum n_sq;
+  br found .found .inner_continue;
+
+.found:
+  print b a;
+
+.inner_continue:
+  b: int = add b one;
+  done: bool = ge b a;
+  br done .outer_continue .inner_loop;
+
+.outer_continue:
+  a: int = add a one;
+  done: bool = ge a n;
+  br done .finish .outer_loop;
+
+.finish:
+}
