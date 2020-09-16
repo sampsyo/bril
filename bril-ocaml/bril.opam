@@ -13,6 +13,5 @@ depends: [
   "core"
   "ocaml"
   "yojson"
-  "ppx_jane"
   "dune" {>= "2.7"}
 ]
