@@ -120,7 +120,7 @@ def brench(config_path, files, jobs):
 
                 # Extract the figure of merit.
                 result = get_result([stdout, stderr], config['extract'])
-                if not result:
+                if not result and not status:
                     status = 'missing'
 
                 # Report the result.
