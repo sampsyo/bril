@@ -6,6 +6,7 @@ authors: "6120"
 maintainer: "6120"
 synopsis: "Bril wrapper"
 build: [
+  ["dune" "subst"] {pinned}
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
@@ -13,5 +14,5 @@ depends: [
   "ocaml"
   "yojson"
   "ppx_jane"
-  "dune" {build}
+  "dune" {>= "2.7"}
 ]
