@@ -1,5 +1,6 @@
 build/
 book/
+venv/
 node_modules/
 yarn.lock
 .hypothesis/

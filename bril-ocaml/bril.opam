@@ -1,0 +1,17 @@
+opam-version: "2.0"
+version: "1.2.0"
+homepage: "https://github.com/sampsyo/bril/tree/master/bril-ocaml"
+bug-reports: "https://github.com/sampsyo/bril/tree/master/bril-ocaml"
+authors: "6120"
+maintainer: "6120"
+synopsis: "Bril wrapper"
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "core"
+  "ocaml"
+  "yojson"
+  "dune" {>= "2.7"}
+]
