@@ -28,7 +28,6 @@ type binop =
   | Gt
   | Le
   | Ge
-  | Not
   | And
   | Or
 [@@deriving sexp_of, equal]
@@ -44,7 +43,6 @@ let binops_by_name =
     ("gt", Gt);
     ("le", Le);
     ("ge", Ge);
-    ("not", Not);
     ("and", And);
     ("or", Or);
   ]
