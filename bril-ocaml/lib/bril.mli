@@ -28,7 +28,6 @@ type binop =
   | Gt
   | Le
   | Ge
-  | Not
   | And
   | Or
 [@@deriving sexp_of]
