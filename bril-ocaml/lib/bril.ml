@@ -248,27 +248,13 @@ let to_string { funcs } =
     | Nop -> `Assoc [ ("op", `String "nop") ]
   in
   let of_func { name; args; ret_type; instrs; _ } =
-    if Option.is_some ret_type then
-      `Assoc
-        [
-          ("name", `String name);
-          ( "args",
-            `List
-              (List.map args ~f:(fun (name, bril_type) ->
-                   `Assoc [ ("name", `String name); ("type", of_type bril_type) ])) );
-          ("type", Option.value_map ret_type ~default:`Null ~f:of_type);
-          ("instrs", `List (List.map instrs ~f:of_instr));
-        ]
-    else
-      `Assoc
-        [
-          ("name", `String name);
+      `Assoc (
+        [ ("name", `String name);
           ( "args",
             `List
               (List.map args ~f:(fun (name, bril_type) ->
                    `Assoc [ ("name", `String name); ("type", of_type bril_type) ])) );
           ("instrs", `List (List.map instrs ~f:of_instr));
-        ]
-      
+        ] @ (Option.value_map ret_type ~default:[] ~f:(fun t -> [of_ret_type t])))
   in
   `Assoc [ ("functions", `List (List.map funcs ~f:of_func)) ] |> Yojson.pretty_to_string
