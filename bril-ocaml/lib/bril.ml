@@ -4,6 +4,7 @@ module Bril_type = Bril_type
 module Func = Func
 module Instr = Instr
 module Op = Op
+include Common
 
 type t = Func.t list [@@deriving sexp_of]
 

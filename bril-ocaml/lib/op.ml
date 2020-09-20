@@ -13,7 +13,6 @@ module Binary = struct
     | Gt
     | Le
     | Ge
-    | Not
     | And
     | Or
   [@@deriving sexp_of, equal]
@@ -29,7 +28,6 @@ module Binary = struct
       ("gt", Gt);
       ("le", Le);
       ("ge", Ge);
-      ("not", Not);
       ("and", And);
       ("or", Or);
     ]

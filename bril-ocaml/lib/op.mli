@@ -11,7 +11,6 @@ module Binary : sig
     | Gt
     | Le
     | Ge
-    | Not
     | And
     | Or
   [@@deriving sexp_of, equal]

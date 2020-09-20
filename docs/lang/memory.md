@@ -21,7 +21,7 @@ A pointer value represents a reference to a specific offset within a uniformly-t
 Operations
 ----------
 
-These re the operations that manipulate memory allocations:
+These are the operations that manipulate memory allocations:
 
 * `alloc`: Create a new memory region. One argument: the number of values to allocate (an integer). The result type is a pointer; the type of the instruction decides the type of the memory region to allocate. For example, this instruction allocates a region of integers:
 

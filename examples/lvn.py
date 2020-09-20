@@ -107,9 +107,12 @@ def lvn_block(block, lookup, canonicalize, fold):
         argvars = instr.get('args', [])
         argnums = tuple(var2num[var] for var in argvars)
 
-        # Value operations are candidates for replacement.
+        # Non-call value operations are candidates for replacement. (We
+        # could conceivably include calls to pure functions as values,
+        # but determining purity would require an interprocedural
+        # analysis.)
         val = None
-        if 'dest' in instr and 'args' in instr:
+        if 'dest' in instr and 'args' in instr and instr['op'] != 'call':
             # Construct a Value for this computation.
             val = canonicalize(Value(instr['op'], argnums))
 

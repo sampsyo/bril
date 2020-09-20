@@ -62,14 +62,14 @@ let of_json json =
   let (blocks, order, cfg) = process_instrs instrs in
   { name; args; ret_type; blocks; order; cfg }
 
-let to_json { name; args; ret_type; blocks; order; _ } =
+let to_json t =
   `Assoc
-    [
-      ("name", `String name);
-      ( "args",
-        `List
-          (List.map args ~f:(fun (name, bril_type) ->
-               `Assoc [ ("name", `String name); ("type", Bril_type.to_json bril_type) ])) );
-      ("type", Option.value_map ret_type ~default:`Null ~f:Bril_type.to_json);
-      ("instrs", `List (List.concat_map order ~f:(Map.find_exn blocks) |> List.map ~f:Instr.to_json));
-    ]
+    ( [
+        ("name", `String t.name);
+        ( "args",
+          `List
+            (List.map t.args ~f:(fun (name, bril_type) ->
+                 `Assoc [ ("name", `String name); ("type", Bril_type.to_json bril_type) ])) );
+        ("instrs", `List (instrs t |> List.map ~f:Instr.to_json));
+      ]
+    @ Option.value_map t.ret_type ~default:[] ~f:(fun t -> [ ("type", Bril_type.to_json t) ]) )
