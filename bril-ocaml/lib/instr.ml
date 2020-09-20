@@ -12,7 +12,7 @@ type t =
   | Ret of arg option
   | Print of arg list
   | Nop
-[@@deriving sexp_of]
+[@@deriving compare, sexp_of]
 
 let dest = function
   | Const (dest, _)

@@ -9,7 +9,7 @@ type t = {
   order : string list;
   cfg : string list String.Map.t;
 }
-[@@deriving sexp_of]
+[@@deriving compare, sexp_of]
 
 val instrs : t -> Instr.t list
 val of_json : Yojson.Basic.t -> t

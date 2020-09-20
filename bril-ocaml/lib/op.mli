@@ -13,7 +13,7 @@ module Binary : sig
     | Ge
     | And
     | Or
-  [@@deriving sexp_of, equal]
+  [@@deriving compare, sexp_of, equal]
 
   val by_name : (string * t) list
   val by_op : (t * string) list
@@ -23,7 +23,7 @@ module Unary : sig
   type t =
     | Not
     | Id
-  [@@deriving sexp_of, equal]
+  [@@deriving compare, sexp_of, equal]
 
   val by_name : (string * t) list
   val by_op : (t * string) list

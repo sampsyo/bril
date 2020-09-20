@@ -6,7 +6,7 @@ module Instr = Instr
 module Op = Op
 include Common
 
-type t = Func.t list [@@deriving sexp_of]
+type t = Func.t list [@@deriving compare, sexp_of]
 
 let from_json json =
   let open Yojson.Basic.Util in

@@ -15,7 +15,7 @@ module Binary = struct
     | Ge
     | And
     | Or
-  [@@deriving sexp_of, equal]
+  [@@deriving compare, sexp_of, equal]
 
   let by_name =
     [
@@ -39,7 +39,7 @@ module Unary = struct
   type t =
     | Not
     | Id
-  [@@deriving sexp_of, equal]
+  [@@deriving compare, sexp_of, equal]
 
   let by_name = [ ("not", Not); ("id", Id) ]
   let by_op = make_by_op by_name

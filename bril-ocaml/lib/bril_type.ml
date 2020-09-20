@@ -3,7 +3,7 @@ open! Core
 type t =
   | IntType
   | BoolType
-[@@deriving sexp_of]
+[@@deriving compare, sexp_of]
 
 let of_json =
   let open Yojson.Basic.Util in
