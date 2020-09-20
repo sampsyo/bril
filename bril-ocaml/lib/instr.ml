@@ -1,14 +1,17 @@
 open! Core
 open! Common
 
+type label = string [@@deriving compare, sexp_of]
+type arg = string [@@deriving compare, sexp_of]
+
 type t =
   | Label of label
-  | Const of dest * const
-  | Binary of dest * Op.Binary.t * arg * arg
-  | Unary of dest * Op.Unary.t * arg
+  | Const of Dest.t * Const.t
+  | Binary of Dest.t * Op.Binary.t * arg * arg
+  | Unary of Dest.t * Op.Unary.t * arg
   | Jmp of label
   | Br of arg * label * label
-  | Call of dest option * func_name * arg list
+  | Call of Dest.t option * string * arg list
   | Ret of arg option
   | Print of arg list
   | Nop
@@ -61,8 +64,8 @@ let of_json json =
     | "const" ->
       let const =
         match json |> member "type" |> Bril_type.of_json with
-        | IntType -> Int (json |> member "value" |> to_int)
-        | BoolType -> Bool (json |> member "value" |> to_bool)
+        | IntType -> Const.Int (json |> member "value" |> to_int)
+        | BoolType -> Const.Bool (json |> member "value" |> to_bool)
       in
       Const (dest (), const)
     | op when mem Op.Binary.by_name op -> Binary (dest (), find Op.Binary.by_name op, arg 0, arg 1)

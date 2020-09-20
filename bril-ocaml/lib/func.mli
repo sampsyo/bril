@@ -2,8 +2,8 @@ open! Core
 open! Common
 
 type t = {
-  name : func_name;
-  args : dest list;
+  name : string;
+  args : Dest.t list;
   ret_type : Bril_type.t option;
   blocks : Instr.t list String.Map.t;
   order : string list;

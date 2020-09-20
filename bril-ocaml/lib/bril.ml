@@ -1,10 +1,11 @@
 open! Core
 open! Common
 module Bril_type = Bril_type
+module Const = Const
+module Dest = Dest
 module Func = Func
 module Instr = Instr
 module Op = Op
-include Common
 
 type t = Func.t list [@@deriving compare, sexp_of]
 
