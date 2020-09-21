@@ -12,5 +12,6 @@ type t = {
 [@@deriving compare, sexp_of]
 
 val instrs : t -> Instr.t list
+val set_instrs : t -> Instr.t list -> t
 val of_json : Yojson.Basic.t -> t
 val to_json : t -> Yojson.Basic.t

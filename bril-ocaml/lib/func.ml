@@ -52,6 +52,10 @@ let process_instrs instrs =
   in
   (String.Map.of_alist_exn blocks, order, String.Map.of_alist_exn cfg)
 
+let set_instrs t instrs =
+  let (blocks, order, cfg) = process_instrs instrs in
+  { t with blocks; order; cfg }
+
 let of_json json =
   let open Yojson.Basic.Util in
   let arg_of_json json =
