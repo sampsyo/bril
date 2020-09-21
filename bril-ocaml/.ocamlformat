@@ -1,4 +1,16 @@
 break-cases = all
+break-infix = fit-or-vertical
+break-infix-before-func = true
+break-fun-decl = fit-or-vertical
+break-fun-sig = fit-or-vertical
+cases-exp-indent = 2
+infix-precedence = parens
+leading-nested-match-parens = true
 margin = 100
+module-item-spacing = compact
+ocp-indent-compat = true
 parens-tuple-patterns = always
+sequence-blank-line = compact
+single-case = sparse
 type-decl = sparse
+wrap-fun-args = false
