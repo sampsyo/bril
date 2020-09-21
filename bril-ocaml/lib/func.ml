@@ -21,7 +21,9 @@ let process_instrs instrs =
       ~init:(block_name 0, [], [])
       ~f:(fun (name, block, blocks) (instr : Instr.t) ->
         match instr with
-        | Label name -> (name, block, blocks)
+        | Label label ->
+          if List.is_empty block then (label, [], blocks)
+          else (label, [], (name, List.rev block) :: blocks)
         | Jmp _
         | Br _
         | Ret _ ->
