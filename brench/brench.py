@@ -14,10 +14,9 @@ import glob
 __version__ = '1.0.0'
 
 ARGS_RE = r'ARGS: (.*)'
-TIMEOUT = 5
 
 
-def run_pipe(cmds, input):
+def run_pipe(cmds, input, timeout):
     """Execute a pipeline of shell commands.
 
     Send the given input (text) string into the first command, then pipe
@@ -41,13 +40,13 @@ def run_pipe(cmds, input):
         # Send stdin and collect stdout.
         procs[0].stdin.write(input)
         procs[0].stdin.close()
-        return procs[-1].communicate(timeout=TIMEOUT)
+        return procs[-1].communicate(timeout=timeout)
     finally:
         for proc in procs:
             proc.kill()
 
 
-def run_bench(pipeline, fn):
+def run_bench(pipeline, fn, timeout):
     """Run a single benchmark pipeline.
     """
     # Load the benchmark.
@@ -63,7 +62,7 @@ def run_bench(pipeline, fn):
         c.format(args=args)
         for c in pipeline
     ]
-    return run_pipe(cmds, in_data)
+    return run_pipe(cmds, in_data, timeout)
 
 
 def get_result(strings, extract_re):
@@ -91,12 +90,15 @@ def brench(config_path, files, jobs):
     if not files and 'benchmarks' in config:
         files = glob.glob(config['benchmarks'])
 
+    timeout = config.get('timeout', 5)
+
     with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.
         futs = {}
         for fn in files:
             for name, run in config['runs'].items():
-                futs[(fn, name)] = pool.submit(run_bench, run['pipeline'], fn)
+                futs[(fn, name)] = pool.submit(run_bench, run['pipeline'], fn,
+                                               timeout)
 
         # Collect results and print CSV.
         writer = csv.writer(sys.stdout)
