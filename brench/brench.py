@@ -15,6 +15,7 @@ __version__ = '1.0.0'
 
 ARGS_RE = r'ARGS: (.*)'
 
+
 def run_pipe(cmds, input, timeout):
     """Execute a pipeline of shell commands.
 
@@ -89,9 +90,7 @@ def brench(config_path, files, jobs):
     if not files and 'benchmarks' in config:
         files = glob.glob(config['benchmarks'])
 
-    timeout = 5
-    if 'timeout' in config:
-        timeout = int(config['timeout'])
+    timeout = config.get('timeout', 5)
 
     with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.
