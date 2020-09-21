@@ -8,10 +8,13 @@ type t = {
   blocks : Instr.t list String.Map.t;
   order : string list;
   cfg : string list String.Map.t;
+  extra_labels : string list;
 }
 [@@deriving compare, sexp_of]
 
-let instrs { blocks; order; _ } = List.concat_map order ~f:(Map.find_exn blocks)
+let instrs { blocks; order; extra_labels; _ } =
+  List.concat_map order ~f:(fun label -> Instr.Label label :: Map.find_exn blocks label)
+  @ List.map extra_labels ~f:(fun label -> Instr.Label label)
 
 let process_instrs instrs =
   let block_name i = sprintf "block%d" i in
@@ -62,7 +65,9 @@ let of_json json =
   let ret_type = json |> member "type" |> Bril_type.of_json_opt in
   let instrs = json |> member "instrs" |> to_list_nonnull |> List.map ~f:Instr.of_json in
   let (blocks, order, cfg) = process_instrs instrs in
-  { name; args; ret_type; blocks; order; cfg }
+  let extra_labels = List.filter_map instrs ~f:(function
+        Instr.Label label when not (String.Map.mem blocks label) -> Some label | _ -> None) in
+  { name; args; ret_type; blocks; order; cfg; extra_labels }
 
 let to_json t =
   `Assoc

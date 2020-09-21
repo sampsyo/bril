@@ -8,6 +8,7 @@ type t = {
   blocks : Instr.t list String.Map.t;
   order : string list;
   cfg : string list String.Map.t;
+  extra_labels : string list;
 }
 [@@deriving compare, sexp_of]
 
