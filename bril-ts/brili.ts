@@ -675,6 +675,7 @@ function evalFunc(func: bril.Function, state: State): ReturnValue {
         for (i = 0; i < func.instrs.length; ++i) {
           let sLine = func.instrs[i];
           if ('label' in sLine && sLine.label === action.label) {
+            --i;  // Execute the label next.
             break;
           }
         }
