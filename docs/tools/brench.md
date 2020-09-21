@@ -37,7 +37,7 @@ Start with something like this:
         "brili -p {args}",
     ]
 
-The two global options are:
+The global options are:
 
 * `extract`:
   A regular expression to extract the figure of merit from a given run of a given benchmark.
@@ -45,6 +45,8 @@ The two global options are:
 * `benchmarks` (optional):
   A shell glob matching the benchmark files to run.
   You can also specify the files on the command line (see below).
+* `timeout` (optional):
+  The timeout of each benchmark run in seconds. Default of 5 seconds.
 
 Then, define an map of *runs*, which are the different treatments you want to give to each benchmark.
 Each one needs a `pipeline`, which is a list of shell commands to run in a pipelined fashion on the benchmark file, which Brench will send to the first command's standard input.
@@ -72,5 +74,5 @@ The output CSV has three columns: `benchmark`, `run`, and `result`.
 The latter is the value extracted from the run's standard output and standard error using the `extract` regular expression or one of these three status indicators:
 
 * `incorrect`: The output did not match the "golden" output (from the first run).
-* `timeout`: Execution took too long. There is currently a hard-coded timeout of 5 seconds; that should probably be configurable.
+* `timeout`: Execution took too long.
 * `missing`: The `extract` regex did not match in the final pipeline stage's standard output or standard error.
