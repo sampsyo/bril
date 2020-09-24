@@ -14,7 +14,7 @@ type t = {
 let instrs { blocks; order; _ } = List.concat_map order ~f:(Map.find_exn blocks)
 
 let process_instrs instrs =
-  let block_name i = sprintf "block%d" i in
+  let block_name i = sprintf "block_%d" i in
   let (name, block, blocks) =
     List.fold
       instrs
@@ -22,8 +22,8 @@ let process_instrs instrs =
       ~f:(fun (name, block, blocks) (instr : Instr.t) ->
         match instr with
         | Label label ->
-          if List.is_empty block then (label, [], blocks)
-          else (label, [], (name, List.rev block) :: blocks)
+          if List.is_empty block then ("label_" ^ label, [ instr ], blocks)
+          else ("label_" ^ label, [ instr ], (name, List.rev block) :: blocks)
         | Jmp _
         | Br _
         | Ret _ ->
@@ -51,6 +51,10 @@ let process_instrs instrs =
         (name, next))
   in
   (String.Map.of_alist_exn blocks, order, String.Map.of_alist_exn cfg)
+
+let set_instrs t instrs =
+  let (blocks, order, cfg) = process_instrs instrs in
+  { t with blocks; order; cfg }
 
 let of_json json =
   let open Yojson.Basic.Util in
