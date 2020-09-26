@@ -7,7 +7,8 @@ type t = {
   ret_type : Bril_type.t option;
   blocks : Instr.t list String.Map.t;
   order : string list;
-  cfg : string list String.Map.t;
+  preds : string list String.Map.t;
+  succs : string list String.Map.t;
 }
 [@@deriving compare, sexp_of]
 
@@ -36,25 +37,33 @@ let process_instrs instrs =
     |> List.rev_filter ~f:(fun (_, block) -> not (List.is_empty block))
   in
   let order = List.map blocks ~f:fst in
-  let cfg =
+  let succs =
     List.mapi blocks ~f:(fun i (name, block) ->
         let next =
           match List.last_exn block with
-          | Jmp label -> [ label ]
-          | Br (_, l1, l2) -> [ l1; l2 ]
+          | Jmp label -> [ "label_" ^ label ]
+          | Br (_, l1, l2) -> [ "label_" ^ l1; "label_" ^ l2 ]
           | Ret _ -> []
           | _ ->
             ( match List.nth blocks (i + 1) with
             | None -> []
-            | Some (label, _) -> [ label ] )
+            | Some (name, _) -> [ name ] )
         in
         (name, next))
+    |> String.Map.of_alist_exn
   in
-  (String.Map.of_alist_exn blocks, order, String.Map.of_alist_exn cfg)
+  let preds =
+    Map.fold
+      succs
+      ~init:(List.map order ~f:(fun name -> (name, [])) |> String.Map.of_alist_exn)
+      ~f:(fun ~key:name ~data:succs preds ->
+        List.fold succs ~init:preds ~f:(fun preds succ -> Map.add_multi preds ~key:succ ~data:name))
+  in
+  (String.Map.of_alist_exn blocks, order, preds, succs)
 
 let set_instrs t instrs =
-  let (blocks, order, cfg) = process_instrs instrs in
-  { t with blocks; order; cfg }
+  let (blocks, order, preds, succs) = process_instrs instrs in
+  { t with blocks; order; preds; succs }
 
 let of_json json =
   let open Yojson.Basic.Util in
@@ -65,8 +74,8 @@ let of_json json =
   let args = json |> member "args" |> to_list_nonnull |> List.map ~f:arg_of_json in
   let ret_type = json |> member "type" |> Bril_type.of_json_opt in
   let instrs = json |> member "instrs" |> to_list_nonnull |> List.map ~f:Instr.of_json in
-  let (blocks, order, cfg) = process_instrs instrs in
-  { name; args; ret_type; blocks; order; cfg }
+  let (blocks, order, preds, succs) = process_instrs instrs in
+  { name; args; ret_type; blocks; order; preds; succs }
 
 let to_json t =
   `Assoc

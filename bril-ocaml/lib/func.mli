@@ -7,7 +7,8 @@ type t = {
   ret_type : Bril_type.t option;
   blocks : Instr.t list String.Map.t;
   order : string list;
-  cfg : string list String.Map.t;
+  preds : string list String.Map.t;
+  succs : string list String.Map.t;
 }
 [@@deriving compare, sexp_of]
 
