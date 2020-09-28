@@ -1,8 +1,8 @@
 open! Core
 open! Common
 
-type label = string [@@deriving compare, sexp_of]
-type arg = string [@@deriving compare, sexp_of]
+type label = string [@@deriving compare, equal, sexp_of]
+type arg = string [@@deriving compare, equal, sexp_of]
 
 type t =
   | Label of label
@@ -15,7 +15,7 @@ type t =
   | Ret of arg option
   | Print of arg list
   | Nop
-[@@deriving compare, sexp_of]
+[@@deriving compare, equal, sexp_of]
 
 val dest : t -> Dest.t option
 val args : t -> arg list

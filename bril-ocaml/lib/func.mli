@@ -10,7 +10,7 @@ type t = {
   preds : string list String.Map.t;
   succs : string list String.Map.t;
 }
-[@@deriving compare, sexp_of]
+[@@deriving compare, equal, sexp_of]
 
 val instrs : t -> Instr.t list
 val set_instrs : t -> Instr.t list -> t

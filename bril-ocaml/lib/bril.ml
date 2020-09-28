@@ -7,7 +7,7 @@ module Func = Func
 module Instr = Instr
 module Op = Op
 
-type t = Func.t list [@@deriving compare, sexp_of]
+type t = Func.t list [@@deriving compare, equal, sexp_of]
 
 let from_json json =
   let open Yojson.Basic.Util in

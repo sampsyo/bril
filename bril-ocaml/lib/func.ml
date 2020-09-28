@@ -10,7 +10,7 @@ type t = {
   preds : string list String.Map.t;
   succs : string list String.Map.t;
 }
-[@@deriving compare, sexp_of]
+[@@deriving compare, equal, sexp_of]
 
 let instrs { blocks; order; _ } = List.concat_map order ~f:(Map.find_exn blocks)
 
