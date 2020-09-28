@@ -138,3 +138,31 @@ let to_json =
   | Print args ->
     `Assoc [ ("op", `String "print"); ("args", `List (List.map args ~f:(fun arg -> `String arg))) ]
   | Nop -> `Assoc [ ("op", `String "nop") ]
+
+let to_string =
+  let dest_to_string (name, bril_type) = sprintf "%s: %s =" name (Bril_type.to_string bril_type) in
+  function
+  | Label label -> sprintf ".%s" label
+  | Const (dest, const) -> sprintf "%s const %s" (dest_to_string dest) (Const.to_string const)
+  | Binary (dest, op, arg1, arg2) ->
+    sprintf
+      "%s %s %s %s"
+      (dest_to_string dest)
+      Op.Binary.(List.Assoc.find_exn by_op op ~equal)
+      arg1
+      arg2
+  | Unary (dest, op, arg) ->
+    sprintf "%s %s %s" (dest_to_string dest) Op.Unary.(List.Assoc.find_exn by_op op ~equal) arg
+  | Jmp label -> sprintf "jmp %s" label
+  | Br (arg, l1, l2) -> sprintf "br %s %s %s" arg l1 l2
+  | Call (dest, func_name, args) ->
+    List.filter
+      ([ Option.value_map dest ~default:"" ~f:dest_to_string; func_name ] @ args)
+      ~f:(Fn.non String.is_empty)
+    |> String.concat ~sep:" "
+  | Ret arg ->
+    ( match arg with
+    | Some arg -> sprintf "ret %s" arg
+    | None -> "ret" )
+  | Print args -> String.concat ~sep:" " ("print" :: args)
+  | Nop -> "nop"

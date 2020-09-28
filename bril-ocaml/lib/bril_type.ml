@@ -19,3 +19,7 @@ let of_json_opt = function
 let to_json = function
   | IntType -> `String "int"
   | BoolType -> `String "bool"
+
+let to_string = function
+  | IntType -> "int"
+  | BoolType -> "bool"

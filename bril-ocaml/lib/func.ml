@@ -88,3 +88,26 @@ let to_json t =
         ("instrs", `List (instrs t |> List.map ~f:Instr.to_json));
       ]
     @ Option.value_map t.ret_type ~default:[] ~f:(fun t -> [ ("type", Bril_type.to_json t) ]) )
+
+let to_string { name; args; ret_type; blocks; order; _ } =
+  let header =
+    sprintf
+      "%s%s%s {"
+      name
+      ( match args with
+      | [] -> ""
+      | args ->
+        sprintf
+          "(%s)"
+          ( List.map args ~f:(fun (name, bril_type) ->
+                sprintf "%s: %s" name (Bril_type.to_string bril_type))
+          |> String.concat ~sep:", " ) )
+      (Option.value_map ret_type ~default:"" ~f:Bril_type.to_string)
+  in
+  let body =
+    order
+    |> List.concat_map ~f:(Map.find_exn blocks)
+    |> List.map ~f:Instr.to_string
+    |> String.concat ~sep:";\n"
+  in
+  sprintf "%s\n%s\n}" header body

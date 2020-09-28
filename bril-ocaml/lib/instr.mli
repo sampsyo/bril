@@ -21,3 +21,4 @@ val dest : t -> Dest.t option
 val args : t -> arg list
 val of_json : Yojson.Basic.t -> t
 val to_json : t -> Yojson.Basic.t
+val to_string : t -> string

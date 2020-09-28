@@ -11,3 +11,4 @@ type t = Func.t list [@@deriving compare, sexp_of]
 
 val from_json : Yojson.Basic.t -> t
 val to_json : t -> Yojson.Basic.t
+val to_string : t -> string
