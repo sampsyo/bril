@@ -18,6 +18,7 @@ module Binary : sig
   val is_op : string -> bool
   val of_string : string -> t
   val to_string : t -> string
+  val fold : t -> Const.t -> Const.t -> Const.t
 end
 
 module Unary : sig
@@ -29,4 +30,5 @@ module Unary : sig
   val is_op : string -> bool
   val of_string : string -> t
   val to_string : t -> string
+  val fold : t -> Const.t -> Const.t
 end
