@@ -51,11 +51,14 @@ def add_terminators(blocks):
     """
     for i, block in enumerate(blocks.values()):
         if not block:
-            dest = list(blocks.keys())[i + 1]
-            block.append({'op': 'jmp', 'labels': [dest]})
-        elif block[-1]['op'] not in TERMINATORS:
             if i == len(blocks) - 1:
                 # In the last block, return.
+                block.append({'op': 'ret', 'args': []})
+            else:
+                dest = list(blocks.keys())[i + 1]
+                block.append({'op': 'jmp', 'labels': [dest]})
+        elif block[-1]['op'] not in TERMINATORS:
+            if i == len(blocks) - 1:
                 block.append({'op': 'ret', 'args': []})
             else:
                 # Otherwise, jump to the next block.
