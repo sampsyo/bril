@@ -48,7 +48,7 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
         # Save stacks.
         old_stack = {k: list(v) for k, v in stack.items()}
 
-        for instr in block:
+        for instr in blocks[block]:
             # Rename arguments in normal instructions.
             if 'args' in instr:
                 new_args = [stack[arg][0] for arg in instr['args']]
@@ -68,7 +68,8 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
         # Rename phi-nodes.
         for s in succ[block]:
             for p in phis[s]:
-                phi_args[s][p].append((block, stack[p][0]))
+                if stack[p]:
+                    phi_args[s][p].append((block, stack[p][0]))
 
         # Recursive calls.
         for b in domtree[block]:
@@ -79,6 +80,8 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
 
     entry = list(blocks.keys())[0]
     _rename(entry)
+
+    return phi_args
 
 
 def func_to_ssa(func):
@@ -93,7 +96,8 @@ def func_to_ssa(func):
     phis = get_phis(blocks, df, defs)
     print(phis)
 
-    ssa_rename(blocks, phis, succ, dom_tree(dom), set(defs.keys()))
+    phi_args = ssa_rename(blocks, phis, succ, dom_tree(dom), set(defs.keys()))
+    print(phi_args)
 
 
 def to_ssa(bril):
