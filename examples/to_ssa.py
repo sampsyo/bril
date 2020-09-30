@@ -39,11 +39,11 @@ def get_phis(blocks, df, defs):
     return phis
 
 
-def ssa_rename(blocks, phis, succ, domtree, vars):
-    stack = {v: [] for v in vars}
-    counters = {v: 0 for v in vars}
+def ssa_rename(blocks, phis, succ, domtree, args):
+    stack = defaultdict(list, {v: [v] for v in args})
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
     phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
+    counters = defaultdict(int)
 
     def _push_fresh(var):
         fresh = '{}.{}'.format(var, counters[var])
@@ -112,15 +112,14 @@ def reassemble(blocks):
     return instrs
 
 
-def get_types(blocks):
+def get_types(func):
     # Silly way to get the type of variables. (According to the Bril
     # spec, well-formed programs must use only a single type for every
     # variable within a given function.)
-    types = {}
-    for block in blocks.values():
-        for instr in block:
-            if 'dest' in instr:
-                types[instr['dest']] = instr['type']
+    types = {arg['name']: arg['type'] for arg in func.get('args', [])}
+    for instr in func['instrs']:
+        if 'dest' in instr:
+            types[instr['dest']] = instr['type']
     return types
 
 
@@ -132,11 +131,12 @@ def func_to_ssa(func):
 
     df = dom_fronts(dom, succ)
     defs = def_blocks(blocks)
-    types = get_types(blocks)
+    types = get_types(func)
+    arg_names = {a['name'] for a in func['args']} if 'args' in func else set()
 
     phis = get_phis(blocks, df, defs)
-    phi_args, phi_dests = ssa_rename(blocks, phis, succ,
-                                     dom_tree(dom), set(defs.keys()))
+    phi_args, phi_dests = ssa_rename(blocks, phis, succ, dom_tree(dom),
+                                     arg_names)
     insert_phis(blocks, phi_args, phi_dests, types)
 
     func['instrs'] = reassemble(blocks)
