@@ -88,13 +88,13 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
     return phi_args, phi_dests
 
 
-def insert_phis(blocks, phi_args, phi_dests):
+def insert_phis(blocks, phi_args, phi_dests, types):
     for block, instrs in blocks.items():
         for dest, pairs in phi_args[block].items():
             phi = {
                 'op': 'phi',
                 'dest': phi_dests[block][dest],
-                'type': 'XXX',
+                'type': types[dest],
                 'labels': [p[0] for p in pairs],
                 'args': [p[1] for p in pairs],
             }
@@ -109,6 +109,18 @@ def reassemble(blocks):
     return instrs
 
 
+def get_types(blocks):
+    # Silly way to get the type of variables. (According to the Bril
+    # spec, well-formed programs must use only a single type for every
+    # variable within a given function.)
+    types = {}
+    for block in blocks.values():
+        for instr in block:
+            if 'dest' in instr:
+                types[instr['dest']] = instr['type']
+    return types
+
+
 def func_to_ssa(func):
     blocks = block_map(form_blocks(func['instrs']))
     add_terminators(blocks)
@@ -117,11 +129,12 @@ def func_to_ssa(func):
 
     df = dom_fronts(dom, succ)
     defs = def_blocks(blocks)
+    types = get_types(blocks)
 
     phis = get_phis(blocks, df, defs)
     phi_args, phi_dests = ssa_rename(blocks, phis, succ,
                                      dom_tree(dom), set(defs.keys()))
-    insert_phis(blocks, phi_args, phi_dests)
+    insert_phis(blocks, phi_args, phi_dests, types)
 
     func['instrs'] = reassemble(blocks)
 
