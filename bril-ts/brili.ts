@@ -651,10 +651,12 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
     let idx = labels.indexOf(state.lastlabel);
     if (idx === -1) {
-      throw error(`phi node had unhandled last label ${state.lastlabel}`);
+      // Last label not handled. Leave uninitialized.
+      state.env.delete(instr.dest);
+    } else {
+      let val = getArgument(instr, state.env, idx);
+      state.env.set(instr.dest, val);
     }
-    let val = getArgument(instr, state.env, idx);
-    state.env.set(instr.dest, val);
     return NEXT;
   }
 
