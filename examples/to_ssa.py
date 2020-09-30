@@ -43,10 +43,21 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
     stack = {v: [] for v in vars}
     counters = {v: 0 for v in vars}
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
+    phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
+
+    def _push_fresh(var):
+        fresh = '{}.{}'.format(var, counters[var])
+        counters[var] += 1
+        stack[var].insert(0, fresh)
+        return fresh
 
     def _rename(block):
         # Save stacks.
         old_stack = {k: list(v) for k, v in stack.items()}
+
+        # Rename phi-node destinations.
+        for p in phis[block]:
+            phi_dests[block][p] = _push_fresh(p)
 
         for instr in blocks[block]:
             # Rename arguments in normal instructions.
@@ -56,16 +67,9 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
 
             # Rename destinations.
             if 'dest' in instr:
-                # Generate fresh name.
-                old = instr['dest']
-                fresh = '{}.{}'.format(old, counters[old])
-                counters[old] += 1
+                instr['dest'] = _push_fresh(instr['dest'])
 
-                # Rename and record.
-                instr['dest'] = fresh
-                stack[old].insert(0, fresh)
-
-        # Rename phi-nodes.
+        # Rename phi-node arguments (in successors).
         for s in succ[block]:
             for p in phis[s]:
                 if stack[p]:
@@ -81,15 +85,15 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
     entry = list(blocks.keys())[0]
     _rename(entry)
 
-    return phi_args
+    return phi_args, phi_dests
 
 
-def insert_phis(blocks, phi_args):
+def insert_phis(blocks, phi_args, phi_dests):
     for block, instrs in blocks.items():
         for dest, pairs in phi_args[block].items():
             phi = {
                 'op': 'phi',
-                'dest': dest,
+                'dest': phi_dests[block][dest],
                 'type': 'XXX',
                 'labels': [p[0] for p in pairs],
                 'args': [p[1] for p in pairs],
@@ -115,8 +119,9 @@ def func_to_ssa(func):
     defs = def_blocks(blocks)
 
     phis = get_phis(blocks, df, defs)
-    phi_args = ssa_rename(blocks, phis, succ, dom_tree(dom), set(defs.keys()))
-    insert_phis(blocks, phi_args)
+    phi_args, phi_dests = ssa_rename(blocks, phis, succ,
+                                     dom_tree(dom), set(defs.keys()))
+    insert_phis(blocks, phi_args, phi_dests)
 
     func['instrs'] = reassemble(blocks)
 
