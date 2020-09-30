@@ -102,6 +102,9 @@ def insert_phis(blocks, phi_args, phi_dests, types):
 
 
 def reassemble(blocks):
+    """Flatten a CFG into an instruction list."""
+    # This could optimize slightly by opportunistically eliminating
+    # `jmp .next` and `ret` terminators where it is allowed.
     instrs = []
     for name, block in blocks.items():
         instrs.append({'label': name})
