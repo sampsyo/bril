@@ -89,6 +89,20 @@ def dom_fronts(dom, succ):
     return frontiers
 
 
+def dom_tree(dom):
+    # Get the blocks strictly dominated by a block strictly dominated by
+    # a given block.
+    dom_inv = map_inv(dom)
+    dom_inv_strict = {a: {b for b in bs if b != a}
+                      for a, bs in dom_inv.items()}
+    dom_inv_strict_2x = {a: set().union(*(dom_inv_strict[b] for b in bs))
+                         for a, bs in dom_inv_strict.items()}
+    return {
+        a: {b for b in bs if b not in dom_inv_strict_2x[a]}
+        for a, bs in dom_inv_strict.items()
+    }
+
+
 def print_dom(bril, mode):
     for func in bril['functions']:
         blocks = block_map(form_blocks(func['instrs']))
@@ -98,6 +112,8 @@ def print_dom(bril, mode):
 
         if mode == 'front':
             res = dom_fronts(dom, succ)
+        elif mode == 'tree':
+            res = dom_tree(dom)
         else:
             res = dom
 
