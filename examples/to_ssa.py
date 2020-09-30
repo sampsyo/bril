@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from cfg import block_map, successors, add_terminators
 from form_blocks import form_blocks
-from dom import get_dom, dom_fronts
+from dom import get_dom, dom_fronts, dom_tree
 
 
 def def_blocks(blocks):
@@ -39,6 +39,48 @@ def get_phis(blocks, df, defs):
     return phis
 
 
+def ssa_rename(blocks, phis, succ, domtree, vars):
+    stack = {v: [] for v in vars}
+    counters = {v: 0 for v in vars}
+    phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
+
+    def _rename(block):
+        # Save stacks.
+        old_stack = {k: list(v) for k, v in stack.items()}
+
+        for instr in block:
+            # Rename arguments in normal instructions.
+            if 'args' in instr:
+                new_args = [stack[arg][0] for arg in instr['args']]
+                instr['args'] = new_args
+
+            # Rename destinations.
+            if 'dest' in instr:
+                # Generate fresh name.
+                old = instr['dest']
+                fresh = '{}.{}'.format(old, counters[old])
+                counters[old] += 1
+
+                # Rename and record.
+                instr['dest'] = fresh
+                stack[old].insert(0, fresh)
+
+        # Rename phi-nodes.
+        for s in succ[block]:
+            for p in phis[s]:
+                phi_args[s][p].append((block, stack[p][0]))
+
+        # Recursive calls.
+        for b in domtree[block]:
+            _rename(b)
+
+        # Restore stacks.
+        stack.update(old_stack)
+
+    entry = list(blocks.keys())[0]
+    _rename(entry)
+
+
 def func_to_ssa(func):
     blocks = block_map(form_blocks(func['instrs']))
     add_terminators(blocks)
@@ -50,6 +92,8 @@ def func_to_ssa(func):
 
     phis = get_phis(blocks, df, defs)
     print(phis)
+
+    ssa_rename(blocks, phis, succ, dom_tree(dom), set(defs.keys()))
 
 
 def to_ssa(bril):
