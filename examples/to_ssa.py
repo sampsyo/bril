@@ -84,6 +84,27 @@ def ssa_rename(blocks, phis, succ, domtree, vars):
     return phi_args
 
 
+def insert_phis(blocks, phi_args):
+    for block, instrs in blocks.items():
+        for dest, pairs in phi_args[block].items():
+            phi = {
+                'op': 'phi',
+                'dest': dest,
+                'type': 'XXX',
+                'labels': [p[0] for p in pairs],
+                'args': [p[1] for p in pairs],
+            }
+            instrs.insert(0, phi)
+
+
+def reassemble(blocks):
+    instrs = []
+    for name, block in blocks.items():
+        instrs.append({'label': name})
+        instrs += block
+    return instrs
+
+
 def func_to_ssa(func):
     blocks = block_map(form_blocks(func['instrs']))
     add_terminators(blocks)
@@ -94,10 +115,10 @@ def func_to_ssa(func):
     defs = def_blocks(blocks)
 
     phis = get_phis(blocks, df, defs)
-    print(phis)
-
     phi_args = ssa_rename(blocks, phis, succ, dom_tree(dom), set(defs.keys()))
-    print(phi_args)
+    insert_phis(blocks, phi_args)
+
+    func['instrs'] = reassemble(blocks)
 
 
 def to_ssa(bril):
