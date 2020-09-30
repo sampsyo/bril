@@ -76,7 +76,7 @@ def ssa_rename(blocks, phis, succ, domtree, args):
                     phi_args[s][p].append((block, stack[p][0]))
 
         # Recursive calls.
-        for b in domtree[block]:
+        for b in sorted(domtree[block]):
             _rename(b)
 
         # Restore stacks.
@@ -90,7 +90,7 @@ def ssa_rename(blocks, phis, succ, domtree, args):
 
 def insert_phis(blocks, phi_args, phi_dests, types):
     for block, instrs in blocks.items():
-        for dest, pairs in phi_args[block].items():
+        for dest, pairs in sorted(phi_args[block].items()):
             phi = {
                 'op': 'phi',
                 'dest': phi_dests[block][dest],
