@@ -51,7 +51,7 @@ def get_dom(succ, entry):
     pred = map_inv(succ)
     nodes = list(reversed(postorder(succ, entry)))  # Reverse postorder.
 
-    dom = {v: set(nodes) for v in nodes}
+    dom = {v: set(nodes) for v in succ}
 
     while True:
         changed = False
