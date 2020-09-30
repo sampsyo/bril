@@ -7,11 +7,13 @@ type t = {
   ret_type : Bril_type.t option;
   blocks : Instr.t list String.Map.t;
   order : string list;
-  cfg : string list String.Map.t;
+  preds : string list String.Map.t;
+  succs : string list String.Map.t;
 }
-[@@deriving compare, sexp_of]
+[@@deriving compare, equal, sexp_of]
 
 val instrs : t -> Instr.t list
 val set_instrs : t -> Instr.t list -> t
 val of_json : Yojson.Basic.t -> t
 val to_json : t -> Yojson.Basic.t
+val to_string : t -> string

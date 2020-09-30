@@ -3,7 +3,7 @@ open! Core
 type t =
   | IntType
   | BoolType
-[@@deriving compare, sexp_of]
+[@@deriving compare, equal, sexp_of]
 
 let of_json =
   let open Yojson.Basic.Util in
@@ -19,3 +19,7 @@ let of_json_opt = function
 let to_json = function
   | IntType -> `String "int"
   | BoolType -> `String "bool"
+
+let to_string = function
+  | IntType -> "int"
+  | BoolType -> "bool"

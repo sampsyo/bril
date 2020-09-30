@@ -13,18 +13,22 @@ module Binary : sig
     | Ge
     | And
     | Or
-  [@@deriving compare, sexp_of, equal]
+  [@@deriving compare, equal, sexp_of]
 
-  val by_name : (string * t) list
-  val by_op : (t * string) list
+  val is_op : string -> bool
+  val of_string : string -> t
+  val to_string : t -> string
+  val fold : t -> Const.t -> Const.t -> Const.t
 end
 
 module Unary : sig
   type t =
     | Not
     | Id
-  [@@deriving compare, sexp_of, equal]
+  [@@deriving compare, equal, sexp_of]
 
-  val by_name : (string * t) list
-  val by_op : (t * string) list
+  val is_op : string -> bool
+  val of_string : string -> t
+  val to_string : t -> string
+  val fold : t -> Const.t -> Const.t
 end
