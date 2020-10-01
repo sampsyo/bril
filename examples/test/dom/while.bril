@@ -1,4 +1,4 @@
-@gcd(a: int): int {
+@main(a: int) {
 .while.cond:
   zero: int = const 0;
   is_term: bool = eq a zero;
@@ -8,5 +8,5 @@
   a: int = sub a one;
   jmp .while.cond;
 .while.finish:
-  ret a;
+  print a;
 }
