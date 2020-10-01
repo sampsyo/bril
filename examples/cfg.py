@@ -100,3 +100,14 @@ def edges(blocks):
             succs[name].append(succ)
             preds[succ].append(name)
     return preds, succs
+
+
+def reassemble(blocks):
+    """Flatten a CFG into an instruction list."""
+    # This could optimize slightly by opportunistically eliminating
+    # `jmp .next` and `ret` terminators where it is allowed.
+    instrs = []
+    for name, block in blocks.items():
+        instrs.append({'label': name})
+        instrs += block
+    return instrs

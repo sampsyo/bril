@@ -2,7 +2,7 @@ import json
 import sys
 from collections import defaultdict
 
-from cfg import block_map, successors, add_terminators, add_entry
+from cfg import block_map, successors, add_terminators, add_entry, reassemble
 from form_blocks import form_blocks
 from dom import get_dom, dom_fronts, dom_tree
 
@@ -99,17 +99,6 @@ def insert_phis(blocks, phi_args, phi_dests, types):
                 'args': [p[1] for p in pairs],
             }
             instrs.insert(0, phi)
-
-
-def reassemble(blocks):
-    """Flatten a CFG into an instruction list."""
-    # This could optimize slightly by opportunistically eliminating
-    # `jmp .next` and `ret` terminators where it is allowed.
-    instrs = []
-    for name, block in blocks.items():
-        instrs.append({'label': name})
-        instrs += block
-    return instrs
 
 
 def get_types(func):
