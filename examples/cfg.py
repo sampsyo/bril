@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from util import fresh
+from util import fresh, flatten
 from form_blocks import TERMINATORS
 
 
@@ -64,6 +64,28 @@ def add_terminators(blocks):
                 # Otherwise, jump to the next block.
                 dest = list(blocks.keys())[i + 1]
                 block.append({'op': 'jmp', 'labels': [dest]})
+
+
+def add_entry(blocks):
+    """Ensure that a CFG has a unique entry block with no predecessors.
+
+    If the first block already has no in-edges, do nothing. Otherwise,
+    add a new block before it that has no in-edges but transfers control
+    to the old first block.
+    """
+    first_lbl = next(iter(blocks.keys()))
+
+    # Check for any references to the label.
+    for instr in flatten(blocks.values()):
+        if 'labels' in instr and first_lbl in instr['labels']:
+            break
+    else:
+        return
+
+    # References exist; insert a new block.
+    new_lbl = fresh('entry', blocks)
+    blocks[new_lbl] = []
+    blocks.move_to_end(new_lbl, last=False)
 
 
 def edges(blocks):
