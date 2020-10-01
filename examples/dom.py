@@ -1,7 +1,7 @@
 import json
 import sys
 
-from cfg import block_map, successors, add_terminators
+from cfg import block_map, successors, add_terminators, add_entry
 from form_blocks import form_blocks
 
 
@@ -106,6 +106,7 @@ def dom_tree(dom):
 def print_dom(bril, mode):
     for func in bril['functions']:
         blocks = block_map(form_blocks(func['instrs']))
+        add_entry(blocks)
         add_terminators(blocks)
         succ = {name: successors(block[-1]) for name, block in blocks.items()}
         dom = get_dom(succ, list(blocks.keys())[0])
