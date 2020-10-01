@@ -647,7 +647,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       throw error(`phi node has unequal numbers of labels and args`);
     }
     if (!state.lastlabel) {
-      throw error(`phi node executed with no last label`);
+      state.env.delete(instr.dest);
+      return NEXT;
     }
     let idx = labels.indexOf(state.lastlabel);
     if (idx === -1) {
