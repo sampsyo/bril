@@ -7,7 +7,9 @@
   ],
   "entry": [],
   "exit": [],
-  "loop": [],
+  "loop": [
+    "loop"
+  ],
   "then": [
     "endif"
   ]
