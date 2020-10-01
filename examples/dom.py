@@ -82,9 +82,10 @@ def dom_fronts(dom, succ):
         for dominated in dom_inv[block]:
             dominated_succs.update(succ[dominated])
 
-        # You're in the frontier if you're not dominated by the block.
+        # You're in the frontier if you're not strictly dominated by the
+        # current block.
         frontiers[block] = [b for b in dominated_succs
-                            if b not in dom_inv[block]]
+                            if b not in dom_inv[block] or b == block]
 
     return frontiers
 
