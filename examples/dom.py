@@ -51,14 +51,7 @@ def get_dom(succ, entry):
     pred = map_inv(succ)
     nodes = list(reversed(postorder(succ, entry)))  # Reverse postorder.
 
-    # Don't process the entry node. You don't need to do this if you
-    # have a distinguished entry with no predecessors, but "fixing" the
-    # dominator set for the entry block can tolerate CFGs with edges to
-    # the entry.
-    nodes = [n for n in nodes if n != entry]
-
-    dom = {v: {v} if v == entry else set(succ)
-           for v in succ}
+    dom = {v: set(nodes) for v in succ}
 
     while True:
         changed = False
