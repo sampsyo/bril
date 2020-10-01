@@ -2,7 +2,6 @@
 .entry1:
   jmp .while.cond;
 .while.cond:
-  one.0: int = phi one.1 .while.body;
   a.0: int = phi a a.1 .entry1 .while.body;
   zero.0: int = const 0;
   is_term.0: bool = eq a.0 zero.0;
