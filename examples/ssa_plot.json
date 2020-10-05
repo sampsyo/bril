@@ -26,7 +26,8 @@
     "color": {
       "field": "run",
       "type": "nominal",
-      "title": "version"
+      "title": "version",
+      "legend": null
     }
   },
   "config": {
