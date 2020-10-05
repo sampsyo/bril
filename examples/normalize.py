@@ -36,7 +36,7 @@ def normalize():
     for run, rs in ratios.items():
         for name, func in STATS.items():
             print(
-                '{}({}) = {:.2f}'.format(name, run, geometric_mean(rs)),
+                '{}({}) = {:.2f}'.format(name, run, func(rs)),
                 file=sys.stderr,
             )
 
