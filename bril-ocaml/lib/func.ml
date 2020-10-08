@@ -92,7 +92,7 @@ let to_json t =
 let to_string { name; args; ret_type; blocks; order; _ } =
   let header =
     sprintf
-      "%s%s%s {"
+      "@%s%s%s {"
       name
       ( match args with
       | [] -> ""
@@ -107,7 +107,12 @@ let to_string { name; args; ret_type; blocks; order; _ } =
   let body =
     order
     |> List.concat_map ~f:(Map.find_exn blocks)
-    |> List.map ~f:Instr.to_string
-    |> String.concat ~sep:";\n"
+    |> List.map ~f:(fun instr ->
+           sprintf
+             ( match instr with
+             | Label _ -> "%s:"
+             | _ -> "  %s;" )
+             (Instr.to_string instr))
+    |> String.concat ~sep:"\n"
   in
   sprintf "%s\n%s\n}" header body
