@@ -10,7 +10,7 @@ There are some quick-start instructions below for some of the main tools, but
 check out the docs for more details about what's available.
 
 [docs]: https://capra.cs.cornell.edu/bril/
-[langref]: https://capra.cs.cornell.edu/bril/langref.html
+[langref]: https://capra.cs.cornell.edu/bril/lang/index.html
 [brilts]: https://github.com/sampsyo/bril/blob/master/bril-ts/bril.ts
 
 
@@ -65,5 +65,5 @@ Install it with [pip][]:
 Then run all the tests by typing `make test`.
 
 [pip]: https://packaging.python.org/tutorials/installing-packages/
-[cs6120]: https://www.cs.cornell.edu/courses/cs6120/2019fa/
+[cs6120]: https://www.cs.cornell.edu/courses/cs6120/2020fa/
 [turnt]: https://github.com/cucapra/turnt

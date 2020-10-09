@@ -12,6 +12,6 @@ Bril's design tenets include:
 
 See the [language reference](lang) for the complete language specification and the [tool documentation](tools) for details on the "batteries included" [monorepo][gh].
 
-[cs6120]: https://www.cs.cornell.edu/courses/cs6120/2019fa/
+[cs6120]: https://www.cs.cornell.edu/courses/cs6120/2020fa/
 [json]: https://www.json.org
 [gh]: https://github.com/sampsyo/bril
