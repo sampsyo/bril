@@ -36,7 +36,8 @@ interface Op {
  */
 export interface EffectOperation extends Op {
   op: "br" | "jmp" | "print" | "ret" | "call" |
-    "store" | "free";
+    "store" | "free" |
+    "speculate" | "guard" | "commit";
 }
 
 /**
