@@ -737,6 +737,9 @@ function evalFunc(func: bril.Function, state: State): Value | null {
       }
       case 'commit': {
         // Resolve speculation.
+        if (!state.specparent) {
+          throw error(`commit in non-speculative state`);
+        }
         state.specparent = null;
         break;
       }
