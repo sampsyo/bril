@@ -724,9 +724,6 @@ function evalFunc(func: bril.Function, state: State): Value | null {
       switch (action.action) {
       case 'end': {
         // Return from this function.
-        if (state.specparent) {
-          throw error(`return in speculative state`);
-        }
         return action.ret;
       }
       case 'speculate': {
