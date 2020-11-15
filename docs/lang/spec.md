@@ -22,6 +22,36 @@ It is an error to commit or abort outside of speculation.
 It is not an error to perform side effects like `print` during speculation, but it is probably a bad idea.
 
 
+Examples
+--------
+
+Committing a speculative update makes it behave like normal:
+
+    v: int = const 4;
+    speculate;
+    v: int = const 2;
+    commit;
+    print v;
+
+So this example prints `2`.
+However, when a guard fails, it rolls back any modifications that happened since the last `speculate` instruction:
+
+      b: bool = const false;
+
+      v: int = const 4;
+      speculate;
+      v: int = const 2;
+      guard b .failed;
+      commit;
+
+    .failed:
+      print v;
+
+The guard here fails because `b` is false, then `v` gets restored to its pre-speculation value, and then control transfers to the `.failed` label.
+So this example prints `4`.
+You can think of the code at `.failed` as the "recovery routine" that handles exceptional conditions.
+
+
 Interpreter
 -----------
 
