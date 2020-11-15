@@ -316,14 +316,7 @@ type State = {
  * Interpet a call instruction.
  */
 function evalCall(instr: bril.Operation, state: State): Action {
-  // Function calls are not (currently) supported during speculation.
-  // It would be cool to add, but aborting from inside a function call
-  // would require explicit stack management.
-  if (state.specparent) {
-    throw error(`function calls not allowed during speculation`);
-  }
-
-  // Which function are we calling?k
+  // Which function are we calling?
   let funcName = getFunc(instr, 0);
   let func = findFunc(funcName, state.funcs);
   if (func === null) {
@@ -416,6 +409,13 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     } else if (count !== null) {
       checkArgs(instr, count);
     }
+  }
+
+  // Function calls are not (currently) supported during speculation.
+  // It would be cool to add, but aborting from inside a function call
+  // would require explicit stack management.
+  if (state.specparent && ['call', 'ret'].includes(instr.op)) {
+    throw error(`${instr.op} not allowed during speculation`);
   }
 
   switch (instr.op) {
@@ -724,6 +724,9 @@ function evalFunc(func: bril.Function, state: State): Value | null {
       switch (action.action) {
       case 'end': {
         // Return from this function.
+        if (state.specparent) {
+          throw error(`return in speculative state`);
+        }
         return action.ret;
       }
       case 'speculate': {
@@ -780,6 +783,9 @@ function evalFunc(func: bril.Function, state: State): Value | null {
   }
 
   // Reached the end of the function without hitting `ret`.
+  if (state.specparent) {
+    throw error(`implicit return in speculative state`);
+  }
   return null;
 }
 
