@@ -147,7 +147,6 @@ type Pointer = {
 }
 
 type Value = boolean | BigInt | Pointer | number;
-type ReturnValue = Value | null;
 type Env = Map<bril.Ident, Value>;
 
 /**
@@ -282,17 +281,17 @@ function getFunc(instr: bril.Operation, index: number): bril.Ident {
 }
 
 /**
- * The thing to do after interpreting an instruction: either transfer
- * control to a label, go to the next instruction, or end thefunction.
+ * The thing to do after interpreting an instruction: this is how `evalInstr`
+ * communicates control-flow actions back to the top-level interpreter loop.
  */
 type Action =
-  {"label": bril.Ident} |
-  {"next": true} |
-  {"end": ReturnValue} |
-  {"speculate": true} |
-  {"commit": true} |
-  {"abort": true, "label": bril.Ident};
-let NEXT: Action = {"next": true};
+  {"action": "next"} |  // Normal execution: just proceed to next instruction.
+  {"action": "jump", "label": bril.Ident} |
+  {"action": "end", "ret": Value | null} |
+  {"action": "speculate"} |
+  {"action": "commit"} |
+  {"action": "abort", "label": bril.Ident};
+let NEXT: Action = {"action": "next"};
 
 /**
  * The interpreter state that's threaded through recursive calls.
@@ -575,25 +574,25 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
 
   case "jmp": {
-    return {"label": getLabel(instr, 0)};
+    return {"action": "jump", "label": getLabel(instr, 0)};
   }
 
   case "br": {
     let cond = getBool(instr, state.env, 0);
     if (cond) {
-      return {"label": getLabel(instr, 0)};
+      return {"action": "jump", "label": getLabel(instr, 0)};
     } else {
-      return {"label": getLabel(instr, 1)};
+      return {"action": "jump", "label": getLabel(instr, 1)};
     }
   }
   
   case "ret": {
     let args = instr.args || [];
     if (args.length == 0) {
-      return {"end": null};
+      return {"action": "end", "ret": null};
     } else if (args.length == 1) {
       let val = get(state.env, args[0]);
-      return {"end": val};
+      return {"action": "end", "ret": val};
     } else {
       throw error(`ret takes 0 or 1 argument(s); got ${args.length}`);
     }
@@ -692,7 +691,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   // Begin speculation.
   case "speculate": {
-    return {"speculate": true};
+    return {"action": "speculate"};
   }
 
   // Abort speculation if the condition is false.
@@ -700,13 +699,13 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     if (getBool(instr, state.env, 0)) {
       return NEXT;
     } else {
-      return {"abort": true, "label": getLabel(instr, 0)};
+      return {"action": "abort", "label": getLabel(instr, 0)};
     }
   }
 
   // Resolve speculation, making speculative state real.
   case "commit": {
-    return {"commit": true};
+    return {"action": "commit"};
   }
 
   }
@@ -714,26 +713,34 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
-function evalFunc(func: bril.Function, state: State): ReturnValue {
+function evalFunc(func: bril.Function, state: State): Value | null {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
       // Run an instruction.
       let action = evalInstr(line, state);
 
-      if ('end' in action) {
-        return action.end;
-      } else if ('speculate' in action) {
+      // Take the prescribed action.
+      switch (action.action) {
+      case 'end': {
+        // Return from this function.
+        return action.ret;
+      }
+      case 'speculate': {
         // Begin speculation.
         state = {
           ...state,
           env: new Map(state.env),  // Clone the environment.
           specparent: state,  // Save current state for aborts.
         };
-      } else if ('commit' in action) {
+        break;
+      }
+      case 'commit': {
         // Resolve speculation.
         state.specparent = null;
-      } else if ('abort' in action) {
+        break;
+      }
+      case 'abort': {
         // Restore state.
         if (!state.specparent) {
           throw error(`abort in non-speculative state`);
@@ -741,8 +748,17 @@ function evalFunc(func: bril.Function, state: State): ReturnValue {
         let icount = state.icount;
         state = state.specparent;
         state.icount = icount;
+        break;
+      }
+      case 'next':
+      case 'jump':
+        break;
+      default:
+        unreachable(action);
+        throw error(`unhandled action ${(action as any).action}`);
       }
 
+      // Move to a label.
       if ('label' in action) {
         // Search for the label and transfer control.
         for (i = 0; i < func.instrs.length; ++i) {
