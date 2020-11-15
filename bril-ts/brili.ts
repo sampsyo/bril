@@ -291,7 +291,7 @@ type Action =
   {"end": ReturnValue} |
   {"speculate": true} |
   {"commit": true} |
-  {"abort": true};
+  {"abort": true, "label": bril.Ident};
 let NEXT: Action = {"next": true};
 
 /**
@@ -309,9 +309,8 @@ type State = {
   curlabel: string | null,
   lastlabel: string | null,
 
-  // For speculation: the instruction index & state at the point where
-  // speculation began.
-  specparent: [number, State] | null,
+  // For speculation: the state at the point where speculation began.
+  specparent: State | null,
 }
 
 /**
@@ -698,11 +697,10 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   // Abort speculation if the condition is false.
   case "guard": {
-    let cond = getBool(instr, state.env, 0);
-    if (cond) {
+    if (getBool(instr, state.env, 0)) {
       return NEXT;
     } else {
-      return {"abort": true};
+      return {"abort": true, "label": getLabel(instr, 0)};
     }
   }
 
@@ -723,6 +721,28 @@ function evalFunc(func: bril.Function, state: State): ReturnValue {
       // Run an instruction.
       let action = evalInstr(line, state);
 
+      if ('end' in action) {
+        return action.end;
+      } else if ('speculate' in action) {
+        // Begin speculation.
+        state = {
+          ...state,
+          env: new Map(state.env),  // Clone the environment.
+          specparent: state,  // Save current state for aborts.
+        };
+      } else if ('commit' in action) {
+        // Resolve speculation.
+        state.specparent = null;
+      } else if ('abort' in action) {
+        // Restore state.
+        if (!state.specparent) {
+          throw error(`abort in non-speculative state`);
+        }
+        let icount = state.icount;
+        state = state.specparent;
+        state.icount = icount;
+      }
+
       if ('label' in action) {
         // Search for the label and transfer control.
         for (i = 0; i < func.instrs.length; ++i) {
@@ -735,26 +755,6 @@ function evalFunc(func: bril.Function, state: State): ReturnValue {
         if (i === func.instrs.length) {
           throw error(`label ${action.label} not found`);
         }
-      } else if ('end' in action) {
-        return action.end;
-      } else if ('speculate' in action) {
-        // Begin speculation.
-        state = {
-          ...state,
-          env: new Map(state.env),  // Clone the environment.
-          specparent: [i, state],  // Save current state for aborts.
-        };
-      } else if ('commit' in action) {
-        // Resolve speculation.
-        state.specparent = null;
-      } else if ('abort' in action) {
-        // Restore state.
-        if (!state.specparent) {
-          throw error(`abort in non-speculative state`);
-        }
-        let icount = state.icount;
-        [i, state] = state.specparent;
-        state.icount = icount;
       }
     } else if ('label' in line) {
       // Update CFG tracking for SSA phi nodes.
