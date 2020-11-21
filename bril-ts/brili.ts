@@ -365,15 +365,15 @@ function evalCall(instr: bril.Operation, state: State): Action {
       throw error(`unexpected value returned without destination`);
     }
     if (func.type !== undefined) {
-      throw error(`non-void function (type: ${func.type}) doesn't return anything`); 
+      throw error(`non-void function (type: ${func.type}) doesn't return anything`);
     }
   } else {  // `instr` is a `ValueOperation`.
     // Expected non-void function
     if (instr.type === undefined) {
-      throw error(`function call must include a type if it has a destination`);  
+      throw error(`function call must include a type if it has a destination`);
     }
     if (instr.dest === undefined) {
-      throw error(`function call must include a destination if it has a type`);  
+      throw error(`function call must include a destination if it has a type`);
     }
     if (retVal === null) {
       throw error(`non-void function (type: ${func.type}) doesn't return anything`);
@@ -585,7 +585,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       return {"action": "jump", "label": getLabel(instr, 1)};
     }
   }
-  
+
   case "ret": {
     let args = instr.args || [];
     if (args.length == 0) {
@@ -871,7 +871,7 @@ async function main() {
   }
   catch(e) {
     if (e instanceof BriliError) {
-      console.error(`error: ${e.message}`) 
+      console.error(`error: ${e.message}`);
       process.exit(2);
     } else {
       throw e;
