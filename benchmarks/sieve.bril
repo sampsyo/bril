@@ -24,7 +24,7 @@
 # Find the next value `p` in `table` that's greater than
 # `currentP`, and is not marked. If there are no numbers
 # in the table left that meet those criteria, return 0.
-@findNextP(table: ptr<book>, tableSize: int, currentP: int) : int {
+@findNextP(table: ptr<bool>, tableSize: int, currentP: int) : int {
   zero: int = const 0;
   one: int = const 1;
   p: int = id currentP;
