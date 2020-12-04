@@ -49,7 +49,7 @@ syntax keyword brilValueOp contained
   \ and
   \ or
 
-let brilEffectOpRegexp =  'jmp|br|ret|print|nop'
+let brilEffectOpRegexp =  'jmp|br|ret|print|nop|speculate|guard|commit'
 call s:DefSynGroup('brilEffectOp', brilEffectOpRegexp, 'contained')
 
 " Comments
