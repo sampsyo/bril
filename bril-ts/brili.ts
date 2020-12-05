@@ -297,7 +297,7 @@ let NEXT: Action = {"action": "next"};
  * The interpreter state that's threaded through recursive calls.
  */
 type State = {
-  readonly env: Env,
+  env: Env,
   readonly heap: Heap<Value>,
   readonly funcs: readonly bril.Function[],
 
@@ -713,7 +713,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
-function evalFunc(func: bril.Function, state: State): Value | null {
+function evalFunc(func: bril.Function, state_ref: State): Value | null {
+  let state = state_ref;
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
@@ -781,6 +782,12 @@ function evalFunc(func: bril.Function, state: State): Value | null {
       state.curlabel = line.label;
     }
   }
+
+  state_ref.env = state.env;
+  state_ref.icount = state.icount;
+  state_ref.lastlabel = state.lastlabel;
+  state_ref.curlabel = state.curlabel;
+  state_ref.specparent = state.specparent;
 
   // Reached the end of the function without hitting `ret`.
   if (state.specparent) {
