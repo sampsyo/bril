@@ -1,0 +1,4 @@
+*.norm.csv
+ssa_results.csv
+ssa_plot.png
+ssa_plot.pdf

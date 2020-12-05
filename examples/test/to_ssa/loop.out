@@ -1,0 +1,16 @@
+@main {
+.entry:
+  i.0: int = const 1;
+  jmp .loop;
+.loop:
+  i.1: int = phi i.0 i.2 .entry .body;
+  max.1: int = const 10;
+  cond.1: bool = lt i.1 max.1;
+  br cond.1 .body .exit;
+.body:
+  i.2: int = add i.1 i.1;
+  jmp .loop;
+.exit:
+  print i.1;
+  ret;
+}

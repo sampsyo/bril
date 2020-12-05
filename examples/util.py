@@ -1,5 +1,4 @@
 import itertools
-from form_blocks import TERMINATORS
 
 
 def flatten(ll):

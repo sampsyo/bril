@@ -1,0 +1,37 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+  "data": { "url": "ssa_results.norm.csv"},
+  "mark": "bar",
+  "encoding": {
+    "column": {
+      "field": "benchmark",
+      "spacing": 10,
+      "title": "",
+      "type": "nominal",
+      "header": {
+        "labelLimit": 80
+      }
+    },
+    "y": {
+      "field": "result",
+      "title": "dynamic instructions",
+      "type": "quantitative",
+      "axis": {"grid": false}
+    },
+    "x": {
+      "field": "run",
+      "axis": {"title": ""},
+      "sort": ["baseline", "ssa", "roundtrip"]
+    },
+    "color": {
+      "field": "run",
+      "type": "nominal",
+      "title": "version",
+      "legend": null
+    }
+  },
+  "config": {
+    "view": {"stroke": "transparent"},
+    "axis": {"domainWidth": 1}
+  }
+}

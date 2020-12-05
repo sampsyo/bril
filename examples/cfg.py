@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from util import fresh
+from util import fresh, flatten
 from form_blocks import TERMINATORS
 
 
@@ -51,16 +51,41 @@ def add_terminators(blocks):
     """
     for i, block in enumerate(blocks.values()):
         if not block:
-            dest = list(blocks.keys())[i + 1]
-            block.append({'op': 'jmp', 'labels': [dest]})
-        elif block[-1]['op'] not in TERMINATORS:
             if i == len(blocks) - 1:
                 # In the last block, return.
+                block.append({'op': 'ret', 'args': []})
+            else:
+                dest = list(blocks.keys())[i + 1]
+                block.append({'op': 'jmp', 'labels': [dest]})
+        elif block[-1]['op'] not in TERMINATORS:
+            if i == len(blocks) - 1:
                 block.append({'op': 'ret', 'args': []})
             else:
                 # Otherwise, jump to the next block.
                 dest = list(blocks.keys())[i + 1]
                 block.append({'op': 'jmp', 'labels': [dest]})
+
+
+def add_entry(blocks):
+    """Ensure that a CFG has a unique entry block with no predecessors.
+
+    If the first block already has no in-edges, do nothing. Otherwise,
+    add a new block before it that has no in-edges but transfers control
+    to the old first block.
+    """
+    first_lbl = next(iter(blocks.keys()))
+
+    # Check for any references to the label.
+    for instr in flatten(blocks.values()):
+        if 'labels' in instr and first_lbl in instr['labels']:
+            break
+    else:
+        return
+
+    # References exist; insert a new block.
+    new_lbl = fresh('entry', blocks)
+    blocks[new_lbl] = []
+    blocks.move_to_end(new_lbl, last=False)
 
 
 def edges(blocks):
@@ -75,3 +100,14 @@ def edges(blocks):
             succs[name].append(succ)
             preds[succ].append(name)
     return preds, succs
+
+
+def reassemble(blocks):
+    """Flatten a CFG into an instruction list."""
+    # This could optimize slightly by opportunistically eliminating
+    # `jmp .next` and `ret` terminators where it is allowed.
+    instrs = []
+    for name, block in blocks.items():
+        instrs.append({'label': name})
+        instrs += block
+    return instrs

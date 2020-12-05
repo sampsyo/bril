@@ -1,0 +1,16 @@
+@main(a: int) {
+.entry1:
+  jmp .while.cond;
+.while.cond:
+  a.0: int = phi a a.1 .entry1 .while.body;
+  zero.1: int = const 0;
+  is_term.1: bool = eq a.0 zero.1;
+  br is_term.1 .while.finish .while.body;
+.while.body:
+  one.1: int = const 1;
+  a.1: int = sub a.0 one.1;
+  jmp .while.cond;
+.while.finish:
+  print a.0;
+  ret;
+}

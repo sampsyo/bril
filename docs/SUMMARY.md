@@ -9,6 +9,7 @@
     - [Static Single Assignment](lang/ssa.md)
     - [Memory](lang/memory.md)
     - [Floating Point](lang/float.md)
+    - [Speculative Execution](lang/spec.md)
 - [Tools](tools/README.md)
     - [Interpreter](tools/interp.md)
     - [Text Representation](tools/text.md)
@@ -18,4 +19,5 @@
     - [Type Inference](tools/infer.md)
     - [Benchmarks](tools/bench.md)
     - [OCaml Library](tools/ocaml.md)
+    - [Rust Library](tools/rust.md)
     - [Benchmark Runner](tools/brench.md)

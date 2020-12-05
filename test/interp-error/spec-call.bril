@@ -1,0 +1,8 @@
+@foo {
+}
+
+@main {
+  speculate;
+  call @foo;
+  commit;
+}
