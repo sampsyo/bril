@@ -713,8 +713,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
-function evalFunc(func: bril.Function, state_ref: State): Value | null {
-  let state = state_ref;
+function evalFunc(func: bril.Function, state: State): Value | null {
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {
@@ -729,11 +728,8 @@ function evalFunc(func: bril.Function, state_ref: State): Value | null {
       }
       case 'speculate': {
         // Begin speculation.
-        state = {
-          ...state,
-          env: new Map(state.env),  // Clone the environment.
-          specparent: state,  // Save current state for aborts.
-        };
+	state.specparent = {...state};
+	state.env = new Map(state.env);
         break;
       }
       case 'commit': {
@@ -749,9 +745,10 @@ function evalFunc(func: bril.Function, state_ref: State): Value | null {
         if (!state.specparent) {
           throw error(`abort in non-speculative state`);
         }
-        let icount = state.icount;
-        state = state.specparent;
-        state.icount = icount;
+	state.env = state.specparent.env;
+	state.lastlabel = state.specparent.lastlabel;
+	state.curlabel = state.specparent.curlabel;
+	state.specparent = state.specparent.specparent;
         break;
       }
       case 'next':
@@ -761,7 +758,6 @@ function evalFunc(func: bril.Function, state_ref: State): Value | null {
         unreachable(action);
         throw error(`unhandled action ${(action as any).action}`);
       }
-
       // Move to a label.
       if ('label' in action) {
         // Search for the label and transfer control.
@@ -782,12 +778,6 @@ function evalFunc(func: bril.Function, state_ref: State): Value | null {
       state.curlabel = line.label;
     }
   }
-
-  state_ref.env = state.env;
-  state_ref.icount = state.icount;
-  state_ref.lastlabel = state.lastlabel;
-  state_ref.curlabel = state.curlabel;
-  state_ref.specparent = state.specparent;
 
   // Reached the end of the function without hitting `ret`.
   if (state.specparent) {
