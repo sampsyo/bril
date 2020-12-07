@@ -297,7 +297,7 @@ let NEXT: Action = {"action": "next"};
  * The interpreter state that's threaded through recursive calls.
  */
 type State = {
-  readonly env: Env,
+  env: Env,
   readonly heap: Heap<Value>,
   readonly funcs: readonly bril.Function[],
 
@@ -728,11 +728,8 @@ function evalFunc(func: bril.Function, state: State): Value | null {
       }
       case 'speculate': {
         // Begin speculation.
-        state = {
-          ...state,
-          env: new Map(state.env),  // Clone the environment.
-          specparent: state,  // Save current state for aborts.
-        };
+        state.specparent = {...state};
+        state.env = new Map(state.env);
         break;
       }
       case 'commit': {
@@ -748,9 +745,14 @@ function evalFunc(func: bril.Function, state: State): Value | null {
         if (!state.specparent) {
           throw error(`abort in non-speculative state`);
         }
-        let icount = state.icount;
-        state = state.specparent;
-        state.icount = icount;
+        // We do *not* restore `icount` from the saved state to ensure that we
+        // count "aborted" instructions.
+        Object.assign(state, {
+          env: state.specparent.env,
+          lastlabel: state.specparent.lastlabel,
+          curlabel: state.specparent.curlabel,
+          specparent: state.specparent.specparent,
+        });
         break;
       }
       case 'next':
@@ -760,7 +762,6 @@ function evalFunc(func: bril.Function, state: State): Value | null {
         unreachable(action);
         throw error(`unhandled action ${(action as any).action}`);
       }
-
       // Move to a label.
       if ('label' in action) {
         // Search for the label and transfer control.
