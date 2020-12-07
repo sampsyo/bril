@@ -728,8 +728,8 @@ function evalFunc(func: bril.Function, state: State): Value | null {
       }
       case 'speculate': {
         // Begin speculation.
-	state.specparent = {...state};
-	state.env = new Map(state.env);
+        state.specparent = {...state};
+        state.env = new Map(state.env);
         break;
       }
       case 'commit': {
@@ -745,10 +745,10 @@ function evalFunc(func: bril.Function, state: State): Value | null {
         if (!state.specparent) {
           throw error(`abort in non-speculative state`);
         }
-	state.env = state.specparent.env;
-	state.lastlabel = state.specparent.lastlabel;
-	state.curlabel = state.specparent.curlabel;
-	state.specparent = state.specparent.specparent;
+        state.env = state.specparent.env;
+        state.lastlabel = state.specparent.lastlabel;
+        state.curlabel = state.specparent.curlabel;
+        state.specparent = state.specparent.specparent;
         break;
       }
       case 'next':
