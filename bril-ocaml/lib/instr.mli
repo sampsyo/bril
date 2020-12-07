@@ -15,10 +15,16 @@ type t =
   | Ret of arg option
   | Print of arg list
   | Nop
+  | Phi of Dest.t * (label * arg) list
+  | Speculate
+  | Commit
+  | Guard of arg * label
 [@@deriving compare, equal, sexp_of]
 
 val dest : t -> Dest.t option
+val set_dest : Dest.t option -> t -> t
 val args : t -> arg list
+val set_args : arg list -> t -> t
 val of_json : Yojson.Basic.t -> t
 val to_json : t -> Yojson.Basic.t
 val to_string : t -> string
