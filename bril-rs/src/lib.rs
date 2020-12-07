@@ -83,6 +83,9 @@ pub enum EffectOps {
     Nop,
     Store,
     Free,
+    Speculate,
+    Commit,
+    Guard,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
