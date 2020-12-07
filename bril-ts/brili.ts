@@ -745,10 +745,14 @@ function evalFunc(func: bril.Function, state: State): Value | null {
         if (!state.specparent) {
           throw error(`abort in non-speculative state`);
         }
-        state.env = state.specparent.env;
-        state.lastlabel = state.specparent.lastlabel;
-        state.curlabel = state.specparent.curlabel;
-        state.specparent = state.specparent.specparent;
+        // We do *not* restore `icount` from the saved state to ensure that we
+        // count "aborted" instructions.
+        Object.assign(state, {
+          env: state.specparent.env,
+          lastlabel: state.specparent.lastlabel,
+          curlabel: state.specparent.curlabel,
+          specparent: state.specparent.specparent,
+        });
         break;
       }
       case 'next':
