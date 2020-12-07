@@ -16,6 +16,9 @@ type t =
   | Print of arg list
   | Nop
   | Phi of Dest.t * (label * arg) list
+  | Speculate
+  | Commit
+  | Guard of arg * label
 [@@deriving compare, equal, sexp_of]
 
 val dest : t -> Dest.t option

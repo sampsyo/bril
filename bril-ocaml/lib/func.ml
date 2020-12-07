@@ -33,7 +33,7 @@ let process_instrs instrs =
         | Jmp _
         | Br _
         | Ret _ ->
-          (block_name (List.length blocks), [], add_block (List.rev (instr :: block)))
+          (block_name (List.length blocks + 1), [], add_block (List.rev (instr :: block)))
         | _ -> (name, instr :: block, blocks))
   in
   let blocks =

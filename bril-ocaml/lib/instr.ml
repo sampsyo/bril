@@ -16,6 +16,9 @@ type t =
   | Print of arg list
   | Nop
   | Phi of Dest.t * (label * arg) list
+  | Speculate
+  | Commit
+  | Guard of arg * label
 [@@deriving compare, equal, sexp_of]
 
 let to_string =
@@ -44,6 +47,9 @@ let to_string =
       "%s phi %s"
       (dest_to_string dest)
       (List.map alist ~f:(fun (label, arg) -> sprintf ".%s %s" label arg) |> String.concat ~sep:" ")
+  | Speculate -> "speculate"
+  | Commit -> "commit"
+  | Guard (arg, l) -> sprintf "guard %s .%s" arg l
 
 let dest = function
   | Const (dest, _)
@@ -52,13 +58,7 @@ let dest = function
   | Phi (dest, _) ->
     Some dest
   | Call (dest, _, _) -> dest
-  | Label _
-  | Jmp _
-  | Br _
-  | Ret _
-  | Print _
-  | Nop ->
-    None
+  | _ -> None
 
 let set_dest dest t =
   match (t, dest) with
@@ -73,18 +73,14 @@ let set_dest dest t =
 let args = function
   | Binary (_, _, arg1, arg2) -> [ arg1; arg2 ]
   | Unary (_, _, arg)
-  | Br (arg, _, _) ->
+  | Br (arg, _, _)
+  | Guard (arg, _) ->
     [ arg ]
   | Call (_, _, args)
   | Print args ->
     args
   | Ret arg -> Option.value_map arg ~default:[] ~f:List.return
-  | Phi _
-  | Const _
-  | Label _
-  | Jmp _
-  | Nop ->
-    []
+  | _ -> []
 
 let set_args args t =
   match (t, args) with
@@ -95,6 +91,7 @@ let set_args args t =
   | (Print _, args) -> Print args
   | (Ret _, []) -> Ret None
   | (Ret _, [ arg ]) -> Ret (Some arg)
+  | (Guard (_, l), [ arg ]) -> Guard (arg, l)
   | (instr, []) -> instr
   | _ -> failwith "invalid set_args"
 
@@ -131,6 +128,9 @@ let of_json json =
     | "print" -> Print (args ())
     | "nop" -> Nop
     | "phi" -> Phi (dest (), List.zip_exn (labels ()) (args ()))
+    | "speculate" -> Speculate
+    | "commit" -> Commit
+    | "guard" -> Guard (arg 0, label 0)
     | op -> failwithf "invalid op: %s" op () )
   | json -> failwithf "invalid label: %s" (json |> to_string) ()
 
@@ -191,3 +191,8 @@ let to_json =
           ("args", `List (List.map alist ~f:(fun (_, arg) -> `String arg)));
         ]
       @ dest_to_json dest )
+  | Speculate -> `Assoc [ ("op", `String "speculate") ]
+  | Commit -> `Assoc [ ("op", `String "commit") ]
+  | Guard (arg, l) ->
+    `Assoc
+      [ ("op", `String "guard"); ("args", `List [ `String arg ]); ("labels", `List [ `String l ]) ]
