@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Program {
@@ -81,8 +81,16 @@ pub enum EffectOps {
     Return,
     Print,
     Nop,
+    #[cfg(feature = "memory")]
     Store,
+    #[cfg(feature = "memory")]
     Free,
+    #[cfg(feature = "speculate")]
+    Speculate,
+    #[cfg(feature = "speculate")]
+    Commit,
+    #[cfg(feature = "speculate")]
+    Guard,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -102,18 +110,31 @@ pub enum ValueOps {
     Or,
     Call,
     Id,
+    #[cfg(feature = "ssa")]
     Phi,
+    #[cfg(feature = "float")]
     Fadd,
+    #[cfg(feature = "float")]
     Fsub,
+    #[cfg(feature = "float")]
     Fmul,
+    #[cfg(feature = "float")]
     Fdiv,
+    #[cfg(feature = "float")]
     Feq,
+    #[cfg(feature = "float")]
     Flt,
+    #[cfg(feature = "float")]
     Fgt,
+    #[cfg(feature = "float")]
     Fle,
+    #[cfg(feature = "float")]
     Fge,
+    #[cfg(feature = "memory")]
     Alloc,
+    #[cfg(feature = "memory")]
     Load,
+    #[cfg(feature = "memory")]
     PtrAdd,
 }
 
@@ -123,6 +144,7 @@ pub enum Type {
     Int,
     Bool,
     Float,
+    #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
     Pointer(Box<Type>),
 }
@@ -139,4 +161,10 @@ pub fn load_program() -> Program {
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer).unwrap();
     serde_json::from_str(&buffer).unwrap()
+}
+
+pub fn output_program(p: &Program) {
+    io::stdout()
+        .write_all(serde_json::to_string(p).unwrap().as_bytes())
+        .unwrap();
 }
