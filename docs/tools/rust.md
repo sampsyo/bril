@@ -17,7 +17,7 @@ features = ["ssa", "memory", "float", "speculate"]
 
 Each of the extensions to [Bril core][core] is feature gated. To ignore an extension, remove its corresponding string from the `features` list.
 
-There is one helper function, `load_program`, which will read a valid Bril program from stdin and return it as a Rust struct. Otherwise, this library can be treated like any other [serde][] JSON representation.
+There are two helper functions, `load_program`, which will read a valid Bril program from stdin and and `output_program` which writes your Bril program to stdout. Otherwise, this library can be treated like any other [serde][] JSON representation.
 
 Development
 -----------
