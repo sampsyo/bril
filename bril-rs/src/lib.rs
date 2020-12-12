@@ -60,13 +60,14 @@ pub enum Instruction {
         labels: Vec<String>,
     },
 }
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ConstOps {
     #[serde(rename = "const")]
     Const,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum EffectOps {
     #[serde(rename = "jmp")]
@@ -90,7 +91,7 @@ pub enum EffectOps {
     Guard,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ValueOps {
     Add,
@@ -135,7 +136,7 @@ pub enum ValueOps {
     PtrAdd,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum Type {
     Int,
@@ -147,7 +148,7 @@ pub enum Type {
     Pointer(Box<Type>),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Literal {
     Int(i64),
