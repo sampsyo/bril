@@ -140,6 +140,7 @@ pub enum ValueOps {
 pub enum Type {
     Int,
     Bool,
+    #[cfg(feature = "float")]
     Float,
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
@@ -151,6 +152,7 @@ pub enum Type {
 pub enum Literal {
     Int(i64),
     Bool(bool),
+    #[cfg(feature = "float")]
     Float(f64),
 }
 
