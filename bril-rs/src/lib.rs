@@ -9,11 +9,12 @@ pub struct Program {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Function {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub args: Option<Vec<Argument>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<Argument>,
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<Type>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<Code>,
 }
 
@@ -46,21 +47,21 @@ pub enum Instruction {
         dest: String,
         #[serde(rename = "type")]
         op_type: Type,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        args: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        funcs: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        labels: Option<Vec<String>>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        funcs: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        labels: Vec<String>,
     },
     Effect {
         op: EffectOps,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        args: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        funcs: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        labels: Option<Vec<String>>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        funcs: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        labels: Vec<String>,
     },
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
