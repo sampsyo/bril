@@ -9,11 +9,12 @@ pub struct Program {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Function {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub args: Option<Vec<Argument>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<Argument>,
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<Type>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<Code>,
 }
 
@@ -46,30 +47,31 @@ pub enum Instruction {
         dest: String,
         #[serde(rename = "type")]
         op_type: Type,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        args: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        funcs: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        labels: Option<Vec<String>>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        funcs: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        labels: Vec<String>,
     },
     Effect {
         op: EffectOps,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        args: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        funcs: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        labels: Option<Vec<String>>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        funcs: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        labels: Vec<String>,
     },
 }
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ConstOps {
     #[serde(rename = "const")]
     Const,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum EffectOps {
     #[serde(rename = "jmp")]
@@ -93,7 +95,7 @@ pub enum EffectOps {
     Guard,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ValueOps {
     Add,
@@ -138,11 +140,12 @@ pub enum ValueOps {
     PtrAdd,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum Type {
     Int,
     Bool,
+    #[cfg(feature = "float")]
     Float,
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
@@ -154,6 +157,7 @@ pub enum Type {
 pub enum Literal {
     Int(i64),
     Bool(bool),
+    #[cfg(feature = "float")]
     Float(f64),
 }
 
