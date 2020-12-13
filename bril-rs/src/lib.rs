@@ -152,7 +152,7 @@ pub enum Type {
     Pointer(Box<Type>),
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Literal {
     Int(i64),
