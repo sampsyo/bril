@@ -11,8 +11,9 @@ pub struct Function {
     pub name: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<Argument>,
+    #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<Type>,
+    pub return_type: Option<Type>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<Code>,
 }
@@ -20,7 +21,8 @@ pub struct Function {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Argument {
     pub name: String,
-    pub r#type: Type,
+    #[serde(rename = "type")]
+    pub arg_type: Type,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -36,13 +38,15 @@ pub enum Instruction {
     Constant {
         op: ConstOps,
         dest: String,
-        r#type: Type,
+        #[serde(rename = "type")]
+        const_type: Type,
         value: Literal,
     },
     Value {
         op: ValueOps,
         dest: String,
-        r#type: Type,
+        #[serde(rename = "type")]
+        op_type: Type,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         args: Vec<String>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
