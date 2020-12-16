@@ -29,7 +29,7 @@ vop.3: IDENT [tyann] "=" op ";"
 eop.2: op ";"
 label.1: LABEL ":"
 
-op: IDENT (FUNC | LABEL | IDENT)*
+op: IDENT (FUNC | LABEL | IDENT | SIGNED_INT)*
 
 ?tyann: ":" type
 
@@ -37,8 +37,9 @@ lit: SIGNED_INT  -> int
   | BOOL         -> bool
   | DECIMAL      -> float
 
-type: IDENT "<" type ">" -> paramtype
-    | IDENT              -> primtype
+type: IDENT "<" type ("," type)* ">" -> paramtype
+    | IDENT "<" ">"                  -> paramtype
+    | IDENT                          -> primtype
 
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
@@ -146,7 +147,10 @@ class JSONTransformer(lark.Transformer):
             return False
 
     def paramtype(self, items):
-        return {items[0]: items[1]}
+        if len(items) == 2:
+            return {items[0]: items[1]}
+        else:
+            return {items[0]: items[1:]}
 
     def primtype(self, items):
         return str(items[0])

@@ -13,9 +13,9 @@ export type Ident = string;
 export type PrimType = "int" | "bool" | "float";
 
 /**
- * Parameterized types. (We only have pointers for now.)
+ * Parameterized types.
  */
-export type ParamType = {"ptr": Type};
+export type ParamType = {"ptr": Type, "product": Type[], "sum": Type[]};
 
 /**
  * Value types.
@@ -52,7 +52,8 @@ export interface ValueOperation extends Op {
       "load" | "ptradd" | "alloc" |
       "fadd" | "fmul" | "fsub" | "fdiv" |
       "feq" | "flt" | "fle" | "fgt" | "fge" |
-      "phi";
+      "phi" |
+      "pack" | "unpack" | "construct" | "destruct";
   dest: Ident;
   type: Type;
 }
