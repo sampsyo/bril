@@ -15,7 +15,7 @@
   unsafe: bool = eq divisor zero;
   br unsafe .unsafe .safe;
 .safe:
-  quotient = div dividend divisor;
+  quotient: int = div dividend divisor;
   constructed: sum<int, product<>> = construct quotient;
   ret constructed;
 .unsafe:
