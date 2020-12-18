@@ -16,7 +16,8 @@ let () =
                 | Call (Some (_, bril_type), _, _) ->
                   ( match bril_type with
                   | IntType -> (ints + 1, bools)
-                  | BoolType -> (ints, bools + 1) )
+                  | BoolType -> (ints, bools + 1)
+                  | SumType _ | ProdType _ -> (ints, bools) )
                 | _ -> (ints, bools)))
   in
   printf "Ints: %d Bools: %d\n" ints bools

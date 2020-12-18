@@ -3,6 +3,8 @@ open! Core
 type t =
   | IntType
   | BoolType
+  | SumType of t list
+  | ProdType of t list
 [@@deriving compare, equal, sexp_of]
 
 val of_json : Yojson.Basic.t -> t
