@@ -136,6 +136,10 @@ pub enum ValueOps {
     Load,
     #[cfg(feature = "memory")]
     PtrAdd,
+    Pack,
+    Unpack,
+    Construct,
+    Destruct,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -147,6 +151,18 @@ pub enum Type {
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
     Pointer(Box<Type>),
+    Sum(Vec<Type>),
+    Product(Vec<Type>),
+}
+
+impl Type {
+    pub fn is_unit(&self) -> bool {
+        self == &Self::Product(Vec::new())
+    }
+
+    pub fn unit() -> Self {
+        Self::Product(Vec::new())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
