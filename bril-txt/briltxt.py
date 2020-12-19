@@ -10,6 +10,7 @@ format and emits the ordinary JSON representation.
 import lark
 import sys
 import json
+import collections.abc as abc
 
 __version__ = '0.0.1'
 
@@ -172,7 +173,10 @@ def type_to_str(type):
     if isinstance(type, dict):
         assert len(type) == 1
         key, value = next(iter(type.items()))
-        return '{}<{}>'.format(key, type_to_str(value))
+        if isinstance(value, abc.Iterable):
+            return '{}<{}>'.format(key, ', '.join(map(type_to_str, value)))
+        else:
+            return '{}<{}>'.format(key, type_to_str(value))
     else:
         return type
 
