@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Program {
@@ -161,10 +161,25 @@ pub enum Literal {
     Float(f64),
 }
 
-pub fn load_program() -> Program {
+impl Literal {
+    pub fn get_type(&self) -> Type {
+        match self {
+            &Literal::Int(_) => Type::Int,
+            &Literal::Bool(_) => Type::Bool,
+            #[cfg(feature = "float")]
+            &Literal::Float(_) => Type::Float,
+        }
+    }
+}
+
+pub fn load_program_from_read<R: std::io::Read>(mut input: R) -> Program {
     let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer).unwrap();
+    input.read_to_string(&mut buffer).unwrap();
     serde_json::from_str(&buffer).unwrap()
+}
+
+pub fn load_program() -> Program {
+    load_program_from_read(std::io::stdin())
 }
 
 pub fn output_program(p: &Program) {
