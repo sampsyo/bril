@@ -20,6 +20,24 @@ fn main() {
         println!(x);
         x: i32 = x + 1;
     }
+
+    let tup: (i32, i32) = (2, 3);
+    let b: i32 = tup.0;
+    println!(b);
+
+    let c: Foobar = Foobar::Y;
+
+    let d: i32 = match c {
+        Foobar::X(e, f) => f,
+        Foobar::Y => 12,
+    };
+
+    println!(d);
+}
+
+enum Foobar {
+    Y,
+    X(i32, i32),
 }
 
 fn foobar() -> i32 {

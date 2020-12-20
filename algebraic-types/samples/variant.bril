@@ -6,6 +6,7 @@
   print destructed;
   ret;
 .bool:
-  print -1;
+  val: int = const -1;
+  print val;
   ret;
 }

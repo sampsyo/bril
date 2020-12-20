@@ -1,7 +1,7 @@
 mod lib;
 
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{self, Read};
 use std::sync::Mutex;
 
@@ -31,7 +31,10 @@ fn unique_label() -> String {
     format!("_label_{}", *counter).to_string()
 }
 
-fn process_type(typ: &syn::Type) -> Type {
+fn process_type(
+    typ: &syn::Type,
+    type_map: &HashMap<String, (Type, HashMap<String, usize>)>,
+) -> Type {
     if typ == &syn::parse_quote!(i32) {
         Type::Int
     } else if typ == &syn::parse_quote!(bool) {
@@ -43,9 +46,16 @@ fn process_type(typ: &syn::Type) -> Type {
             syn::Type::Tuple(tuple) => {
                 let mut typs = Vec::new();
                 for typ in tuple.elems.iter() {
-                    typs.push(process_type(typ));
+                    typs.push(process_type(typ, type_map));
                 }
-                Type::Sum(typs)
+                Type::Product(typs)
+            }
+            syn::Type::Path(syn::TypePath { path, .. }) => {
+                let name = process_path(&path);
+                match type_map.get(&name) {
+                    Some((typ, _)) => typ.clone(),
+                    None => panic!("unrecognized type: {}", name),
+                }
             }
             _ => panic!("unrecognized type: {:?}", typ),
         }
@@ -60,15 +70,28 @@ fn process_pat(pat: &syn::Pat) -> String {
     }
 }
 
-fn process_pat_typ(pat: &syn::Pat) -> Type {
+fn process_pat_typ(
+    pat: &syn::Pat,
+    type_map: &HashMap<String, (Type, HashMap<String, usize>)>,
+) -> Type {
     match pat {
-        syn::Pat::Type(syn::PatType { ty, .. }) => process_type(ty),
+        syn::Pat::Type(syn::PatType { ty, .. }) => process_type(ty, type_map),
         _ => panic!("missing type annotation for {:?}", pat),
     }
 }
 
+fn process_path_parts(path: &syn::Path) -> Vec<String> {
+    path.segments
+        .iter()
+        .map(|seg| seg.ident.to_string())
+        .collect()
+}
+
 fn process_path(path: &syn::Path) -> String {
-    return path.get_ident().unwrap().to_string();
+    match &process_path_parts(path)[..] {
+        [ident] => ident.clone(),
+        _ => panic!("expected path of length one, got {:?} instead", path),
+    }
 }
 
 fn process_binop(binop: &syn::BinOp) -> (ValueOps, Type, Type) {
@@ -93,21 +116,59 @@ fn process_expr(
     typ: &Type,
     expr: &syn::Expr,
     func_map: &HashMap<String, Function>,
+    type_map: &HashMap<String, (Type, HashMap<String, usize>)>,
     return_type: &Option<Type>,
 ) -> Vec<Code> {
     match expr {
-        syn::Expr::Path(syn::ExprPath { path, .. }) => {
-            vec![Code::Instruction(Instruction::Value {
+        syn::Expr::Path(syn::ExprPath { path, .. }) => match &process_path_parts(path)[..] {
+            [var] => vec![Code::Instruction(Instruction::Value {
                 op: ValueOps::Id,
                 dest: name.to_string(),
                 op_type: typ.clone(),
-                args: Some(vec![process_path(path)]),
+                args: Some(vec![var.clone()]),
                 funcs: None,
                 labels: None,
-            })]
-        }
+            })],
+            [typ_name, constructor] => {
+                let (typ, constructor_map) = match type_map.get(typ_name) {
+                    Some(res) => res,
+                    None => panic!("unknown type: {:?}", typ_name),
+                };
+
+                match constructor_map.get(constructor) {
+                    Some(_) => (),
+                    None => panic!(
+                        "undefined constructor {:?} for type {:?}",
+                        constructor, typ_name
+                    ),
+                };
+
+                let tmp = unique_id();
+
+                let mut expr = Vec::new();
+                expr.push(Code::Instruction(Instruction::Value {
+                    op: ValueOps::Pack,
+                    dest: tmp.clone(),
+                    op_type: Type::unit(),
+                    args: None,
+                    funcs: None,
+                    labels: None,
+                }));
+                expr.push(Code::Instruction(Instruction::Value {
+                    op: ValueOps::Construct,
+                    dest: name.to_string(),
+                    op_type: typ.clone(),
+                    args: Some(vec![tmp]),
+                    funcs: None,
+                    labels: None,
+                }));
+
+                expr
+            }
+            _ => panic!("invalid path: {:?}", path),
+        },
         syn::Expr::Paren(syn::ExprParen { expr, .. }) => {
-            process_expr(name, typ, expr, func_map, return_type)
+            process_expr(name, typ, expr, func_map, type_map, return_type)
         }
         syn::Expr::Lit(syn::ExprLit {
             lit: syn::Lit::Int(lit),
@@ -134,7 +195,14 @@ fn process_expr(
             syn::Expr::Type(syn::ExprType { expr, ty, .. }) => match *expr.clone() {
                 syn::Expr::Path(syn::ExprPath { path, .. }) => {
                     let var = process_path(&path);
-                    process_expr(&var, &process_type(&ty), &right, &func_map, &return_type)
+                    process_expr(
+                        &var,
+                        &process_type(&ty, &type_map),
+                        &right,
+                        &func_map,
+                        &type_map,
+                        &return_type,
+                    )
                 }
                 _ => panic!("unsupported left hand side of assignment"),
             },
@@ -151,8 +219,9 @@ fn process_expr(
             expr.append(&mut process_expr(
                 &tmp,
                 &Type::Bool,
-                e,
+                &e,
                 &func_map,
+                &type_map,
                 &return_type,
             ));
             expr.push(Code::Instruction(Instruction::Value {
@@ -160,6 +229,40 @@ fn process_expr(
                 dest: name.to_string(),
                 op_type: Type::Bool,
                 args: Some(vec![tmp]),
+                funcs: None,
+                labels: None,
+            }));
+
+            expr
+        }
+        syn::Expr::Unary(syn::ExprUnary {
+            op: syn::UnOp::Neg(_),
+            expr: e,
+            ..
+        }) => {
+            let tmp = unique_id();
+            let neg_one = unique_id();
+
+            let mut expr = Vec::new();
+            expr.append(&mut process_expr(
+                &tmp,
+                &Type::Int,
+                &e,
+                &func_map,
+                &type_map,
+                &return_type,
+            ));
+            expr.push(Code::Instruction(Instruction::Constant {
+                op: ConstOps::Const,
+                dest: neg_one.clone(),
+                const_type: Type::Int,
+                value: Literal::Int(-1),
+            }));
+            expr.push(Code::Instruction(Instruction::Value {
+                op: ValueOps::Mul,
+                dest: name.to_string(),
+                op_type: Type::Int,
+                args: Some(vec![tmp, neg_one]),
                 funcs: None,
                 labels: None,
             }));
@@ -179,6 +282,7 @@ fn process_expr(
                 &arg_typ,
                 left,
                 &func_map,
+                &type_map,
                 &return_type,
             ));
             expr.append(&mut process_expr(
@@ -186,6 +290,7 @@ fn process_expr(
                 &arg_typ,
                 right,
                 &func_map,
+                &type_map,
                 &return_type,
             ));
             expr.push(Code::Instruction(Instruction::Value {
@@ -200,64 +305,130 @@ fn process_expr(
             expr
         }
         syn::Expr::Call(syn::ExprCall { func, args, .. }) => match *func.clone() {
-            syn::Expr::Path(syn::ExprPath { path, .. }) => {
-                let func_name = process_path(&path);
-                let func_header = match func_map.get(&func_name) {
-                    Some(header) => header,
-                    None => panic!("undefined function: {}", func_name),
-                };
+            syn::Expr::Path(syn::ExprPath { path, .. }) => match &process_path_parts(&path)[..] {
+                [func_name] => {
+                    let func_header = match func_map.get(func_name) {
+                        Some(header) => header,
+                        None => panic!("undefined function: {}", func_name),
+                    };
 
-                let mut arg_list = Vec::new();
-                let mut expr = Vec::new();
+                    let mut arg_list = Vec::new();
+                    let mut expr = Vec::new();
 
-                if args.len() > 0 {
-                    let header_args = func_header.args.clone().unwrap();
-                    if args.len() != header_args.len() {
-                        panic!("incompatible function call arguments arity");
+                    if args.len() > 0 {
+                        let header_args = func_header.args.clone().unwrap();
+                        if args.len() != header_args.len() {
+                            panic!("incompatible function call arguments arity");
+                        }
+                        for (arg, sig) in args.iter().zip(header_args) {
+                            let tmp = unique_id();
+                            expr.append(&mut process_expr(
+                                &tmp,
+                                &sig.arg_type,
+                                arg,
+                                &func_map,
+                                &type_map,
+                                &return_type,
+                            ));
+                            arg_list.push(tmp);
+                        }
                     }
-                    for (arg, sig) in args.iter().zip(header_args) {
+
+                    let ret_type = func_header.return_type.clone().unwrap();
+
+                    expr.push(if ret_type.is_unit() {
+                        Code::Instruction(Instruction::Effect {
+                            op: EffectOps::Call,
+                            args: if arg_list.is_empty() {
+                                None
+                            } else {
+                                Some(arg_list)
+                            },
+                            funcs: Some(vec![func_name.clone()]),
+                            labels: None,
+                        })
+                    } else {
+                        Code::Instruction(Instruction::Value {
+                            op: ValueOps::Call,
+                            dest: name.to_string(),
+                            op_type: ret_type,
+                            args: if arg_list.is_empty() {
+                                None
+                            } else {
+                                Some(arg_list)
+                            },
+                            funcs: Some(vec![func_name.clone()]),
+                            labels: None,
+                        })
+                    });
+
+                    expr
+                }
+                [typ_name, constructor] => {
+                    let (typ, constructor_map) = match type_map.get(typ_name) {
+                        Some(res) => res,
+                        None => panic!("unknown type: {:?}", typ_name),
+                    };
+
+                    let index = match constructor_map.get(constructor) {
+                        Some(res) => res,
+                        None => panic!(
+                            "undefined constructor {:?} for type {:?}",
+                            constructor, typ_name
+                        ),
+                    };
+
+                    let typs = match typ {
+                        Type::Sum(typs) => match &typs[index.clone()] {
+                            Type::Product(typs) => typs,
+                            _ => panic!("impossible???"),
+                        },
+                        _ => panic!("impossible??"),
+                    };
+
+                    if args.len() != typs.len() {
+                        panic!("incorrect number of constructor arguments for constructor");
+                    }
+
+                    let tmp = unique_id();
+
+                    let mut expr = Vec::new();
+                    let mut arg_list = Vec::new();
+
+                    for (arg, sig) in args.iter().zip(typs) {
                         let tmp = unique_id();
                         expr.append(&mut process_expr(
                             &tmp,
-                            &sig.arg_type,
-                            arg,
+                            &sig,
+                            &arg,
                             &func_map,
+                            &type_map,
                             &return_type,
                         ));
                         arg_list.push(tmp);
                     }
-                }
 
-                let ret_type = func_header.return_type.clone().unwrap();
-
-                expr.push(if ret_type.is_unit() {
-                    Code::Instruction(Instruction::Effect {
-                        op: EffectOps::Call,
-                        args: if arg_list.is_empty() {
-                            None
-                        } else {
-                            Some(arg_list)
-                        },
-                        funcs: Some(vec![func_name]),
+                    expr.push(Code::Instruction(Instruction::Value {
+                        op: ValueOps::Pack,
+                        dest: tmp.clone(),
+                        op_type: Type::Product(typs.clone()),
+                        args: Some(arg_list),
+                        funcs: None,
                         labels: None,
-                    })
-                } else {
-                    Code::Instruction(Instruction::Value {
-                        op: ValueOps::Call,
+                    }));
+                    expr.push(Code::Instruction(Instruction::Value {
+                        op: ValueOps::Construct,
                         dest: name.to_string(),
-                        op_type: ret_type,
-                        args: if arg_list.is_empty() {
-                            None
-                        } else {
-                            Some(arg_list)
-                        },
-                        funcs: Some(vec![func_name]),
+                        op_type: typ.clone(),
+                        args: Some(vec![tmp]),
+                        funcs: None,
                         labels: None,
-                    })
-                });
+                    }));
 
-                expr
-            }
+                    expr
+                }
+                _ => panic!("arbitrary function expressions not supported"),
+            },
             _ => panic!("unuspported function call syntax: {:?}", func),
         },
         syn::Expr::Macro(syn::ExprMacro {
@@ -295,8 +466,9 @@ fn process_expr(
             expr.append(&mut process_expr(
                 &tmp,
                 &Type::Bool,
-                cond,
+                &cond,
                 &func_map,
+                &type_map,
                 &return_type,
             ));
             expr.push(Code::Instruction(Instruction::Effect {
@@ -306,7 +478,12 @@ fn process_expr(
                 labels: Some(vec![b_tr.clone(), b_fa.clone()]),
             }));
             expr.push(Code::Label { label: b_tr });
-            expr.append(&mut process_block(&then_branch, &func_map, &return_type));
+            expr.append(&mut process_block(
+                &then_branch,
+                &func_map,
+                &type_map,
+                &return_type,
+            ));
             expr.push(Code::Instruction(Instruction::Effect {
                 op: EffectOps::Jump,
                 args: None,
@@ -318,8 +495,9 @@ fn process_expr(
                 Some((_, branch)) => expr.append(&mut process_expr(
                     &unique_id(),
                     &Type::unit(),
-                    branch,
+                    &branch,
                     &func_map,
+                    &type_map,
                     &return_type,
                 )),
                 None => (),
@@ -329,7 +507,7 @@ fn process_expr(
             expr
         }
         syn::Expr::Block(syn::ExprBlock { block, .. }) => {
-            process_block(&block, &func_map, &return_type)
+            process_block(&block, &func_map, &type_map, &return_type)
         }
         syn::Expr::While(syn::ExprWhile { cond, body, .. }) => {
             let tmp = unique_id();
@@ -344,8 +522,9 @@ fn process_expr(
             expr.append(&mut process_expr(
                 &tmp,
                 &Type::Bool,
-                cond,
+                &cond,
                 &func_map,
+                &type_map,
                 &return_type,
             ));
             expr.push(Code::Instruction(Instruction::Effect {
@@ -355,13 +534,226 @@ fn process_expr(
                 labels: Some(vec![start.clone(), end.clone()]),
             }));
             expr.push(Code::Label { label: start });
-            expr.append(&mut process_block(&body, &func_map, &return_type));
+            expr.append(&mut process_block(
+                &body,
+                &func_map,
+                &type_map,
+                &return_type,
+            ));
             expr.push(Code::Instruction(Instruction::Effect {
                 op: EffectOps::Jump,
                 args: None,
                 funcs: None,
                 labels: Some(vec![header]),
             }));
+            expr.push(Code::Label { label: end });
+
+            expr
+        }
+        syn::Expr::Tuple(syn::ExprTuple { elems, .. }) => {
+            let typs = match typ {
+                Type::Product(typs) => typs,
+                _ => panic!("expected product typ, not {:?}", typ),
+            };
+
+            if typs.len() != elems.len() {
+                panic!("tuple expression has mismatched arity")
+            }
+
+            let mut expr = Vec::new();
+            let mut tmps = Vec::new();
+
+            for (elem, typ) in elems.iter().zip(typs.iter()) {
+                let tmp = unique_id();
+                expr.append(&mut process_expr(
+                    &tmp,
+                    &typ,
+                    &elem,
+                    &func_map,
+                    &type_map,
+                    &return_type,
+                ));
+                tmps.push(tmp);
+            }
+
+            expr.push(Code::Instruction(Instruction::Value {
+                op: ValueOps::Pack,
+                dest: name.to_string(),
+                op_type: typ.clone(),
+                args: Some(tmps),
+                funcs: None,
+                labels: None,
+            }));
+
+            expr
+        }
+        syn::Expr::Field(syn::ExprField {
+            base,
+            member: syn::Member::Unnamed(syn::Index { index, .. }),
+            ..
+        }) => match *base.clone() {
+            syn::Expr::Path(syn::ExprPath { path, .. }) => {
+                let var = process_path(&path);
+
+                vec![Code::Instruction(Instruction::Value {
+                    op: ValueOps::Unpack,
+                    dest: name.to_string(),
+                    op_type: typ.clone(),
+                    args: Some(vec![var, index.to_string()]),
+                    funcs: None,
+                    labels: None,
+                })]
+            }
+            _ => panic!("tuple-indexing arbitrary expressions is not supported"),
+        },
+        syn::Expr::Match(syn::ExprMatch { expr: e, arms, .. }) => {
+            let mut variant_data = None;
+            let mut branches = HashMap::new();
+            for arm in arms {
+                let (path, args) = match arm.pat.clone() {
+                    syn::Pat::TupleStruct(syn::PatTupleStruct {
+                        path,
+                        pat: syn::PatTuple { elems, .. },
+                        ..
+                    }) => (path, elems.iter().map(|pat| process_pat(pat)).collect()),
+                    syn::Pat::Path(syn::PatPath { path, .. }) => (path, Vec::new()),
+                    _ => panic!("invalid match pattern: {:?}", arm.pat),
+                };
+
+                let (variant_name, constr) = match &process_path_parts(&path)[..] {
+                    [variant_name, constr] => (variant_name.clone(), constr.clone()),
+                    _ => panic!("unsupported pattern: {:?}", path),
+                };
+
+                let index_map = match &variant_data {
+                    None => match type_map.get(&variant_name) {
+                        Some((typ, index_map)) => {
+                            variant_data = Some((variant_name, typ, index_map));
+                            index_map
+                        }
+                        None => panic!("unrecognized type: {:?}", variant_name),
+                    },
+                    Some((existing_variant_name, _, index_map)) => {
+                        if existing_variant_name != &variant_name {
+                            panic!(
+                                "multiple types in match: {:?}, {:?}",
+                                existing_variant_name, variant_name
+                            )
+                        };
+                        index_map
+                    }
+                };
+
+                let index = match index_map.get(&constr) {
+                    Some(index) => index,
+                    None => panic!("should be impossible??"),
+                };
+
+                branches.insert(
+                    index,
+                    (
+                        args,
+                        *arm.body.clone(),
+                        format!("{}_branch_{}", unique_label(), index),
+                    ),
+                );
+            }
+
+            let (_variant_name, variant_typ, constr_typs) = match variant_data {
+                Some((variant_name, variant_typ, _)) => match &variant_typ {
+                    Type::Sum(typs) => (variant_name, variant_typ, typs),
+                    _ => panic!("should be impossible???"),
+                },
+                None => panic!("match statement cannot be empty"),
+            };
+
+            if constr_typs.len() != branches.len() {
+                panic!("match missing constructors!");
+            }
+
+            let tmp = unique_id();
+            let dst = unique_id();
+            let end = format!("{}_match_end", unique_label());
+
+            let mut expr = Vec::new();
+
+            expr.append(&mut process_expr(
+                &tmp,
+                &variant_typ,
+                &e,
+                &func_map,
+                &type_map,
+                &return_type,
+            ));
+
+            let mut labels = Vec::new();
+            for index in 0..branches.len() {
+                match branches.get(&index) {
+                    Some((_, _, label)) => labels.push(label.clone()),
+                    None => panic!("should be impossible????"),
+                };
+            }
+
+            expr.push(Code::Instruction(Instruction::Value {
+                op: ValueOps::Destruct,
+                dest: dst.clone(),
+                op_type: variant_typ.clone(),
+                args: Some(vec![tmp]),
+                funcs: None,
+                labels: Some(labels),
+            }));
+
+            for index in 0..branches.len() {
+                let (args, block, label) = match branches.get(&index) {
+                    Some(data) => data,
+                    None => panic!("should be impossible????"),
+                };
+
+                let arg_typs = match &constr_typs[index] {
+                    Type::Product(arg_typs) => arg_typs,
+                    _ => panic!("should be impossible?????"),
+                };
+
+                if arg_typs.len() != args.len() {
+                    panic!(
+                        "invalid arity for match pattern: expected {}, got {}",
+                        arg_typs.len(),
+                        args.len()
+                    );
+                }
+
+                expr.push(Code::Label {
+                    label: label.clone(),
+                });
+
+                for (i, arg) in args.iter().enumerate() {
+                    expr.push(Code::Instruction(Instruction::Value {
+                        op: ValueOps::Unpack,
+                        dest: arg.clone(),
+                        op_type: arg_typs[i].clone(),
+                        args: Some(vec![dst.clone(), i.to_string()]),
+                        funcs: None,
+                        labels: None,
+                    }));
+                }
+
+                expr.append(&mut process_expr(
+                    &name,
+                    &typ,
+                    &block,
+                    &func_map,
+                    &type_map,
+                    &return_type,
+                ));
+
+                expr.push(Code::Instruction(Instruction::Effect {
+                    op: EffectOps::Jump,
+                    args: None,
+                    funcs: None,
+                    labels: Some(vec![end.clone()]),
+                }));
+            }
+
             expr.push(Code::Label { label: end });
 
             expr
@@ -374,14 +766,16 @@ fn process_stmt(
     stmt: &syn::Stmt,
     return_type: &Option<Type>,
     func_map: &HashMap<String, Function>,
+    type_map: &HashMap<String, (Type, HashMap<String, usize>)>,
 ) -> Vec<Code> {
     match stmt {
         syn::Stmt::Local(local) => match &local.init {
             Some((_, expr)) => process_expr(
                 &process_pat(&local.pat),
-                &process_pat_typ(&local.pat),
+                &process_pat_typ(&local.pat, &type_map),
                 &expr,
                 &func_map,
+                &type_map,
                 &return_type,
             ),
             _ => panic!("must specify type and value for let binding"),
@@ -395,8 +789,9 @@ fn process_stmt(
                     expr.append(&mut process_expr(
                         &tmp,
                         &ret_type,
-                        e,
+                        &e,
                         &func_map,
+                        &type_map,
                         &return_type,
                     ));
                     expr.push(Code::Instruction(Instruction::Effect {
@@ -427,6 +822,7 @@ fn process_stmt(
                 &Type::unit(),
                 &expr,
                 &func_map,
+                &type_map,
                 &return_type,
             )
         }
@@ -437,11 +833,12 @@ fn process_stmt(
 fn process_block(
     block: &syn::Block,
     func_map: &HashMap<String, Function>,
+    type_map: &HashMap<String, (Type, HashMap<String, usize>)>,
     return_type: &Option<Type>,
 ) -> Vec<Code> {
     let mut instrs = Vec::new();
     for stmt in &block.stmts[..] {
-        instrs.append(&mut process_stmt(&stmt, &return_type, &func_map));
+        instrs.append(&mut process_stmt(&stmt, &return_type, &func_map, &type_map));
     }
     instrs
 }
@@ -449,6 +846,7 @@ fn process_block(
 fn process_func(
     func: &syn::ItemFn,
     func_map: &HashMap<String, Function>,
+    type_map: &HashMap<String, (Type, HashMap<String, usize>)>,
     get_instrs: bool,
 ) -> Function {
     let name = func.sig.ident.to_string();
@@ -460,7 +858,7 @@ fn process_func(
                 Some(Type::unit())
             }
         }
-        syn::ReturnType::Type(_, typ) => Some(process_type(&typ)),
+        syn::ReturnType::Type(_, typ) => Some(process_type(&typ, &type_map)),
     };
 
     let mut args = Vec::new();
@@ -470,7 +868,7 @@ fn process_func(
             syn::FnArg::Typed(pat_type) => {
                 args.push(Argument {
                     name: process_pat(&pat_type.pat),
-                    arg_type: process_type(&pat_type.ty),
+                    arg_type: process_type(&pat_type.ty, &type_map),
                 });
             }
         }
@@ -478,7 +876,12 @@ fn process_func(
 
     let mut instrs = Vec::new();
     if get_instrs {
-        instrs.append(&mut process_block(&func.block, &func_map, &return_type));
+        instrs.append(&mut process_block(
+            &func.block,
+            &func_map,
+            &type_map,
+            &return_type,
+        ));
     }
 
     Function {
@@ -489,20 +892,62 @@ fn process_func(
     }
 }
 
+fn process_enum(
+    enm: &syn::ItemEnum,
+    type_map: &HashMap<String, (Type, HashMap<String, usize>)>,
+) -> (String, HashMap<String, usize>, Type) {
+    let name = enm.ident.to_string();
+
+    let mut variants = Vec::new();
+    let mut constructor_map = HashMap::new();
+    let mut type_set = HashSet::new();
+
+    for (i, variant) in enm.variants.iter().enumerate() {
+        constructor_map.insert(variant.ident.to_string(), i);
+        let typ = match &variant.fields {
+            syn::Fields::Unit => Type::unit(),
+            syn::Fields::Unnamed(syn::FieldsUnnamed { unnamed, .. }) => Type::Product(
+                unnamed
+                    .iter()
+                    .map(|field| process_type(&field.ty, &type_map))
+                    .collect(),
+            ),
+            syn::Fields::Named(_) => panic!("named types in constructors not supported"),
+        };
+        if type_set.contains(&typ) {
+            panic!(
+                "variant {:?} has two constructors with the same type {:?}, which is not permitted",
+                name, &typ
+            );
+        }
+        variants.push(typ.clone());
+        type_set.insert(typ);
+    }
+
+    let typ = Type::Sum(variants.iter().map(|typ| typ.clone()).collect());
+
+    (name, constructor_map, typ)
+}
+
 fn main() {
     let tree = parse_file();
 
     let mut functions = Vec::new();
+    let mut type_map = HashMap::new();
     for item in tree.items {
         match item {
             syn::Item::Fn(function) => functions.push(function),
+            syn::Item::Enum(enm) => {
+                let (name, constructor_map, typ) = process_enum(&enm, &type_map);
+                type_map.insert(name, (typ, constructor_map));
+            }
             _ => (),
         }
     }
 
     let mut func_map = HashMap::new();
     for function in &functions[..] {
-        let func = process_func(function, &func_map, false);
+        let func = process_func(function, &func_map, &type_map, false);
         func_map.insert(func.name.clone(), func);
     }
 
@@ -513,7 +958,7 @@ fn main() {
     for function in &functions[..] {
         program
             .functions
-            .push(process_func(function, &func_map, true))
+            .push(process_func(function, &func_map, &type_map, true))
     }
 
     output_program(&program);

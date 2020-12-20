@@ -166,9 +166,22 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
   } else if (typeof typ === "object" && typ.hasOwnProperty("ptr")) {
     return val.hasOwnProperty("loc");
   } else if (typeof typ === "object" && typ.hasOwnProperty("product")) {
-    return Array.isArray(val);
+    if (Array.isArray(val)) {
+      if (typ.product.length == val.length) {
+        for (let i = 0; i < val.length; i++) {
+          if (!typeCheck(val[i], typ.product[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
   } else if (typeof typ === "object" && typ.hasOwnProperty("sum")) {
-    return Array.isArray(val);
+    if (Array.isArray(val) && val.length == 2 && typeof val[0] === "number") {
+      return typeCheck(val[1], typ.sum[val[0]]);
+    }
+    return false;
   }
   throw error(`unknown type ${typ}`);
 }
