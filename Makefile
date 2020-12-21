@@ -24,7 +24,8 @@ ts:
 
 .PHONY: deploy
 RSYNCARGS := --compress --recursive --checksum --itemize-changes \
-	--delete -e ssh --perms --chmod=Du=rwx,Dgo=rx,Fu=rw,Fog=r
+	--delete -e ssh --perms --chmod=Du=rwx,Dgo=rx,Fu=rw,Fog=r \
+	--exclude=.DS_Store
 DEST := courses:coursewww/capra.cs.cornell.edu/htdocs/bril
 deploy: book
 	rsync $(RSYNCARGS) ./book/ $(DEST)
