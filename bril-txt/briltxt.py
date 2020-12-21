@@ -35,7 +35,7 @@ op: IDENT (FUNC | LABEL | IDENT)*
 
 lit: SIGNED_INT  -> int
   | BOOL         -> bool
-  | DECIMAL      -> float
+  | SIGNED_FLOAT -> float
 
 type: IDENT "<" type ">" -> paramtype
     | IDENT              -> primtype
@@ -47,7 +47,7 @@ LABEL: "." IDENT
 COMMENT: /#.*/
 
 %import common.SIGNED_INT
-%import common.DECIMAL
+%import common.SIGNED_FLOAT
 %import common.WS
 %import common.LETTER
 %import common.DIGIT
