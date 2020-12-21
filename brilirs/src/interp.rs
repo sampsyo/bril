@@ -29,7 +29,7 @@ fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(
 fn get_values<'a>(
   vars: &'a HashMap<String, Value>,
   arity: usize,
-  args: &Vec<String>,
+  args: &[String],
 ) -> Result<Vec<&'a Value>, InterpError> {
   if args.len() != arity {
     return Err(InterpError::BadNumArgs(arity, args.len()));
@@ -49,7 +49,7 @@ fn get_values<'a>(
 fn get_args<'a, T>(
   vars: &'a HashMap<String, Value>,
   arity: usize,
-  args: &Vec<String>,
+  args: &[String],
 ) -> Result<Vec<T>, InterpError>
 where
   T: TryFrom<&'a Value>,
@@ -80,10 +80,10 @@ enum Value {
 
 impl Value {
   pub fn get_type(&self) -> bril_rs::Type {
-    match self {
-      &Value::Int(_) => bril_rs::Type::Int,
-      &Value::Bool(_) => bril_rs::Type::Bool,
-      &Value::Float(_) => bril_rs::Type::Float,
+    match *self {
+      Value::Int(_) => bril_rs::Type::Int,
+      Value::Bool(_) => bril_rs::Type::Bool,
+      Value::Float(_) => bril_rs::Type::Float,
     }
   }
 }
@@ -150,11 +150,12 @@ impl TryFrom<&Value> for f64 {
   }
 }
 
+#[allow(clippy::float_cmp)]
 fn execute_value_op(
   op: &bril_rs::ValueOps,
   dest: &str,
   op_type: &bril_rs::Type,
-  args: &Vec<String>,
+  args: &[String],
   value_store: &mut HashMap<String, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::*;
@@ -276,7 +277,7 @@ fn execute_value_op(
   Ok(())
 }
 
-fn check_num_args(expected: usize, args: &Vec<String>) -> Result<(), InterpError> {
+fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
   if expected != args.len() {
     Err(InterpError::BadNumArgs(expected, args.len()))
   } else {
@@ -284,7 +285,7 @@ fn check_num_args(expected: usize, args: &Vec<String>) -> Result<(), InterpError
   }
 }
 
-fn check_num_labels(expected: usize, labels: &Vec<String>) -> Result<(), InterpError> {
+fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpError> {
   if expected != labels.len() {
     Err(InterpError::BadNumArgs(expected, labels.len()))
   } else {
@@ -296,8 +297,8 @@ fn check_num_labels(expected: usize, labels: &Vec<String>) -> Result<(), InterpE
 // *not* executed).
 fn execute_effect_op<T: std::io::Write>(
   op: &bril_rs::EffectOps,
-  args: &Vec<String>,
-  labels: &Vec<String>,
+  args: &[String],
+  labels: &[String],
   curr_block: &BasicBlock,
   value_store: &HashMap<String, Value>,
   mut out: T,
@@ -322,11 +323,9 @@ fn execute_effect_op<T: std::io::Write>(
       return Ok(false);
     }
     Print => {
-      write!(
+      writeln!(
         out,
-        // NOTE: The Bril spec implies print should just output its arguments, with no newline.
-        // However, brili uses console.log, which does add a newline, so we will too
-        "{}\n",
+        "{}",
         args
           .iter()
           .map(|a| format!("{}", value_store[a]))

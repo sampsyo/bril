@@ -1,5 +1,4 @@
 use crate::basic_block::BasicBlock;
-use bril_rs;
 
 use std::collections::HashMap;
 

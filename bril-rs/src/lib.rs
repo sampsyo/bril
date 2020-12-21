@@ -163,11 +163,11 @@ pub enum Literal {
 
 impl Literal {
     pub fn get_type(&self) -> Type {
-        match self {
-            &Literal::Int(_) => Type::Int,
-            &Literal::Bool(_) => Type::Bool,
+        match *self {
+            Literal::Int(_) => Type::Int,
+            Literal::Bool(_) => Type::Bool,
             #[cfg(feature = "float")]
-            &Literal::Float(_) => Type::Float,
+            Literal::Float(_) => Type::Float,
         }
     }
 }

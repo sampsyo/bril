@@ -1,4 +1,3 @@
-use bril_rs;
 use std::collections::HashMap;
 
 // A program composed of basic blocks.
