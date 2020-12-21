@@ -40,13 +40,20 @@ macro_rules! interp_tests {
 }
 
 interp_tests! {
-    printvar: "../test/ts/printvar.json",
-    loopfact: "../test/ts/loopfact.json",
-    add: "../test/print/add.json",
+    div: "./testdata/div.json",
+    float: "./testdata/float.json",
+    jmp: "./testdata/jmp.json",
+    add: "./testdata/add.json",
+    mul: "./testdata/mul.json",
+    sub: "./testdata/sub.json",
+    eq: "./testdata/eq.json",
+    lt: "./testdata/lt.json",
+    gt: "./testdata/gt.json",
+    le: "./testdata/le.json",
+    ge: "./testdata/ge.json",
+    not: "./testdata/not.json",
+    and: "./testdata/and.json",
+    or: "./testdata/or.json",
+    id: "./testdata/id.json",
+    br: "./testdata/br.json",
 }
-
-//#[test]
-//fn test() {
-//    run_both_interpreters("../test/ts/printvar.json");
-//    run_both_interpreters("../test/ts/loopfact.json");
-//}
