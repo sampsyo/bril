@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Program {
@@ -9,11 +9,12 @@ pub struct Program {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Function {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub args: Option<Vec<Argument>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<Argument>,
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<Type>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<Code>,
 }
 
@@ -46,30 +47,31 @@ pub enum Instruction {
         dest: String,
         #[serde(rename = "type")]
         op_type: Type,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        args: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        funcs: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        labels: Option<Vec<String>>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        funcs: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        labels: Vec<String>,
     },
     Effect {
         op: EffectOps,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        args: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        funcs: Option<Vec<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        labels: Option<Vec<String>>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        funcs: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        labels: Vec<String>,
     },
 }
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ConstOps {
     #[serde(rename = "const")]
     Const,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum EffectOps {
     #[serde(rename = "jmp")]
@@ -93,7 +95,7 @@ pub enum EffectOps {
     Guard,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ValueOps {
     Add,
@@ -147,6 +149,7 @@ pub enum ValueOps {
 pub enum Type {
     Int,
     Bool,
+    #[cfg(feature = "float")]
     Float,
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
@@ -170,13 +173,29 @@ impl Type {
 pub enum Literal {
     Int(i64),
     Bool(bool),
+    #[cfg(feature = "float")]
     Float(f64),
 }
 
-pub fn load_program() -> Program {
+impl Literal {
+    pub fn get_type(&self) -> Type {
+        match *self {
+            Literal::Int(_) => Type::Int,
+            Literal::Bool(_) => Type::Bool,
+            #[cfg(feature = "float")]
+            Literal::Float(_) => Type::Float,
+        }
+    }
+}
+
+pub fn load_program_from_read<R: std::io::Read>(mut input: R) -> Program {
     let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer).unwrap();
+    input.read_to_string(&mut buffer).unwrap();
     serde_json::from_str(&buffer).unwrap()
+}
+
+pub fn load_program() -> Program {
+    load_program_from_read(std::io::stdin())
 }
 
 pub fn output_program(p: &Program) {

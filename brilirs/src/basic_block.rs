@@ -1,4 +1,3 @@
-use crate::ir_types::{Function, Instruction, Operation, Program};
 use std::collections::HashMap;
 
 // A program composed of basic blocks.
@@ -7,7 +6,7 @@ pub type BBProgram = (Option<usize>, Vec<BasicBlock>, HashMap<String, usize>);
 
 #[derive(Debug)]
 pub struct BasicBlock {
-  pub instrs: Vec<Operation<usize>>,
+  pub instrs: Vec<bril_rs::Code>,
   pub exit: Vec<usize>,
 }
 
@@ -20,50 +19,49 @@ impl BasicBlock {
   }
 }
 
-pub fn find_basic_blocks(prog: Program<usize>) -> BBProgram {
+pub fn find_basic_blocks(prog: bril_rs::Program) -> BBProgram {
   let mut main_fn = None;
   let mut blocks = Vec::new();
   let mut labels = HashMap::new();
 
-  let mut bb_helper = |func: Function<usize>| -> usize {
+  let mut bb_helper = |func: bril_rs::Function| -> usize {
     let mut curr_block = BasicBlock::new();
     let root_block = blocks.len();
-    let mut label = None;
+    let mut curr_label = None;
     for instr in func.instrs.into_iter() {
       match instr {
-        Instruction::Label(ref l) => {
+        bril_rs::Code::Label { ref label } => {
           if !curr_block.instrs.is_empty() {
             blocks.push(curr_block);
-            if let Some(old_label) = label {
+            if let Some(old_label) = curr_label {
               labels.insert(old_label, blocks.len() - 1);
             }
-
             curr_block = BasicBlock::new();
           }
-
-          label = Some(l.label.clone());
+          curr_label = Some(label.clone());
         }
-        Instruction::Operation(op) => match op {
-          Operation::Jmp { .. } | Operation::Br { .. } | Operation::Ret { .. } => {
-            curr_block.instrs.push(op);
-            blocks.push(curr_block);
-            if let Some(l) = label {
-              labels.insert(l, blocks.len() - 1);
-              label = None;
-            }
-
-            curr_block = BasicBlock::new();
+        bril_rs::Code::Instruction(bril_rs::Instruction::Effect { op, .. })
+          if op == bril_rs::EffectOps::Jump
+            || op == bril_rs::EffectOps::Branch
+            || op == bril_rs::EffectOps::Return =>
+        {
+          curr_block.instrs.push(instr);
+          blocks.push(curr_block);
+          if let Some(l) = curr_label {
+            labels.insert(l, blocks.len() - 1);
+            curr_label = None;
           }
-          _ => {
-            curr_block.instrs.push(op);
-          }
-        },
+          curr_block = BasicBlock::new();
+        }
+        _ => {
+          curr_block.instrs.push(instr);
+        }
       }
     }
 
     if !curr_block.instrs.is_empty() {
       blocks.push(curr_block);
-      if let Some(l) = label {
+      if let Some(l) = curr_label {
         labels.insert(l, blocks.len() - 1);
       }
     }

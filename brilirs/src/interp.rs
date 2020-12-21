@@ -1,64 +1,24 @@
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::basic_block::BBProgram;
-use crate::ir_types::{BrArgs, BrilType, BrilValue, EffectOp, Identifier, Operation, ValueOp};
-
-impl BrilValue {
-  fn get_type(&self) -> BrilType {
-    match self {
-      BrilValue::Int(..) => BrilType::Int,
-      BrilValue::Bool(..) => BrilType::Bool,
-      BrilValue::Nil => BrilType::Nil,
-    }
-  }
-}
-
-impl fmt::Display for BrilValue {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    use BrilValue::*;
-    match self {
-      Int(i) => write!(f, "{}", i),
-      Bool(b) => write!(f, "{}", b),
-      Nil => write!(f, "nil"),
-    }
-  }
-}
-
-impl TryFrom<&BrilValue> for i64 {
-  type Error = InterpError;
-  fn try_from(value: &BrilValue) -> Result<Self, Self::Error> {
-    match value {
-      BrilValue::Int(i) => Ok(*i),
-      _ => Err(InterpError::BadValueType(BrilType::Int, value.get_type())),
-    }
-  }
-}
-
-impl TryFrom<&BrilValue> for bool {
-  type Error = InterpError;
-  fn try_from(value: &BrilValue) -> Result<Self, Self::Error> {
-    match value {
-      BrilValue::Bool(b) => Ok(*b),
-      _ => Err(InterpError::BadValueType(BrilType::Bool, value.get_type())),
-    }
-  }
-}
+use crate::basic_block::{BBProgram, BasicBlock};
 
 #[derive(Debug)]
 pub enum InterpError {
   BadJsonInt,
   BadJsonBool,
   NoMainFunction,
-  BadNumArgs(usize, usize), // (expected, actual)
-  VarNotFound(usize),
-  BadAsmtType(BrilType, BrilType), // (expected, actual). For when the LHS type of an instruction is bad
+  BadNumArgs(usize, usize),   // (expected, actual)
+  BadNumLabels(usize, usize), // (expected, actual)
+  VarNotFound(String),
+  BadAsmtType(bril_rs::Type, bril_rs::Type), // (expected, actual). For when the LHS type of an instruction is bad
   LabelNotFound(String),
-  BadValueType(BrilType, BrilType), // (expected, actual)
+  BadValueType(bril_rs::Type, bril_rs::Type), // (expected, actual)
   IoError(Box<std::io::Error>),
 }
 
-fn check_asmt_type(expected: &BrilType, actual: &BrilType) -> Result<(), InterpError> {
+fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(), InterpError> {
   if expected == actual {
     Ok(())
   } else {
@@ -66,15 +26,35 @@ fn check_asmt_type(expected: &BrilType, actual: &BrilType) -> Result<(), InterpE
   }
 }
 
-fn get_args<'a, T>(
-  vars: &'a Vec<BrilValue>,
+fn get_values<'a>(
+  vars: &'a HashMap<String, Value>,
   arity: usize,
-  args: &Vec<Identifier<usize>>,
+  args: &[String],
+) -> Result<Vec<&'a Value>, InterpError> {
+  if args.len() != arity {
+    return Err(InterpError::BadNumArgs(arity, args.len()));
+  }
+
+  let mut vals = vec![];
+  for arg in args {
+    let arg_bril_val = vars
+      .get(arg)
+      .ok_or_else(|| InterpError::VarNotFound(arg.clone()))?;
+    vals.push(arg_bril_val);
+  }
+
+  Ok(vals)
+}
+
+fn get_args<'a, T>(
+  vars: &'a HashMap<String, Value>,
+  arity: usize,
+  args: &[String],
 ) -> Result<Vec<T>, InterpError>
 where
-  T: TryFrom<&'a BrilValue>,
-  InterpError: std::convert::From<<T as TryFrom<&'a BrilValue>>::Error>,
-  <T as TryFrom<&'a BrilValue>>::Error: std::convert::From<InterpError>,
+  T: TryFrom<&'a Value>,
+  InterpError: std::convert::From<<T as TryFrom<&'a Value>>::Error>,
+  <T as TryFrom<&'a Value>>::Error: std::convert::From<InterpError>,
 {
   if args.len() != arity {
     return Err(InterpError::BadNumArgs(arity, args.len()));
@@ -83,27 +63,290 @@ where
   let mut arg_vals = vec![];
   for arg in args {
     let arg_bril_val = vars
-      .get(arg.0)
-      // TODO: This error message will be pretty uninformative without a map back from Identifier ->
-      // String
-      .ok_or_else(|| InterpError::VarNotFound(arg.0))?;
+      .get(arg)
+      .ok_or_else(|| InterpError::VarNotFound(arg.clone()))?;
     arg_vals.push(T::try_from(arg_bril_val)?);
   }
 
   Ok(arg_vals)
 }
 
-pub fn execute<T: std::io::Write>(
-  prog: BBProgram,
-  num_vars: usize,
-  mut out: T,
+#[derive(Debug, Clone)]
+enum Value {
+  Int(i64),
+  Bool(bool),
+  Float(f64),
+}
+
+impl Value {
+  pub fn get_type(&self) -> bril_rs::Type {
+    match *self {
+      Value::Int(_) => bril_rs::Type::Int,
+      Value::Bool(_) => bril_rs::Type::Bool,
+      Value::Float(_) => bril_rs::Type::Float,
+    }
+  }
+}
+
+impl fmt::Display for Value {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    use Value::*;
+    match self {
+      Int(i) => write!(f, "{}", i),
+      Bool(b) => write!(f, "{}", b),
+      Float(v) => write!(f, "{}", v),
+    }
+  }
+}
+
+impl From<&bril_rs::Literal> for Value {
+  fn from(l: &bril_rs::Literal) -> Value {
+    match l {
+      bril_rs::Literal::Int(i) => Value::Int(*i),
+      bril_rs::Literal::Bool(b) => Value::Bool(*b),
+      bril_rs::Literal::Float(f) => Value::Float(*f),
+    }
+  }
+}
+
+impl TryFrom<&Value> for i64 {
+  type Error = InterpError;
+  fn try_from(value: &Value) -> Result<Self, Self::Error> {
+    if let Value::Int(i) = value {
+      Ok(*i)
+    } else {
+      Err(InterpError::BadValueType(
+        bril_rs::Type::Int,
+        value.get_type(),
+      ))
+    }
+  }
+}
+
+impl TryFrom<&Value> for bool {
+  type Error = InterpError;
+  fn try_from(value: &Value) -> Result<Self, Self::Error> {
+    if let Value::Bool(b) = value {
+      Ok(*b)
+    } else {
+      Err(InterpError::BadValueType(
+        bril_rs::Type::Bool,
+        value.get_type(),
+      ))
+    }
+  }
+}
+
+impl TryFrom<&Value> for f64 {
+  type Error = InterpError;
+  fn try_from(value: &Value) -> Result<Self, Self::Error> {
+    match value {
+      Value::Float(f) => Ok(*f),
+      _ => Err(InterpError::BadValueType(
+        bril_rs::Type::Float,
+        value.get_type(),
+      )),
+    }
+  }
+}
+
+#[allow(clippy::float_cmp)]
+fn execute_value_op(
+  op: &bril_rs::ValueOps,
+  dest: &str,
+  op_type: &bril_rs::Type,
+  args: &[String],
+  value_store: &mut HashMap<String, Value>,
 ) -> Result<(), InterpError> {
+  use bril_rs::ValueOps::*;
+  match *op {
+    Add => {
+      check_asmt_type(&bril_rs::Type::Int, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Int(args[0] + args[1]));
+    }
+    Mul => {
+      check_asmt_type(&bril_rs::Type::Int, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Int(args[0] * args[1]));
+    }
+    Sub => {
+      check_asmt_type(&bril_rs::Type::Int, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Int(args[0] - args[1]));
+    }
+    Div => {
+      check_asmt_type(&bril_rs::Type::Int, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Int(args[0] / args[1]));
+    }
+    Eq => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] == args[1]));
+    }
+    Lt => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] < args[1]));
+    }
+    Gt => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] > args[1]));
+    }
+    Le => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] <= args[1]));
+    }
+    Ge => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<i64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] >= args[1]));
+    }
+    Not => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<bool>(value_store, 1, args)?;
+      value_store.insert(String::from(dest), Value::Bool(!args[0]));
+    }
+    And => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<bool>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] && args[1]));
+    }
+    Or => {
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
+      let args = get_args::<bool>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] || args[1]));
+    }
+    Id => {
+      check_num_args(1, args)?;
+      let src_vals = get_values(value_store, 1, args)?;
+      let src = src_vals[0].clone();
+      value_store.insert(String::from(dest), src);
+    }
+    Fadd => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Float(args[0] + args[1]));
+    }
+    Fmul => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Float(args[0] * args[1]));
+    }
+    Fsub => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Float(args[0] - args[1]));
+    }
+    Fdiv => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Float(args[0] / args[1]));
+    }
+    Feq => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] == args[1]));
+    }
+    Flt => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] < args[1]));
+    }
+    Fgt => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] > args[1]));
+    }
+    Fle => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] <= args[1]));
+    }
+    Fge => {
+      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      let args = get_args::<f64>(value_store, 2, args)?;
+      value_store.insert(String::from(dest), Value::Bool(args[0] >= args[1]));
+    }
+    Call => unreachable!(), // TODO(yati): Why is Call a ValueOp as well?
+    Phi | Alloc | Load | PtrAdd => unimplemented!(),
+  }
+  Ok(())
+}
+
+fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
+  if expected != args.len() {
+    Err(InterpError::BadNumArgs(expected, args.len()))
+  } else {
+    Ok(())
+  }
+}
+
+fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpError> {
+  if expected != labels.len() {
+    Err(InterpError::BadNumArgs(expected, labels.len()))
+  } else {
+    Ok(())
+  }
+}
+
+// Returns whether the program should continue running (i.e., if a Return was
+// *not* executed).
+fn execute_effect_op<T: std::io::Write>(
+  op: &bril_rs::EffectOps,
+  args: &[String],
+  labels: &[String],
+  curr_block: &BasicBlock,
+  value_store: &HashMap<String, Value>,
+  mut out: T,
+  next_block_idx: &mut Option<usize>,
+) -> Result<bool, InterpError> {
+  use bril_rs::EffectOps::*;
+  match op {
+    Jump => {
+      check_num_args(0, args)?;
+      check_num_labels(1, labels)?;
+      *next_block_idx = Some(curr_block.exit[0]);
+    }
+    Branch => {
+      let bool_args = get_args::<bool>(value_store, 1, args)?;
+      check_num_labels(2, labels)?;
+      let exit_idx = if bool_args[0] { 0 } else { 1 };
+      *next_block_idx = Some(curr_block.exit[exit_idx]);
+    }
+    Return => {
+      out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
+      // NOTE: This only works so long as `main` is the only function
+      return Ok(false);
+    }
+    Print => {
+      writeln!(
+        out,
+        "{}",
+        args
+          .iter()
+          .map(|a| format!("{}", value_store[a]))
+          .collect::<Vec<_>>()
+          .join(", ")
+      )
+      .map_err(|e| InterpError::IoError(Box::new(e)))?;
+    }
+    Nop => {}
+    Call => unreachable!(),
+    Store | Free | Speculate | Commit | Guard => unimplemented!(),
+  }
+  Ok(true)
+}
+
+pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), InterpError> {
   let (main_fn, blocks, _labels) = prog;
   let mut curr_block_idx: usize = main_fn.ok_or(InterpError::NoMainFunction)?;
-  let mut store: Vec<BrilValue> = vec![BrilValue::Nil; num_vars];
 
-  use BrilValue::*;
-  use Operation::*;
+  // Map from variable name to value.
+  let mut value_store: HashMap<String, Value> = HashMap::new();
 
   loop {
     let curr_block = &blocks[curr_block_idx];
@@ -114,152 +357,46 @@ pub fn execute<T: std::io::Write>(
       None
     };
 
-    for operation in curr_instrs.iter() {
-      match operation {
-        Const { dest, typ, value } => {
-          check_asmt_type(typ, &value.get_type())?;
-          store[dest.0] = value.clone();
-        }
-        Add {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Int, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Int(args[0] + args[1]);
-        }
-        Mul {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Int, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Int(args[0] * args[1]);
-        }
-        Sub {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Int, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Int(args[0] - args[1]);
-        }
-        Div {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Int, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Int(args[0] / args[1]);
-        }
-        Eq {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Bool(args[0] == args[1]);
-        }
-        Lt {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Bool(args[0] < args[1]);
-        }
-        Gt {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Bool(args[0] > args[1]);
-        }
-        Le {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Bool(args[0] <= args[1]);
-        }
-        Ge {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<i64>(&store, 2, args)?;
-          store[dest.0] = Bool(args[0] >= args[1]);
-        }
-        Not {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<bool>(&store, 2, args)?;
-          store[dest.0] = Bool(!args[0]);
-        }
-        And {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<bool>(&store, 2, args)?;
-          store[dest.0] = Bool(args[0] && args[1]);
-        }
-        Or {
-          params: ValueOp { dest, typ, args },
-        } => {
-          check_asmt_type(&BrilType::Bool, typ)?;
-          let args = get_args::<bool>(&store, 2, args)?;
-          store[dest.0] = Bool(args[0] || args[1]);
-        }
-        Jmp {
-          params: EffectOp { args },
-        } => {
-          if args.len() != 1 {
-            return Err(InterpError::BadNumArgs(1, args.len()));
+    for operation in curr_instrs {
+      if let bril_rs::Code::Instruction(instr) = operation {
+        match instr {
+          bril_rs::Instruction::Constant {
+            op: bril_rs::ConstOps::Const,
+            dest,
+            const_type,
+            value,
+          } => {
+            check_asmt_type(const_type, &value.get_type())?;
+            value_store.insert(dest.clone(), Value::from(value));
           }
-
-          next_block_idx = Some(curr_block.exit[0]);
-        }
-        Br {
-          params: BrArgs::IdArgs { test_var, dests },
-        } => {
-          if dests.len() != 2 {
-            return Err(InterpError::BadNumArgs(3, dests.len()));
+          bril_rs::Instruction::Value {
+            op,
+            dest,
+            op_type,
+            args,
+            ..
+          } => {
+            execute_value_op(op, dest, op_type, args, &mut value_store)?;
           }
+          bril_rs::Instruction::Effect {
+            op, args, labels, ..
+          } => {
+            let should_continue = execute_effect_op(
+              op,
+              args,
+              labels,
+              &curr_block,
+              &value_store,
+              &mut out,
+              &mut next_block_idx,
+            )?;
 
-          let exit_idx = if bool::try_from(&store[test_var.0])? {
-            0
-          } else {
-            1
-          };
-
-          next_block_idx = Some(curr_block.exit[exit_idx]);
-        }
-        Ret { .. } => {
-          out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
-          // NOTE: This only works so long as `main` is the only function
-          return Ok(());
-        }
-        Id {
-          params: ValueOp { dest, typ, args },
-        } => {
-          if args.len() != 1 {
-            return Err(InterpError::BadNumArgs(1, args.len()));
+            // TODO(yati): Correct only when main is the only function.
+            if !should_continue {
+              return Ok(());
+            }
           }
-
-          let src = store[args[0].0].clone();
-          check_asmt_type(&src.get_type(), typ)?;
-          store[dest.0] = src;
         }
-        Print { args } => {
-          write!(
-            out,
-            // NOTE: The Bril spec implies print should just output its arguments, with no newline.
-            // However, brili uses console.log, which does add a newline, so we will too
-            "{}\n",
-            args
-              .iter()
-              .map(|a| format!("{}", store[a.0]))
-              .collect::<Vec<_>>()
-              .join(", ")
-          )
-          .map_err(|e| InterpError::IoError(Box::new(e)))?;
-        }
-        Nop => {}
-        _ => unreachable!(),
       }
     }
 
