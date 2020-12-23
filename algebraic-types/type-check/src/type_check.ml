@@ -181,11 +181,12 @@ module TypeCheckAnalysis = struct
         | _ -> failwith "cannot unpack a non-product type"
       end
 
-    | Construct ((_, SumType typs) as dest, arg) ->
+    | Construct ((_, SumType typs) as dest, arg, index) ->
       let typ = lookup_type arg in
-      if List.exists typs (Bril_type.equal typ)
+      if Bril_type.equal typ (List.nth_exn typs index)
       then update_type dest
-      else failwith "invalid type for construct, not in sum type"
+      else failwith "invalid type; does not match type at specified \
+                     index in product type"
 
     | Construct _ -> failwith "cannot construct a non-sum type"
 

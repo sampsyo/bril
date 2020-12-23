@@ -141,7 +141,7 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   commit: 0,
   pack: null,  // Any number of arguments
   unpack: 2,
-  construct: 1,
+  construct: 2,
   destruct: 1,
 };
 
@@ -776,22 +776,16 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
 
   case "construct": {
-    if (!instr.args || instr.args.length < 1) {
+    if (!instr.args || instr.args.length < 2) {
       throw error("malformed construct instr");
     }
     if (typeof(instr.type) !== "object" || !instr.type.hasOwnProperty("sum")) {
       throw error("construct destination must be a sum type");
     }
     let value = getArgument(instr, state.env, 0);
-    let index = -1;
-    for (let i = 0; i < instr.type.sum.length; i++) {
-      if (typeCheck(value, instr.type.sum[i])) {
-        index = i;
-        break;
-      }
-    }
-    if (index == -1) {
-      throw error("no constructor for type");
+    let index = parseInt(instr.args[1]);
+    if (index < 0 || index >= instr.type.sum.length) {
+      throw error("invalid constructor index: " + index);
     }
     state.env.set(instr.dest, [index, value]);
     return NEXT;
@@ -817,7 +811,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     let index: number = variant[0];
     let value: Value = variant[1];
     if (!typeCheck(value, instr.type.sum[index])) {
-      throw error("attempt to destruct value that does not match specified type");
+      throw error("attempt to destruct value that does not match specified type, value: "
+                  + value + ", index: " + index + ", type: " + instr.type.sum[index]);
     }
     state.env.set(instr.dest, value);
     return {"action": "jump", "label": instr.labels[index]};
@@ -829,6 +824,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 }
 
 function evalFunc(func: bril.Function, state: State): Value | null {
+  if (func.instrs === undefined) {
+    return null;
+  }
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {

@@ -1,6 +1,6 @@
 @main() {
   one: int = const 1;
-  sum: sum<int, bool> = construct one;
+  sum: sum<int, bool> = construct one 0;
   destructed: sum<int, bool> = destruct sum .int .bool;
 .int:
   print destructed;

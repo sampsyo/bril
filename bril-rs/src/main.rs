@@ -125,9 +125,9 @@ fn process_expr(
                 op: ValueOps::Id,
                 dest: name.to_string(),
                 op_type: typ.clone(),
-                args: Some(vec![var.clone()]),
-                funcs: None,
-                labels: None,
+                args: vec![var.clone()],
+                funcs: vec![],
+                labels: vec![],
             })],
             [typ_name, constructor] => {
                 let (typ, constructor_map) = match type_map.get(typ_name) {
@@ -135,8 +135,8 @@ fn process_expr(
                     None => panic!("unknown type: {:?}", typ_name),
                 };
 
-                match constructor_map.get(constructor) {
-                    Some(_) => (),
+                let index = match constructor_map.get(constructor) {
+                    Some(index) => index,
                     None => panic!(
                         "undefined constructor {:?} for type {:?}",
                         constructor, typ_name
@@ -150,17 +150,17 @@ fn process_expr(
                     op: ValueOps::Pack,
                     dest: tmp.clone(),
                     op_type: Type::unit(),
-                    args: None,
-                    funcs: None,
-                    labels: None,
+                    args: vec![],
+                    funcs: vec![],
+                    labels: vec![],
                 }));
                 expr.push(Code::Instruction(Instruction::Value {
                     op: ValueOps::Construct,
                     dest: name.to_string(),
                     op_type: typ.clone(),
-                    args: Some(vec![tmp]),
-                    funcs: None,
-                    labels: None,
+                    args: vec![tmp, index.to_string()],
+                    funcs: vec![],
+                    labels: vec![],
                 }));
 
                 expr
@@ -228,9 +228,9 @@ fn process_expr(
                 op: ValueOps::Not,
                 dest: name.to_string(),
                 op_type: Type::Bool,
-                args: Some(vec![tmp]),
-                funcs: None,
-                labels: None,
+                args: vec![tmp],
+                funcs: vec![],
+                labels: vec![],
             }));
 
             expr
@@ -262,9 +262,9 @@ fn process_expr(
                 op: ValueOps::Mul,
                 dest: name.to_string(),
                 op_type: Type::Int,
-                args: Some(vec![tmp, neg_one]),
-                funcs: None,
-                labels: None,
+                args: vec![tmp, neg_one],
+                funcs: vec![],
+                labels: vec![],
             }));
 
             expr
@@ -297,9 +297,9 @@ fn process_expr(
                 op: binop,
                 dest: name.to_string(),
                 op_type: ret_typ,
-                args: Some(vec![tmp1, tmp2]),
-                funcs: None,
-                labels: None,
+                args: vec![tmp1, tmp2],
+                funcs: vec![],
+                labels: vec![],
             }));
 
             expr
@@ -316,7 +316,7 @@ fn process_expr(
                     let mut expr = Vec::new();
 
                     if args.len() > 0 {
-                        let header_args = func_header.args.clone().unwrap();
+                        let header_args = func_header.args.clone();
                         if args.len() != header_args.len() {
                             panic!("incompatible function call arguments arity");
                         }
@@ -339,26 +339,18 @@ fn process_expr(
                     expr.push(if ret_type.is_unit() {
                         Code::Instruction(Instruction::Effect {
                             op: EffectOps::Call,
-                            args: if arg_list.is_empty() {
-                                None
-                            } else {
-                                Some(arg_list)
-                            },
-                            funcs: Some(vec![func_name.clone()]),
-                            labels: None,
+                            args: arg_list,
+                            funcs: vec![func_name.clone()],
+                            labels: vec![],
                         })
                     } else {
                         Code::Instruction(Instruction::Value {
                             op: ValueOps::Call,
                             dest: name.to_string(),
                             op_type: ret_type,
-                            args: if arg_list.is_empty() {
-                                None
-                            } else {
-                                Some(arg_list)
-                            },
-                            funcs: Some(vec![func_name.clone()]),
-                            labels: None,
+                            args: arg_list,
+                            funcs: vec![func_name.clone()],
+                            labels: vec![],
                         })
                     });
 
@@ -412,17 +404,17 @@ fn process_expr(
                         op: ValueOps::Pack,
                         dest: tmp.clone(),
                         op_type: Type::Product(typs.clone()),
-                        args: Some(arg_list),
-                        funcs: None,
-                        labels: None,
+                        args: arg_list,
+                        funcs: vec![],
+                        labels: vec![],
                     }));
                     expr.push(Code::Instruction(Instruction::Value {
                         op: ValueOps::Construct,
                         dest: name.to_string(),
                         op_type: typ.clone(),
-                        args: Some(vec![tmp]),
-                        funcs: None,
-                        labels: None,
+                        args: vec![tmp, index.to_string()],
+                        funcs: vec![],
+                        labels: vec![],
                     }));
 
                     expr
@@ -444,9 +436,9 @@ fn process_expr(
                     .collect();
                 vec![Code::Instruction(Instruction::Effect {
                     op: EffectOps::Print,
-                    args: Some(args),
-                    funcs: None,
-                    labels: None,
+                    args: args,
+                    funcs: vec![],
+                    labels: vec![],
                 })]
             }
             mac => panic!("unsupported macro: {:?}", mac),
@@ -473,9 +465,9 @@ fn process_expr(
             ));
             expr.push(Code::Instruction(Instruction::Effect {
                 op: EffectOps::Branch,
-                args: Some(vec![tmp]),
-                funcs: None,
-                labels: Some(vec![b_tr.clone(), b_fa.clone()]),
+                args: vec![tmp],
+                funcs: vec![],
+                labels: vec![b_tr.clone(), b_fa.clone()],
             }));
             expr.push(Code::Label { label: b_tr });
             expr.append(&mut process_block(
@@ -486,9 +478,9 @@ fn process_expr(
             ));
             expr.push(Code::Instruction(Instruction::Effect {
                 op: EffectOps::Jump,
-                args: None,
-                funcs: None,
-                labels: Some(vec![end.clone()]),
+                args: vec![],
+                funcs: vec![],
+                labels: vec![end.clone()],
             }));
             expr.push(Code::Label { label: b_fa });
             match else_branch {
@@ -529,9 +521,9 @@ fn process_expr(
             ));
             expr.push(Code::Instruction(Instruction::Effect {
                 op: EffectOps::Branch,
-                args: Some(vec![tmp]),
-                funcs: None,
-                labels: Some(vec![start.clone(), end.clone()]),
+                args: vec![tmp],
+                funcs: vec![],
+                labels: vec![start.clone(), end.clone()],
             }));
             expr.push(Code::Label { label: start });
             expr.append(&mut process_block(
@@ -542,9 +534,9 @@ fn process_expr(
             ));
             expr.push(Code::Instruction(Instruction::Effect {
                 op: EffectOps::Jump,
-                args: None,
-                funcs: None,
-                labels: Some(vec![header]),
+                args: vec![],
+                funcs: vec![],
+                labels: vec![header],
             }));
             expr.push(Code::Label { label: end });
 
@@ -580,9 +572,9 @@ fn process_expr(
                 op: ValueOps::Pack,
                 dest: name.to_string(),
                 op_type: typ.clone(),
-                args: Some(tmps),
-                funcs: None,
-                labels: None,
+                args: tmps,
+                funcs: vec![],
+                labels: vec![],
             }));
 
             expr
@@ -599,9 +591,9 @@ fn process_expr(
                     op: ValueOps::Unpack,
                     dest: name.to_string(),
                     op_type: typ.clone(),
-                    args: Some(vec![var, index.to_string()]),
-                    funcs: None,
-                    labels: None,
+                    args: vec![var, index.to_string()],
+                    funcs: vec![],
+                    labels: vec![],
                 })]
             }
             _ => panic!("tuple-indexing arbitrary expressions is not supported"),
@@ -698,9 +690,9 @@ fn process_expr(
                 op: ValueOps::Destruct,
                 dest: dst.clone(),
                 op_type: variant_typ.clone(),
-                args: Some(vec![tmp]),
-                funcs: None,
-                labels: Some(labels),
+                args: vec![tmp],
+                funcs: vec![],
+                labels: labels,
             }));
 
             for index in 0..branches.len() {
@@ -731,9 +723,9 @@ fn process_expr(
                         op: ValueOps::Unpack,
                         dest: arg.clone(),
                         op_type: arg_typs[i].clone(),
-                        args: Some(vec![dst.clone(), i.to_string()]),
-                        funcs: None,
-                        labels: None,
+                        args: vec![dst.clone(), i.to_string()],
+                        funcs: vec![],
+                        labels: vec![],
                     }));
                 }
 
@@ -748,9 +740,9 @@ fn process_expr(
 
                 expr.push(Code::Instruction(Instruction::Effect {
                     op: EffectOps::Jump,
-                    args: None,
-                    funcs: None,
-                    labels: Some(vec![end.clone()]),
+                    args: vec![],
+                    funcs: vec![],
+                    labels: vec![end.clone()],
                 }));
             }
 
@@ -796,18 +788,18 @@ fn process_stmt(
                     ));
                     expr.push(Code::Instruction(Instruction::Effect {
                         op: EffectOps::Return,
-                        args: Some(vec![tmp]),
-                        funcs: None,
-                        labels: None,
+                        args: vec![tmp],
+                        funcs: vec![],
+                        labels: vec![],
                     }));
 
                     expr
                 }
                 (None, None) => vec![Code::Instruction(Instruction::Effect {
                     op: EffectOps::Return,
-                    args: None,
-                    funcs: None,
-                    labels: None,
+                    args: vec![],
+                    funcs: vec![],
+                    labels: vec![],
                 })],
                 (Some(_), None) => {
                     panic!("attempt to return value when function has no return type")
@@ -886,7 +878,7 @@ fn process_func(
 
     Function {
         name,
-        args: if args.is_empty() { None } else { Some(args) },
+        args,
         return_type,
         instrs,
     }
@@ -900,7 +892,6 @@ fn process_enum(
 
     let mut variants = Vec::new();
     let mut constructor_map = HashMap::new();
-    let mut type_set = HashSet::new();
 
     for (i, variant) in enm.variants.iter().enumerate() {
         constructor_map.insert(variant.ident.to_string(), i);
@@ -914,14 +905,7 @@ fn process_enum(
             ),
             syn::Fields::Named(_) => panic!("named types in constructors not supported"),
         };
-        if type_set.contains(&typ) {
-            panic!(
-                "variant {:?} has two constructors with the same type {:?}, which is not permitted",
-                name, &typ
-            );
-        }
         variants.push(typ.clone());
-        type_set.insert(typ);
     }
 
     let typ = Type::Sum(variants.iter().map(|typ| typ.clone()).collect());

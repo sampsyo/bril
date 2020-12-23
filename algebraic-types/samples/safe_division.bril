@@ -16,10 +16,10 @@
   br unsafe .unsafe .safe;
 .safe:
   quotient: int = div dividend divisor;
-  constructed: sum<int, product<>> = construct quotient;
+  constructed: sum<int, product<>> = construct quotient 0;
   ret constructed;
 .unsafe:
   packed: product<> = pack;
-  constructed: sum<int, product<>> = construct packed;
+  constructed: sum<int, product<>> = construct packed 1;
   ret constructed;
 }

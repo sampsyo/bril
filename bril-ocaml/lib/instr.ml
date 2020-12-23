@@ -21,7 +21,7 @@ type t =
   | Guard of arg * label
   | Pack of Dest.t * arg list
   | Unpack of Dest.t * arg * int
-  | Construct of Dest.t * arg
+  | Construct of Dest.t * arg * int
   | Destruct of Dest.t * arg * label list
 [@@deriving compare, equal, sexp_of]
 
@@ -56,7 +56,7 @@ let to_string =
   | Guard (arg, l) -> sprintf "guard %s .%s" arg l
   | Pack (dest, args) -> sprintf "%s %s" (dest_to_string dest) (String.concat ~sep:" " args)
   | Unpack (dest, arg, index) -> sprintf "%s %s %i" (dest_to_string dest) arg index
-  | Construct (dest, arg) -> sprintf "%s %s" (dest_to_string dest) arg
+  | Construct (dest, arg, index) -> sprintf "%s %s %i" (dest_to_string dest) arg index
   | Destruct (dest, arg, labels) -> sprintf "%s %s %s" (dest_to_string dest) arg (String.concat ~sep:" " labels)
 
 let dest = function
@@ -142,7 +142,7 @@ let of_json json =
     | "guard" -> Guard (arg 0, label 0)
     | "pack" -> Pack (dest (), args ())
     | "unpack" -> Unpack (dest (), arg 0, arg 1 |> int_of_string)
-    | "construct" -> Construct (dest (), arg 0)
+    | "construct" -> Construct (dest (), arg 0, arg 1 |> int_of_string)
     | "destruct" -> Destruct (dest (), arg 0, labels ())
     | op -> failwithf "invalid op: %s" op () )
   | json -> failwithf "invalid label: %s" (json |> to_string) ()
@@ -221,11 +221,11 @@ let to_json =
         ("op", `String "unpack");
         ("args", `List [ `String arg; `String (string_of_int index) ]) ]
         @ dest_to_json dest)
-  | Construct (dest, arg) ->
+  | Construct (dest, arg, index) ->
     `Assoc
       ([
         ("op", `String "construct");
-        ("args", `List [ `String arg ]) ]
+        ("args", `List [ `String arg; `String (string_of_int index) ]) ]
         @ dest_to_json dest)
   | Destruct (dest, arg, labels) ->
     `Assoc

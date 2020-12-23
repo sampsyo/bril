@@ -239,11 +239,12 @@ def print_func(func):
         args_to_string(func.get('args', [])),
         ': {}'.format(type_to_str(typ)) if typ != 'void' else '',
     ))
-    for instr_or_label in func['instrs']:
-        if 'label' in instr_or_label:
-            print_label(instr_or_label)
-        else:
-            print_instr(instr_or_label)
+    if 'instrs' in func:
+        for instr_or_label in func['instrs']:
+            if 'label' in instr_or_label:
+                print_label(instr_or_label)
+            else:
+                print_instr(instr_or_label)
     print('}')
 
 
