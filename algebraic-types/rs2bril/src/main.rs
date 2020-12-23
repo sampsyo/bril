@@ -1,11 +1,9 @@
-mod lib;
-
 use lazy_static::lazy_static;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{self, Read};
 use std::sync::Mutex;
 
-use lib::*;
+use bril_rs::*;
 
 fn parse_file() -> syn::File {
     let mut buffer = String::new();
