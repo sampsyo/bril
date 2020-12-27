@@ -1,0 +1,47 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "funcs": [
+            "print4"
+          ],
+          "op": "call"
+        },
+        {
+          "args": [
+            "v"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "instrs": [
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "args": [
+            "v"
+          ],
+          "op": "print"
+        },
+        {
+          "op": "ret"
+        }
+      ],
+      "name": "print4"
+    }
+  ]
+}

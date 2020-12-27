@@ -56,4 +56,6 @@ interp_tests! {
     or: "./testdata/or.json",
     id: "./testdata/id.json",
     br: "./testdata/br.json",
+    call: "./testdata/call.json",
+    call_with_args: "./testdata/call-with-args.json",
 }
