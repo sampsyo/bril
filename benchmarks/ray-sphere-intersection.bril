@@ -1,0 +1,127 @@
+# Ray-sphere intersection algorithm. Prints true if
+# the ray intersects the sphere, and false otherwise.
+#
+# https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+
+@RaySphereIntersection(rayOriginX: float, rayOriginY: float, rayOriginZ: float,
+                       rayDirectionX: float, rayDirectionY: float, rayDirectionZ: float,
+                       circleCenterX: float, circleCenterY: float, circleCenterZ: float,
+                       radius: float): bool {
+  v0: float = id rayOriginX;
+  v1: float = id circleCenterX;
+  v2: float = fsub v0 v1;
+  OC_x: float = id v2;
+  v3: float = id rayOriginY;
+  v4: float = id circleCenterY;
+  v5: float = fsub v3 v4;
+  OC_y: float = id v5;
+  v6: float = id rayOriginZ;
+  v7: float = id circleCenterZ;
+  v8: float = fsub v6 v7;
+  OC_z: float = id v8;
+  v9: float = id rayDirectionX;
+  v10: float = id rayDirectionY;
+  v11: float = id rayDirectionZ;
+  v12: float = id rayDirectionX;
+  v13: float = id rayDirectionY;
+  v14: float = id rayDirectionZ;
+  a: float = call @DotProduct v9 v10 v11 v12 v13 v14;
+  a: float = id a;
+  v15: float = id OC_x;
+  v16: float = id OC_y;
+  v17: float = id OC_z;
+  v18: float = id rayDirectionX;
+  v19: float = id rayDirectionY;
+  v20: float = id rayDirectionZ;
+  bInitial: float = call @DotProduct v15 v16 v17 v18 v19 v20;
+  bInitial: float = id bInitial;
+  v21: float = const 2;
+  v22: float = id bInitial;
+  v23: float = fmul v21 v22;
+  b: float = id v23;
+  v24: float = id OC_x;
+  v25: float = id OC_y;
+  v26: float = id OC_z;
+  v27: float = id OC_x;
+  v28: float = id OC_y;
+  v29: float = id OC_z;
+  cInitial: float = call @DotProduct v24 v25 v26 v27 v28 v29;
+  cInitial: float = id cInitial;
+  v30: float = id radius;
+  v31: float = id radius;
+  v32: float = fmul v30 v31;
+  radiusSquared: float = id v32;
+  v33: float = id cInitial;
+  v34: float = id radiusSquared;
+  v35: float = fsub v33 v34;
+  c: float = id v35;
+  v36: float = id b;
+  v37: float = id b;
+  v38: float = fmul v36 v37;
+  discriminant1: float = id v38;
+  v39: float = const 4;
+  v40: float = id a;
+  v41: float = fmul v39 v40;
+  v42: float = id c;
+  v43: float = fmul v41 v42;
+  discriminant2: float = id v43;
+  v44: float = id discriminant1;
+  v45: float = id discriminant2;
+  v46: float = fsub v44 v45;
+  discriminant: float = id v46;
+  v47: float = id discriminant;
+  v48: float = const 0;
+  v49: bool = fgt v47 v48;
+  ret v49;
+}
+
+@DotProduct(a: float, b: float, c: float, x: float, y: float, z: float): float {
+  v0: float = id a;
+  v1: float = id x;
+  v2: float = fmul v0 v1;
+  A: float = id v2;
+  v3: float = id b;
+  v4: float = id y;
+  v5: float = fmul v3 v4;
+  B: float = id v5;
+  v6: float = id c;
+  v7: float = id z;
+  v8: float = fmul v6 v7;
+  C: float = id v8;
+  v9: float = id A;
+  v10: float = id B;
+  v11: float = fadd v9 v10;
+  v12: float = id C;
+  v13: float = fadd v11 v12;
+  ret v13;
+}
+
+
+@main {
+  rayOriginX: float = const 0.0;
+  rayOriginY: float = const 0.0;
+  rayOriginZ: float = const 0.0;
+
+  rayDirectionX: float = const 0.33;
+  rayDirectionY: float = const 0.33;
+  rayDirectionZ: float = const 0.33;
+
+  circleCenterX: float = const 5.0;
+  circleCenterY: float = const 5.0;
+  circleCenterZ: float = const 5.0;
+
+  radius: float = const 1.0;
+
+  v10: float = id rayOriginX;
+  v11: float = id rayOriginY;
+  v12: float = id rayOriginZ;
+  v13: float = id rayDirectionX;
+  v14: float = id rayDirectionY;
+  v15: float = id rayDirectionZ;
+  v16: float = id circleCenterX;
+  v17: float = id circleCenterY;
+  v18: float = id circleCenterZ;
+  v19: float = id radius;
+  intersected: bool = call @RaySphereIntersection v10 v11 v12 v13 v14 v15 v16 v17 v18 v19;
+  print intersected;
+}
