@@ -17,7 +17,8 @@ fn main() {
     (author: "Wil Thomason <wbthomason@cs.cornell.edu>")
     (about: "An interpreter for Bril")
     (@arg verbose: -v --verbose "Print debug information")
-    (@arg FILE: "The Bril file to run. stdin is assumed if FILE is not provided")
+    (@arg FILE: -f --file "The Bril file to run. stdin is assumed if FILE is not provided")
+    (@arg args: ... "Arguments for the main function ")
   )
   .get_matches();
 
@@ -33,6 +34,8 @@ fn main() {
   )
   .unwrap();
 
+  let input_args = args.values_of("args").unwrap_or_default().collect();
+
   let input: Box<dyn std::io::Read> = match args.value_of("FILE") {
     None => {
       debug!("Reading from stdin");
@@ -45,5 +48,5 @@ fn main() {
     }
   };
 
-  brilirs::run_input(input, std::io::stdout());
+  brilirs::run_input(input, std::io::stdout(), input_args)
 }

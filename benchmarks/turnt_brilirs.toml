@@ -1,0 +1,3 @@
+command = "bril2json < {filename} | cargo run --manifest-path ../../brilirs/Cargo.toml -- -p {args}"
+output.out = "-"
+output.prof = "2"

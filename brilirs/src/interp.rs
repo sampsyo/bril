@@ -2,23 +2,109 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::basic_block::{BBProgram, BasicBlock, Function};
+use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
+use bril_rs::Instruction;
 
 #[derive(Debug)]
 pub enum InterpError {
-  BadJsonInt,
-  BadJsonBool,
+  MemLeak,
+  UsingUninitializedMemory,
+  NoLastLabel,
   NoMainFunction,
+  UnequalPhiNode, // Unequal number of args and labels
+  EmptyRetForfunc(String),
+  NonEmptyRetForfunc(String),
+  CannotAllocSize(i64),
+  IllegalFree(usize, i64),         // (base, offset)
+  InvalidMemoryAccess(usize, i64), // (base, offset)
+  BadNumFuncArgs(usize, usize),    // (expected, actual)
+  BadNumArgs(usize, usize),        // (expected, actual)
+  BadNumLabels(usize, usize),      // (expected, actual)
+  BadNumFuncs(usize, usize),       // (expected, actual)
   FuncNotFound(String),
-  NoRetValForfunc(String),
-  BadNumArgs(usize, usize),   // (expected, actual)
-  BadNumLabels(usize, usize), // (expected, actual)
   VarNotFound(String),
+  PhiMissingLabel(String),
+  ExpectedPointerType(bril_rs::Type),         // found type
+  BadFuncArgType(bril_rs::Type, String),      // (expected, actual)
   BadAsmtType(bril_rs::Type, bril_rs::Type), // (expected, actual). For when the LHS type of an instruction is bad
-  LabelNotFound(String),
   BadValueType(bril_rs::Type, bril_rs::Type), // (expected, actual)
   IoError(Box<std::io::Error>),
-  BadCall(String, String), // (func name, reason).
+}
+
+// TODO(Patrick): Using String vs &str will be a SERIOUS performance penalty
+#[derive(Default)]
+pub struct Environment {
+  env: HashMap<String, Value>,
+}
+
+impl Environment {
+  pub fn get(&self, ident: &str) -> Result<&Value, InterpError> {
+    self
+      .env
+      .get(ident)
+      .ok_or_else(|| InterpError::VarNotFound(ident.to_string()))
+  }
+  pub fn set(&mut self, ident: String, val: Value) {
+    self.env.insert(ident, val);
+  }
+}
+
+#[derive(Default)]
+pub struct Heap {
+  memory: HashMap<usize, Vec<Value>>,
+  base_num_counter: usize,
+}
+
+impl Heap {
+  fn is_empty(&self) -> bool {
+    self.memory.is_empty()
+  }
+
+  fn alloc(&mut self, amount: i64, ptr_type: bril_rs::Type) -> Result<Value, InterpError> {
+    if amount < 0 {
+      return Err(InterpError::CannotAllocSize(amount));
+    }
+    let base = self.base_num_counter;
+    self.base_num_counter += 1;
+    self
+      .memory
+      .insert(base, vec![Value::default(); amount as usize]);
+    Ok(Value::Pointer(Pointer {
+      base,
+      offset: 0,
+      ptr_type,
+    }))
+  }
+
+  fn free(&mut self, key: Pointer) -> Result<(), InterpError> {
+    if self.memory.remove(&key.base).is_some() && key.offset == 0 {
+      Ok(())
+    } else {
+      Err(InterpError::IllegalFree(key.base, key.offset))
+    }
+  }
+
+  fn write(&mut self, key: &Pointer, val: Value) -> Result<(), InterpError> {
+    match self.memory.get_mut(&key.base) {
+      Some(vec) if vec.len() > (key.offset as usize) && key.offset >= 0 => {
+        vec[key.offset as usize] = val;
+        Ok(())
+      }
+      Some(_) | None => Err(InterpError::InvalidMemoryAccess(key.base, key.offset)),
+    }
+  }
+
+  fn read(&self, key: &Pointer) -> Result<&Value, InterpError> {
+    self
+      .memory
+      .get(&key.base)
+      .and_then(|vec| vec.get(key.offset as usize))
+      .ok_or(InterpError::InvalidMemoryAccess(key.base, key.offset))
+      .and_then(|val| match val {
+        Value::Uninitialized => Err(InterpError::UsingUninitializedMemory),
+        _ => Ok(val),
+      })
+  }
 }
 
 fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(), InterpError> {
@@ -29,64 +115,82 @@ fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(
   }
 }
 
-fn get_values<'a>(
-  vars: &'a HashMap<String, Value>,
-  arity: usize,
+fn get_value<'a>(
+  vars: &'a Environment,
+  index: usize,
   args: &[String],
-) -> Result<Vec<&'a Value>, InterpError> {
-  if args.len() != arity {
-    return Err(InterpError::BadNumArgs(arity, args.len()));
+) -> Result<&'a Value, InterpError> {
+  if index >= args.len() {
+    return Err(InterpError::BadNumArgs(index, args.len()));
   }
 
-  let mut vals = vec![];
-  for arg in args {
-    let arg_bril_val = vars
-      .get(arg)
-      .ok_or_else(|| InterpError::VarNotFound(arg.clone()))?;
-    vals.push(arg_bril_val);
-  }
-
-  Ok(vals)
+  vars.get(&args[index])
 }
 
-fn get_args<'a, T>(
-  vars: &'a HashMap<String, Value>,
-  arity: usize,
-  args: &[String],
-) -> Result<Vec<T>, InterpError>
+fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[String]) -> Result<T, InterpError>
 where
-  T: TryFrom<&'a Value>,
-  InterpError: std::convert::From<<T as TryFrom<&'a Value>>::Error>,
-  <T as TryFrom<&'a Value>>::Error: std::convert::From<InterpError>,
+  T: TryFrom<&'a Value, Error = InterpError>,
 {
-  if args.len() != arity {
-    return Err(InterpError::BadNumArgs(arity, args.len()));
+  if index >= args.len() {
+    return Err(InterpError::BadNumArgs(index + 1, args.len()));
   }
 
-  let mut arg_vals = vec![];
-  for arg in args {
-    let arg_bril_val = vars
-      .get(arg)
-      .ok_or_else(|| InterpError::VarNotFound(arg.clone()))?;
-    arg_vals.push(T::try_from(arg_bril_val)?);
-  }
+  T::try_from(vars.get(&args[index])?)
+}
 
-  Ok(arg_vals)
+fn get_ptr_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
+  match typ {
+    bril_rs::Type::Pointer(ptr_type) => Ok(&ptr_type),
+    _ => Err(InterpError::ExpectedPointerType(typ.clone())),
+  }
 }
 
 #[derive(Debug, Clone)]
-enum Value {
+pub enum Value {
   Int(i64),
   Bool(bool),
   Float(f64),
+  Pointer(Pointer),
+  Uninitialized,
+}
+
+impl Default for Value {
+  fn default() -> Self {
+    Value::Uninitialized
+  }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pointer {
+  base: usize,
+  offset: i64,
+  ptr_type: bril_rs::Type,
+}
+
+impl Pointer {
+  fn add(&self, offset: i64) -> Pointer {
+    Pointer {
+      base: self.base,
+      offset: self.offset + offset,
+      ptr_type: self.ptr_type.clone(),
+    }
+  }
+  fn get_type(&self) -> &bril_rs::Type {
+    let Pointer { ptr_type, .. } = self;
+    ptr_type
+  }
 }
 
 impl Value {
   pub fn get_type(&self) -> bril_rs::Type {
-    match *self {
+    match self {
       Value::Int(_) => bril_rs::Type::Int,
       Value::Bool(_) => bril_rs::Type::Bool,
       Value::Float(_) => bril_rs::Type::Float,
+      Value::Pointer(Pointer { ptr_type, .. }) => {
+        bril_rs::Type::Pointer(Box::new(ptr_type.clone()))
+      }
+      Value::Uninitialized => unreachable!(),
     }
   }
 }
@@ -98,6 +202,8 @@ impl fmt::Display for Value {
       Int(i) => write!(f, "{}", i),
       Bool(b) => write!(f, "{}", b),
       Float(v) => write!(f, "{}", v),
+      Pointer(p) => write!(f, "{:?}", p),
+      Uninitialized => unreachable!(),
     }
   }
 }
@@ -143,182 +249,239 @@ impl TryFrom<&Value> for bool {
 impl TryFrom<&Value> for f64 {
   type Error = InterpError;
   fn try_from(value: &Value) -> Result<Self, Self::Error> {
-    match value {
-      Value::Float(f) => Ok(*f),
-      _ => Err(InterpError::BadValueType(
+    if let Value::Float(f) = value {
+      Ok(*f)
+    } else {
+      Err(InterpError::BadValueType(
         bril_rs::Type::Float,
         value.get_type(),
-      )),
+      ))
     }
   }
 }
 
+impl TryFrom<&Value> for Pointer {
+  type Error = InterpError;
+  fn try_from(value: &Value) -> Result<Self, Self::Error> {
+    if let Value::Pointer(p) = value {
+      Ok(p.clone())
+    } else {
+      Err(InterpError::BadValueType(
+        //TODO Not sure how to get the expected type here
+        bril_rs::Type::Pointer(Box::new(bril_rs::Type::Int)),
+        value.get_type(),
+      ))
+    }
+  }
+}
+
+// todo do this with less function arguments
 #[allow(clippy::float_cmp)]
-fn execute_value_op<W: std::io::Write>(
+fn execute_value_op<T: std::io::Write>(
   prog: &BBProgram,
   op: &bril_rs::ValueOps,
   dest: &str,
   op_type: &bril_rs::Type,
   args: &[String],
+  labels: &[String],
   funcs: &[String],
-  value_store: &mut HashMap<String, Value>,
-  out: &mut W,
+  out: &mut T,
+  value_store: &mut Environment,
+  heap: &mut Heap,
+  last_label: &Option<&String>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::*;
   match *op {
     Add => {
       check_asmt_type(&bril_rs::Type::Int, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Int(args[0] + args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Int(arg0.wrapping_add(arg1)));
     }
     Mul => {
       check_asmt_type(&bril_rs::Type::Int, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Int(args[0] * args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Int(arg0.wrapping_mul(arg1)));
     }
     Sub => {
       check_asmt_type(&bril_rs::Type::Int, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Int(args[0] - args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Int(arg0.wrapping_sub(arg1)));
     }
     Div => {
       check_asmt_type(&bril_rs::Type::Int, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Int(args[0] / args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Int(arg0.wrapping_div(arg1)));
     }
     Eq => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] == args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 == arg1));
     }
     Lt => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] < args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 < arg1));
     }
     Gt => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] > args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 > arg1));
     }
     Le => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] <= args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 <= arg1));
     }
     Ge => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<i64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] >= args[1]));
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 >= arg1));
     }
     Not => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<bool>(value_store, 1, args)?;
-      value_store.insert(String::from(dest), Value::Bool(!args[0]));
+      let arg0 = get_arg::<bool>(value_store, 0, args)?;
+      value_store.set(String::from(dest), Value::Bool(!arg0));
     }
     And => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<bool>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] && args[1]));
+      let arg0 = get_arg::<bool>(value_store, 0, args)?;
+      let arg1 = get_arg::<bool>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 && arg1));
     }
     Or => {
       check_asmt_type(&bril_rs::Type::Bool, op_type)?;
-      let args = get_args::<bool>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] || args[1]));
+      let arg0 = get_arg::<bool>(value_store, 0, args)?;
+      let arg1 = get_arg::<bool>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 || arg1));
     }
     Id => {
-      check_num_args(1, args)?;
-      let src_vals = get_values(value_store, 1, args)?;
-      let src = src_vals[0].clone();
-      value_store.insert(String::from(dest), src);
+      let src = get_value(value_store, 0, args)?.clone();
+      check_asmt_type(op_type, &src.get_type())?;
+      value_store.set(String::from(dest), src);
     }
     Fadd => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Float(args[0] + args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Float(arg0 + arg1));
     }
     Fmul => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Float(args[0] * args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Float(arg0 * arg1));
     }
     Fsub => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Float(args[0] - args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Float(arg0 - arg1));
     }
     Fdiv => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Float(args[0] / args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Float(arg0 / arg1));
     }
     Feq => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] == args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 == arg1));
     }
     Flt => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] < args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 < arg1));
     }
     Fgt => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] > args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 > arg1));
     }
     Fle => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] <= args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 <= arg1));
     }
     Fge => {
       check_asmt_type(&bril_rs::Type::Float, op_type)?;
-      let args = get_args::<f64>(value_store, 2, args)?;
-      value_store.insert(String::from(dest), Value::Bool(args[0] >= args[1]));
+      let arg0 = get_arg::<f64>(value_store, 0, args)?;
+      let arg1 = get_arg::<f64>(value_store, 1, args)?;
+      value_store.set(String::from(dest), Value::Bool(arg0 >= arg1));
     }
     Call => {
-      assert!(funcs.len() == 1);
-      let func_info = prog
-        .func_index
+      if funcs.len() != 1 {
+        return Err(InterpError::BadNumFuncs(1, funcs.len()));
+      }
+      let callee_func = prog
         .get(&funcs[0])
-        .ok_or(InterpError::FuncNotFound(funcs[0].clone()))?;
+        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
 
-      check_asmt_type(
-        func_info.return_type.as_ref().ok_or(InterpError::BadCall(
-          String::from(&funcs[0]),
-          String::from(
-            "Function does not return a value, but used on the right side of an assignment",
-          ),
-        ))?,
-        op_type,
-      )?;
-
-      let vars = make_func_args(&funcs[0], func_info, args, value_store)?;
-      if let Some(val) = execute_func(&prog, &funcs[0], vars, out)? {
-        check_asmt_type(&val.get_type(), op_type)?;
-        value_store.insert(String::from(dest), val);
+      let next_env = make_func_args(callee_func, args, value_store)?;
+      match callee_func.return_type.as_ref() {
+        None => return Err(InterpError::EmptyRetForfunc(callee_func.name.clone())),
+        Some(t) => check_asmt_type(op_type, t)?,
+      }
+      value_store.set(
+        String::from(dest),
+        execute(prog, callee_func, out, next_env, heap)?.unwrap(),
+      )
+    }
+    Phi => {
+      if args.len() != labels.len() {
+        return Err(InterpError::UnequalPhiNode);
+      } else if last_label.is_none() {
+        return Err(InterpError::NoLastLabel);
       } else {
-        // This is a value-op call, so the target func must return a result.
-        return Err(InterpError::NoRetValForfunc(funcs[0].clone()));
+        let arg = labels
+          .iter()
+          .position(|l| l == last_label.unwrap())
+          .ok_or_else(|| InterpError::PhiMissingLabel(last_label.unwrap().to_string()))
+          .and_then(|i| value_store.get(args.get(i).unwrap()))?
+          .clone();
+        check_asmt_type(op_type, &arg.get_type())?;
+        value_store.set(String::from(dest), arg);
       }
     }
-    Phi | Alloc | Load | PtrAdd => unimplemented!(),
+    Alloc => {
+      let arg0 = get_arg::<i64>(value_store, 0, args)?;
+      let res = heap.alloc(arg0, get_ptr_type(op_type)?.clone())?;
+      check_asmt_type(op_type, &res.get_type())?;
+      value_store.set(String::from(dest), res)
+    }
+    Load => {
+      let arg0 = get_arg::<Pointer>(value_store, 0, args)?;
+      let res = heap.read(&arg0)?;
+      check_asmt_type(op_type, &res.get_type())?;
+      value_store.set(String::from(dest), res.clone())
+    }
+    PtrAdd => {
+      let arg0 = get_arg::<Pointer>(value_store, 0, args)?;
+      let arg1 = get_arg::<i64>(value_store, 1, args)?;
+      let res = Value::Pointer(arg0.add(arg1));
+      check_asmt_type(op_type, &res.get_type())?;
+      value_store.set(String::from(dest), res)
+    }
   }
   Ok(())
 }
 
-fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
-  if expected != args.len() {
-    Err(InterpError::BadNumArgs(expected, args.len()))
-  } else {
-    Ok(())
-  }
-}
-
 fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpError> {
   if expected != labels.len() {
-    Err(InterpError::BadNumArgs(expected, labels.len()))
+    Err(InterpError::BadNumLabels(expected, labels.len()))
   } else {
     Ok(())
   }
@@ -327,187 +490,280 @@ fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpErro
 // Returns a map from function parameter names to values of the call arguments
 // that are bound to those parameters.
 fn make_func_args(
-  func_name: &str,
-  func: &Function,
-  call_args: &[String],
-  vars: &HashMap<String, Value>,
-) -> Result<HashMap<String, Value>, InterpError> {
-  if func.args.len() != call_args.len() {
-    return Err(InterpError::BadCall(
-      String::from(func_name),
-      format!(
-        "Expected {} parameters, tried to pass {} args",
-        func.args.len(),
-        call_args.len()
-      ),
-    ));
+  callee_func: &BBFunction,
+  args: &[String],
+  vars: &Environment,
+) -> Result<Environment, InterpError> {
+  let mut next_env = Environment::default();
+  if args.is_empty() && callee_func.args.is_empty() {
+    // do nothing because we have not args to add to the environment
+  } else if args.len() != callee_func.args.len() {
+    return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
+  } else {
+    args
+      .iter()
+      .zip(callee_func.args.iter())
+      .try_for_each(|(arg_name, expected_arg)| {
+        let arg = vars.get(arg_name)?;
+        check_asmt_type(&expected_arg.arg_type, &arg.get_type())?;
+        next_env.set(expected_arg.name.clone(), arg.clone());
+        Ok(())
+      })?
   }
-  let vals = get_values(vars, call_args.len(), call_args)?;
-  let mut args = HashMap::new();
-  for (i, arg) in func.args.iter().enumerate() {
-    check_asmt_type(&arg.arg_type, &vals[i].get_type())?;
-    args.insert(arg.name.clone(), vals[i].clone());
-  }
-  Ok(args)
-}
 
-// Result of executing an effect operation.
-enum EffectResult {
-  // Return from the current function without any value.
-  Return,
-
-  // Return a given value from the current function.
-  ReturnWithVal(Value),
-
-  // Continue execution of the current function.
-  Continue,
+  Ok(next_env)
 }
 
 fn execute_effect_op<T: std::io::Write>(
   prog: &BBProgram,
+  func: &BBFunction,
   op: &bril_rs::EffectOps,
   args: &[String],
   labels: &[String],
   funcs: &[String],
   curr_block: &BasicBlock,
-  value_store: &HashMap<String, Value>,
   out: &mut T,
+  value_store: &Environment,
+  heap: &mut Heap,
   next_block_idx: &mut Option<usize>,
-) -> Result<EffectResult, InterpError> {
+) -> Result<Option<Value>, InterpError> {
   use bril_rs::EffectOps::*;
   match op {
     Jump => {
-      check_num_args(0, args)?;
       check_num_labels(1, labels)?;
       *next_block_idx = Some(curr_block.exit[0]);
     }
     Branch => {
-      let bool_args = get_args::<bool>(value_store, 1, args)?;
+      let bool_arg0 = get_arg::<bool>(value_store, 0, args)?;
       check_num_labels(2, labels)?;
-      let exit_idx = if bool_args[0] { 0 } else { 1 };
+      let exit_idx = if bool_arg0 { 0 } else { 1 };
       *next_block_idx = Some(curr_block.exit[exit_idx]);
     }
-    Return => {
-      out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
-      // NOTE: This only works so long as `main` is the only function
-      if args.is_empty() {
-        return Ok(EffectResult::Return);
+    Return => match &func.return_type {
+      Some(t) => {
+        let arg0 = get_value(value_store, 0, args)?;
+        check_asmt_type(t, &arg0.get_type())?;
+        return Ok(Some(arg0.clone()));
       }
-      let retval = value_store
-        .get(&args[0])
-        .ok_or(InterpError::VarNotFound(args[0].clone()))?;
-      return Ok(EffectResult::ReturnWithVal(retval.clone()));
-    }
+      None => {
+        if args.is_empty() {
+          return Ok(None);
+        } else {
+          return Err(InterpError::NonEmptyRetForfunc(func.name.clone()));
+        }
+      }
+    },
     Print => {
-      let vals = get_values(value_store, args.len(), args)?;
       writeln!(
         out,
         "{}",
-        vals
+        args
           .iter()
-          .map(|v| format!("{}", v))
-          .collect::<Vec<_>>()
-          .join(", ")
+          .map(|a| value_store.get(a).map(|x| format!("{}", x)))
+          .collect::<Result<Vec<String>, InterpError>>()?
+          .join(" ")
       )
       .map_err(|e| InterpError::IoError(Box::new(e)))?;
+      out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
     }
     Nop => {}
     Call => {
-      assert!(funcs.len() == 1);
-      let func = prog
-        .func_index
+      if funcs.len() != 1 {
+        return Err(InterpError::BadNumFuncs(1, funcs.len()));
+      }
+      let callee_func = prog
         .get(&funcs[0])
-        .ok_or(InterpError::FuncNotFound(funcs[0].clone()))?;
-      let vars = make_func_args(&funcs[0], func, args, value_store)?;
-      execute_func(&prog, &funcs[0], vars, out)?;
+        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+
+      let next_env = make_func_args(callee_func, args, value_store)?;
+
+      if callee_func.return_type.is_some() {
+        return Err(InterpError::NonEmptyRetForfunc(callee_func.name.clone()));
+      }
+      if execute(prog, callee_func, out, next_env, heap)?.is_some() {
+        unreachable!()
+      }
     }
-    Store | Free | Speculate | Commit | Guard => unimplemented!(),
+    Store => {
+      let arg0 = get_arg::<Pointer>(value_store, 0, args)?;
+      let arg1 = get_value(value_store, 1, args)?;
+      check_asmt_type(arg0.get_type(), &arg1.get_type())?;
+      heap.write(&arg0, arg1.clone())?
+    }
+    Free => {
+      let arg0 = get_arg::<Pointer>(value_store, 0, args)?;
+      heap.free(arg0)?
+    }
+    Speculate | Commit | Guard => unimplemented!(),
   }
-  Ok(EffectResult::Continue)
+  Ok(None)
 }
 
-fn execute_func<T: std::io::Write>(
+fn execute<T: std::io::Write>(
   prog: &BBProgram,
-  func: &str,
-  mut vars: HashMap<String, Value>,
+  func: &BBFunction,
   out: &mut T,
+  mut value_store: Environment,
+  heap: &mut Heap,
 ) -> Result<Option<Value>, InterpError> {
-  let f = prog
-    .func_index
-    .get(func)
-    .ok_or(InterpError::FuncNotFound(String::from(func)))?;
+  // Map from variable name to value.
+  let mut last_label;
+  let mut current_label = None;
   let mut curr_block_idx = 0;
+  let mut result = None;
+
   loop {
-    let curr_block = &f.blocks[curr_block_idx];
+    let curr_block = &func.blocks[curr_block_idx];
     let curr_instrs = &curr_block.instrs;
+    last_label = current_label;
+    current_label = curr_block.label.as_ref();
+
     let mut next_block_idx = if curr_block.exit.len() == 1 {
       Some(curr_block.exit[0])
     } else {
       None
     };
 
-    for operation in curr_instrs {
-      if let bril_rs::Code::Instruction(instr) = operation {
-        match instr {
-          bril_rs::Instruction::Constant {
-            op: bril_rs::ConstOps::Const,
-            dest,
-            const_type,
-            value,
-          } => {
-            check_asmt_type(const_type, &value.get_type())?;
-            vars.insert(dest.clone(), Value::from(value));
-          }
-          bril_rs::Instruction::Value {
+    for code in curr_instrs {
+      match code {
+        Instruction::Constant {
+          op: bril_rs::ConstOps::Const,
+          dest,
+          const_type,
+          value,
+        } => {
+          check_asmt_type(const_type, &value.get_type())?;
+          value_store.set(dest.clone(), Value::from(value));
+        }
+        Instruction::Value {
+          op,
+          dest,
+          op_type,
+          args,
+          labels,
+          funcs,
+        } => {
+          execute_value_op(
+            prog,
             op,
             dest,
             op_type,
             args,
+            labels,
             funcs,
-            ..
-          } => {
-            execute_value_op(&prog, op, dest, op_type, args, funcs, &mut vars, out)?;
-          }
-          bril_rs::Instruction::Effect {
+            out,
+            &mut value_store,
+            heap,
+            &last_label,
+          )?;
+        }
+        Instruction::Effect {
+          op,
+          args,
+          labels,
+          funcs,
+        } => {
+          result = execute_effect_op(
+            prog,
+            func,
             op,
             args,
             labels,
             funcs,
-            ..
-          } => {
-            match execute_effect_op(
-              prog,
-              op,
-              args,
-              labels,
-              funcs,
-              &curr_block,
-              &vars,
-              out,
-              &mut next_block_idx,
-            )? {
-              EffectResult::Continue => {}
-              EffectResult::Return => {
-                return Ok(None);
-              }
-              EffectResult::ReturnWithVal(val) => {
-                return Ok(Some(val));
-              }
-            };
-          }
+            &curr_block,
+            out,
+            &value_store,
+            heap,
+            &mut next_block_idx,
+          )?;
         }
       }
     }
     if let Some(idx) = next_block_idx {
       curr_block_idx = idx;
     } else {
-      out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
-      return Ok(None);
+      return Ok(result);
     }
   }
 }
 
-pub fn execute<T: std::io::Write>(prog: BBProgram, out: &mut T) -> Result<(), InterpError> {
-  // Ignore return value of @main.
-  execute_func(&prog, "main", HashMap::new(), out).map(|_| ())
+fn parse_args(
+  mut env: Environment,
+  args: &[bril_rs::Argument],
+  inputs: Vec<&str>,
+) -> Result<Environment, InterpError> {
+  if args.is_empty() && inputs.is_empty() {
+    Ok(env)
+  } else if inputs.len() != args.len() {
+    Err(InterpError::BadNumFuncArgs(args.len(), inputs.len()))
+  } else {
+    args
+      .iter()
+      .enumerate()
+      .try_for_each(|(index, arg)| match arg.arg_type {
+        bril_rs::Type::Bool => {
+          match inputs.get(index).unwrap().parse::<bool>() {
+            Err(_) => {
+              return Err(InterpError::BadFuncArgType(
+                bril_rs::Type::Bool,
+                inputs.get(index).unwrap().to_string(),
+              ))
+            }
+            Ok(b) => env.set(arg.name.clone(), Value::Bool(b)),
+          };
+          Ok(())
+        }
+        bril_rs::Type::Int => {
+          match inputs.get(index).unwrap().parse::<i64>() {
+            Err(_) => {
+              return Err(InterpError::BadFuncArgType(
+                bril_rs::Type::Int,
+                inputs.get(index).unwrap().to_string(),
+              ))
+            }
+            Ok(i) => env.set(arg.name.clone(), Value::Int(i)),
+          };
+          Ok(())
+        }
+        bril_rs::Type::Float => {
+          match inputs.get(index).unwrap().parse::<f64>() {
+            Err(_) => {
+              return Err(InterpError::BadFuncArgType(
+                bril_rs::Type::Float,
+                inputs.get(index).unwrap().to_string(),
+              ))
+            }
+            Ok(f) => env.set(arg.name.clone(), Value::Float(f)),
+          };
+          Ok(())
+        }
+        bril_rs::Type::Pointer(..) => unreachable!(),
+      })?;
+    Ok(env)
+  }
+}
+
+pub fn execute_main<T: std::io::Write>(
+  prog: BBProgram,
+  mut out: T,
+  input_args: Vec<&str>,
+) -> Result<(), InterpError> {
+  let main_func = prog.get("main").ok_or(InterpError::NoMainFunction)?;
+
+  if main_func.return_type.is_some() {
+    return Err(InterpError::NonEmptyRetForfunc(main_func.name.clone()));
+  }
+
+  let env = Environment::default();
+  let mut heap = Heap::default();
+
+  let value_store = parse_args(env, &main_func.args, input_args)?;
+
+  execute(&prog, &main_func, &mut out, value_store, &mut heap)?;
+
+  if !heap.is_empty() {
+    return Err(InterpError::MemLeak);
+  }
+
+  Ok(())
 }

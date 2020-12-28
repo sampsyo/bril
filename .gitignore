@@ -7,3 +7,4 @@ yarn.lock
 .pytest_cache/
 hypothesis_*
 __pycache__
+.vscode
