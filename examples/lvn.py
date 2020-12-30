@@ -15,6 +15,7 @@ class Numbering(dict):
     """A dict mapping anything to numbers that can generate new numbers
     for you when adding new values.
     """
+
     def __init__(self, init={}):
         super(Numbering, self).__init__(init)
         self._next_fresh = 0
@@ -207,6 +208,8 @@ def _fold(num2const, value):
             const_args = [num2const[n] for n in value.args]
             return FOLDABLE_OPS[value.op](*const_args)
         except KeyError:  # At least one argument is not a constant.
+            # Two values are equal if their arguments are equivalent.
+            if value.op == 'eq': return FOLDABLE_OPS[value.op](*value.args)
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
             return None
