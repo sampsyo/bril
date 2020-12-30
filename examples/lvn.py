@@ -196,6 +196,8 @@ FOLDABLE_OPS = {
     'lt': lambda a, b: a < b,
     'ge': lambda a, b: a >= b,
     'le': lambda a, b: a <= b,
+    'ne': lambda a, b: a != b,
+    'eq': lambda a, b: a == b,
 }
 
 
