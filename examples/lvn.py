@@ -208,8 +208,8 @@ def _fold(num2const, value):
             const_args = [num2const[n] for n in value.args]
             return FOLDABLE_OPS[value.op](*const_args)
         except KeyError:  # At least one argument is not a constant.
-            # Two values are equal if their arguments are equivalent.
             if value.op == 'eq' and value.args[0] == value.args[1]:
+                # Arguments are equivalent.
                 return True
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
