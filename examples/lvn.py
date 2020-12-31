@@ -161,7 +161,7 @@ def lvn_block(block, lookup, canonicalize, fold):
             if val:
                 # Is this value foldable to a constant?
                 const = fold(num2const, val)
-                if const != None:
+                if const is not None:
                     num2const[newnum] = const
                     instr.update({
                         'op': 'const',
