@@ -210,6 +210,7 @@ def _fold(num2const, value):
         except KeyError:  # At least one argument is not a constant.
             if value.op in {'eq', 'ne'} and value.args[0] == value.args[1]:
                 # Equivalent arguments may be evaluated for equality.
+                # E.g. `eq x x`, where `x` is not a constant.
                 return value.op == 'eq'
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
