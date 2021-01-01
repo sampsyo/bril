@@ -3,9 +3,12 @@
 @main(arg1: int, arg2: int) {
   a: int = const 4;
   b: int = const 3;
-  constant_fold1: bool = eq a b;
-  constant_fold2: bool = le a b;
-  constant_fold3: bool = gt b a;
+  constant_fold1: bool = ne b a;
+  constant_fold2: bool = eq a b;
+  constant_fold3: bool = le a b;
+  constant_fold4: bool = lt b a;
+  constant_fold5: bool = gt b a;
+  constant_fold6: bool = ge b a;
 
   should_fold1: bool = eq arg1 arg1;
   should_fold2: bool = ne arg1 arg1;
