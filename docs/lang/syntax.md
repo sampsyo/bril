@@ -97,7 +97,7 @@ It has the `dest` and `type` fields described above, and also:
     { "op": "<string>", "dest": "<string>", "type": <Type>,
       "args": ["<string>", ...]?,
       "funcs": ["<string>", ...]?,
-      "labels": ["<srring>", ...]? }
+      "labels": ["<string>", ...]? }
 
 A Value Operation is an instruction that takes arguments, does some computation, and produces a value.
 Like a Constant, it has the `dest` and `type` fields described above, and also any of these three optional fields:
@@ -116,7 +116,7 @@ In all three cases, these keys may be missing and the semantics are identical to
     { "op": "<string>",
       "args": ["<string>", ...]?,
       "funcs": ["<string>", ...]?,
-      "labels": ["<srring>", ...]? }
+      "labels": ["<string>", ...]? }
 
 An Effect Operation is like a Value Operation but it does not produce a value.
 It also has the optional `args`, `funcs`, and `labels` fields.

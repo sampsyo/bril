@@ -77,7 +77,7 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_SRC: ./book/
           DEPLOY_DEST: sync/bril-book
-          DEPLOY_2_HOST: courses
+          DEPLOY_2_HOST: courses.cit.cornell.edu
           DEPLOY_2_DEST: coursewww/capra.cs.cornell.edu/htdocs/bril
         run: |
           echo "$DEPLOY_KEY" > pk
