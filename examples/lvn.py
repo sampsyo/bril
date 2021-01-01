@@ -15,6 +15,7 @@ class Numbering(dict):
     """A dict mapping anything to numbers that can generate new numbers
     for you when adding new values.
     """
+
     def __init__(self, init={}):
         super(Numbering, self).__init__(init)
         self._next_fresh = 0
@@ -160,7 +161,7 @@ def lvn_block(block, lookup, canonicalize, fold):
             if val:
                 # Is this value foldable to a constant?
                 const = fold(num2const, val)
-                if const:
+                if const is not None:
                     num2const[newnum] = const
                     instr.update({
                         'op': 'const',
@@ -196,6 +197,8 @@ FOLDABLE_OPS = {
     'lt': lambda a, b: a < b,
     'ge': lambda a, b: a >= b,
     'le': lambda a, b: a <= b,
+    'ne': lambda a, b: a != b,
+    'eq': lambda a, b: a == b,
 }
 
 
@@ -205,6 +208,10 @@ def _fold(num2const, value):
             const_args = [num2const[n] for n in value.args]
             return FOLDABLE_OPS[value.op](*const_args)
         except KeyError:  # At least one argument is not a constant.
+            if value.op in {'eq', 'ne', 'le', 'ge'} and value.args[0] == value.args[1]:
+                # Equivalent arguments may be evaluated for equality.
+                # E.g. `eq x x`, where `x` is not a constant evaluates to `true`.
+                return value.op != 'ne'
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
             return None
