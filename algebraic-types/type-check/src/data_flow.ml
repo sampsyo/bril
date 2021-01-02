@@ -33,7 +33,6 @@ module CfgConstructor (F : FlowAnalysis) = struct
       (func : Bril.Func.t)
     : F.workset cfg_node list =
 
-    let open F in
     let cfg_node_map, cfg_nodes =
       List.fold_left
         begin fun (acc, nodes) block_name ->
@@ -55,14 +54,14 @@ module CfgConstructor (F : FlowAnalysis) = struct
             | _ -> () in
           helper cfg_nodes;
           if List.length cfg_nodes > 0 then begin
-            Core.String.Map.add_exn acc block_name
-              (cfg_nodes |> List.hd, List.rev cfg_nodes |> List.hd),
+            Core.String.Map.add_exn acc ~key:block_name
+              ~data:(cfg_nodes |> List.hd, List.rev cfg_nodes |> List.hd),
             nodes @ cfg_nodes
           end else acc, nodes @ cfg_nodes
         end (Core.String.Map.empty, []) func.order in
 
     List.iter2
-      begin fun (first, last) block_name ->
+      begin fun (_, last) block_name ->
         let succ_nodes =
           Core.String.Map.find func.succs block_name
           |> Option.value ~default:[]

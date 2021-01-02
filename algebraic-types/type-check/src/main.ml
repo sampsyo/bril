@@ -5,7 +5,7 @@ let main channel =
   let funcs = Yojson.Basic.from_channel channel |> Bril.from_json in
   let func_map =
     List.fold funcs ~init:String.Map.empty
-      ~f:(fun acc func -> String.Map.add_exn acc func.name func) in
+      ~f:(fun acc func -> String.Map.add_exn acc ~key:func.name ~data:func) in
   List.iter ~f:(Type_check.perform func_map) funcs
 
 let () =

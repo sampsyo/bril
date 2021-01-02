@@ -1,4 +1,0 @@
-B ../_build/src
-PKG bril
-PKG yojson
-PKG sexplib

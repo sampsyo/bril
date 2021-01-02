@@ -33,7 +33,7 @@ module TypeCheckAnalysis = struct
       match helper, helper' with
       | None, None -> None
       | Some h, None | None, Some h -> Some h
-      | Some h, Some h' -> failwith "label cannot be the target of multiple destructs" in
+      | Some _, Some _ -> failwith "label cannot be the target of multiple destructs" in
     workset'', helper''
 
   let transfer {func; func_map} ((type_map, destruct_helper) as workset) (cfg_node : workset cfg_node) =
@@ -44,7 +44,7 @@ module TypeCheckAnalysis = struct
         begin
           match String.Map.find map cfg_node.label with
           | Some typ ->
-            let type_map' = String.Map.update type_map var (fun _ -> typ) in
+            let type_map' = String.Map.update type_map var ~f:(fun _ -> typ) in
             type_map', None
           | None -> failwithf "label not an option from destruct: %s" cfg_node.label ()
         end
@@ -192,6 +192,8 @@ module TypeCheckAnalysis = struct
 
     | Destruct ((var, SumType typs), arg, labels) ->
       begin
+        if not (Bril_type.equal (String.Map.find_exn type_map arg) (SumType typs))
+        then failwith "mismatched destruct type";
         match List.fold2
                 labels typs
                 ~init:String.Map.empty
@@ -216,7 +218,7 @@ module TypeCheckDataFlow = DataFlow (TypeCheckAnalysis)
 
 let perform (func_map : Bril.Func.t String.Map.t) func =
   let top_workset = List.fold Bril.Func.(func.args) ~init:String.Map.empty
-      ~f:(fun acc (var, typ) -> String.Map.add_exn acc var typ) in
+      ~f:(fun acc (var, typ) -> String.Map.add_exn acc ~key:var ~data:typ) in
   let top = top_workset, None in
   let cfg = TypeCheckCfgConstructor.construct_cfg top func in
   let extra = TypeCheckAnalysis.{func; func_map} in

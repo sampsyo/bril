@@ -1,20 +1,15 @@
-MAIN_OUT=main.byte
-SRC=src
+default: install
 
-default: $(MAIN_OUT)
+build:
+	dune build
 
-$(MAIN_OUT): $(SRC)
-	ocamlbuild -use-ocamlfind $(MAIN_OUT) -I $(SRC)
-
-test: $(MAIN_OUT)
-	for dir in test* ; do \
-		cd $$dir && turnt *.bril ; \
-		cd .. ; \
-	done
+install: build
+	dune install
 
 clean:
-	ocamlbuild -clean
+	dune clean
+	ocamlfind remove briltc
 
 fresh: clean default
 
-.PHONY: default run test clean fresh
+.PHONY: default build clean fresh
