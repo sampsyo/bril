@@ -1,0 +1,5 @@
+@main() {
+    a: int = id a;
+    b: int = id a;
+    print b;
+}

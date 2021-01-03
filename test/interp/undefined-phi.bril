@@ -1,0 +1,14 @@
+@main() {
+    cond: bool = const true;
+    br cond .true .false;
+.true:
+    a: int = const 1;
+    jmp .exit;
+.false:
+.exit:
+    # Okay to read from a because the var is defined
+    a: int = phi a undefined .true .false;
+    # Okay because b is never read
+    b: int = phi undefined undefined .true .false;
+    print a;
+}

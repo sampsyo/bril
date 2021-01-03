@@ -1,0 +1,11 @@
+@main() {
+    cond: bool = const true;
+    br cond .true .false;
+.true:
+    a: int = const 1;
+    jmp .exit;
+.false:
+.exit:
+    a: int = phi undefined a .true .false;
+    print a;
+}

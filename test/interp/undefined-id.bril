@@ -1,0 +1,8 @@
+@main() {
+    # Okay because a is never read
+    a: int = id a;
+    # Okay because b is written before read
+    b: int = id b;
+    b: int = const 1;
+    print b;
+}

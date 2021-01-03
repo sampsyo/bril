@@ -180,12 +180,19 @@ function typeCmp(lhs: bril.Type, rhs: bril.Type): boolean {
   }
 }
 
-function get(env: Env, ident: bril.Ident) {
-  let val = env.get(ident);
+function undefinedCheck(val: Value | undefined, ident: bril.Ident): Value {
   if (typeof val === 'undefined') {
     throw error(`undefined variable ${ident}`);
   }
   return val;
+}
+
+function maybeGet(env: Env, ident: bril.Ident) {
+  return env.get(ident);
+}
+
+function get(env: Env, ident: bril.Ident) {
+  return undefinedCheck(maybeGet(env, ident), ident);
 }
 
 function findFunc(func: bril.Ident, funcs: readonly bril.Function[]) {
@@ -236,16 +243,22 @@ function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
   return val;
 }
 
-function getArgument(instr: bril.Operation, env: Env, index: number, typ?: bril.Type) {
+function maybeGetArgument(instr: bril.Operation, env: Env, index: number, typ?: bril.Type) {
   let args = instr.args || [];
   if (args.length <= index) {
     throw error(`${instr.op} expected at least ${index+1} arguments; got ${args.length}`);
   }
-  let val = get(env, args[index]);
-  if (typ && !typeCheck(val, typ)) {
+  let val = maybeGet(env, args[index]);
+  if (val !== undefined && typ && !typeCheck(val, typ)) {
     throw error(`${instr.op} argument ${index} must be a ${typ}`);
   }
   return val;
+}
+
+function getArgument(instr: bril.Operation, env: Env, index: number, typ?: bril.Type) {
+  let args = instr.args || [];
+  let val = maybeGetArgument(instr, env, index, typ);
+  return undefinedCheck(val, args[index]);
 }
 
 function getInt(instr: bril.Operation, env: Env, index: number): bigint {
@@ -435,8 +448,12 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     return NEXT;
 
   case "id": {
-    let val = getArgument(instr, state.env, 0);
-    state.env.set(instr.dest, val);
+    let val = maybeGetArgument(instr, state.env, 0);
+    if (val === undefined) {
+      state.env.delete(instr.dest);
+    } else {
+      state.env.set(instr.dest, val);
+    }
     return NEXT;
   }
 
@@ -675,11 +692,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       state.env.delete(instr.dest);
     } else {
       // Copy the right argument (including an undefined one).
-      if (!instr.args || idx >= instr.args.length) {
-        throw error(`phi node needed at least ${idx+1} arguments`);
-      }
-      let src = instr.args[idx];
-      let val = state.env.get(src);
+      let val = maybeGetArgument(instr, state.env, idx, instr.type);
       if (val === undefined) {
         state.env.delete(instr.dest);
       } else {
