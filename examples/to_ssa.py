@@ -74,6 +74,9 @@ def ssa_rename(blocks, phis, succ, domtree, args):
             for p in phis[s]:
                 if stack[p]:
                     phi_args[s][p].append((block, stack[p][0]))
+                else:
+                    # The variable is not defined on this path
+                    phi_args[s][p].append((block, "__undefined"))
 
         # Recursive calls.
         for b in sorted(domtree[block]):
@@ -87,43 +90,6 @@ def ssa_rename(blocks, phis, succ, domtree, args):
 
     return phi_args, phi_dests
 
-
-def prune_phis(pred, phi_args, phi_dests):
-    """Prune possibly-undefined phi-nodes.
-
-    Ordinary phi insertion will create phi-nodes that are "partially
-    undefined" because they represent a convergence of paths where the
-    variable is defined along some but not all paths. These phi-nodes
-    are useless because it is illegal to read from the result. And they
-    can confuse the out-of-SSA pass because it creates nonsensical
-    copies. This algorithm iteratively eliminates such phi-nodes,
-    propagating through to eliminate consumer phi-nodes until
-    convergence.
-    """
-    # We build up a set of new names (phi destinations) to prune, and we
-    # iterate until this set stops growing.
-    old_prune_len = -1
-    prune = set()
-    while len(prune) != old_prune_len:
-        old_prune_len = len(prune)
-
-        # Look at each phi.
-        for block, args in phi_args.items():
-            dests = phi_dests[block]
-            for v, v_args in args.items():
-                # How many non-pruned arguments does this phi have?
-                live_args = [a for _, a in v_args if a not in prune]
-                if len(live_args) < len(pred[block]):
-                    # Prune phis with insufficient arguments.
-                    prune.add(dests[v])
-
-    # Actually delete all phis with pruned destinations.
-    for block, args in phi_args.items():
-        dests = phi_dests[block]
-        to_del = {v for v, d in dests.items() if d in prune}
-        for v in to_del:
-            del args[v]
-            del dests[v]
 
 
 def insert_phis(blocks, phi_args, phi_dests, types):
@@ -166,7 +132,6 @@ def func_to_ssa(func):
     phis = get_phis(blocks, df, defs)
     phi_args, phi_dests = ssa_rename(blocks, phis, succ, dom_tree(dom),
                                      arg_names)
-    prune_phis(pred, phi_args, phi_dests)
     insert_phis(blocks, phi_args, phi_dests, types)
 
     func['instrs'] = reassemble(blocks)
