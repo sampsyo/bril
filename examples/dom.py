@@ -72,6 +72,10 @@ def get_dom(succ, entry):
 
 def dom_fronts(dom, succ):
     """Compute the dominance frontier, given the dominance relation.
+
+    A's domination frontier contains B if:
+      1. A does not strictly dominate B
+      2. A dominates a predecessor of B.
     """
     dom_inv = map_inv(dom)
 
@@ -84,8 +88,7 @@ def dom_fronts(dom, succ):
 
         # You're in the frontier if you're not strictly dominated by the
         # current block.
-        frontiers[block] = [b for b in dominated_succs
-                            if b != block and b not in dom_inv[block]]
+        frontiers[block] = [b for b in dominated_succs if b not in dom_inv[block]]
 
     return frontiers
 
