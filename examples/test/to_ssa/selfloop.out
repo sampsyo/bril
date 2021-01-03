@@ -6,6 +6,7 @@
   jmp .loop;
 .loop:
   x.1: int = phi x.0 x.2 .entry .br;
+  done.0: bool = phi __undefined done.1 .entry .br;
   x.2: int = sub x.1 one.0;
   done.1: bool = eq x.2 zero.0;
   jmp .br;
