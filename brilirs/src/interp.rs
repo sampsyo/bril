@@ -2,13 +2,15 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::basic_block::{BBProgram, BasicBlock};
+use crate::basic_block::{BBProgram, BasicBlock, Function};
 
 #[derive(Debug)]
 pub enum InterpError {
   BadJsonInt,
   BadJsonBool,
   NoMainFunction,
+  FuncNotFound(String),
+  NoRetValForfunc(String),
   BadNumArgs(usize, usize),   // (expected, actual)
   BadNumLabels(usize, usize), // (expected, actual)
   VarNotFound(String),
@@ -16,6 +18,7 @@ pub enum InterpError {
   LabelNotFound(String),
   BadValueType(bril_rs::Type, bril_rs::Type), // (expected, actual)
   IoError(Box<std::io::Error>),
+  BadCall(String, String), // (func name, reason).
 }
 
 fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(), InterpError> {
@@ -151,12 +154,15 @@ impl TryFrom<&Value> for f64 {
 }
 
 #[allow(clippy::float_cmp)]
-fn execute_value_op(
+fn execute_value_op<W: std::io::Write>(
+  prog: &BBProgram,
   op: &bril_rs::ValueOps,
   dest: &str,
   op_type: &bril_rs::Type,
   args: &[String],
+  funcs: &[String],
   value_store: &mut HashMap<String, Value>,
+  out: &mut W,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::*;
   match *op {
@@ -271,7 +277,32 @@ fn execute_value_op(
       let args = get_args::<f64>(value_store, 2, args)?;
       value_store.insert(String::from(dest), Value::Bool(args[0] >= args[1]));
     }
-    Call => unreachable!(), // TODO(yati): Why is Call a ValueOp as well?
+    Call => {
+      assert!(funcs.len() == 1);
+      let func_info = prog
+        .func_index
+        .get(&funcs[0])
+        .ok_or(InterpError::FuncNotFound(funcs[0].clone()))?;
+
+      check_asmt_type(
+        func_info.return_type.as_ref().ok_or(InterpError::BadCall(
+          String::from(&funcs[0]),
+          String::from(
+            "Function does not return a value, but used on the right side of an assignment",
+          ),
+        ))?,
+        op_type,
+      )?;
+
+      let vars = make_func_args(&funcs[0], func_info, args, value_store)?;
+      if let Some(val) = execute_func(&prog, &funcs[0], vars, out)? {
+        check_asmt_type(&val.get_type(), op_type)?;
+        value_store.insert(String::from(dest), val);
+      } else {
+        // This is a value-op call, so the target func must return a result.
+        return Err(InterpError::NoRetValForfunc(funcs[0].clone()));
+      }
+    }
     Phi | Alloc | Load | PtrAdd => unimplemented!(),
   }
   Ok(())
@@ -293,17 +324,56 @@ fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpErro
   }
 }
 
-// Returns whether the program should continue running (i.e., if a Return was
-// *not* executed).
+// Returns a map from function parameter names to values of the call arguments
+// that are bound to those parameters.
+fn make_func_args(
+  func_name: &str,
+  func: &Function,
+  call_args: &[String],
+  vars: &HashMap<String, Value>,
+) -> Result<HashMap<String, Value>, InterpError> {
+  if func.args.len() != call_args.len() {
+    return Err(InterpError::BadCall(
+      String::from(func_name),
+      format!(
+        "Expected {} parameters, tried to pass {} args",
+        func.args.len(),
+        call_args.len()
+      ),
+    ));
+  }
+  let vals = get_values(vars, call_args.len(), call_args)?;
+  let mut args = HashMap::new();
+  for (i, arg) in func.args.iter().enumerate() {
+    check_asmt_type(&arg.arg_type, &vals[i].get_type())?;
+    args.insert(arg.name.clone(), vals[i].clone());
+  }
+  Ok(args)
+}
+
+// Result of executing an effect operation.
+enum EffectResult {
+  // Return from the current function without any value.
+  Return,
+
+  // Return a given value from the current function.
+  ReturnWithVal(Value),
+
+  // Continue execution of the current function.
+  Continue,
+}
+
 fn execute_effect_op<T: std::io::Write>(
+  prog: &BBProgram,
   op: &bril_rs::EffectOps,
   args: &[String],
   labels: &[String],
+  funcs: &[String],
   curr_block: &BasicBlock,
   value_store: &HashMap<String, Value>,
-  mut out: T,
+  out: &mut T,
   next_block_idx: &mut Option<usize>,
-) -> Result<bool, InterpError> {
+) -> Result<EffectResult, InterpError> {
   use bril_rs::EffectOps::*;
   match op {
     Jump => {
@@ -320,36 +390,55 @@ fn execute_effect_op<T: std::io::Write>(
     Return => {
       out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
       // NOTE: This only works so long as `main` is the only function
-      return Ok(false);
+      if args.is_empty() {
+        return Ok(EffectResult::Return);
+      }
+      let retval = value_store
+        .get(&args[0])
+        .ok_or(InterpError::VarNotFound(args[0].clone()))?;
+      return Ok(EffectResult::ReturnWithVal(retval.clone()));
     }
     Print => {
+      let vals = get_values(value_store, args.len(), args)?;
       writeln!(
         out,
         "{}",
-        args
+        vals
           .iter()
-          .map(|a| format!("{}", value_store[a]))
+          .map(|v| format!("{}", v))
           .collect::<Vec<_>>()
           .join(", ")
       )
       .map_err(|e| InterpError::IoError(Box::new(e)))?;
     }
     Nop => {}
-    Call => unreachable!(),
+    Call => {
+      assert!(funcs.len() == 1);
+      let func = prog
+        .func_index
+        .get(&funcs[0])
+        .ok_or(InterpError::FuncNotFound(funcs[0].clone()))?;
+      let vars = make_func_args(&funcs[0], func, args, value_store)?;
+      execute_func(&prog, &funcs[0], vars, out)?;
+    }
     Store | Free | Speculate | Commit | Guard => unimplemented!(),
   }
-  Ok(true)
+  Ok(EffectResult::Continue)
 }
 
-pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), InterpError> {
-  let (main_fn, blocks, _labels) = prog;
-  let mut curr_block_idx: usize = main_fn.ok_or(InterpError::NoMainFunction)?;
-
-  // Map from variable name to value.
-  let mut value_store: HashMap<String, Value> = HashMap::new();
-
+fn execute_func<T: std::io::Write>(
+  prog: &BBProgram,
+  func: &str,
+  mut vars: HashMap<String, Value>,
+  out: &mut T,
+) -> Result<Option<Value>, InterpError> {
+  let f = prog
+    .func_index
+    .get(func)
+    .ok_or(InterpError::FuncNotFound(String::from(func)))?;
+  let mut curr_block_idx = 0;
   loop {
-    let curr_block = &blocks[curr_block_idx];
+    let curr_block = &f.blocks[curr_block_idx];
     let curr_instrs = &curr_block.instrs;
     let mut next_block_idx = if curr_block.exit.len() == 1 {
       Some(curr_block.exit[0])
@@ -367,44 +456,58 @@ pub fn execute<T: std::io::Write>(prog: BBProgram, mut out: T) -> Result<(), Int
             value,
           } => {
             check_asmt_type(const_type, &value.get_type())?;
-            value_store.insert(dest.clone(), Value::from(value));
+            vars.insert(dest.clone(), Value::from(value));
           }
           bril_rs::Instruction::Value {
             op,
             dest,
             op_type,
             args,
+            funcs,
             ..
           } => {
-            execute_value_op(op, dest, op_type, args, &mut value_store)?;
+            execute_value_op(&prog, op, dest, op_type, args, funcs, &mut vars, out)?;
           }
           bril_rs::Instruction::Effect {
-            op, args, labels, ..
+            op,
+            args,
+            labels,
+            funcs,
+            ..
           } => {
-            let should_continue = execute_effect_op(
+            match execute_effect_op(
+              prog,
               op,
               args,
               labels,
+              funcs,
               &curr_block,
-              &value_store,
-              &mut out,
+              &vars,
+              out,
               &mut next_block_idx,
-            )?;
-
-            // TODO(yati): Correct only when main is the only function.
-            if !should_continue {
-              return Ok(());
-            }
+            )? {
+              EffectResult::Continue => {}
+              EffectResult::Return => {
+                return Ok(None);
+              }
+              EffectResult::ReturnWithVal(val) => {
+                return Ok(Some(val));
+              }
+            };
           }
         }
       }
     }
-
     if let Some(idx) = next_block_idx {
       curr_block_idx = idx;
     } else {
       out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
-      return Ok(());
+      return Ok(None);
     }
   }
+}
+
+pub fn execute<T: std::io::Write>(prog: BBProgram, out: &mut T) -> Result<(), InterpError> {
+  // Ignore return value of @main.
+  execute_func(&prog, "main", HashMap::new(), out).map(|_| ())
 }
