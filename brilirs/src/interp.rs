@@ -33,7 +33,7 @@ pub enum InterpError {
 
 // TODO(Patrick): Using String vs &str will be a SERIOUS performance penalty
 #[derive(Default)]
-pub struct Environment {
+struct Environment {
   env: HashMap<String, Value>,
 }
 
@@ -50,7 +50,7 @@ impl Environment {
 }
 
 #[derive(Default)]
-pub struct Heap {
+struct Heap {
   memory: HashMap<usize, Vec<Value>>,
   base_num_counter: usize,
 }
@@ -514,6 +514,7 @@ fn make_func_args(
   Ok(next_env)
 }
 
+// todo do this with less function arguments
 fn execute_effect_op<T: std::io::Write>(
   prog: &BBProgram,
   func: &BBFunction,
