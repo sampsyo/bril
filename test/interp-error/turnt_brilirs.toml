@@ -1,0 +1,3 @@
+command = "bril2json < {filename} | cargo run --manifest-path ../../brilirs/Cargo.toml -- {args}"
+return_code = 2
+output.err = "2"
