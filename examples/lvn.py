@@ -220,9 +220,9 @@ def _fold(num2const, value):
                 # Short circuiting the logical operators `and` and `or` for two cases:
                 # (1) `and x c0` -> false, where `c0` a constant that evaluates to `false`.
                 # (2) `or x c1`  -> true, where `c1` a constant that evaluates to `true`.
-                const_value = num2const[value.args[0]] if value.args[0] in num2const else num2const[value.args[1]]
-                if (value.op == 'and' and not const_value) or (value.op == 'or' and const_value):
-                    return const_value
+                const_val = num2const[value.args[0]] if value.args[0] in num2const else num2const[value.args[1]]
+                if (value.op == 'and' and not const_val) or (value.op == 'or' and const_val):
+                    return const_val
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
             return None
