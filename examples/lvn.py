@@ -158,7 +158,7 @@ def lvn_block(block, lookup, canonicalize, fold):
             num2var[newnum] = var
             instr['dest'] = var
 
-            if val:
+            if val is not None:
                 # Is this value foldable to a constant?
                 const = fold(num2const, val)
                 if const is not None:
