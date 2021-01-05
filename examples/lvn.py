@@ -199,6 +199,9 @@ FOLDABLE_OPS = {
     'le': lambda a, b: a <= b,
     'ne': lambda a, b: a != b,
     'eq': lambda a, b: a == b,
+    'or': lambda a, b: a or b,
+    'and': lambda a, b: a and b,
+    'not': lambda a: not a
 }
 
 
@@ -212,6 +215,14 @@ def _fold(num2const, value):
                 # Equivalent arguments may be evaluated for equality.
                 # E.g. `eq x x`, where `x` is not a constant evaluates to `true`.
                 return value.op != 'ne'
+
+            if value.op in {'and', 'or'} and any(v in num2const for v in value.args):
+                # Short circuiting the logical operators `and` and `or` for two cases:
+                # (1) `and x c0` -> false, where `c0` a constant that evaluates to `false`.
+                # (2) `or x c1`  -> true, where `c1` a constant that evaluates to `true`.
+                const_value = num2const[value.args[0]] if value.args[0] in num2const else num2const[value.args[1]]
+                if (value.op == 'and' and not const_value) or (value.op == 'or' and const_value):
+                    return const_value
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
             return None
