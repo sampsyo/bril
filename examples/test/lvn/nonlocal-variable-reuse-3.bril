@@ -1,0 +1,13 @@
+# CMD: bril2json < {filename} | python3 ../../lvn.py -p | bril2txt
+@main {
+  # This should re-name within local scope only with `lvn`.
+  a: int = const 3;
+  b: int = id a;
+  a: int = id b;
+  print b;
+  print a;
+  a: int = const 4;
+  print a;
+  a: int = const 5;
+  print a;
+}

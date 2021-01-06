@@ -64,6 +64,56 @@ def read_first(instrs):
     return read
 
 
+def rename_nonlocal_duplicates(block):
+    """Renames any variables that
+    (1) share a name with an argument in an `id` op where the argument
+        is not defined in the current block, and
+    (2) appear after the `id` op.
+    This avoids a wrong copy propagation. For example,
+        1  @main {
+        2    a: int = const 42;
+        3  .lbl:
+        4    b: int = id a;
+        5    a: int = const 5;
+        6    print b;
+        7  }
+
+    Here, we replace line 5 with:
+        _a: int = const 5;
+    to ensure that the copy propagation leads to the correct value of `a`.
+    """
+    all_vars = set(instr['dest'] for instr in block if 'dest' in instr)
+    current_vars = set()
+
+    def fresh_id(v):
+        while v in all_vars:
+            v = '_{}'.format(v)
+        return v
+
+    def rename_until_next_assign(old_var, new_var, index, instrs):
+        for i in range(index, len(instrs)):
+            instr = instrs[i]
+            if 'args' in instr and old_var in instr['args']:
+                instr['args'] = [new_var if x == old_var else x for x in instr['args']]
+            if instr.get('dest') == old_var:
+                return
+
+    id2line = {}
+    for index, instr in enumerate(block):
+        if instr.get('op') == 'id':
+            id_arg = instr['args'][0]
+            if id_arg not in current_vars and id_arg != instr['dest']:
+                id2line[id_arg] = index
+        if 'dest' not in instr:
+            continue
+        dest = instr['dest']
+        current_vars.add(dest)
+        if dest in id2line and id2line[dest] < index:
+            old_var = instr['dest']
+            instr['dest'] = fresh_id(dest)
+            rename_until_next_assign(old_var, instr['dest'], index, block)
+
+
 def lvn_block(block, lookup, canonicalize, fold):
     """Use local value numbering to optimize a basic block. Modify the
     instructions in place.
@@ -95,6 +145,9 @@ def lvn_block(block, lookup, canonicalize, fold):
 
     # Track constant values for values assigned with `const`.
     num2const = {}
+
+    # Update names to variables that are used in `id`, yet defined outside the local scope.
+    rename_nonlocal_duplicates(block)
 
     # Initialize the table with numbers for input variables. These
     # variables are their own canonical source.
@@ -199,6 +252,9 @@ FOLDABLE_OPS = {
     'le': lambda a, b: a <= b,
     'ne': lambda a, b: a != b,
     'eq': lambda a, b: a == b,
+    'or': lambda a, b: a or b,
+    'and': lambda a, b: a and b,
+    'not': lambda a: not a
 }
 
 
@@ -212,6 +268,14 @@ def _fold(num2const, value):
                 # Equivalent arguments may be evaluated for equality.
                 # E.g. `eq x x`, where `x` is not a constant evaluates to `true`.
                 return value.op != 'ne'
+
+            if value.op in {'and', 'or'} and any(v in num2const for v in value.args):
+                # Short circuiting the logical operators `and` and `or` for two cases:
+                # (1) `and x c0` -> false, where `c0` a constant that evaluates to `false`.
+                # (2) `or x c1`  -> true, where `c1` a constant that evaluates to `true`.
+                const_val = num2const[value.args[0] if value.args[0] in num2const else value.args[1]]
+                if (value.op == 'and' and not const_val) or (value.op == 'or' and const_val):
+                    return const_val
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
             return None

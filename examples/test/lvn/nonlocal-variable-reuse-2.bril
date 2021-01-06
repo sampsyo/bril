@@ -1,0 +1,10 @@
+# CMD: bril2json < {filename} | python3 ../../lvn.py -p | bril2txt
+@main {
+  a: int = const 42;
+.lbl:
+  # While `a` is outside the local scope, we essentially
+  # have a no-op here, so nonlocal re-naming isn't necessary.
+  a: int = id a;
+  a: int = const 5;
+  print a;
+}
