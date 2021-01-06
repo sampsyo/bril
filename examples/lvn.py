@@ -90,15 +90,15 @@ def rename_nonlocal_duplicates(block):
             v = '_{}'.format(v)
         return v
 
-    def rename_until_next_assign(old_var, new_var, index, instrs):
-        for i in range(index, len(instrs)):
-            instr = instrs[i]
+    def rename_until_next_assign(old_var, new_var, instrs):
+        for instr in instrs:
             if 'args' in instr and old_var in instr['args']:
-                instr['args'] = [new_var if x == old_var else x for x in instr['args']]
+                instr['args'] = [new_var if a == old_var else a for a in instr['args']]
             if instr.get('dest') == old_var:
                 return
 
     id2line = {}
+    block_len = len(block)
     for index, instr in enumerate(block):
         if instr.get('op') == 'id':
             id_arg = instr['args'][0]
@@ -111,7 +111,7 @@ def rename_nonlocal_duplicates(block):
         if dest in id2line and id2line[dest] < index:
             old_var = instr['dest']
             instr['dest'] = fresh_id(dest)
-            rename_until_next_assign(old_var, instr['dest'], index, block)
+            rename_until_next_assign(old_var, instr['dest'], block[index + 1:block_len])
 
 
 def lvn_block(block, lookup, canonicalize, fold):
