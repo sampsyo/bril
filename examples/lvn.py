@@ -100,7 +100,7 @@ def rename_nonlocal_duplicates(block):
             if instr.get('dest') == old_var:
                 return
 
-    # A running set to track which variables have been defined locally.
+    # A running set to track which variables have been assigned locally.
     current_vars = set()
     # Mapping from `id` op of a non-local variable to its line number.
     id2line = {}
@@ -109,15 +109,19 @@ def rename_nonlocal_duplicates(block):
         if instr.get('op') == 'id':
             id_arg = instr['args'][0]
             if id_arg not in current_vars and id_arg != instr['dest']:
+                # Argument of this `id` op is not defined locally.
                 id2line[id_arg] = index
         if 'dest' not in instr:
             continue
         dest = instr['dest']
         current_vars.add(dest)
         if dest in id2line and id2line[dest] < index:
+            # Local assignment shares a name with
+            # previous `id` of a non-local variable.
             old_var = instr['dest']
             instr['dest'] = fresh_id(dest)
-            rename_until_next_assign(old_var, instr['dest'], block[index + 1:len(block)])
+            rename_until_next_assign(old_var, instr['dest'],
+                                     block[index + 1:len(block)])
 
 
 def lvn_block(block, lookup, canonicalize, fold):
