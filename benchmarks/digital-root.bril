@@ -30,7 +30,6 @@
 
  .done:
     print result;
-    ret result;
 }
 
 @is_single_digit(input: int): bool {

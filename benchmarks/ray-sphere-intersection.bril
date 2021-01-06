@@ -35,7 +35,7 @@
   v20: float = id rayDirectionZ;
   bInitial: float = call @DotProduct v15 v16 v17 v18 v19 v20;
   bInitial: float = id bInitial;
-  v21: float = const 2;
+  v21: float = const 2.0;
   v22: float = id bInitial;
   v23: float = fmul v21 v22;
   b: float = id v23;
@@ -59,7 +59,7 @@
   v37: float = id b;
   v38: float = fmul v36 v37;
   discriminant1: float = id v38;
-  v39: float = const 4;
+  v39: float = const 4.0;
   v40: float = id a;
   v41: float = fmul v39 v40;
   v42: float = id c;
@@ -70,7 +70,7 @@
   v46: float = fsub v44 v45;
   discriminant: float = id v46;
   v47: float = id discriminant;
-  v48: float = const 0;
+  v48: float = const 0.0;
   v49: bool = fgt v47 v48;
   ret v49;
 }

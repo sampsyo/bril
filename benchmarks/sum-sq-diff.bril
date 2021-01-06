@@ -55,7 +55,7 @@
   ret v15;
 }
 # ARGS: 100
-@main(n: int): int {
+@main(n: int) {
   v0: int = id n;
   sum: int = call @sumOfSquares v0;
   sum: int = id sum;
@@ -70,5 +70,4 @@
   print v5;
   v6: int = const 0;
   v7: int = id diff;
-  ret v7;
 }
