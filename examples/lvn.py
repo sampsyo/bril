@@ -120,8 +120,7 @@ def rename_nonlocal_duplicates(block):
             # previous `id` of a non-local variable.
             old_var = instr['dest']
             instr['dest'] = fresh_id(dest)
-            rename_until_next_assign(old_var, instr['dest'],
-                                     block[index + 1:len(block)])
+            rename_until_next_assign(old_var, instr['dest'], block[index + 1:])
 
 
 def lvn_block(block, lookup, canonicalize, fold):
