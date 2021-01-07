@@ -1,5 +1,5 @@
 @main {
-  v0: float = const 327.0;
+  v0: float = const 327;
   n: float = id v0;
   v1: float = const 0.00001;
   precision: float = id v1;
@@ -28,11 +28,11 @@
   v17: float = fsub v15 v16;
   diff: float = id v17;
   v19: float = id diff;
-  v20: float = const 0.0;
+  v20: float = const 0;
   v21: bool = flt v19 v20;
   br v21 .then.18 .else.18;
 .then.18:
-  v22: float = const 0.0;
+  v22: float = const 0;
   v23: float = id diff;
   v24: float = fsub v22 v23;
   diff: float = id v24;

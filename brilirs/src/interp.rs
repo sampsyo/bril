@@ -218,6 +218,16 @@ impl From<&bril_rs::Literal> for Value {
   }
 }
 
+impl From<bril_rs::Literal> for Value {
+  fn from(l: bril_rs::Literal) -> Value {
+    match l {
+      bril_rs::Literal::Int(i) => Value::Int(i),
+      bril_rs::Literal::Bool(b) => Value::Bool(b),
+      bril_rs::Literal::Float(f) => Value::Float(f),
+    }
+  }
+}
+
 impl TryFrom<&Value> for i64 {
   type Error = InterpError;
   fn try_from(value: &Value) -> Result<Self, Self::Error> {
@@ -638,6 +648,15 @@ fn execute<T: std::io::Write>(
           const_type,
           value,
         } => {
+          // Integer literals can be promoted to Floating point
+          let value = if const_type == &bril_rs::Type::Float {
+            match value {
+              bril_rs::Literal::Int(i) => bril_rs::Literal::Float(*i as f64),
+              _ => value.clone(),
+            }
+          } else {
+            value.clone()
+          };
           check_asmt_type(const_type, &value.get_type())?;
           value_store.set(dest.clone(), Value::from(value));
         }

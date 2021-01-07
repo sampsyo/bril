@@ -10,7 +10,7 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	turnt -v -c turnt_brilirs.toml $(BENCHMARKS)
+	turnt -c turnt_brilirs.toml $(BENCHMARKS)
 
 # This is primarily used for running examples and debuging a bril program
 .PHONY: example
