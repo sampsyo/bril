@@ -6,6 +6,11 @@ use bril_rs::Instruction;
 
 use fxhash::FxHashMap;
 
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 #[derive(Debug)]
 pub enum InterpError {
   MemLeak,
@@ -32,12 +37,19 @@ pub enum InterpError {
   IoError(Box<std::io::Error>),
 }
 
-#[derive(Default)]
 struct Environment<'a> {
   env: FxHashMap<&'a str, Value>,
 }
 
-impl <'a> Environment<'a> {
+impl <'a>  Default for Environment<'a> {
+  fn default() -> Self {
+    Environment {
+      env: FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default()),
+    }
+  }
+}
+
+impl<'a> Environment<'a> {
   #[inline(always)]
   pub fn get(&self, ident: &str) -> Result<&Value, InterpError> {
     self
@@ -51,10 +63,18 @@ impl <'a> Environment<'a> {
   }
 }
 
-#[derive(Default)]
 struct Heap {
   memory: FxHashMap<usize, Vec<Value>>,
   base_num_counter: usize,
+}
+
+impl Default for Heap {
+  fn default() -> Self {
+    Heap {
+      memory: FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default()),
+      base_num_counter: 0,
+    }
+  }
 }
 
 impl Heap {
@@ -584,7 +604,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
         "{}",
         args
           .iter()
-          .map(|a| value_store.get(a).map(|x| format!("{}", x)))
+          .map(|a| value_store.get(a).map(|x| x.to_string()))
           .collect::<Result<Vec<String>, InterpError>>()?
           .join(" ")
       )

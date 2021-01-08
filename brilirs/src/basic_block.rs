@@ -106,12 +106,15 @@ impl BBFunction {
       blocks.push(curr_block);
     }
 
-    (BBFunction {
-      name: func.name,
-      args: func.args,
-      return_type: func.return_type,
-      blocks,
-    }, label_map)
+    (
+      BBFunction {
+        name: func.name,
+        args: func.args,
+        return_type: func.return_type,
+        blocks,
+      },
+      label_map,
+    )
   }
 
   fn build_cfg(&mut self, label_map: FxHashMap<String, usize>) {

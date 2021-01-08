@@ -3,7 +3,6 @@
 # Some ideas for faster code
 # Async code?
 # Feature gate type checking?
-# CoW?
 
 files=( "../benchmarks/ackermann.bril" "../benchmarks/eight-queens.bril" \
         "../benchmarks/mat-mul.bril"\
