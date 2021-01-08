@@ -1,10 +1,10 @@
 use bril_rs::{Function, Program};
-use std::collections::HashMap;
+use fxhash::FxHashMap;
 
 // A program represented as basic blocks.
 #[derive(Debug)]
 pub struct BBProgram {
-  pub func_index: HashMap<String, BBFunction>,
+  pub func_index: FxHashMap<String, BBFunction>,
 }
 
 impl BBProgram {
@@ -46,24 +46,23 @@ pub struct BBFunction {
   pub args: Vec<bril_rs::Argument>,
   pub return_type: Option<bril_rs::Type>,
   pub blocks: Vec<BasicBlock>,
-  pub label_map: HashMap<String, usize>,
 }
 
 impl BBFunction {
   pub fn new(f: Function) -> BBFunction {
-    let mut func = BBFunction::find_basic_blocks(f);
-    func.build_cfg();
+    let (mut func, label_map) = BBFunction::find_basic_blocks(f);
+    func.build_cfg(label_map);
     func
   }
 
-  fn find_basic_blocks(func: bril_rs::Function) -> BBFunction {
+  fn find_basic_blocks(func: bril_rs::Function) -> (BBFunction, FxHashMap<String, usize>) {
     let mut blocks = Vec::new();
-    let mut label_map = HashMap::new();
+    let mut label_map = FxHashMap::default();
 
     let mut curr_block = BasicBlock::new();
     for instr in func.instrs.into_iter() {
       match instr {
-        bril_rs::Code::Label { ref label } => {
+        bril_rs::Code::Label { label } => {
           if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
             if let Some(old_label) = curr_block.label.as_ref() {
               label_map.insert(old_label.to_string(), blocks.len());
@@ -71,7 +70,7 @@ impl BBFunction {
             blocks.push(curr_block);
             curr_block = BasicBlock::new();
           }
-          curr_block.label = Some(label.clone());
+          curr_block.label = Some(label);
         }
         bril_rs::Code::Instruction(bril_rs::Instruction::Effect {
           op,
@@ -107,16 +106,15 @@ impl BBFunction {
       blocks.push(curr_block);
     }
 
-    BBFunction {
+    (BBFunction {
       name: func.name,
       args: func.args,
       return_type: func.return_type,
       blocks,
-      label_map,
-    }
+    }, label_map)
   }
 
-  fn build_cfg(&mut self) {
+  fn build_cfg(&mut self, label_map: FxHashMap<String, usize>) {
     let last_idx = self.blocks.len() - 1;
     for (i, block) in self.blocks.iter_mut().enumerate() {
       // If we're before the last block
@@ -136,8 +134,7 @@ impl BBFunction {
         {
           for l in labels {
             block.exit.push(
-              *self
-                .label_map
+              *label_map
                 .get(&l)
                 .unwrap_or_else(|| panic!("No label {} found.", &l)),
             );

@@ -8,8 +8,15 @@ edition = "2018"
 
 [dependencies]
 clap         = "~2.31"
+fxhash       = "0.2.1"
 
 [dependencies.bril-rs]
 version = "0.1.0"
 path = "../bril-rs"
 features = ["ssa", "memory", "float", "speculate"]
+
+[profile.release]
+# this can shave off a few ms but doubles the build time so it's not really worth it
+# codegen-units = 1
+lto = true
+panic = "abort"
