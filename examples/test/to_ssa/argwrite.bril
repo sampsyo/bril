@@ -1,5 +1,4 @@
 @main(a: int) {
-.entry:
   cond: bool = const true;
   br cond .here .there;
 .here:
