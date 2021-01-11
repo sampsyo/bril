@@ -2,9 +2,50 @@ import json
 import sys
 from collections import defaultdict
 
-from cfg import block_map, successors, add_terminators, add_entry, reassemble
+from cfg import block_map, successors, add_terminators, add_entry, reassemble, edges
 from form_blocks import form_blocks
 from dom import get_dom, dom_fronts, dom_tree, map_inv
+
+
+def reaching_definitions(init, blocks, pred, succ):
+    """
+    Reaching definitions analysis of `blocks`. Returns a
+    mapping for each the `in` and `out` of a block, in the
+    following manner:
+
+    `block` -> {v1, v2, ...}
+    where `v1, v2, ...` are reached in `block`.
+    """
+
+    def merge(_initial, _pred, _out):
+        return set().union(_initial, *[_out[name] for name in _pred])
+
+    def transfer(_in, _block):
+        return _in.symmetric_difference(definitions[_block])
+
+    # Initialize.
+    block_names = list(blocks.keys())
+    in_ = {name: {} for name in block_names}
+    out_ = {name: {} for name in block_names}
+
+    entry = block_names[0]
+    for a in init:
+        in_[entry][a] = {entry}
+
+    # Mapping from block name to a set of definitions within the block.
+    definitions = {n: set(i['dest'] for i in blocks[n] if 'dest' in i)
+                   for n in block_names}
+
+    worklist = [name for name in block_names]
+    while worklist:
+        b = worklist.pop()
+        in_[b] = merge(in_[b], pred[b], out_)
+        copy = out_[b].copy()
+        out_[b] = transfer(in_[b], b)
+        if out_[b] == copy:
+            continue
+        worklist.extend(succ[b])
+    return in_, out_, definitions
 
 
 def def_blocks(blocks):
@@ -20,7 +61,6 @@ def def_blocks(blocks):
 
 def get_phis(blocks, df, defs):
     """Find where to insert phi-nodes in the blocks.
-
     Produce a map from block names to variable names that need phi-nodes
     in those blocks. (We will need to generate names and actually insert
     instructions later.)
@@ -39,10 +79,11 @@ def get_phis(blocks, df, defs):
     return phis
 
 
-def ssa_rename(blocks, phis, succ, domtree, args):
+def ssa_rename(blocks, phis, pred, succ, domtree, args):
     stack = defaultdict(list, {v: [v] for v in args})
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
     phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
+    in_, out_, definitions = reaching_definitions(args, blocks, pred, succ)
     counters = defaultdict(int)
 
     def _push_fresh(var):
@@ -72,7 +113,15 @@ def ssa_rename(blocks, phis, succ, domtree, args):
         # Rename phi-node arguments (in successors).
         for s in succ[block]:
             for p in phis[s]:
-                if stack[p]:
+                # We only want to add a variable `v` to phi if
+                # (1) `v` has already been defined along the predecessors path to `s`,
+                # (2) `v` is defined in the current block, or
+                # (3) `v` is defined in the incoming definitions of the block, e.g. function arguments.
+                is_defined = any(p in out_[b] for b in pred[block]) \
+                             or p in definitions[block] \
+                             or p in in_[block]
+
+                if is_defined and stack[p]:
                     phi_args[s][p].append((block, stack[p][0]))
                 else:
                     # The variable is not defined on this path
@@ -89,7 +138,6 @@ def ssa_rename(blocks, phis, succ, domtree, args):
     _rename(entry)
 
     return phi_args, phi_dests
-
 
 
 def insert_phis(blocks, phi_args, phi_dests, types):
@@ -120,8 +168,7 @@ def func_to_ssa(func):
     blocks = block_map(form_blocks(func['instrs']))
     add_entry(blocks)
     add_terminators(blocks)
-    succ = {name: successors(block[-1]) for name, block in blocks.items()}
-    pred = map_inv(succ)
+    pred, succ = edges(blocks)
     dom = get_dom(succ, list(blocks.keys())[0])
 
     df = dom_fronts(dom, succ)
@@ -130,8 +177,7 @@ def func_to_ssa(func):
     arg_names = {a['name'] for a in func['args']} if 'args' in func else set()
 
     phis = get_phis(blocks, df, defs)
-    phi_args, phi_dests = ssa_rename(blocks, phis, succ, dom_tree(dom),
-                                     arg_names)
+    phi_args, phi_dests = ssa_rename(blocks, phis, pred, succ, dom_tree(dom), arg_names)
     insert_phis(blocks, phi_args, phi_dests, types)
 
     func['instrs'] = reassemble(blocks)

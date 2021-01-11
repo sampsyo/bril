@@ -9,7 +9,7 @@
   b.0: int = const 1;
   jmp .zexit;
 .zexit:
-  b.1: int = phi b.0 b.0 .false .true;
+  b.1: int = phi b.0 __undefined .false .true;
   a.1: int = phi __undefined a.0 .false .true;
   print a.1;
   ret;

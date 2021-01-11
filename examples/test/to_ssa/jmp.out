@@ -1,0 +1,10 @@
+@main {
+.entry:
+  cond.0: bool = const true;
+  b.0: int = const 42;
+  jmp .exit;
+.exit:
+  b.1: int = const 0;
+  print b.1;
+  ret;
+}
