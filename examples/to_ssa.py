@@ -7,21 +7,22 @@ from form_blocks import form_blocks
 from dom import get_dom, dom_fronts, dom_tree, map_inv
 
 
-def reaching_definitions(init, blocks, pred, succ):
-    """
-    Reaching definitions analysis of `blocks`. Returns a
-    mapping for each the `in` and `out` of a block, in the
-    following manner:
+def defined_analysis(init, blocks, pred, succ):
+    """Accumulates all currently-defined variables at
+    the beginning and end of each block. Returns a
+    mapping:
+     block -> {v1, v2, ...}
+     where `v1, v2, ...` are defined in block.
 
-    `block` -> {v1, v2, ...}
-    where `v1, v2, ...` are reached in `block`.
+    This is done for both the entrance and exit
+    of a block, resulting in two mappings.
     """
 
     def merge(_initial, _pred, _out):
         return set().union(_initial, *[_out[name] for name in _pred])
 
     def transfer(_in, _block):
-        return _in.symmetric_difference(definitions[_block])
+        return _in.union(definitions[_block])
 
     # Initialize.
     block_names = list(blocks.keys())
@@ -45,7 +46,7 @@ def reaching_definitions(init, blocks, pred, succ):
         if out_[b] == copy:
             continue
         worklist.extend(succ[b])
-    return in_, out_, definitions
+    return in_, out_
 
 
 def def_blocks(blocks):
@@ -83,7 +84,7 @@ def ssa_rename(blocks, phis, pred, succ, domtree, args):
     stack = defaultdict(list, {v: [v] for v in args})
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
     phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
-    in_, out_, definitions = reaching_definitions(args, blocks, pred, succ)
+    in_, out_ = defined_analysis(args, blocks, pred, succ)
     counters = defaultdict(int)
 
     def _push_fresh(var):
@@ -113,14 +114,9 @@ def ssa_rename(blocks, phis, pred, succ, domtree, args):
         # Rename phi-node arguments (in successors).
         for s in succ[block]:
             for p in phis[s]:
-                # We only want to add a variable `v` to phi if
-                # (1) `v` has already been defined along the predecessors path to `s`,
-                # (2) `v` is defined in the current block, or
-                # (3) `v` is defined in the incoming definitions of the block.
-                is_defined = any(p in out_[b] for b in pred[block]) \
-                             or p in definitions[block] \
-                             or p in in_[block]
-
+                # we want to ensure that `p` is defined in the
+                # path of predecessors, or in the current block.
+                is_defined = any(p in out_[b] for b in pred[block] + [block])
                 if is_defined and stack[p]:
                     phi_args[s][p].append((block, stack[p][0]))
                 else:
