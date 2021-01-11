@@ -84,7 +84,8 @@ def ssa_rename(blocks, phis, pred, succ, domtree, args):
     stack = defaultdict(list, {v: [v] for v in args})
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
     phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
-    _, out_ = defined_analysis(args, blocks, pred, succ)
+
+    _, defined_out = defined_analysis(args, blocks, pred, succ)
     counters = defaultdict(int)
 
     def _push_fresh(var):
@@ -114,10 +115,9 @@ def ssa_rename(blocks, phis, pred, succ, domtree, args):
         # Rename phi-node arguments (in successors).
         for s in succ[block]:
             for p in phis[s]:
-                # we want to ensure that `p` is defined in the
+                # We want to ensure that `p` is defined in the
                 # path of predecessors, or in the current block.
-                is_defined = any(p in out_[b] for b in pred[block] + [block])
-                if is_defined and stack[p]:
+                if p in defined_out[block] and stack[p]:
                     phi_args[s][p].append((block, stack[p][0]))
                 else:
                     # The variable is not defined on this path
