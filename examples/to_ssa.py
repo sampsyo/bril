@@ -84,7 +84,7 @@ def ssa_rename(blocks, phis, pred, succ, domtree, args):
     stack = defaultdict(list, {v: [v] for v in args})
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
     phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
-    in_, out_ = defined_analysis(args, blocks, pred, succ)
+    _, out_ = defined_analysis(args, blocks, pred, succ)
     counters = defaultdict(int)
 
     def _push_fresh(var):
