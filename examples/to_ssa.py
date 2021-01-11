@@ -116,7 +116,7 @@ def ssa_rename(blocks, phis, pred, succ, domtree, args):
                 # We only want to add a variable `v` to phi if
                 # (1) `v` has already been defined along the predecessors path to `s`,
                 # (2) `v` is defined in the current block, or
-                # (3) `v` is defined in the incoming definitions of the block, e.g. function arguments.
+                # (3) `v` is defined in the incoming definitions of the block.
                 is_defined = any(p in out_[b] for b in pred[block]) \
                              or p in definitions[block] \
                              or p in in_[block]
@@ -177,7 +177,8 @@ def func_to_ssa(func):
     arg_names = {a['name'] for a in func['args']} if 'args' in func else set()
 
     phis = get_phis(blocks, df, defs)
-    phi_args, phi_dests = ssa_rename(blocks, phis, pred, succ, dom_tree(dom), arg_names)
+    phi_args, phi_dests = ssa_rename(blocks, phis, pred, succ,
+                                     dom_tree(dom), arg_names)
     insert_phis(blocks, phi_args, phi_dests, types)
 
     func['instrs'] = reassemble(blocks)
