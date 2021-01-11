@@ -120,7 +120,7 @@ def ssa_rename(blocks, phis, pred, succ, domtree, args):
                 if p in defined_out[block] and stack[p]:
                     phi_args[s][p].append((block, stack[p][0]))
                 else:
-                    # The variable is not defined on this path
+                    # The variable is not defined on this path.
                     phi_args[s][p].append((block, "__undefined"))
 
         # Recursive calls.
