@@ -39,7 +39,23 @@ def get_phis(blocks, df, defs):
     return phis
 
 
-def ssa_rename(blocks, phis, succ, domtree, args):
+def type_is_ptr(var_type):
+    return type(var_type) == dict
+
+
+def type_str(var_type):
+    if type_is_ptr(var_type):
+        ptr_type = var_type["ptr"]
+        return "ptr." + type_str(ptr_type)
+    assert type(var_type) == str
+    return var_type
+
+
+def undefined_var(var_type):
+    return "__undefined." + type_str(var_type)
+
+
+def ssa_rename(blocks, phis, succ, domtree, args, types):
     stack = {v: [v] for v in args}
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
     phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
@@ -76,7 +92,7 @@ def ssa_rename(blocks, phis, succ, domtree, args):
                     phi_args[s][p].append((block, stack[p][0]))
                 else:
                     # The variable is not defined on this path
-                    phi_args[s][p].append((block, "__undefined"))
+                    phi_args[s][p].append((block, undefined_var(types[p])))
 
         # Recursive calls.
         for b in sorted(domtree[block]):
@@ -100,6 +116,57 @@ def insert_phis(blocks, phi_args, phi_dests, types):
                 'args': [p[1] for p in pairs],
             }
             instrs.insert(0, phi)
+
+
+def undefined_value_instr(var_type):
+    if type_is_ptr(var_type):
+        # The memory bril extension doesn't have a null
+        # pointer value, so allocate a 0 sized region,
+        # which we will never free.
+        ptr_type = var_type["ptr"]
+        return {
+            'op': 'alloc',
+            'dest': undefined_var(var_type),
+            'type': var_type,
+            'args': ['__undefined.zero'],
+        }
+    else:
+        values = {
+            "int": 0,
+            "bool": False,
+            "float": 0.0,
+        }
+        return {
+            'op': 'const',
+            'dest': undefined_var(var_type),
+            'type': var_type,
+            'value': values[var_type],
+        }
+
+
+def get_unique_types(types):
+    unique_types = {type_str(t): t for t in types.values()}
+    unique_types = sorted(unique_types.items(), key=lambda t: t[0])
+    return [t for _, t in unique_types]
+
+
+def insert_undefined_vars(blocks, types):
+    entry = list(blocks.keys())[0]
+    unique_types = get_unique_types(types)
+
+    for var_type in unique_types:
+        instr = undefined_value_instr(var_type)
+        blocks[entry].insert(0, instr)
+
+    need_zero = any({type_is_ptr(t) for t in unique_types})
+    if need_zero:
+        zero = {
+            'op': 'const',
+            'dest': '__undefined.zero',
+            'type': 'int',
+            'value': 0,
+        }
+        blocks[entry].insert(0, zero)
 
 
 def get_types(func):
@@ -128,8 +195,9 @@ def func_to_ssa(func):
 
     phis = get_phis(blocks, df, defs)
     phi_args, phi_dests = ssa_rename(blocks, phis, succ, dom_tree(dom),
-                                     arg_names)
+                                     arg_names, types)
     insert_phis(blocks, phi_args, phi_dests, types)
+    insert_undefined_vars(blocks, types)
 
     func['instrs'] = reassemble(blocks)
 

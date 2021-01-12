@@ -1,5 +1,7 @@
 @main(a: int) {
 .b1:
+  __undefined.int: int = const 0;
+  __undefined.bool: bool = const false;
   cond.0: bool = const true;
   br cond.0 .here .there;
 .here:

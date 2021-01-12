@@ -1,10 +1,12 @@
 @main(a: int) {
 .entry1:
+  __undefined.int: int = const 0;
+  __undefined.bool: bool = const false;
   jmp .while.cond;
 .while.cond:
-  zero.0: int = phi __undefined zero.1 .entry1 .while.body;
-  one.0: int = phi __undefined one.1 .entry1 .while.body;
-  is_term.0: bool = phi __undefined is_term.1 .entry1 .while.body;
+  zero.0: int = phi __undefined.int zero.1 .entry1 .while.body;
+  one.0: int = phi __undefined.int one.1 .entry1 .while.body;
+  is_term.0: bool = phi __undefined.bool is_term.1 .entry1 .while.body;
   a.0: int = phi a a.1 .entry1 .while.body;
   zero.1: int = const 0;
   is_term.1: bool = eq a.0 zero.1;

@@ -1,5 +1,7 @@
 @main(cond: bool) {
 .entry:
+  __undefined.int: int = const 0;
+  __undefined.bool: bool = const false;
   a.1.0: int = const 47;
   br cond .left .right;
 .left:
@@ -9,8 +11,8 @@
   a.3.0: int = mul a.1.0 a.1.0;
   jmp .zexit;
 .zexit:
-  a.3.1: int = phi __undefined a.3.0 .left .right;
-  a.2.1: int = phi a.2.0 __undefined .left .right;
+  a.3.1: int = phi __undefined.int a.3.0 .left .right;
+  a.2.1: int = phi a.2.0 __undefined.int .left .right;
   a.4.0: int = phi a.2.1 a.3.1 .left .right;
   print a.4.0;
   ret;
