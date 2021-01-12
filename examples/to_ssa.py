@@ -40,24 +40,24 @@ def get_phis(blocks, df, defs):
 
 
 def ssa_rename(blocks, phis, succ, domtree, args):
-    stack = defaultdict(list, {v: [v] for v in args})
+    stack = {v: [v] for v in args}
     phi_args = {b: {p: [] for p in phis[b]} for b in blocks}
     phi_dests = {b: {p: None for p in phis[b]} for b in blocks}
     counters = defaultdict(int)
 
-    def _push_fresh(var):
+    def _push_fresh(stack, var):
         fresh = '{}.{}'.format(var, counters[var])
         counters[var] += 1
         stack[var].insert(0, fresh)
         return fresh
 
-    def _rename(block):
-        # Save stacks.
-        old_stack = {k: list(v) for k, v in stack.items()}
+    def _rename(block, stack):
+        # Copy the stack so the callers stack isn't mutated.
+        stack = defaultdict(list, {v: list(s) for v, s in stack.items()})
 
         # Rename phi-node destinations.
         for p in phis[block]:
-            phi_dests[block][p] = _push_fresh(p)
+            phi_dests[block][p] = _push_fresh(stack, p)
 
         for instr in blocks[block]:
             # Rename arguments in normal instructions.
@@ -67,7 +67,7 @@ def ssa_rename(blocks, phis, succ, domtree, args):
 
             # Rename destinations.
             if 'dest' in instr:
-                instr['dest'] = _push_fresh(instr['dest'])
+                instr['dest'] = _push_fresh(stack, instr['dest'])
 
         # Rename phi-node arguments (in successors).
         for s in succ[block]:
@@ -80,13 +80,10 @@ def ssa_rename(blocks, phis, succ, domtree, args):
 
         # Recursive calls.
         for b in sorted(domtree[block]):
-            _rename(b)
-
-        # Restore stacks.
-        stack.update(old_stack)
+            _rename(b, stack)
 
     entry = list(blocks.keys())[0]
-    _rename(entry)
+    _rename(entry, stack)
 
     return phi_args, phi_dests
 
