@@ -1,0 +1,17 @@
+# ARGS: true
+@main(cond: bool) {
+.entry:
+    a.1: int = const 47;
+    br cond .left .right;
+.left:
+    a.2: int = add a.1 a.1;
+    jmp .zexit;
+.right:
+    a.3: int = mul a.1 a.1;
+    jmp .zexit;
+# zexit to trigger a bug in to_ssa.py that depends on
+# the order that basic blocks get renamed.
+.zexit:
+    a.4: int = phi .left a.2 .right a.3;
+    print a.4;
+}
