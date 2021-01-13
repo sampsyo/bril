@@ -26,4 +26,4 @@ compare: release
 # This is primarily used for running examples and debuging a bril program
 .PHONY: example
 example:
-	bril2json < ../benchmarks/pythagorean_triple.bril | cargo run -- -p 125
+	bril2json < ../benchmarks/sqrt.bril | cargo +nightly run
