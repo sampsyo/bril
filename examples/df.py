@@ -1,6 +1,6 @@
 import sys
 import json
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 from form_blocks import form_blocks
 import cfg
@@ -18,6 +18,28 @@ def union(sets):
     for s in sets:
         out.update(s)
     return out
+
+
+def with_func_args(func, blocks):
+    """Inserts function arguments in a pre-cursor block, so that
+    they're not missed in the analysis. For example,
+      @main(x: int) { ... }
+      will insert the following pre-cursor block:
+
+      .__main_arguments:
+        x: int = id x;
+    """
+    if 'args' not in func:
+        return blocks
+
+    blocks = list(blocks.items())
+    # Id each argument of the function, to ensure it is not skipped in the worklist.
+    pre_cursor = [{'op': 'id', 'dest': a['name'], 'type': a['type'], 'args': [a['name']]} for a in func['args']]
+    # Jump to original entry block.
+    pre_cursor.append({'op': 'jmp', 'labels': [blocks[0][0]]})
+
+    blocks.insert(0, ('__{}_arguments'.format(func['name']), pre_cursor))
+    return OrderedDict([(k, v) for k, v in blocks])
 
 
 def df_worklist(blocks, analysis):
@@ -85,7 +107,8 @@ def run_df(bril, analysis):
         blocks = cfg.block_map(form_blocks(func['instrs']))
         cfg.add_terminators(blocks)
 
-        in_, out = df_worklist(blocks, analysis)
+        # Insert a pre-cursor block for function arguments.
+        in_, out = df_worklist(with_func_args(func, blocks), analysis)
         for block in blocks:
             print('{}:'.format(block))
             print('  in: ', fmt(in_[block]))
