@@ -64,72 +64,11 @@ def read_first(instrs):
     return read
 
 
-def rename_nonlocal_duplicates(block):
-    """Renames any variables that
-    (1) share a name with an argument in an `id` op where the argument
-        is not defined in the current block, and
-    (2) appear after the `id` op.
-    This avoids a wrong copy propagation. For example,
-        1  @main {
-        2    a: int = const 42;
-        3  .lbl:
-        4    b: int = id a;
-        5    a: int = const 5;
-        6    print b;
-        7  }
-
-    Here, we replace line 5 with:
-        _a: int = const 5;
-    to ensure that the copy propagation leads to the correct value of `a`.
-    """
-    all_vars = set(instr['dest'] for instr in block if 'dest' in instr)
-
-    def fresh_id(v):
-        """Appends `_` to `v` until it is uniquely named in the local scope."""
-        while v in all_vars:
-            v = '_{}'.format(v)
-        return v
-
-    def rename_until_next_assign(old_var, new_var, instrs):
-        """Renames all instances of `old_var` to `new_var` until the next
-        assignment of `old_var`.
-        """
-        for instr in instrs:
-            if 'args' in instr and old_var in instr['args']:
-                instr['args'] = [new_var if a == old_var else a for a in instr['args']]
-            if instr.get('dest') == old_var:
-                return
-
-    # A running set to track which variables have been assigned locally.
-    current_vars = set()
-    # Mapping from `id` op of a non-local variable to its line number.
-    id2line = {}
-
-    for index, instr in enumerate(block):
-        if instr.get('op') == 'id':
-            id_arg = instr['args'][0]
-            if id_arg not in current_vars and id_arg != instr['dest']:
-                # Argument of this `id` op is not defined locally.
-                id2line[id_arg] = index
-        if 'dest' not in instr:
-            continue
-        dest = instr['dest']
-        current_vars.add(dest)
-        if dest in id2line and id2line[dest] < index:
-            # Local assignment shares a name with
-            # previous `id` of a non-local variable.
-            old_var = instr['dest']
-            instr['dest'] = fresh_id(dest)
-            rename_until_next_assign(old_var, instr['dest'], block[index + 1:])
-
-
 def lvn_block(block, lookup, canonicalize, fold):
     """Use local value numbering to optimize a basic block. Modify the
     instructions in place.
-
     You can extend the basic LVN algorithm to bring interesting language
     semantics with these functions:
-
     - `lookup`. Arguments: a value-to-number map and a value. Return the
       corresponding number (or None if it does not exist).
     - `canonicalize`. Argument: a value. Returns an equivalent value in
@@ -154,9 +93,6 @@ def lvn_block(block, lookup, canonicalize, fold):
 
     # Track constant values for values assigned with `const`.
     num2const = {}
-
-    # Update names to variables that are used in `id`, yet defined outside the local scope.
-    rename_nonlocal_duplicates(block)
 
     # Initialize the table with numbers for input variables. These
     # variables are their own canonical source.
@@ -220,7 +156,7 @@ def lvn_block(block, lookup, canonicalize, fold):
             num2var[newnum] = var
             instr['dest'] = var
 
-            if val:
+            if val is not None:
                 # Is this value foldable to a constant?
                 const = fold(num2const, val)
                 if const is not None:
