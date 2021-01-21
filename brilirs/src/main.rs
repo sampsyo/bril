@@ -8,7 +8,8 @@ fn main() {
     (about: "An interpreter for Bril")
     (@arg profiling: -p "Flag to output the total number of dynamic instructions")
     (@arg FILE: -f --file +takes_value "The Bril file to run. stdin is assumed if FILE is not provided")
-    (@arg args: ... "Arguments for the main function")
+    (@arg check: --check "Flag to only typeckeck/validate the bril program")
+    (@arg args: +allow_hyphen_values ... "Arguments for the main function")
   ).setting(AppSettings::AllowLeadingHyphen)
   .get_matches();
 
@@ -25,5 +26,6 @@ fn main() {
     std::io::stdout(),
     input_args,
     args.is_present("profiling"),
+    args.is_present("check"),
   )
 }

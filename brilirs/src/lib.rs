@@ -10,6 +10,7 @@ pub fn run_input<T: std::io::Write>(
   out: T,
   input_args: Vec<&str>,
   profiling: bool,
+  check: bool,
 ) {
   let prog = bril_rs::load_program_from_read(input);
   let bbprog = basic_block::BBProgram::new(prog);
@@ -17,10 +18,12 @@ pub fn run_input<T: std::io::Write>(
   if let Err(e) = check::type_check(&bbprog) {
     eprintln!("{:?}", e);
     std::process::exit(2)
-  };
+  }
 
-  if let Err(e) = interp::execute_main(bbprog, out, input_args, profiling) {
-    eprintln!("{:?}", e);
-    std::process::exit(2)
-  };
+  if !check {
+    if let Err(e) = interp::execute_main(bbprog, out, input_args, profiling) {
+      eprintln!("{:?}", e);
+      std::process::exit(2)
+    }
+  }
 }
