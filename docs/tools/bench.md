@@ -17,6 +17,7 @@ The current benchmarks are:
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `loopfact`: Compute *n!* imperatively using a loop.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
+* `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
@@ -43,3 +44,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [euclidean_into]: https://en.wikipedia.org/wiki/Euclidean_algorithm
 [euclid]: https://en.wikipedia.org/wiki/Euclidean_algorithm#Euclidean_division
 [eight_queens]: https://en.wikipedia.org/wiki/Eight_queens_puzzle
+[newton]: https://en.wikipedia.org/wiki/Newton%27s_method
