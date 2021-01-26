@@ -1,5 +1,5 @@
 use std::fmt;
-use std::unreachable;
+use std::hint::unreachable_unchecked;
 
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::InterpError;
@@ -17,6 +17,7 @@ struct Environment<'a> {
 }
 
 impl<'a> Default for Environment<'a> {
+  #[inline(always)]
   fn default() -> Self {
     Environment {
       env: FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default()),
@@ -69,7 +70,7 @@ impl Heap {
   }
 
   #[inline(always)]
-  fn free(&mut self, key: Pointer) -> Result<(), InterpError> {
+  fn free(&mut self, key: &Pointer) -> Result<(), InterpError> {
     if self.memory.remove(&key.base).is_some() && key.offset == 0 {
       Ok(())
     } else {
@@ -152,7 +153,8 @@ impl fmt::Display for Value {
       Value::Bool(b) => write!(f, "{}", b),
       Value::Float(v) => write!(f, "{}", v),
       Value::Pointer(p) => write!(f, "{:?}", p),
-      Value::Uninitialized => unreachable!(),
+      // This is safe because Uninitialized is only used in relation to memory and immediately errors if this value is returned. Otherwise this value can not appear in the code
+      Value::Uninitialized => unsafe { unreachable_unchecked() },
     }
   }
 }
@@ -185,7 +187,8 @@ impl From<&Value> for i64 {
     if let Value::Int(i) = value {
       *i
     } else {
-      unreachable!()
+      // This is safe because we type check the program beforehand
+      unsafe { unreachable_unchecked() }
     }
   }
 }
@@ -196,7 +199,8 @@ impl From<&Value> for bool {
     if let Value::Bool(b) = value {
       *b
     } else {
-      unreachable!()
+      // This is safe because we type check the program beforehand
+      unsafe { unreachable_unchecked() }
     }
   }
 }
@@ -207,18 +211,20 @@ impl From<&Value> for f64 {
     if let Value::Float(f) = value {
       *f
     } else {
-      unreachable!()
+      // This is safe because we type check the program beforehand
+      unsafe { unreachable_unchecked() }
     }
   }
 }
 
-impl From<&Value> for Pointer {
+impl<'a> From<&'a Value> for &'a Pointer {
   #[inline(always)]
-  fn from(value: &Value) -> Self {
+  fn from(value: &'a Value) -> Self {
     if let Value::Pointer(p) = value {
-      p.clone()
+      p
     } else {
-      unreachable!()
+      // This is safe because we type check the program beforehand
+      unsafe { unreachable_unchecked() }
     }
   }
 }
@@ -369,7 +375,7 @@ fn execute_value_op<'a, T: std::io::Write>(
           .iter()
           .position(|l| l == last_label.unwrap())
           .ok_or_else(|| InterpError::PhiMissingLabel(last_label.unwrap().to_string()))
-          .and_then(|i| Ok(value_store.get(args.get(i).unwrap())))?
+          .map(|i| value_store.get(args.get(i).unwrap()))?
           .clone();
         value_store.set(dest, arg);
       }
@@ -380,12 +386,12 @@ fn execute_value_op<'a, T: std::io::Write>(
       value_store.set(dest, res)
     }
     Load => {
-      let arg0 = get_arg::<Pointer>(value_store, 0, args);
-      let res = heap.read(&arg0)?;
+      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
+      let res = heap.read(arg0)?;
       value_store.set(dest, res.clone())
     }
     PtrAdd => {
-      let arg0 = get_arg::<Pointer>(value_store, 0, args);
+      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
       let arg1 = get_arg::<i64>(value_store, 1, args);
       let res = Value::Pointer(arg0.add(arg1));
       value_store.set(dest, res)
@@ -470,12 +476,12 @@ fn execute_effect_op<'a, T: std::io::Write>(
       execute(prog, callee_func, out, next_env, heap, instruction_count)?;
     }
     Store => {
-      let arg0 = get_arg::<Pointer>(value_store, 0, args);
+      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
       let arg1 = get_value(value_store, 1, args);
-      heap.write(&arg0, arg1.clone())?
+      heap.write(arg0, arg1.clone())?
     }
     Free => {
-      let arg0 = get_arg::<Pointer>(value_store, 0, args);
+      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
       heap.free(arg0)?
     }
     Speculate | Commit | Guard => unimplemented!(),
@@ -523,7 +529,8 @@ fn execute<'a, T: std::io::Write>(
             match value {
               bril_rs::Literal::Int(i) => value_store.set(&dest, Value::Float(*i as f64)),
               bril_rs::Literal::Float(f) => value_store.set(&dest, Value::Float(*f)),
-              _ => unreachable!(),
+              // this is safe because we type check this beforehand
+              _ => unsafe { unreachable_unchecked() },
             }
           } else {
             value_store.set(&dest, Value::from(value));
@@ -631,7 +638,8 @@ fn parse_args<'a>(
           };
           Ok(())
         }
-        bril_rs::Type::Pointer(..) => unreachable!(),
+        // this is safe because there is no possible way to pass a pointer as an argument
+        bril_rs::Type::Pointer(..) => unsafe { unreachable_unchecked() },
       })?;
     Ok(env)
   }

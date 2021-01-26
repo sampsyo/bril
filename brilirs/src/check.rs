@@ -45,8 +45,8 @@ fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(
 
 #[inline(always)]
 fn update_env<'a>(
-  env: &mut FxHashMap<&'a String, &'a Type>,
-  dest: &'a String,
+  env: &mut FxHashMap<&'a str, &'a Type>,
+  dest: &'a str,
   typ: &'a Type,
 ) -> Result<(), InterpError> {
   match env.get(dest) {
@@ -60,7 +60,7 @@ fn update_env<'a>(
 
 #[inline(always)]
 fn get_type<'a>(
-  env: &'a FxHashMap<&'a String, &'a Type>,
+  env: &'a FxHashMap<&'a str, &'a Type>,
   index: usize,
   args: &[String],
 ) -> Result<&'a &'a Type, InterpError> {
@@ -69,7 +69,7 @@ fn get_type<'a>(
   }
 
   env
-    .get(&args[index])
+    .get(&args[index] as &str)
     .ok_or_else(|| InterpError::VarNotFound(args[index].to_string()))
 }
 
@@ -85,7 +85,7 @@ fn type_check_instruction<'a>(
   instr: &'a Instruction,
   func: &BBFunction,
   prog: &BBProgram,
-  env: &mut FxHashMap<&'a String, &'a Type>,
+  env: &mut FxHashMap<&'a str, &'a Type>,
 ) -> Result<(), InterpError> {
   match instr {
     Instruction::Constant {
@@ -94,9 +94,7 @@ fn type_check_instruction<'a>(
       const_type,
       value,
     } => {
-      if const_type == &Type::Float && value.get_type() == Type::Int {
-        ()
-      } else {
+      if !(const_type == &Type::Float && value.get_type() == Type::Int) {
         check_asmt_type(const_type, &value.get_type())?;
       }
       update_env(env, dest, const_type)
@@ -233,7 +231,7 @@ fn type_check_instruction<'a>(
         .zip(callee_func.args.iter())
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
-            .get(&arg_name)
+            .get(&arg_name as &str)
             .ok_or_else(|| InterpError::VarNotFound(arg_name.to_string()))?;
 
           check_asmt_type(&ty, &expected_arg.arg_type)
@@ -345,14 +343,13 @@ fn type_check_instruction<'a>(
         Some(t) => {
           check_num_args(1, args)?;
           let ty0 = get_type(env, 0, args)?;
-          check_asmt_type(t, ty0)?;
-          return Ok(());
+          check_asmt_type(t, ty0)
         }
         None => {
           if args.is_empty() {
-            return Ok(());
+            Ok(())
           } else {
-            return Err(InterpError::NonEmptyRetForfunc(func.name.clone()));
+            Err(InterpError::NonEmptyRetForfunc(func.name.clone()))
           }
         }
       }
@@ -402,7 +399,7 @@ fn type_check_instruction<'a>(
         .zip(callee_func.args.iter())
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
-            .get(&arg_name)
+            .get(&arg_name as &str)
             .ok_or_else(|| InterpError::VarNotFound(arg_name.to_string()))?;
 
           check_asmt_type(ty, &expected_arg.arg_type)
@@ -451,7 +448,8 @@ fn type_check_instruction<'a>(
 }
 
 fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), InterpError> {
-  let mut env = FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default());
+  let mut env: FxHashMap<&str, &Type> =
+    FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default());
   bbfunc.args.iter().for_each(|a| {
     env.insert(&a.name, &a.arg_type);
   });
