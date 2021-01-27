@@ -60,15 +60,29 @@ impl Heap {
     self.memory.is_empty()
   }
 
+  fn null_base(&self) -> usize {
+    0
+  }
+
+  fn is_null(&self, key: &Pointer) -> bool {
+    key.base == self.null_base()
+  }
+
   fn alloc(&mut self, amount: i64, ptr_type: bril_rs::Type) -> Result<Value, InterpError> {
     if amount < 0 {
       return Err(InterpError::CannotAllocSize(amount));
     }
-    let base = self.base_num_counter;
-    self.base_num_counter += 1;
-    self
-      .memory
-      .insert(base, vec![Value::default(); amount as usize]);
+    let base = if amount > 0 {
+      // Add first to reserve base == 0 for null
+      self.base_num_counter += 1;
+      let base = self.base_num_counter;
+      self
+        .memory
+        .insert(base, vec![Value::default(); amount as usize]);
+      base
+    } else {
+      self.null_base()
+    };
     Ok(Value::Pointer(Pointer {
       base,
       offset: 0,
@@ -77,7 +91,10 @@ impl Heap {
   }
 
   fn free(&mut self, key: Pointer) -> Result<(), InterpError> {
-    if self.memory.remove(&key.base).is_some() && key.offset == 0 {
+    if self.is_null(&key) && key.offset == 0 {
+      // no-op
+      Ok(())
+    } else if self.memory.remove(&key.base).is_some() && key.offset == 0 {
       Ok(())
     } else {
       Err(InterpError::IllegalFree(key.base, key.offset))

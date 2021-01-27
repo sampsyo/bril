@@ -1,5 +1,7 @@
 @main(cond: bool) {
 .entry:
+  __undefined.int: int = const 0;
+  __undefined.bool: bool = const false;
   a.0: int = const 47;
   br cond .left .right;
 .left:

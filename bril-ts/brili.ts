@@ -53,7 +53,7 @@ export class Heap<X> {
         return this.storage.size == 0;
     }
 
-    private count = 0;
+    private count = 1;
     private getNewBase():number {
         let val = this.count;
         this.count++;
@@ -64,19 +64,33 @@ export class Heap<X> {
         return;
     }
 
+    private getNullKey(): Key {
+      return new Key(0, 0);
+    }
+
+    private isNull(key: Key): boolean {
+      return key.base == 0;
+    }
+
     alloc(amt:number): Key {
-        if (amt <= 0) {
+        if (amt < 0) {
             throw error(`cannot allocate ${amt} entries`);
         }
-        let base = this.getNewBase();
-        this.storage.set(base, new Array(amt))
-        return new Key(base, 0);
+        if (amt == 0) {
+          return this.getNullKey();
+        } else {
+          let base = this.getNewBase();
+          this.storage.set(base, new Array(amt))
+          return new Key(base, 0);
+        }
     }
 
     free(key: Key) {
         if (this.storage.has(key.base) && key.offset == 0) {
             this.freeKey(key);
             this.storage.delete(key.base);
+        } else if (this.isNull(key) && key.offset == 0) {
+            // no-op
         } else {
             throw error(`Tried to free illegal memory location base: ${key.base}, offset: ${key.offset}. Offset must be 0.`);
         }
@@ -205,7 +219,7 @@ function findFunc(func: bril.Ident, funcs: readonly bril.Function[]) {
 function alloc(ptrType: bril.ParamType, amt:number, heap:Heap<Value>): Pointer {
   if (typeof ptrType != 'object') {
     throw error(`unspecified pointer type ${ptrType}`);
-  } else if (amt <= 0) {
+  } else if (amt < 0) {
     throw error(`must allocate a positive amount of memory: ${amt} <= 0`);
   } else {
     let loc = heap.alloc(amt)

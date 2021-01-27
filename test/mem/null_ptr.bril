@@ -1,0 +1,8 @@
+@main {
+  zero: int = const 0;
+  one: int = const 1;
+  p0: ptr<int> = alloc zero;
+  p1: ptr<int> = ptradd p0 one;
+  free p0;
+  p0: ptr<int> = alloc zero;
+}
