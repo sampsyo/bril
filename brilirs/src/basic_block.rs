@@ -1,4 +1,4 @@
-use bril_rs::{Function, Program};
+use bril_rs::{Function, Instruction, Program};
 use fxhash::FxHashMap;
 
 // A program represented as basic blocks.
@@ -26,7 +26,11 @@ impl BBProgram {
 #[derive(Debug)]
 pub struct BasicBlock {
   pub label: Option<String>,
+  // These two vecs work in parallel
+  // One is the normal instruction
+  // The other contains the numified version of the destination and arguments
   pub instrs: Vec<bril_rs::Instruction>,
+  pub numified_instrs: Vec<NumifiedInstruction>,
   pub exit: Vec<usize>,
 }
 
@@ -35,7 +39,59 @@ impl BasicBlock {
     BasicBlock {
       label: None,
       instrs: Vec::new(),
+      numified_instrs: Vec::new(),
       exit: Vec::new(),
+    }
+  }
+}
+
+#[derive(Debug)]
+pub struct NumifiedInstruction {
+  pub dest: Option<u32>,
+  pub args: Vec<u32>,
+}
+
+fn get_num_from_map(
+  var: &str,
+  num_of_vars: &mut u32,
+  num_var_map: &mut FxHashMap<String, u32>,
+) -> u32 {
+  match num_var_map.get(var) {
+    Some(i) => *i,
+    None => {
+      let x = *num_of_vars;
+      num_var_map.insert(var.to_string(), x);
+      *num_of_vars += 1;
+      x
+    }
+  }
+}
+
+impl NumifiedInstruction {
+  pub fn create(
+    instr: &Instruction,
+    num_of_vars: &mut u32,
+    num_var_map: &mut FxHashMap<String, u32>,
+  ) -> Self {
+    match instr {
+      Instruction::Constant { dest, .. } => NumifiedInstruction {
+        dest: Some(get_num_from_map(dest, num_of_vars, num_var_map)),
+        args: Vec::new(),
+      },
+      Instruction::Value { dest, args, .. } => NumifiedInstruction {
+        dest: Some(get_num_from_map(dest, num_of_vars, num_var_map)),
+        args: args
+          .iter()
+          .map(|v| get_num_from_map(v, num_of_vars, num_var_map))
+          .collect(),
+      },
+      Instruction::Effect { args, .. } => NumifiedInstruction {
+        dest: None,
+        args: args
+          .iter()
+          .map(|v| get_num_from_map(v, num_of_vars, num_var_map))
+          .collect(),
+      },
     }
   }
 }
@@ -46,6 +102,11 @@ pub struct BBFunction {
   pub args: Vec<bril_rs::Argument>,
   pub return_type: Option<bril_rs::Type>,
   pub blocks: Vec<BasicBlock>,
+  // the following is an optimization by replacing the string representation of variables with a number
+  // Variable names are ordered from 0 to num_of_vars.
+  // These replacements are found for function args and for code in the BasicBlocks
+  pub num_of_vars: u32,
+  pub args_as_nums: Vec<u32>,
 }
 
 impl BBFunction {
@@ -58,6 +119,15 @@ impl BBFunction {
   fn find_basic_blocks(func: bril_rs::Function) -> (BBFunction, FxHashMap<String, usize>) {
     let mut blocks = Vec::new();
     let mut label_map = FxHashMap::default();
+
+    let mut num_of_vars = 0;
+    let mut num_var_map = FxHashMap::default();
+
+    let args_as_nums = func
+      .args
+      .iter()
+      .map(|a| get_num_from_map(&a.name, &mut num_of_vars, &mut num_var_map))
+      .collect();
 
     let mut curr_block = BasicBlock::new();
     for instr in func.instrs.into_iter() {
@@ -81,12 +151,18 @@ impl BBFunction {
           || op == bril_rs::EffectOps::Branch
           || op == bril_rs::EffectOps::Return =>
         {
-          curr_block.instrs.push(bril_rs::Instruction::Effect {
+          let i = bril_rs::Instruction::Effect {
             op,
             args,
             funcs,
             labels,
-          });
+          };
+          curr_block.numified_instrs.push(NumifiedInstruction::create(
+            &i,
+            &mut num_of_vars,
+            &mut num_var_map,
+          ));
+          curr_block.instrs.push(i);
           if let Some(l) = curr_block.label.as_ref() {
             label_map.insert(l.to_string(), blocks.len());
           }
@@ -94,6 +170,11 @@ impl BBFunction {
           curr_block = BasicBlock::new();
         }
         bril_rs::Code::Instruction(code) => {
+          curr_block.numified_instrs.push(NumifiedInstruction::create(
+            &code,
+            &mut num_of_vars,
+            &mut num_var_map,
+          ));
           curr_block.instrs.push(code);
         }
       }
@@ -112,6 +193,8 @@ impl BBFunction {
         args: func.args,
         return_type: func.return_type,
         blocks,
+        args_as_nums,
+        num_of_vars,
       },
       label_map,
     )

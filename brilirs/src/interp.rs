@@ -12,27 +12,24 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-struct Environment<'a> {
-  env: FxHashMap<&'a str, Value>,
+struct Environment {
+  env: Vec<Value>,
 }
 
-impl<'a> Default for Environment<'a> {
+impl Environment {
   #[inline(always)]
-  fn default() -> Self {
+  pub fn new(size: u32) -> Self {
     Environment {
-      env: FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default()),
+      env: vec![Value::default(); size as usize],
     }
   }
-}
-
-impl<'a> Environment<'a> {
   #[inline(always)]
-  pub fn get(&self, ident: &str) -> &Value {
-    self.env.get(ident).unwrap()
+  pub fn get(&self, ident: &u32) -> &Value {
+    self.env.get(*ident as usize).unwrap()
   }
   #[inline(always)]
-  pub fn set(&mut self, ident: &'a str, val: Value) {
-    self.env.insert(ident, val);
+  pub fn set(&mut self, ident: u32, val: Value) {
+    self.env[ident as usize] = val;
   }
 }
 
@@ -104,12 +101,12 @@ impl Heap {
 }
 
 #[inline(always)]
-fn get_value<'a>(vars: &'a Environment, index: usize, args: &[String]) -> &'a Value {
+fn get_value<'a>(vars: &'a Environment, index: usize, args: &[u32]) -> &'a Value {
   vars.get(&args[index])
 }
 
 #[inline(always)]
-fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[String]) -> T
+fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[u32]) -> T
 where
   T: From<&'a Value>,
 {
@@ -235,12 +232,12 @@ impl<'a> From<&'a Value> for &'a Pointer {
 fn execute_value_op<'a, T: std::io::Write>(
   prog: &'a BBProgram,
   op: &bril_rs::ValueOps,
-  dest: &'a str,
-  args: &[String],
+  dest: u32,
+  args: &[u32],
   labels: &[String],
   funcs: &[String],
   out: &mut T,
-  value_store: &mut Environment<'a>,
+  value_store: &mut Environment,
   heap: &mut Heap,
   last_label: &Option<&String>,
   instruction_count: &mut u32,
@@ -404,17 +401,17 @@ fn execute_value_op<'a, T: std::io::Write>(
 // that are bound to those parameters.
 fn make_func_args<'a>(
   callee_func: &'a BBFunction,
-  args: &[String],
-  vars: &Environment<'a>,
-) -> Environment<'a> {
-  let mut next_env = Environment::default();
+  args: &[u32],
+  vars: &Environment,
+) -> Environment {
+  let mut next_env = Environment::new(callee_func.num_of_vars);
 
   args
     .iter()
-    .zip(callee_func.args.iter())
+    .zip(callee_func.args_as_nums.iter())
     .for_each(|(arg_name, expected_arg)| {
       let arg = vars.get(arg_name);
-      next_env.set(&expected_arg.name, arg.clone());
+      next_env.set(*expected_arg, arg.clone());
     });
 
   next_env
@@ -426,11 +423,11 @@ fn execute_effect_op<'a, T: std::io::Write>(
   prog: &'a BBProgram,
   func: &BBFunction,
   op: &bril_rs::EffectOps,
-  args: &[String],
+  args: &[u32],
   funcs: &[String],
   curr_block: &BasicBlock,
   out: &mut T,
-  value_store: &Environment<'a>,
+  value_store: &Environment,
   heap: &mut Heap,
   next_block_idx: &mut Option<usize>,
   instruction_count: &mut u32,
@@ -493,7 +490,7 @@ fn execute<'a, T: std::io::Write>(
   prog: &'a BBProgram,
   func: &'a BBFunction,
   out: &mut T,
-  mut value_store: Environment<'a>,
+  mut value_store: Environment,
   heap: &mut Heap,
   instruction_count: &mut u32,
 ) -> Result<Option<Value>, InterpError> {
@@ -506,6 +503,7 @@ fn execute<'a, T: std::io::Write>(
   loop {
     let curr_block = &func.blocks[curr_block_idx];
     let curr_instrs = &curr_block.instrs;
+    let curr_numified_instrs = &curr_block.numified_instrs;
     *instruction_count += curr_instrs.len() as u32;
     last_label = current_label;
     current_label = curr_block.label.as_ref();
@@ -516,39 +514,43 @@ fn execute<'a, T: std::io::Write>(
       None
     };
 
-    for code in curr_instrs {
+    for (code, numified_code) in curr_instrs.iter().zip(curr_numified_instrs.iter()) {
       match code {
         Instruction::Constant {
           op: bril_rs::ConstOps::Const,
-          dest,
+          dest: _,
           const_type,
           value,
         } => {
           // Integer literals can be promoted to Floating point
           if const_type == &bril_rs::Type::Float {
             match value {
-              bril_rs::Literal::Int(i) => value_store.set(&dest, Value::Float(*i as f64)),
-              bril_rs::Literal::Float(f) => value_store.set(&dest, Value::Float(*f)),
+              bril_rs::Literal::Int(i) => {
+                value_store.set(numified_code.dest.unwrap(), Value::Float(*i as f64))
+              }
+              bril_rs::Literal::Float(f) => {
+                value_store.set(numified_code.dest.unwrap(), Value::Float(*f))
+              }
               // this is safe because we type check this beforehand
               _ => unsafe { unreachable_unchecked() },
             }
           } else {
-            value_store.set(&dest, Value::from(value));
+            value_store.set(numified_code.dest.unwrap(), Value::from(value));
           };
         }
         Instruction::Value {
           op,
-          dest,
+          dest: _,
           op_type: _,
-          args,
+          args: _,
           labels,
           funcs,
         } => {
           execute_value_op(
             prog,
             op,
-            dest,
-            args,
+            numified_code.dest.unwrap(),
+            &numified_code.args,
             labels,
             funcs,
             out,
@@ -560,7 +562,7 @@ fn execute<'a, T: std::io::Write>(
         }
         Instruction::Effect {
           op,
-          args,
+          args: _,
           labels: _,
           funcs,
         } => {
@@ -568,7 +570,7 @@ fn execute<'a, T: std::io::Write>(
             prog,
             func,
             op,
-            args,
+            &numified_code.args,
             funcs,
             &curr_block,
             out,
@@ -588,11 +590,12 @@ fn execute<'a, T: std::io::Write>(
   }
 }
 
-fn parse_args<'a>(
-  mut env: Environment<'a>,
-  args: &'a [bril_rs::Argument],
+fn parse_args(
+  mut env: Environment,
+  args: &[bril_rs::Argument],
+  args_as_nums: &[u32],
   inputs: Vec<&str>,
-) -> Result<Environment<'a>, InterpError> {
+) -> Result<Environment, InterpError> {
   if args.is_empty() && inputs.is_empty() {
     Ok(env)
   } else if inputs.len() != args.len() {
@@ -600,8 +603,9 @@ fn parse_args<'a>(
   } else {
     args
       .iter()
+      .zip(args_as_nums.iter())
       .enumerate()
-      .try_for_each(|(index, arg)| match arg.arg_type {
+      .try_for_each(|(index, (arg, arg_as_num))| match arg.arg_type {
         bril_rs::Type::Bool => {
           match inputs.get(index).unwrap().parse::<bool>() {
             Err(_) => {
@@ -610,7 +614,7 @@ fn parse_args<'a>(
                 inputs.get(index).unwrap().to_string(),
               ))
             }
-            Ok(b) => env.set(&arg.name, Value::Bool(b)),
+            Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
           };
           Ok(())
         }
@@ -622,7 +626,7 @@ fn parse_args<'a>(
                 inputs.get(index).unwrap().to_string(),
               ))
             }
-            Ok(i) => env.set(&arg.name, Value::Int(i)),
+            Ok(i) => env.set(*arg_as_num, Value::Int(i)),
           };
           Ok(())
         }
@@ -634,7 +638,7 @@ fn parse_args<'a>(
                 inputs.get(index).unwrap().to_string(),
               ))
             }
-            Ok(f) => env.set(&arg.name, Value::Float(f)),
+            Ok(f) => env.set(*arg_as_num, Value::Float(f)),
           };
           Ok(())
         }
@@ -657,10 +661,10 @@ pub fn execute_main<T: std::io::Write>(
     return Err(InterpError::NonEmptyRetForfunc(main_func.name.clone()));
   }
 
-  let env = Environment::default();
+  let env = Environment::new(main_func.num_of_vars);
   let mut heap = Heap::default();
 
-  let value_store = parse_args(env, &main_func.args, input_args)?;
+  let value_store = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)?;
 
   let mut instruction_count = 0;
 
