@@ -25,6 +25,7 @@ The current benchmarks are:
 * `recfact`: Compute *n!* using recursive function calls.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
+* `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `binary-fmt`: Print the binary format for the given positive integer.
