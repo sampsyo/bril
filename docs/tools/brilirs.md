@@ -19,6 +19,7 @@ Run a program by piping a JSON Bril program into it:
 
     bril2json < myprogram.bril | brilirs
 
+Similar to [type-infer](infer.md), `brilirs` can be used to typecheck and validate your Bril JSON program by passing the `--check` flag (similar to `cargo --check`).
 
 [rust]: https://www.rust-lang.org
 [ssa]: ../lang/ssa.md
