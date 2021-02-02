@@ -1,5 +1,8 @@
 use bril_rs::{Function, Instruction, Program};
 use fxhash::FxHashMap;
+use error::InterpError;
+
+use crate::error;
 
 // A program represented as basic blocks.
 #[derive(Debug)]
@@ -8,13 +11,19 @@ pub struct BBProgram {
 }
 
 impl BBProgram {
-  pub fn new(prog: Program) -> BBProgram {
-    BBProgram {
+  pub fn new(prog: Program) -> Result<BBProgram, InterpError> {
+    let num_funcs = prog.functions.len();
+    let bb = BBProgram {
       func_index: prog
         .functions
         .into_iter()
         .map(|func| (func.name.clone(), BBFunction::new(func)))
         .collect(),
+    };
+    if bb.func_index.len() != num_funcs {
+      Err(InterpError::DuplicateFunction)
+    } else {
+      Ok(bb)
     }
   }
 

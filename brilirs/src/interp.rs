@@ -25,6 +25,8 @@ impl Environment {
   }
   #[inline(always)]
   pub fn get(&self, ident: &u32) -> &Value {
+    // A bril program is well formed when, dynamically, every variable is defined before its use.
+    // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
     self.env.get(*ident as usize).unwrap()
   }
   #[inline(always)]

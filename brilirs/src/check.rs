@@ -70,7 +70,7 @@ fn get_type<'a>(
 
   env
     .get(&args[index] as &str)
-    .ok_or_else(|| InterpError::VarNotFound(args[index].to_string()))
+    .ok_or_else(|| InterpError::VarUndefined(args[index].to_string()))
 }
 
 #[inline(always)]
@@ -232,13 +232,13 @@ fn type_check_instruction<'a>(
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
             .get(&arg_name as &str)
-            .ok_or_else(|| InterpError::VarNotFound(arg_name.to_string()))?;
+            .ok_or_else(|| InterpError::VarUndefined(arg_name.to_string()))?;
 
           check_asmt_type(&ty, &expected_arg.arg_type)
         })?;
 
       match &callee_func.return_type {
-        None => Err(InterpError::EmptyRetForfunc(callee_func.name.clone())),
+        None => Err(InterpError::NonEmptyRetForfunc(callee_func.name.clone())),
         Some(t) => check_asmt_type(op_type, &t),
       }?;
       update_env(env, dest, op_type)
@@ -400,7 +400,7 @@ fn type_check_instruction<'a>(
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
             .get(&arg_name as &str)
-            .ok_or_else(|| InterpError::VarNotFound(arg_name.to_string()))?;
+            .ok_or_else(|| InterpError::VarUndefined(arg_name.to_string()))?;
 
           check_asmt_type(ty, &expected_arg.arg_type)
         })?;

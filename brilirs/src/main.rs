@@ -21,11 +21,14 @@ fn main() {
     Some(input_file) => Box::new(File::open(input_file).unwrap()),
   };
 
-  brilirs::run_input(
+  if let Err(e) = brilirs::run_input(
     input,
     std::io::stdout(),
     input_args,
     args.is_present("profiling"),
     args.is_present("check"),
-  )
+  ) {
+    eprintln!("{}", e);
+    std::process::exit(2)
+  }
 }
