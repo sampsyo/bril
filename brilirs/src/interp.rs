@@ -35,6 +35,7 @@ impl Environment {
   }
 }
 
+// todo: This is basically a copy of the heap implement in brili and we could probably do something smarter. This currently isn't that worth it to optimize because most benchmarks do not use the memory extension nor do they run for very long. You (the reader in the future) may be working with bril programs that you would like to speed up that extensively use the bril memory extension. In that case, it would be worth seeing how to implement Heap without a map based memory. Maybe try to re-implement malloc for a large Vec<Value>?
 struct Heap {
   memory: FxHashMap<usize, Vec<Value>>,
   base_num_counter: usize,
@@ -406,6 +407,7 @@ fn make_func_args<'a>(
   args: &[u32],
   vars: &Environment,
 ) -> Environment {
+  // todo: Having to allocate a new environment on each function call probably makes small function calls very heavy weight. This could be interesting to profile and see if old environments can be reused instead of being deallocated and reallocated. Maybe there is another way to sometimes avoid this allocation.
   let mut next_env = Environment::new(callee_func.num_of_vars);
 
   args
