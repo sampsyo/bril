@@ -2,6 +2,7 @@ use bril_rs::{Function, Program};
 use std::collections::HashMap;
 
 // A program represented as basic blocks.
+#[derive(Debug)]
 pub struct BBProgram {
   pub func_index: HashMap<String, BBFunction>,
 }
@@ -39,6 +40,7 @@ impl BasicBlock {
   }
 }
 
+#[derive(Debug)]
 pub struct BBFunction {
   pub name: String,
   pub args: Vec<bril_rs::Argument>,
@@ -62,7 +64,7 @@ impl BBFunction {
     for instr in func.instrs.into_iter() {
       match instr {
         bril_rs::Code::Label { ref label } => {
-          if !curr_block.instrs.is_empty() {
+          if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
             if let Some(old_label) = curr_block.label.as_ref() {
               label_map.insert(old_label.to_string(), blocks.len());
             }
@@ -98,7 +100,7 @@ impl BBFunction {
       }
     }
 
-    if !curr_block.instrs.is_empty() {
+    if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
       if let Some(l) = curr_block.label.as_ref() {
         label_map.insert(l.to_string(), blocks.len());
       }
@@ -120,18 +122,32 @@ impl BBFunction {
       // If we're before the last block
       if i < last_idx {
         // Get the last instruction
-        if let Some(bril_rs::Instruction::Effect { op, labels, .. }) = block.instrs.last().cloned()
+        let last_instr = block.instrs.last().cloned();
+        if let Some(bril_rs::Instruction::Effect {
+          op: bril_rs::EffectOps::Jump,
+          labels,
+          ..
+        })
+        | Some(bril_rs::Instruction::Effect {
+          op: bril_rs::EffectOps::Branch,
+          labels,
+          ..
+        }) = last_instr
         {
-          if let bril_rs::EffectOps::Jump | bril_rs::EffectOps::Branch = op {
-            for l in labels {
-              block.exit.push(
-                *self
-                  .label_map
-                  .get(&l)
-                  .unwrap_or_else(|| panic!("No label {} found.", &l)),
-              );
-            }
+          for l in labels {
+            block.exit.push(
+              *self
+                .label_map
+                .get(&l)
+                .unwrap_or_else(|| panic!("No label {} found.", &l)),
+            );
           }
+        } else if let Some(bril_rs::Instruction::Effect {
+          op: bril_rs::EffectOps::Return,
+          ..
+        }) = last_instr
+        {
+          // We are done, there is no exit from this block
         } else {
           block.exit.push(i + 1);
         }

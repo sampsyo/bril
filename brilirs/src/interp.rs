@@ -218,6 +218,16 @@ impl From<&bril_rs::Literal> for Value {
   }
 }
 
+impl From<bril_rs::Literal> for Value {
+  fn from(l: bril_rs::Literal) -> Value {
+    match l {
+      bril_rs::Literal::Int(i) => Value::Int(i),
+      bril_rs::Literal::Bool(b) => Value::Bool(b),
+      bril_rs::Literal::Float(f) => Value::Float(f),
+    }
+  }
+}
+
 impl TryFrom<&Value> for i64 {
   type Error = InterpError;
   fn try_from(value: &Value) -> Result<Self, Self::Error> {
@@ -289,6 +299,7 @@ fn execute_value_op<T: std::io::Write>(
   value_store: &mut Environment,
   heap: &mut Heap,
   last_label: &Option<&String>,
+  instruction_count: &mut u32,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::*;
   match *op {
@@ -393,31 +404,31 @@ fn execute_value_op<T: std::io::Write>(
       value_store.set(String::from(dest), Value::Float(arg0 / arg1));
     }
     Feq => {
-      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
       let arg0 = get_arg::<f64>(value_store, 0, args)?;
       let arg1 = get_arg::<f64>(value_store, 1, args)?;
       value_store.set(String::from(dest), Value::Bool(arg0 == arg1));
     }
     Flt => {
-      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
       let arg0 = get_arg::<f64>(value_store, 0, args)?;
       let arg1 = get_arg::<f64>(value_store, 1, args)?;
       value_store.set(String::from(dest), Value::Bool(arg0 < arg1));
     }
     Fgt => {
-      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
       let arg0 = get_arg::<f64>(value_store, 0, args)?;
       let arg1 = get_arg::<f64>(value_store, 1, args)?;
       value_store.set(String::from(dest), Value::Bool(arg0 > arg1));
     }
     Fle => {
-      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
       let arg0 = get_arg::<f64>(value_store, 0, args)?;
       let arg1 = get_arg::<f64>(value_store, 1, args)?;
       value_store.set(String::from(dest), Value::Bool(arg0 <= arg1));
     }
     Fge => {
-      check_asmt_type(&bril_rs::Type::Float, op_type)?;
+      check_asmt_type(&bril_rs::Type::Bool, op_type)?;
       let arg0 = get_arg::<f64>(value_store, 0, args)?;
       let arg1 = get_arg::<f64>(value_store, 1, args)?;
       value_store.set(String::from(dest), Value::Bool(arg0 >= arg1));
@@ -437,7 +448,7 @@ fn execute_value_op<T: std::io::Write>(
       }
       value_store.set(
         String::from(dest),
-        execute(prog, callee_func, out, next_env, heap)?.unwrap(),
+        execute(prog, callee_func, out, next_env, heap, instruction_count)?.unwrap(),
       )
     }
     Phi => {
@@ -527,6 +538,7 @@ fn execute_effect_op<T: std::io::Write>(
   value_store: &Environment,
   heap: &mut Heap,
   next_block_idx: &mut Option<usize>,
+  instruction_count: &mut u32,
 ) -> Result<Option<Value>, InterpError> {
   use bril_rs::EffectOps::*;
   match op {
@@ -581,7 +593,7 @@ fn execute_effect_op<T: std::io::Write>(
       if callee_func.return_type.is_some() {
         return Err(InterpError::NonEmptyRetForfunc(callee_func.name.clone()));
       }
-      if execute(prog, callee_func, out, next_env, heap)?.is_some() {
+      if execute(prog, callee_func, out, next_env, heap, instruction_count)?.is_some() {
         unreachable!()
       }
     }
@@ -606,6 +618,7 @@ fn execute<T: std::io::Write>(
   out: &mut T,
   mut value_store: Environment,
   heap: &mut Heap,
+  instruction_count: &mut u32,
 ) -> Result<Option<Value>, InterpError> {
   // Map from variable name to value.
   let mut last_label;
@@ -616,6 +629,7 @@ fn execute<T: std::io::Write>(
   loop {
     let curr_block = &func.blocks[curr_block_idx];
     let curr_instrs = &curr_block.instrs;
+    *instruction_count += curr_instrs.len() as u32;
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
@@ -626,6 +640,7 @@ fn execute<T: std::io::Write>(
     };
 
     for code in curr_instrs {
+      //println!("{:?}", code);
       match code {
         Instruction::Constant {
           op: bril_rs::ConstOps::Const,
@@ -633,6 +648,15 @@ fn execute<T: std::io::Write>(
           const_type,
           value,
         } => {
+          // Integer literals can be promoted to Floating point
+          let value = if const_type == &bril_rs::Type::Float {
+            match value {
+              bril_rs::Literal::Int(i) => bril_rs::Literal::Float(*i as f64),
+              _ => value.clone(),
+            }
+          } else {
+            value.clone()
+          };
           check_asmt_type(const_type, &value.get_type())?;
           value_store.set(dest.clone(), Value::from(value));
         }
@@ -656,6 +680,7 @@ fn execute<T: std::io::Write>(
             &mut value_store,
             heap,
             &last_label,
+            instruction_count,
           )?;
         }
         Instruction::Effect {
@@ -676,6 +701,7 @@ fn execute<T: std::io::Write>(
             &value_store,
             heap,
             &mut next_block_idx,
+            instruction_count,
           )?;
         }
       }
@@ -748,6 +774,7 @@ pub fn execute_main<T: std::io::Write>(
   prog: BBProgram,
   mut out: T,
   input_args: Vec<&str>,
+  profiling: bool,
 ) -> Result<(), InterpError> {
   let main_func = prog.get("main").ok_or(InterpError::NoMainFunction)?;
 
@@ -760,10 +787,23 @@ pub fn execute_main<T: std::io::Write>(
 
   let value_store = parse_args(env, &main_func.args, input_args)?;
 
-  execute(&prog, &main_func, &mut out, value_store, &mut heap)?;
+  let mut instruction_count = 0;
+
+  execute(
+    &prog,
+    &main_func,
+    &mut out,
+    value_store,
+    &mut heap,
+    &mut instruction_count,
+  )?;
 
   if !heap.is_empty() {
     return Err(InterpError::MemLeak);
+  }
+
+  if profiling {
+    eprintln!("total_dyn_inst: {}", instruction_count);
   }
 
   Ok(())

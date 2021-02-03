@@ -1,4 +1,4 @@
-# ARGS: 496 
+# ARGS: 496
 @main(input: int) {
   n: int = id input;
   v0: int = const 0;
@@ -30,5 +30,4 @@
    result: int = id v0;
   .if.failure.end:
   print result;
-  ret v0;
 }

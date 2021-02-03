@@ -54,7 +54,7 @@
   jmp .loop;
 .done:
   ret;
-} 
+}
 
 # Naive matrix muliplication algorithm
 # `arr1`, `arr2`, and `dest` are `size` x `size` matrices
@@ -106,7 +106,7 @@
   ret;
 }
 
-# ARGS: 50, 109658
+# ARGS: 50 109658
 @main(size: int, seed: int) {
   one: int = const 1;
   rng: ptr<int> = alloc one;

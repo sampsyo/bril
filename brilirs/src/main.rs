@@ -1,4 +1,4 @@
-use clap::clap_app;
+use clap::{clap_app, AppSettings};
 use std::fs::File;
 
 fn main() {
@@ -6,22 +6,24 @@ fn main() {
     (version: "0.1")
     (author: "Wil Thomason <wbthomason@cs.cornell.edu>")
     (about: "An interpreter for Bril")
-    (@arg FILE: -f --file "The Bril file to run. stdin is assumed if FILE is not provided")
-    (@arg args: ... "Arguments for the main function ")
-  )
+    (@arg profiling: -p "Flag to output the total number of dynamic instructions")
+    (@arg FILE: -f --file +takes_value "The Bril file to run. stdin is assumed if FILE is not provided")
+    (@arg args: ... "Arguments for the main function")
+  ).setting(AppSettings::AllowLeadingHyphen)
   .get_matches();
 
   let input_args = args.values_of("args").unwrap_or_default().collect();
 
   let input: Box<dyn std::io::Read> = match args.value_of("FILE") {
-    None => {
-      Box::new(std::io::stdin())
-    }
+    None => Box::new(std::io::stdin()),
 
-    Some(input_file) => {
-      Box::new(File::open(input_file).unwrap())
-    }
+    Some(input_file) => Box::new(File::open(input_file).unwrap()),
   };
 
-  brilirs::run_input(input, std::io::stdout(), input_args)
+  brilirs::run_input(
+    input,
+    std::io::stdout(),
+    input_args,
+    args.is_present("profiling"),
+  )
 }
