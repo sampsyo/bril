@@ -14,7 +14,7 @@ benchmark:
 
 .PHONY: release
 release:
-	RUSTFLAGS="-C target-cpu=native" cargo +nightly build --release
+	RUSTFLAGS="-C target-cpu=native" cargo build --release
 
 .PHONY: compare
 compare: release
@@ -26,4 +26,4 @@ compare: release
 # This is primarily used for running examples and debuging a bril program
 .PHONY: example
 example:
-	bril2json < ../benchmarks/sqrt.bril | cargo +nightly run
+	bril2json < ../benchmarks/sqrt.bril | cargo run
