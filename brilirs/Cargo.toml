@@ -7,9 +7,17 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap         = "~2.31"
+clap         = "~2.33"
+fxhash       = "0.2"
+mimalloc     = "0.1"
 
 [dependencies.bril-rs]
 version = "0.1.0"
 path = "../bril-rs"
 features = ["ssa", "memory", "float", "speculate"]
+
+[profile.release]
+# this can shave off a few ms but doubles the build time so it's not really worth it
+# codegen-units = 1
+lto = true
+panic = "abort"

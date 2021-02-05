@@ -12,7 +12,18 @@ test:
 benchmark:
 	turnt -c turnt_brilirs.toml $(BENCHMARKS)
 
+.PHONY: release
+release:
+	RUSTFLAGS="-C target-cpu=native" cargo +nightly build --release
+
+.PHONY: compare
+compare: release
+	./benchmark.sh
+	#hyperfine --export-markdown results.md --warmup 5 \
+	-L interp brili,./target/release/brilirs \
+	"bril2json < ../benchmarks/check-primes.bril | {interp} -p 50"
+
 # This is primarily used for running examples and debuging a bril program
 .PHONY: example
 example:
-	bril2json < ../benchmarks/mat-mul.bril | cargo run -- -p 50 109658
+	bril2json < ../benchmarks/sqrt.bril | cargo +nightly run

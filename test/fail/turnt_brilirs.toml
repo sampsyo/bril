@@ -1,2 +1,2 @@
-command = "bril2json < {filename} | cargo run --manifest-path ../../brilirs/Cargo.toml -- {args}"
+command = "bril2json < {filename} | cargo +nightly run --manifest-path ../../brilirs/Cargo.toml -- {args}"
 return_code = 2
