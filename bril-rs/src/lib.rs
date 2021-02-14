@@ -138,6 +138,14 @@ pub enum ValueOps {
     Load,
     #[cfg(feature = "memory")]
     PtrAdd,
+    #[cfg(feature = "algebraic")]
+    Pack,
+    #[cfg(feature = "algebraic")]
+    Unpack,
+    #[cfg(feature = "algebraic")]
+    Construct,
+    #[cfg(feature = "algebraic")]
+    Destruct,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -150,6 +158,22 @@ pub enum Type {
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
     Pointer(Box<Type>),
+    #[cfg(feature = "algebraic")]
+    Sum(Vec<Type>),
+    #[cfg(feature = "algebraic")]
+    Product(Vec<Type>),
+}
+
+impl Type {
+    #[cfg(feature = "algebraic")]
+    pub fn is_unit(&self) -> bool {
+        self == &Self::Product(Vec::new())
+    }
+
+    #[cfg(feature = "algebraic")]
+    pub fn unit() -> Self {
+        Self::Product(Vec::new())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

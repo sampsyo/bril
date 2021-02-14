@@ -19,6 +19,10 @@ type t =
   | Speculate
   | Commit
   | Guard of arg * label
+  | Pack of Dest.t * arg list
+  | Unpack of Dest.t * arg * int
+  | Construct of Dest.t * arg * int
+  | Destruct of Dest.t * arg * label list
 [@@deriving compare, equal, sexp_of]
 
 val dest : t -> Dest.t option

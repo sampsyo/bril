@@ -1,0 +1,14 @@
+@main() {
+  x: int = const 5;
+  tuple: product<int, int> = call @dummy x;
+  y: int = unpack tuple 0;
+  z: int = unpack tuple 1;
+  print y z;
+}
+
+@dummy(n: int): product<int, int> {
+  one: int = const 1;
+  m: int = add n one;
+  tuple: product<int, int> = pack n m;
+  ret tuple;
+}

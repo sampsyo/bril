@@ -1,0 +1,11 @@
+[package]
+name = "rs2bril"
+version = "0.1.0"
+authors = ["Will Smith <wds68@cornell.edu>"]
+edition = "2018"
+
+[dependencies]
+bril-rs = { version = "0.1.0", path = "../../bril-rs" , features = ["algebraic"] }
+syn = { version = "1.0", features = ["full", "visit", "fold", "extra-traits", "printing"] }
+quote = "1.0"
+lazy_static = "1.4.0"

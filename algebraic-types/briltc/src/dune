@@ -1,0 +1,6 @@
+(executable
+ (name main)
+ (libraries core bril))
+(install
+ (files (main.exe as briltc))
+ (section bin))

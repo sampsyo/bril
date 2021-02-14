@@ -1,0 +1,12 @@
+@main() {
+  one: int = const 1;
+  sum: sum<int, bool> = construct one 0;
+  destructed: sum<int, bool> = destruct sum .int .bool;
+.int:
+  print destructed;
+  ret;
+.bool:
+  val: int = const -1;
+  print val;
+  ret;
+}

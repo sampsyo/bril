@@ -32,7 +32,8 @@ let process_instrs instrs =
           else (label, [ instr ], add_block (List.rev block))
         | Jmp _
         | Br _
-        | Ret _ ->
+        | Ret _
+        | Destruct _ ->
           (block_name (List.length blocks + 1), [], add_block (List.rev (instr :: block)))
         | _ -> (name, instr :: block, blocks))
   in
@@ -48,6 +49,7 @@ let process_instrs instrs =
           | Jmp label -> [ label ]
           | Br (_, l1, l2) -> [ l1; l2 ]
           | Ret _ -> []
+          | Destruct (_, _, labels) -> labels
           | _ ->
             ( match List.nth blocks (i + 1) with
             | None -> []

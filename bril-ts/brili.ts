@@ -139,6 +139,10 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   speculate: 0,
   guard: 1,
   commit: 0,
+  pack: null,  // Any number of arguments
+  unpack: 2,
+  construct: 2,
+  destruct: 1,
 };
 
 type Pointer = {
@@ -146,7 +150,7 @@ type Pointer = {
   type: bril.Type;
 }
 
-type Value = boolean | BigInt | Pointer | number;
+type Value = boolean | BigInt | Pointer | number | Value[] | [number, Value];
 type Env = Map<bril.Ident, Value>;
 
 /**
@@ -161,6 +165,23 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
     return typeof val === "number";
   } else if (typeof typ === "object" && typ.hasOwnProperty("ptr")) {
     return val.hasOwnProperty("loc");
+  } else if (typeof typ === "object" && typ.hasOwnProperty("product")) {
+    if (Array.isArray(val)) {
+      if (typ.product.length == val.length) {
+        for (let i = 0; i < val.length; i++) {
+          if (!typeCheck(val[i], typ.product[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
+  } else if (typeof typ === "object" && typ.hasOwnProperty("sum")) {
+    if (Array.isArray(val) && val.length == 2 && typeof val[0] === "number") {
+      return typeCheck(val[1], typ.sum[val[0]]);
+    }
+    return false;
   }
   throw error(`unknown type ${typ}`);
 }
@@ -169,15 +190,34 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
  * Check whether the types are equal.
  */
 function typeCmp(lhs: bril.Type, rhs: bril.Type): boolean {
-  if (lhs === "int" || lhs == "bool" || lhs == "float") {
+  if (lhs == "int" || lhs == "bool" || lhs == "float") {
     return lhs == rhs;
-  } else {
-    if (typeof rhs === "object" && rhs.hasOwnProperty("ptr")) {
+  } else if (typeof rhs === "object") {
+    if (rhs.hasOwnProperty("ptr")) {
       return typeCmp(lhs.ptr, rhs.ptr);
-    } else {
-      return false;
+    } else if (rhs.hasOwnProperty("product") && lhs.hasOwnProperty("product")) {
+      if (rhs.product.length == lhs.product.length) {
+        for (let i = 0; i < rhs.product.length; i++) {
+          if (!typeCmp(lhs.product[i], rhs.product[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+    } else if (rhs.hasOwnProperty("sum") && lhs.hasOwnProperty("sum")) {
+      // for now we have no subtyping relationship for sum types
+      if (rhs.sum.length == lhs.sum.length) {
+        for (let i = 0; i < rhs.sum.length; i++) {
+          if (!typeCmp(lhs.sum[i], rhs.sum[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
     }
   }
+
+  return false;
 }
 
 function get(env: Env, ident: bril.Ident) {
@@ -230,7 +270,8 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
   let val = getArgument(instr, env, index);
-  if (typeof val !== 'object' || val instanceof BigInt) {
+  // this check seems like it needs to change when we add value types, not very modular
+  if (typeof val !== 'object' || val instanceof BigInt || val instanceof Array) {
     throw `${instr.op} argument ${index} must be a Pointer`;
   }
   return val;
@@ -708,12 +749,84 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     return {"action": "commit"};
   }
 
+  case "pack": {
+    let values: Value[] = [];
+    for (let i = 0; i < (instr.args || []).length; i++) {
+      values.push(getArgument(instr, state.env, i));
+    }
+    state.env.set(instr.dest, values);
+    return NEXT;
+  }
+
+  case "unpack": {
+    if (!instr.args || instr.args.length < 2) {
+      throw error("malformed unpack instr");
+    }
+    let tuple = getArgument(instr, state.env, 0);
+    let index = parseInt(instr.args[1]);
+    if (!Array.isArray(tuple)) {
+      throw error("cannot unpack a non-tuple value");
+    }
+    if (tuple.length <= index) {
+      throw error("invalid tuple index: " + index +
+                  ", length: " + tuple.length);
+    }
+    state.env.set(instr.dest, tuple[index]);
+    return NEXT;
+  }
+
+  case "construct": {
+    if (!instr.args || instr.args.length < 2) {
+      throw error("malformed construct instr");
+    }
+    if (typeof(instr.type) !== "object" || !instr.type.hasOwnProperty("sum")) {
+      throw error("construct destination must be a sum type");
+    }
+    let value = getArgument(instr, state.env, 0);
+    let index = parseInt(instr.args[1]);
+    if (index < 0 || index >= instr.type.sum.length) {
+      throw error("invalid constructor index: " + index);
+    }
+    state.env.set(instr.dest, [index, value]);
+    return NEXT;
+  }
+
+  case "destruct": {
+    if (!instr.labels || !instr.args || instr.args.length < 1) {
+      throw error("malformed destruct instr");
+    }
+    let variant = getArgument(instr, state.env, 0);
+    if (typeof(instr.type) !== "object" || !instr.type.hasOwnProperty("sum")) {
+      throw error("destruct destination must be a sum type");
+    }
+    if (instr.type.sum.length != instr.labels.length) {
+      throw error("destruct must have one label per type");
+    }
+    if (!Array.isArray(variant) || variant.length != 2) {
+      throw error("attempt to destruct non-variant value");
+    }
+    if (typeof(variant[0]) !== "number") {
+      throw error("malformed variant type");
+    }
+    let index: number = variant[0];
+    let value: Value = variant[1];
+    if (!typeCheck(value, instr.type.sum[index])) {
+      throw error("attempt to destruct value that does not match specified type, value: "
+                  + value + ", index: " + index + ", type: " + instr.type.sum[index]);
+    }
+    state.env.set(instr.dest, value);
+    return {"action": "jump", "label": instr.labels[index]};
+  }
+
   }
   unreachable(instr);
   throw error(`unhandled opcode ${(instr as any).op}`);
 }
 
 function evalFunc(func: bril.Function, state: State): Value | null {
+  if (func.instrs === undefined) {
+    return null;
+  }
   for (let i = 0; i < func.instrs.length; ++i) {
     let line = func.instrs[i];
     if ('op' in line) {

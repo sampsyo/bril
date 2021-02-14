@@ -10,6 +10,7 @@ format and emits the ordinary JSON representation.
 import lark
 import sys
 import json
+import collections.abc as abc
 
 __version__ = '0.0.1'
 
@@ -29,7 +30,7 @@ vop.3: IDENT [tyann] "=" op ";"
 eop.2: op ";"
 label.1: LABEL ":"
 
-op: IDENT (FUNC | LABEL | IDENT)*
+op: IDENT (FUNC | LABEL | IDENT | SIGNED_INT)*
 
 ?tyann: ":" type
 
@@ -37,8 +38,9 @@ lit: SIGNED_INT  -> int
   | BOOL         -> bool
   | SIGNED_FLOAT -> float
 
-type: IDENT "<" type ">" -> paramtype
-    | IDENT              -> primtype
+type: IDENT "<" type ("," type)* ">" -> paramtype
+    | IDENT "<" ">"                  -> paramtype
+    | IDENT                          -> primtype
 
 BOOL: "true" | "false"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
@@ -146,7 +148,10 @@ class JSONTransformer(lark.Transformer):
             return False
 
     def paramtype(self, items):
-        return {items[0]: items[1]}
+        if len(items) == 2:
+            return {items[0]: items[1]}
+        else:
+            return {items[0]: items[1:]}
 
     def primtype(self, items):
         return str(items[0])
@@ -168,7 +173,10 @@ def type_to_str(type):
     if isinstance(type, dict):
         assert len(type) == 1
         key, value = next(iter(type.items()))
-        return '{}<{}>'.format(key, type_to_str(value))
+        if isinstance(value, abc.Iterable):
+            return '{}<{}>'.format(key, ', '.join(map(type_to_str, value)))
+        else:
+            return '{}<{}>'.format(key, type_to_str(value))
     else:
         return type
 
@@ -231,11 +239,12 @@ def print_func(func):
         args_to_string(func.get('args', [])),
         ': {}'.format(type_to_str(typ)) if typ != 'void' else '',
     ))
-    for instr_or_label in func['instrs']:
-        if 'label' in instr_or_label:
-            print_label(instr_or_label)
-        else:
-            print_instr(instr_or_label)
+    if 'instrs' in func:
+        for instr_or_label in func['instrs']:
+            if 'label' in instr_or_label:
+                print_label(instr_or_label)
+            else:
+                print_instr(instr_or_label)
     print('}')
 
 

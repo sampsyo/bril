@@ -1,0 +1,12 @@
+opam-version: "2.0"
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "core"
+  "ocaml"
+  "yojson"
+  "dune" {>= "2.7"}
+  "bril"
+]
