@@ -1,0 +1,524 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "n",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "icount",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "site",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "zero",
+            "n",
+            "icount",
+            "site"
+          ],
+          "dest": "result",
+          "funcs": [
+            "queen"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "site"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "queens",
+          "type": "int"
+        },
+        {
+          "name": "icount",
+          "type": "int"
+        },
+        {
+          "name": "site",
+          "type": {
+            "ptr": "int"
+          }
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "ite",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "queens"
+          ],
+          "dest": "ret_cond",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "ret_cond"
+          ],
+          "labels": [
+            "next.ret",
+            "for.cond"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "next.ret"
+        },
+        {
+          "args": [
+            "icount",
+            "one"
+          ],
+          "dest": "icount",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "icount"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "for.cond"
+        },
+        {
+          "args": [
+            "ite",
+            "queens"
+          ],
+          "dest": "for_cond_0",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "for_cond_0"
+          ],
+          "labels": [
+            "for.body",
+            "next.ret.1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body"
+        },
+        {
+          "args": [
+            "site",
+            "n"
+          ],
+          "dest": "nptr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "nptr",
+            "ite"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "n",
+            "site"
+          ],
+          "dest": "is_valid",
+          "funcs": [
+            "valid"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_valid"
+          ],
+          "labels": [
+            "rec.func",
+            "next.loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "rec.func"
+        },
+        {
+          "args": [
+            "n",
+            "one"
+          ],
+          "dest": "n_1",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n_1",
+            "queens",
+            "icount",
+            "site"
+          ],
+          "dest": "icount",
+          "funcs": [
+            "queen"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "label": "next.loop"
+        },
+        {
+          "args": [
+            "ite",
+            "one"
+          ],
+          "dest": "ite",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "next.ret.1"
+        },
+        {
+          "args": [
+            "icount"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "queen",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "site",
+          "type": {
+            "ptr": "int"
+          }
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "one",
+            "one"
+          ],
+          "dest": "true",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "zero",
+            "one"
+          ],
+          "dest": "false",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "ite",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond"
+        },
+        {
+          "args": [
+            "ite",
+            "n"
+          ],
+          "dest": "for_cond",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "for_cond"
+          ],
+          "labels": [
+            "for.body",
+            "ret.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body"
+        },
+        {
+          "args": [
+            "site",
+            "ite"
+          ],
+          "dest": "iptr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "site",
+            "n"
+          ],
+          "dest": "nptr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "dest": "help_0",
+          "op": "const",
+          "type": "int",
+          "value": 500
+        },
+        {
+          "args": [
+            "iptr"
+          ],
+          "dest": "vali",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "nptr"
+          ],
+          "dest": "valn",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "vali",
+            "valn"
+          ],
+          "dest": "eq_cond_0",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eq_cond_0"
+          ],
+          "labels": [
+            "true.ret.0",
+            "false.else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "true.ret.0"
+        },
+        {
+          "args": [
+            "false"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "false.else"
+        },
+        {
+          "args": [
+            "vali",
+            "valn"
+          ],
+          "dest": "sub_0",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "valn",
+            "vali"
+          ],
+          "dest": "sub_1",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "ite"
+          ],
+          "dest": "sub_2",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sub_0",
+            "sub_2"
+          ],
+          "dest": "eq_cond_1",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "sub_1",
+            "sub_2"
+          ],
+          "dest": "eq_cond_2",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eq_cond_1",
+            "eq_cond_2"
+          ],
+          "dest": "eq_cond_12",
+          "op": "or",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eq_cond_12"
+          ],
+          "labels": [
+            "true.ret.1",
+            "false.loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "true.ret.1"
+        },
+        {
+          "args": [
+            "false"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "false.loop"
+        },
+        {
+          "args": [
+            "ite",
+            "one"
+          ],
+          "dest": "ite",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "ret.end"
+        },
+        {
+          "args": [
+            "true"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "valid",
+      "type": "bool"
+    }
+  ]
+}

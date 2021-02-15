@@ -1,0 +1,2 @@
+command = "cargo run --example bril2txt --manifest-path ../../bril-rs/Cargo.toml < {filename}"
+output.bril = "-"

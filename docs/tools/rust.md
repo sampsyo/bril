@@ -19,6 +19,11 @@ Each of the extensions to [Bril core][core] is feature gated. To ignore an exten
 
 There are two helper functions, `load_program`, which will read a valid Bril program from stdin, and `output_program` which writes your Bril program to stdout. Otherwise, this library can be treated like any other [serde][] JSON representation.
 
+Examples
+---
+
+There is currently a very trivial example that uses this interface to create a rust implementation of `bril2txt`. Run it with `cargo run --example bril2txt`.
+
 Development
 -----------
 

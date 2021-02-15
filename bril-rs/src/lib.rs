@@ -31,14 +31,17 @@ pub struct Function {
 
 impl Display for Function {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "@{}(", self.name)?;
-        for (i, arg) in self.args.iter().enumerate() {
-            if i != 0 {
-                write!(f, ", ")?;
+        write!(f, "@{}", self.name)?;
+        if !self.args.is_empty() {
+            write!(f, "(")?;
+            for (i, arg) in self.args.iter().enumerate() {
+                if i != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{}", arg)?;
             }
-            write!(f, "{}", arg)?;
+            write!(f, ")")?;
         }
-        write!(f, ")")?;
         if let Some(tpe) = self.return_type.as_ref() {
             write!(f, ": {}", tpe)?;
         }
@@ -314,7 +317,7 @@ impl Display for ValueOps {
             #[cfg(feature = "memory")]
             ValueOps::Load => write!(f, "load"),
             #[cfg(feature = "memory")]
-            ValueOps::PtrAdd => write!(f, "ptrAdd"),
+            ValueOps::PtrAdd => write!(f, "ptradd"),
         }
     }
 }
@@ -389,171 +392,4 @@ pub fn output_program(p: &Program) {
     io::stdout()
         .write_all(serde_json::to_string(p).unwrap().as_bytes())
         .unwrap();
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn full_program() {
-        let expected = "@main(cond: bool) {
-  a: bool = const true;
-  br cond .left .right;
-.left:
-  c: int = add a b;
-  jmp .end;
-.right:
-  jmp .end;
-.end:
-  print d;
-}
-";
-        let program = Program {
-            functions: vec![Function {
-                name: "main".to_owned(),
-                args: vec![Argument {
-                    name: "cond".to_owned(),
-                    arg_type: Type::Bool,
-                }],
-                return_type: None,
-                instrs: vec![
-                    Code::Instruction(Instruction::Constant {
-                        op: ConstOps::Const,
-                        dest: "a".to_owned(),
-                        const_type: Type::Bool,
-                        value: Literal::Bool(true),
-                    }),
-                    Code::Instruction(Instruction::Effect {
-                        op: EffectOps::Branch,
-                        args: vec!["cond".to_owned()],
-                        funcs: vec![],
-                        labels: vec!["left".to_owned(), "right".to_owned()],
-                    }),
-                    Code::Label {
-                        label: "left".to_owned(),
-                    },
-                    Code::Instruction(Instruction::Value {
-                        op: ValueOps::Add,
-                        dest: "c".to_owned(),
-                        op_type: Type::Int,
-                        args: vec!["a".to_owned(), "b".to_owned()],
-                        funcs: vec![],
-                        labels: vec![],
-                    }),
-                    Code::Instruction(Instruction::Effect {
-                        op: EffectOps::Jump,
-                        args: vec![],
-                        funcs: vec![],
-                        labels: vec!["end".to_owned()],
-                    }),
-                    Code::Label {
-                        label: "right".to_owned(),
-                    },
-                    Code::Instruction(Instruction::Effect {
-                        op: EffectOps::Jump,
-                        args: vec![],
-                        funcs: vec![],
-                        labels: vec!["end".to_owned()],
-                    }),
-                    Code::Label {
-                        label: "end".to_owned(),
-                    },
-                    Code::Instruction(Instruction::Effect {
-                        op: EffectOps::Print,
-                        args: vec!["d".to_owned()],
-                        funcs: vec![],
-                        labels: vec![],
-                    }),
-                ],
-            }],
-        };
-        assert_eq!(expected, format!("{}", program));
-    }
-
-    #[test]
-    fn value_call() {
-        assert_eq!(
-            "mod: int = call @mod a b;",
-            format!(
-                "{}",
-                Instruction::Value {
-                    op: ValueOps::Call,
-                    dest: "mod".to_owned(),
-                    op_type: Type::Int,
-                    args: vec!["a".to_owned(), "b".to_owned()],
-                    funcs: vec!["mod".to_owned()],
-                    labels: vec![],
-                }
-            )
-        )
-    }
-
-    #[test]
-    fn effect_call() {
-        assert_eq!(
-            "call @callPrint v1;",
-            format!(
-                "{}",
-                Instruction::Effect {
-                    op: EffectOps::Call,
-                    args: vec!["v1".to_owned()],
-                    funcs: vec!["callPrint".to_owned()],
-                    labels: vec![],
-                }
-            )
-        )
-    }
-
-    #[test]
-    fn pointer() {
-        assert_eq!(
-            "myptr: ptr<int> = alloc ten;",
-            format!(
-                "{}",
-                Instruction::Value {
-                    op: ValueOps::Alloc,
-                    dest: "myptr".to_owned(),
-                    op_type: Type::Pointer(Box::new(Type::Int)),
-                    args: vec!["ten".to_owned()],
-                    funcs: vec![],
-                    labels: vec![],
-                }
-            )
-        )
-    }
-
-    #[test]
-    fn phi() {
-        assert_eq!(
-            "x: int = phi a b .here .there;",
-            format!(
-                "{}",
-                Instruction::Value {
-                    op: ValueOps::Phi,
-                    dest: "x".to_owned(),
-                    op_type: Type::Int,
-                    args: vec!["a".to_owned(), "b".to_owned()],
-                    funcs: vec![],
-                    labels: vec!["here".to_owned(), "there".to_owned()],
-                }
-            )
-        )
-    }
-
-    #[test]
-    fn speculation() {
-        assert_eq!(
-            "speculate;",
-            format!(
-                "{}",
-                Instruction::Effect {
-                    op: EffectOps::Speculate,
-                    args: vec![],
-                    funcs: vec![],
-                    labels: vec![],
-                }
-            )
-        )
-    }
 }
