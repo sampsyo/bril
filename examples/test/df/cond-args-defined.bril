@@ -1,0 +1,6 @@
+# ARGS: defined
+
+@main(awesome_integer: int) {
+.entry:
+  print awesome_integer;
+}

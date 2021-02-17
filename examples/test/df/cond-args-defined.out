@@ -1,0 +1,3 @@
+entry:
+  in:  awesome_integer
+  out: awesome_integer

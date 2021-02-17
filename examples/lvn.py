@@ -67,10 +67,8 @@ def read_first(instrs):
 def lvn_block(block, lookup, canonicalize, fold):
     """Use local value numbering to optimize a basic block. Modify the
     instructions in place.
-
     You can extend the basic LVN algorithm to bring interesting language
     semantics with these functions:
-
     - `lookup`. Arguments: a value-to-number map and a value. Return the
       corresponding number (or None if it does not exist).
     - `canonicalize`. Argument: a value. Returns an equivalent value in
