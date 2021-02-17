@@ -1,0 +1,10 @@
+@main() {
+.entry:
+    cond: bool = const true;
+    # No `phi` needed here since there is no branching.
+    b: int = const 42;
+    jmp .exit;
+.exit:
+    b: int = const 0;
+    print b;
+}

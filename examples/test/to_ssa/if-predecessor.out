@@ -1,0 +1,15 @@
+@main {
+.entry:
+  cond.0: bool = const true;
+  b.0: int = const 42;
+  br cond.0 .true .false;
+.true:
+  jmp .zexit;
+.false:
+  b.1: int = const 1;
+  jmp .zexit;
+.zexit:
+  b.2: int = phi b.1 b.0 .false .true;
+  print b.2;
+  ret;
+}

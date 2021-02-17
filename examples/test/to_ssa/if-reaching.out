@@ -1,0 +1,21 @@
+@main(cond: bool) {
+.entry:
+  a.0: int = const 47;
+  b.0: int = const 42;
+  br cond .left .right;
+.left:
+  b.1: int = const 1;
+  c.0: int = const 5;
+  jmp .zexit;
+.right:
+  a.1: int = const 2;
+  c.1: int = const 10;
+  jmp .zexit;
+.zexit:
+  c.2: int = phi c.0 c.1 .left .right;
+  b.2: int = phi b.1 b.0 .left .right;
+  a.2: int = phi a.0 a.1 .left .right;
+  d.0: int = sub a.2 c.2;
+  print d.0;
+  ret;
+}

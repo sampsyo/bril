@@ -1,0 +1,16 @@
+@main() {
+.entry:
+    cond: bool = const true;
+    # This is overwritten in both the `.true` and `.false` branches,
+    # so should not be passed to the phi in `.zexit`.
+    b: int = const 42;
+    br cond .true .false;
+.true:
+    b: int = const 1;
+    jmp .zexit;
+.false:
+    b: int = const 0;
+    jmp .zexit;
+.zexit:
+    print b;
+}

@@ -1,0 +1,22 @@
+@main(foo: bool) {
+.entry:
+  cond.0: bool = const true;
+  b.0: int = const 42;
+  br cond.0 .true .false;
+.true:
+  b.2: int = const 1;
+  br foo .left .right;
+.false:
+  b.1: int = const 0;
+  jmp .zexit;
+.left:
+  b.3: int = const 2;
+  jmp .zexit;
+.right:
+  b.4: int = const 3;
+  jmp .zexit;
+.zexit:
+  b.5: int = phi b.1 b.3 b.4 .false .left .right;
+  print b.5;
+  ret;
+}

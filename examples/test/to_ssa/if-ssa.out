@@ -10,7 +10,7 @@
   jmp .zexit;
 .zexit:
   a.3.1: int = phi __undefined a.3.0 .left .right;
-  a.2.1: int = phi a.2.0 a.2.0 .left .right;
+  a.2.1: int = phi a.2.0 __undefined .left .right;
   a.4.0: int = phi a.2.1 a.3.1 .left .right;
   print a.4.0;
   ret;
