@@ -3,6 +3,7 @@ open! Core
 type t =
   | IntType
   | BoolType
+  | PtrType of t
 [@@deriving compare, equal, sexp_of]
 
 val of_json : Yojson.Basic.t -> t
