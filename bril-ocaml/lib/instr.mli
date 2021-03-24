@@ -19,6 +19,11 @@ type t =
   | Speculate
   | Commit
   | Guard of arg * label
+  | Alloc of (Dest.t * arg)
+  | Free of arg
+  | Store of (arg * arg)
+  | Load of (Dest.t * arg)
+  | PtrAdd of (Dest.t * arg * arg)
 [@@deriving compare, equal, sexp_of]
 
 val dest : t -> Dest.t option

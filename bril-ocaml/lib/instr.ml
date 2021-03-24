@@ -19,6 +19,11 @@ type t =
   | Speculate
   | Commit
   | Guard of arg * label
+  | Alloc of (Dest.t * arg)
+  | Free of arg
+  | Store of (arg * arg)
+  | Load of (Dest.t * arg)
+  | PtrAdd of (Dest.t * arg * arg)
 [@@deriving compare, equal, sexp_of]
 
 let to_string =
@@ -50,15 +55,34 @@ let to_string =
   | Speculate -> "speculate"
   | Commit -> "commit"
   | Guard (arg, l) -> sprintf "guard %s .%s" arg l
+  | Alloc (dst, arg) -> sprintf "%s alloc %s" (dest_to_string dst) arg
+  | Store (arg1, arg2) -> sprintf "store %s %s" arg1 arg2
+  | Load (dst, arg) -> sprintf "%s load %s" (dest_to_string dst) arg
+  | PtrAdd (dst, arg1, arg2) -> sprintf "%s ptradd %s %s" (dest_to_string dst) arg1 arg2
+  | Free arg -> sprintf "free %s" arg
 
 let dest = function
   | Const (dest, _)
   | Binary (dest, _, _, _)
   | Unary (dest, _, _)
-  | Phi (dest, _) ->
+  | Phi (dest, _)
+  | Alloc (dest, _)
+  | PtrAdd (dest, _, _)
+  | Load (dest, _) ->
     Some dest
   | Call (dest, _, _) -> dest
-  | _ -> None
+  | Nop
+  | Speculate
+  | Commit
+  | Label _
+  | Jmp _
+  | Br (_, _, _)
+  | Ret _
+  | Print _
+  | Guard (_, _)
+  | Free _
+  | Store _ ->
+    None
 
 let set_dest dest t =
   match (t, dest) with
@@ -67,8 +91,13 @@ let set_dest dest t =
   | (Unary (_, op, arg), Some dest) -> Unary (dest, op, arg)
   | (Call (_, f, args), dest) -> Call (dest, f, args)
   | (Phi (_, params), Some dest) -> Phi (dest, params)
+  | (Alloc (_, arg), Some dest) -> Alloc (dest, arg)
+  | (Load (_, arg), Some dest) -> Load (dest, arg)
+  | (PtrAdd (_, a1, a2), Some dest) -> PtrAdd (dest, a1, a2)
   | (instr, None) -> instr
-  | _ -> failwith "invalid set_dest"
+  | _ ->
+    let dest = [%sexp_of: Dest.t Option.t] dest in
+    failwithf !"Cannot [set_dest] on instruction %{to_string} with dest %{Sexp}" t dest ()
 
 let args = function
   | Binary (_, _, arg1, arg2) -> [ arg1; arg2 ]
@@ -79,8 +108,15 @@ let args = function
   | Call (_, _, args)
   | Print args ->
     args
+  | Alloc ((_ : Dest.t), arg) -> [ arg ]
+  | Free arg -> [ arg ]
+  | Store (arg1, arg2) -> [ arg1; arg2 ]
+  | Load ((_ : Dest.t), arg) -> [ arg ]
+  | PtrAdd ((_ : Dest.t), arg1, arg2) -> [ arg1; arg2 ]
   | Ret arg -> Option.value_map arg ~default:[] ~f:List.return
-  | _ -> []
+  | Phi ((_ : Dest.t), label_and_args) -> List.map label_and_args ~f:snd
+  | (Nop | Speculate | Commit | Label _ | Const (_, _) | Jmp _) as instr ->
+    failwithf "Cannot call [args] on %s" (to_string instr) ()
 
 let set_args args t =
   match (t, args) with
@@ -92,6 +128,11 @@ let set_args args t =
   | (Ret _, []) -> Ret None
   | (Ret _, [ arg ]) -> Ret (Some arg)
   | (Guard (_, l), [ arg ]) -> Guard (arg, l)
+  | (Alloc (dst, _), [ arg ]) -> Alloc (dst, arg)
+  | (Free _, [ arg ]) -> Free arg
+  | (Store (_, _), [ a1; a2 ]) -> Store (a1, a2)
+  | (Load (dst, _), [ a ]) -> Load (dst, a)
+  | (PtrAdd (dst, _, _), [ a1; a2 ]) -> PtrAdd (dst, a1, a2)
   | (instr, []) -> instr
   | _ -> failwith "invalid set_args"
 
@@ -113,6 +154,7 @@ let of_json json =
         match json |> member "type" |> Bril_type.of_json with
         | IntType -> Const.Int (json |> member "value" |> to_int)
         | BoolType -> Const.Bool (json |> member "value" |> to_bool)
+        | PtrType _ -> failwith "pointer is not supported in constants"
       in
       Const (dest (), const)
     | op when Op.Binary.is_op op -> Binary (dest (), Op.Binary.of_string op, arg 0, arg 1)
@@ -131,12 +173,28 @@ let of_json json =
     | "speculate" -> Speculate
     | "commit" -> Commit
     | "guard" -> Guard (arg 0, label 0)
+    | "alloc" -> Alloc (dest (), arg 0)
+    | "free" -> Free (arg 0)
+    | "store" -> Store (arg 0, arg 1)
+    | "load" -> Load (dest (), arg 0)
+    | "ptradd" -> PtrAdd (dest (), arg 0, arg 1)
     | op -> failwithf "invalid op: %s" op () )
   | json -> failwithf "invalid label: %s" (json |> to_string) ()
 
 let to_json =
   let dest_to_json (name, bril_type) =
     [ ("dest", `String name); ("type", Bril_type.to_json bril_type) ]
+  in
+  let build_op ?dest ?args ~op () =
+    `Assoc
+      ( [ ("op", `String op) ]
+      @ ( match args with
+        | None -> []
+        | Some args -> [ ("args", `List (List.map args ~f:(fun a -> `String a))) ] )
+      @
+      match dest with
+      | None -> []
+      | Some dest -> dest_to_json dest )
   in
   function
   | Label label -> `Assoc [ ("label", `String label) ]
@@ -196,3 +254,8 @@ let to_json =
   | Guard (arg, l) ->
     `Assoc
       [ ("op", `String "guard"); ("args", `List [ `String arg ]); ("labels", `List [ `String l ]) ]
+  | Alloc (dest, arg) -> build_op ~op:"alloc" ~args:[ arg ] ~dest ()
+  | Free arg -> build_op ~op:"free" ~args:[ arg ] ()
+  | Load (dest, arg) -> build_op ~op:"load" ~args:[ arg ] ~dest ()
+  | Store (arg1, arg2) -> build_op ~op:"load" ~args:[ arg1; arg2 ] ()
+  | PtrAdd (dest, arg1, arg2) -> build_op ~op:"ptradd" ~args:[ arg1; arg2 ] ~dest ()
