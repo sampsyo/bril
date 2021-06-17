@@ -8,7 +8,7 @@ use crate::error::InterpError;
 use fxhash::FxHashMap;
 
 #[inline(always)]
-fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
+const fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
   if expected != args.len() {
     Err(InterpError::BadNumArgs(expected, args.len()))
   } else {
@@ -17,7 +17,7 @@ fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
 }
 
 #[inline(always)]
-fn check_num_funcs(expected: usize, funcs: &[String]) -> Result<(), InterpError> {
+const fn check_num_funcs(expected: usize, funcs: &[String]) -> Result<(), InterpError> {
   if expected != funcs.len() {
     Err(InterpError::BadNumFuncs(expected, funcs.len()))
   } else {
@@ -26,7 +26,7 @@ fn check_num_funcs(expected: usize, funcs: &[String]) -> Result<(), InterpError>
 }
 
 #[inline(always)]
-fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpError> {
+const fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpError> {
   if expected != labels.len() {
     Err(InterpError::BadNumLabels(expected, labels.len()))
   } else {
@@ -50,7 +50,7 @@ fn update_env<'a>(
   typ: &'a Type,
 ) -> Result<(), InterpError> {
   match env.get(dest) {
-    Some(current_typ) => check_asmt_type(current_typ, &typ),
+    Some(current_typ) => check_asmt_type(current_typ, typ),
     None => {
       env.insert(dest, typ);
       Ok(())
@@ -76,7 +76,7 @@ fn get_type<'a>(
 #[inline(always)]
 fn get_ptr_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
   match typ {
-    bril_rs::Type::Pointer(ptr_type) => Ok(&ptr_type),
+    bril_rs::Type::Pointer(ptr_type) => Ok(ptr_type),
     _ => Err(InterpError::ExpectedPointerType(typ.clone())),
   }
 }
@@ -231,15 +231,15 @@ fn type_check_instruction<'a>(
         .zip(callee_func.args.iter())
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
-            .get(&arg_name as &str)
+            .get(arg_name as &str)
             .ok_or_else(|| InterpError::VarUndefined(arg_name.to_string()))?;
 
-          check_asmt_type(&ty, &expected_arg.arg_type)
+          check_asmt_type(ty, &expected_arg.arg_type)
         })?;
 
       match &callee_func.return_type {
         None => Err(InterpError::NonEmptyRetForfunc(callee_func.name.clone())),
-        Some(t) => check_asmt_type(op_type, &t),
+        Some(t) => check_asmt_type(op_type, t),
       }?;
       update_env(env, dest, op_type)
     }
@@ -399,7 +399,7 @@ fn type_check_instruction<'a>(
         .zip(callee_func.args.iter())
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
-            .get(&arg_name as &str)
+            .get(arg_name as &str)
             .ok_or_else(|| InterpError::VarUndefined(arg_name.to_string()))?;
 
           check_asmt_type(ty, &expected_arg.arg_type)

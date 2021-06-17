@@ -1,3 +1,10 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+// todo these are allowed to appease clippy but should be addressed some day
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::cargo_common_metadata)]
+
 use std::fmt::{self, Display, Formatter};
 use std::io::{self, Write};
 
@@ -10,7 +17,7 @@ pub struct Program {
 
 impl Display for Program {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for func in self.functions.iter() {
+        for func in &self.functions {
             writeln!(f, "{}", func)?;
         }
         Ok(())
@@ -46,7 +53,7 @@ impl Display for Function {
             write!(f, ": {}", tpe)?;
         }
         writeln!(f, " {{")?;
-        for instr in self.instrs.iter() {
+        for instr in &self.instrs {
             writeln!(f, "{}", instr)?;
         }
         write!(f, "}}")?;
@@ -331,7 +338,7 @@ pub enum Type {
     Float,
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
-    Pointer(Box<Type>),
+    Pointer(Box<Self>),
 }
 
 impl Display for Type {
@@ -368,7 +375,7 @@ impl Display for Literal {
 }
 
 impl Literal {
-    pub fn get_type(&self) -> Type {
+    pub const fn get_type(&self) -> Type {
         match self {
             Literal::Int(_) => Type::Int,
             Literal::Bool(_) => Type::Bool,
