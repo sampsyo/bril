@@ -11,9 +11,9 @@ pub struct BBProgram {
 }
 
 impl BBProgram {
-  pub fn new(prog: Program) -> Result<BBProgram, InterpError> {
+  pub fn new(prog: Program) -> Result<Self, InterpError> {
     let num_funcs = prog.functions.len();
-    let bb = BBProgram {
+    let bb = Self {
       func_index: prog
         .functions
         .into_iter()
@@ -44,8 +44,8 @@ pub struct BasicBlock {
 }
 
 impl BasicBlock {
-  fn new() -> BasicBlock {
-    BasicBlock {
+  const fn new() -> Self {
+    Self {
       label: None,
       instrs: Vec::new(),
       numified_instrs: Vec::new(),
@@ -83,18 +83,18 @@ impl NumifiedInstruction {
     num_var_map: &mut FxHashMap<String, u32>,
   ) -> Self {
     match instr {
-      Instruction::Constant { dest, .. } => NumifiedInstruction {
+      Instruction::Constant { dest, .. } => Self {
         dest: Some(get_num_from_map(dest, num_of_vars, num_var_map)),
         args: Vec::new(),
       },
-      Instruction::Value { dest, args, .. } => NumifiedInstruction {
+      Instruction::Value { dest, args, .. } => Self {
         dest: Some(get_num_from_map(dest, num_of_vars, num_var_map)),
         args: args
           .iter()
           .map(|v| get_num_from_map(v, num_of_vars, num_var_map))
           .collect(),
       },
-      Instruction::Effect { args, .. } => NumifiedInstruction {
+      Instruction::Effect { args, .. } => Self {
         dest: None,
         args: args
           .iter()
@@ -119,13 +119,13 @@ pub struct BBFunction {
 }
 
 impl BBFunction {
-  pub fn new(f: Function) -> BBFunction {
-    let (mut func, label_map) = BBFunction::find_basic_blocks(f);
+  pub fn new(f: Function) -> Self {
+    let (mut func, label_map) = Self::find_basic_blocks(f);
     func.build_cfg(label_map);
     func
   }
 
-  fn find_basic_blocks(func: bril_rs::Function) -> (BBFunction, FxHashMap<String, usize>) {
+  fn find_basic_blocks(func: bril_rs::Function) -> (Self, FxHashMap<String, usize>) {
     let mut blocks = Vec::new();
     let mut label_map = FxHashMap::default();
 
@@ -197,7 +197,7 @@ impl BBFunction {
     }
 
     (
-      BBFunction {
+      Self {
         name: func.name,
         args: func.args,
         return_type: func.return_type,

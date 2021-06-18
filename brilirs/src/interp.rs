@@ -19,7 +19,7 @@ struct Environment {
 impl Environment {
   #[inline(always)]
   pub fn new(size: u32) -> Self {
-    Environment {
+    Self {
       env: vec![Value::default(); size as usize],
     }
   }
@@ -43,7 +43,7 @@ struct Heap {
 
 impl Default for Heap {
   fn default() -> Self {
-    Heap {
+    Self {
       memory: FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default()),
       base_num_counter: 0,
     }
@@ -127,7 +127,7 @@ pub enum Value {
 
 impl Default for Value {
   fn default() -> Self {
-    Value::Uninitialized
+    Self::Uninitialized
   }
 }
 
@@ -138,8 +138,8 @@ pub struct Pointer {
 }
 
 impl Pointer {
-  fn add(&self, offset: i64) -> Pointer {
-    Pointer {
+  const fn add(&self, offset: i64) -> Self {
+    Self {
       base: self.base,
       offset: self.offset + offset,
     }
@@ -161,22 +161,22 @@ impl fmt::Display for Value {
 
 impl From<&bril_rs::Literal> for Value {
   #[inline(always)]
-  fn from(l: &bril_rs::Literal) -> Value {
+  fn from(l: &bril_rs::Literal) -> Self {
     match l {
-      bril_rs::Literal::Int(i) => Value::Int(*i),
-      bril_rs::Literal::Bool(b) => Value::Bool(*b),
-      bril_rs::Literal::Float(f) => Value::Float(*f),
+      bril_rs::Literal::Int(i) => Self::Int(*i),
+      bril_rs::Literal::Bool(b) => Self::Bool(*b),
+      bril_rs::Literal::Float(f) => Self::Float(*f),
     }
   }
 }
 
 impl From<bril_rs::Literal> for Value {
   #[inline(always)]
-  fn from(l: bril_rs::Literal) -> Value {
+  fn from(l: bril_rs::Literal) -> Self {
     match l {
-      bril_rs::Literal::Int(i) => Value::Int(i),
-      bril_rs::Literal::Bool(b) => Value::Bool(b),
-      bril_rs::Literal::Float(f) => Value::Float(f),
+      bril_rs::Literal::Int(i) => Self::Int(i),
+      bril_rs::Literal::Bool(b) => Self::Bool(b),
+      bril_rs::Literal::Float(f) => Self::Float(f),
     }
   }
 }
@@ -242,7 +242,7 @@ fn execute_value_op<'a, T: std::io::Write>(
   out: &mut T,
   value_store: &mut Environment,
   heap: &mut Heap,
-  last_label: &Option<&String>,
+  last_label: Option<&String>,
   instruction_count: &mut u32,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::*;
@@ -536,7 +536,7 @@ fn execute<'a, T: std::io::Write>(
                 value_store.set(numified_code.dest.unwrap(), Value::Float(*f))
               }
               // this is safe because we type check this beforehand
-              _ => unsafe { unreachable_unchecked() },
+              bril_rs::Literal::Bool(_) => unsafe { unreachable_unchecked() },
             }
           } else {
             value_store.set(numified_code.dest.unwrap(), Value::from(value));
@@ -560,7 +560,7 @@ fn execute<'a, T: std::io::Write>(
             out,
             &mut value_store,
             heap,
-            &last_label,
+            last_label,
             instruction_count,
           )?;
         }
@@ -576,7 +576,7 @@ fn execute<'a, T: std::io::Write>(
             op,
             &numified_code.args,
             funcs,
-            &curr_block,
+            curr_block,
             out,
             &value_store,
             heap,
@@ -598,7 +598,7 @@ fn parse_args(
   mut env: Environment,
   args: &[bril_rs::Argument],
   args_as_nums: &[u32],
-  inputs: Vec<&str>,
+  inputs: &[&str],
 ) -> Result<Environment, InterpError> {
   if args.is_empty() && inputs.is_empty() {
     Ok(env)
@@ -615,7 +615,7 @@ fn parse_args(
             Err(_) => {
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Bool,
-                inputs.get(index).unwrap().to_string(),
+                (*inputs.get(index).unwrap()).to_string(),
               ))
             }
             Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
@@ -627,7 +627,7 @@ fn parse_args(
             Err(_) => {
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Int,
-                inputs.get(index).unwrap().to_string(),
+                (*inputs.get(index).unwrap()).to_string(),
               ))
             }
             Ok(i) => env.set(*arg_as_num, Value::Int(i)),
@@ -639,7 +639,7 @@ fn parse_args(
             Err(_) => {
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Float,
-                inputs.get(index).unwrap().to_string(),
+                (*inputs.get(index).unwrap()).to_string(),
               ))
             }
             Ok(f) => env.set(*arg_as_num, Value::Float(f)),
@@ -654,9 +654,9 @@ fn parse_args(
 }
 
 pub fn execute_main<T: std::io::Write>(
-  prog: BBProgram,
+  prog: &BBProgram,
   mut out: T,
-  input_args: Vec<&str>,
+  input_args: &[&str],
   profiling: bool,
 ) -> Result<(), InterpError> {
   let main_func = prog.get("main").ok_or(InterpError::NoMainFunction)?;
@@ -673,8 +673,8 @@ pub fn execute_main<T: std::io::Write>(
   let mut instruction_count = 0;
 
   execute(
-    &prog,
-    &main_func,
+    prog,
+    main_func,
     &mut out,
     value_store,
     &mut heap,
