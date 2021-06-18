@@ -1,5 +1,3 @@
-#![feature(or_patterns)]
-
 use error::InterpError;
 
 mod basic_block;
