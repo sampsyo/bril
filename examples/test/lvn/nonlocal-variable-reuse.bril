@@ -1,0 +1,9 @@
+# CMD: bril2json < {filename} | python3 ../../lvn.py -p | bril2txt
+@main {
+  a: int = const 42;
+.lbl:
+  b: int = id a;
+  # This should be re-named since `a` is defined outside of the local scope.
+  a: int = const 5;
+  print b;
+}
