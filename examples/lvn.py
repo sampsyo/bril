@@ -211,17 +211,24 @@ def _fold(num2const, value):
             const_args = [num2const[n] for n in value.args]
             return FOLDABLE_OPS[value.op](*const_args)
         except KeyError:  # At least one argument is not a constant.
-            if value.op in {'eq', 'ne', 'le', 'ge'} and value.args[0] == value.args[1]:
+            if value.op in {'eq', 'ne', 'le', 'ge'} and \
+               value.args[0] == value.args[1]:
                 # Equivalent arguments may be evaluated for equality.
-                # E.g. `eq x x`, where `x` is not a constant evaluates to `true`.
+                # E.g. `eq x x`, where `x` is not a constant evaluates
+                # to `true`.
                 return value.op != 'ne'
 
-            if value.op in {'and', 'or'} and any(v in num2const for v in value.args):
-                # Short circuiting the logical operators `and` and `or` for two cases:
-                # (1) `and x c0` -> false, where `c0` a constant that evaluates to `false`.
-                # (2) `or x c1`  -> true, where `c1` a constant that evaluates to `true`.
-                const_val = num2const[value.args[0] if value.args[0] in num2const else value.args[1]]
-                if (value.op == 'and' and not const_val) or (value.op == 'or' and const_val):
+            if value.op in {'and', 'or'} and \
+               any(v in num2const for v in value.args):
+                # Short circuiting the logical operators `and` and `or`
+                # for two cases: (1) `and x c0` -> false, where `c0` a
+                # constant that evaluates to `false`. (2) `or x c1`  ->
+                # true, where `c1` a constant that evaluates to `true`.
+                const_val = num2const[value.args[0]
+                                      if value.args[0] in num2const
+                                      else value.args[1]]
+                if (value.op == 'and' and not const_val) or \
+                   (value.op == 'or' and const_val):
                     return const_val
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
