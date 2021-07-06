@@ -442,24 +442,28 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   case "add": {
     let val = getInt(instr, state.env, 0) + getInt(instr, state.env, 1);
+    val = BigInt.asIntN(64, val);
     state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "mul": {
     let val = getInt(instr, state.env, 0) * getInt(instr, state.env, 1);
+    val = BigInt.asIntN(64, val);
     state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "sub": {
     let val = getInt(instr, state.env, 0) - getInt(instr, state.env, 1);
+    val = BigInt.asIntN(64, val);
     state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "div": {
     let val = getInt(instr, state.env, 0) / getInt(instr, state.env, 1);
+    val = BigInt.asIntN(64, val);
     state.env.set(instr.dest, val);
     return NEXT;
   }
