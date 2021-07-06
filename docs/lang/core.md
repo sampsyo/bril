@@ -23,6 +23,8 @@ They all take two arguments, which must be names of variables of type `int`, and
 * `sub`: x - y.
 * `div`: x ÷ y.
 
+In each case, overflow follows two's complement rules.
+
 Comparison
 ----------
 
