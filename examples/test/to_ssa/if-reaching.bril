@@ -1,0 +1,20 @@
+@main(cond: bool) {
+.entry:
+    # Can be reached through `.left`, so it should be within a phi in `.zexit`.
+    a: int = const 47;
+
+    # Can be reached through `.right`, so it should be within a phi in `.zexit`.
+    b: int = const 42;
+    br cond .left .right;
+.left:
+    b: int = const 1;
+    c: int = const 5;
+    jmp .zexit;
+.right:
+    a: int = const 2;
+    c: int = const 10;
+    jmp .zexit;
+.zexit:
+    d: int = sub a c;
+    print d;
+}
