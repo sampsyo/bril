@@ -83,6 +83,7 @@ def ssa_rename(blocks, phis, succ, domtree, args):
             _rename(b)
 
         # Restore stacks.
+        stack.clear()
         stack.update(old_stack)
 
     entry = list(blocks.keys())[0]
