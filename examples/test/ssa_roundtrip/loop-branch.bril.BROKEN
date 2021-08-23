@@ -1,0 +1,24 @@
+@func(): int {
+    n: int = const 5;
+    ret n;
+}
+
+@loop(infinite: bool, print: bool) {
+.entry:
+.loop.header:
+    br infinite .loop.body .loop.end;
+.loop.body:
+    br print .loop.print .loop.next;
+.loop.print:
+    v: int = call @func;
+    print v;
+.loop.next:
+    jmp .loop.header;
+.loop.end:
+}
+
+@main() {
+  infinite: bool = const false;
+  print: bool = const true;
+  call @loop infinite print;
+}

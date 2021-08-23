@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from cfg import block_map, successors, add_terminators, add_entry, reassemble
 from form_blocks import form_blocks
-from dom import get_dom, dom_fronts, dom_tree, map_inv
+from dom import get_dom, dom_fronts, dom_tree
 
 
 def def_blocks(blocks):
@@ -83,13 +83,13 @@ def ssa_rename(blocks, phis, succ, domtree, args):
             _rename(b)
 
         # Restore stacks.
+        stack.clear()
         stack.update(old_stack)
 
     entry = list(blocks.keys())[0]
     _rename(entry)
 
     return phi_args, phi_dests
-
 
 
 def insert_phis(blocks, phi_args, phi_dests, types):
@@ -121,7 +121,6 @@ def func_to_ssa(func):
     add_entry(blocks)
     add_terminators(blocks)
     succ = {name: successors(block[-1]) for name, block in blocks.items()}
-    pred = map_inv(succ)
     dom = get_dom(succ, list(blocks.keys())[0])
 
     df = dom_fronts(dom, succ)
