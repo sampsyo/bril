@@ -25,7 +25,7 @@ let identifierRegexp = '(\a|_)\w*'
 call s:DefSynGroup('brilVariable', identifierRegexp, 'contained')
 
 " Tokens
-let funcRegexp = s:ConcatRegexp('\@', identifierRegexp)
+let funcRegexp = s:ConcatRegexp('\@', identifierRegexp, '(\(.*\))?')
 call s:DefSynGroup('brilFuncName', funcRegexp, 'contained')
 
 " Types
