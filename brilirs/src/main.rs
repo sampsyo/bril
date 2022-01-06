@@ -28,7 +28,7 @@ fn main() {
     args.is_present("profiling"),
     args.is_present("check"),
   ) {
-    eprintln!("{}", e);
+    eprintln!("error: {}", e);
     std::process::exit(2)
   }
 }
