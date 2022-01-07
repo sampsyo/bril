@@ -598,7 +598,7 @@ fn parse_args(
   mut env: Environment,
   args: &[bril_rs::Argument],
   args_as_nums: &[u32],
-  inputs: &[&str],
+  inputs: &[String],
 ) -> Result<Environment, InterpError> {
   if args.is_empty() && inputs.is_empty() {
     Ok(env)
@@ -656,7 +656,7 @@ fn parse_args(
 pub fn execute_main<T: std::io::Write>(
   prog: &BBProgram,
   mut out: T,
-  input_args: &[&str],
+  input_args: &[String],
   profiling: bool,
 ) -> Result<(), InterpError> {
   let main_func = prog.get("main").ok_or(InterpError::NoMainFunction)?;

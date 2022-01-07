@@ -15,7 +15,7 @@ mod interp;
 pub fn run_input<T: std::io::Write>(
   input: Box<dyn std::io::Read>,
   out: T,
-  input_args: Vec<&str>,
+  input_args: Vec<String>,
   profiling: bool,
   check: bool,
 ) -> Result<(), InterpError> {
