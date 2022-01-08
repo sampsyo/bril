@@ -1,5 +1,3 @@
-use std::unimplemented;
-
 use crate::basic_block::{BBFunction, BBProgram};
 use bril_rs::{ConstOps, EffectOps, Instruction, Type, ValueOps};
 
@@ -222,10 +220,10 @@ fn type_check_instruction<'a>(
         .func_index
         .get(&funcs[0])
         .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
       }
-
       args
         .iter()
         .zip(callee_func.args.iter())
@@ -238,7 +236,7 @@ fn type_check_instruction<'a>(
         })?;
 
       match &callee_func.return_type {
-        None => Err(InterpError::NonEmptyRetForfunc(callee_func.name.clone())),
+        None => Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone())),
         Some(t) => check_asmt_type(op_type, t),
       }?;
       update_env(env, dest, op_type)
@@ -255,7 +253,7 @@ fn type_check_instruction<'a>(
         return Err(InterpError::UnequalPhiNode);
       }
       check_num_funcs(0, funcs)?;
-      // Phi nodes are a little weird with their args and theirs been some discussion on an _undefined var name in #108
+      // Phi nodes are a little weird with their args and there has been some discussion on an _undefined var name in #108
       // Instead, we are going to assign the type we expect to all of the args and this will trigger an error if any of these args ends up being a different type.
       args.iter().try_for_each(|a| update_env(env, a, op_type))?;
 
@@ -349,7 +347,7 @@ fn type_check_instruction<'a>(
           if args.is_empty() {
             Ok(())
           } else {
-            Err(InterpError::NonEmptyRetForfunc(func.name.clone()))
+            Err(InterpError::NonEmptyRetForFunc(func.name.clone()))
           }
         }
       }
@@ -390,10 +388,10 @@ fn type_check_instruction<'a>(
         .func_index
         .get(&funcs[0])
         .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
       }
-
       args
         .iter()
         .zip(callee_func.args.iter())
@@ -406,7 +404,7 @@ fn type_check_instruction<'a>(
         })?;
 
       if callee_func.return_type.is_some() {
-        Err(InterpError::NonEmptyRetForfunc(callee_func.name.clone()))
+        Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone()))
       } else {
         Ok(())
       }

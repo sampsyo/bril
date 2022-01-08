@@ -16,7 +16,7 @@ pub enum InterpError {
   #[error("multiple functions of the same name found")]
   DuplicateFunction,
   #[error("Expected empty return for `{0}`, found value")]
-  NonEmptyRetForfunc(String),
+  NonEmptyRetForFunc(String),
   #[error("cannot allocate `{0}` entries")]
   CannotAllocSize(i64),
   #[error("Tried to free illegal memory location base: `{0}`, offset: `{1}`. Offset must be 0.")]
