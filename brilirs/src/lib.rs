@@ -9,6 +9,7 @@ use error::InterpError;
 
 mod basic_block;
 mod check;
+pub mod cli;
 mod error;
 mod interp;
 

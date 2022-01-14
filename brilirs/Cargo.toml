@@ -5,6 +5,9 @@ authors = ["Wil Thomason <wil.thomason@gmail.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[build-dependencies]
+clap         = { version = "3.0", features = ["derive"] }
+clap_complete= "3.0"
 
 [dependencies]
 thiserror    = "1.0"
@@ -13,9 +16,9 @@ fxhash       = "0.2"
 mimalloc     = "0.1"
 
 [dependencies.bril-rs]
-version = "0.1.0"
-path = "../bril-rs"
-features = ["ssa", "memory", "float", "speculate"]
+version      = "0.1.0"
+path         = "../bril-rs"
+features     = ["ssa", "memory", "float", "speculate"]
 
 [profile.release]
 # this can shave off a few ms but doubles the build time so it's not really worth it
