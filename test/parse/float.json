@@ -35,7 +35,7 @@
             "v2"
           ],
           "dest": "v4",
-          "op": "fmult",
+          "op": "fmul",
           "type": "float"
         }
       ],

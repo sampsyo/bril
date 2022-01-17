@@ -3,5 +3,5 @@
   v1: float = const .02;
   v2: float = const 0.3;
   v3: float = fadd v0 v1;
-  v4: float = fmult v2 v2;
+  v4: float = fmul v2 v2;
 }
