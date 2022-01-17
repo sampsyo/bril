@@ -38,9 +38,6 @@ fn main() -> Result<(), Error> {
     app.get_name(),
     path
   );
-  println!(
-    "cargo:warning=enable this by running `source {:?}`",
-    path
-  );
+  println!("cargo:warning=enable this by running `source {:?}`", path);
   Ok(())
 }

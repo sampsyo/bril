@@ -14,53 +14,11 @@ grammar;
 match {
     r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
     r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // func
+    "const", "int", "float", "bool", "ptr", "true", "false",
 } else {
     r"\s*" => { }, /// Whitespace
     r"#[^\n\r]*[\n\r]*" => { }, /// Comments
-    "const",
-    "jmp",
-    "br",
-    "int",
-    "bool",
-    "float",
-    "ptr",
-    "ret",
-    "print",
-    "nop",
-    "store",
-    "free",
-    "speculate",
-    "commit",
-    "guard",
-    "add",
-    "sub",
-    "mul",
-    "div",
-    "eq",
-    "lt",
-    "gt",
-    "le",
-    "ge",
-    "not",
-    "and",
-    "or",
-    "call",
-    "id",
-    "phi",
-    "fadd",
-    "fsub",
-    "fmul",
-    "fdiv",
-    "feq",
-    "flt",
-    "fgt",
-    "fle",
-    "fge",
-    "alloc",
-    "load",
-    "ptradd",
-    "<", ">", "{", "}", "(", ")", "@", ".", "=", ";", ":", ",", r"true|false",
-} else {
+    "<", ">", "{", "}", "(", ")", "@", ".", "=", ";", ":", ",",
     r"(\+|-)?[0-9]+", // int
     r"(\+|-)?[0-9]*\.[0-9]+", // float
     r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
@@ -101,7 +59,7 @@ Code : Code = {
     <i: Instruction> => Code::Instruction(i),
 }
 
-pub Instruction : Instruction = {
+Instruction : Instruction = {
     <i:Ident> ":" <t: Type> "=" <c: ConstOps> <l: Literal> ";" => Instruction::Constant {
         op : c,
         dest : i,
@@ -152,47 +110,53 @@ ConstOps : ConstOps = {
 }
 
 EffectOps : EffectOps = {
-    "jmp" => EffectOps::Jump,
-    "br" => EffectOps::Branch,
-    "call" => EffectOps::Call,
-    "ret" => EffectOps::Return,
-    "print" => EffectOps::Print,
-    "nop" => EffectOps::Nop,
-    "store" => EffectOps::Store,
-    "free" => EffectOps::Free,
-    "speculate" => EffectOps::Speculate,
-    "commit" => EffectOps::Commit,
-    "guard" => EffectOps::Guard,
+    <e:Ident> => match e.as_ref() {
+        "jmp" => EffectOps::Jump,
+        "br" => EffectOps::Branch,
+        "call" => EffectOps::Call,
+        "ret" => EffectOps::Return,
+        "print" => EffectOps::Print,
+        "nop" => EffectOps::Nop,
+        "store" => EffectOps::Store,
+        "free" => EffectOps::Free,
+        "speculate" => EffectOps::Speculate,
+        "commit" => EffectOps::Commit,
+        "guard" => EffectOps::Guard,
+        x => panic!("Unexpected EffectOp: {}", x),
+    }
 }
 
 ValueOps : ValueOps = {
-    "add" => ValueOps::Add,
-    "sub" => ValueOps::Sub,
-    "mul" => ValueOps::Mul,
-    "div" => ValueOps::Div,
-    "eq" => ValueOps::Eq,
-    "lt" => ValueOps::Lt,
-    "gt" => ValueOps::Gt,
-    "le" => ValueOps::Le,
-    "ge" => ValueOps::Ge,
-    "not" => ValueOps::Not,
-    "and" => ValueOps::And,
-    "or" => ValueOps::Or,
-    "call" => ValueOps::Call,
-    "id" => ValueOps::Id,
-    "phi" => ValueOps::Phi,
-    "fadd" => ValueOps::Fadd,
-    "fsub" => ValueOps::Fsub,
-    "fmul" => ValueOps::Fmul,
-    "fdiv" => ValueOps::Fdiv,
-    "feq" => ValueOps::Feq,
-    "flt" => ValueOps::Flt,
-    "fgt" => ValueOps::Fgt,
-    "fle" => ValueOps::Fle,
-    "fge" => ValueOps::Fge,
-    "alloc" => ValueOps::Alloc,
-    "load" => ValueOps::Load,
-    "ptradd" => ValueOps::PtrAdd,
+    <v:Ident> => match v.as_ref() {
+        "add" => ValueOps::Add,
+        "sub" => ValueOps::Sub,
+        "mul" => ValueOps::Mul,
+        "div" => ValueOps::Div,
+        "eq" => ValueOps::Eq,
+        "lt" => ValueOps::Lt,
+        "gt" => ValueOps::Gt,
+        "le" => ValueOps::Le,
+        "ge" => ValueOps::Ge,
+        "not" => ValueOps::Not,
+        "and" => ValueOps::And,
+        "or" => ValueOps::Or,
+        "call" => ValueOps::Call,
+        "id" => ValueOps::Id,
+        "phi" => ValueOps::Phi,
+        "fadd" => ValueOps::Fadd,
+        "fsub" => ValueOps::Fsub,
+        "fmul" => ValueOps::Fmul,
+        "fdiv" => ValueOps::Fdiv,
+        "feq" => ValueOps::Feq,
+        "flt" => ValueOps::Flt,
+        "fgt" => ValueOps::Fgt,
+        "fle" => ValueOps::Fle,
+        "fge" => ValueOps::Fge,
+        "alloc" => ValueOps::Alloc,
+        "load" => ValueOps::Load,
+        "ptradd" => ValueOps::PtrAdd,
+        x => panic!("Unexpected EffectOp: {}", x),
+    }
 }
 
 Type : Type = {
@@ -202,7 +166,16 @@ Type : Type = {
     "ptr" "<" <t:Type> ">" => Type::Pointer(Box::new(t)),
 }
 
-pub Ident: String = <s : r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => s.to_string();
+// We can't match on const because of a reduce-reduce conflict
+Ident: String = {
+    <s : r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => s.to_string(),
+    "int" => "int".to_owned(),
+    "float" => "float".to_owned(),
+    "bool" => "bool".to_owned(),
+    "ptr" => "ptr".to_owned(),
+    "true" => "true".to_owned(),
+    "false" => "false".to_owned(),
+}
 
 Args: String = {
     <f:Func> => format!("@{}", f),
@@ -226,5 +199,8 @@ Literal: Literal = {
 }
 
 Num: i64 = <s:r"(\+|-)?[0-9]+"> => i64::from_str(s).unwrap();
-Bool: bool = <b: r"true|false"> => bool::from_str(b).unwrap();
+Bool: bool = {
+    "true" => true,
+    "false" => false,
+}
 Float: f64 = <f:r"(\+|-)?[0-9]*\.[0-9]+"> => f64::from_str(f).unwrap();
