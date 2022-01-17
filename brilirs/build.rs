@@ -11,8 +11,7 @@ use std::{env, path::PathBuf};
 include!("src/cli.rs");
 
 fn main() -> Result<(), Error> {
-  //  let outdir = env!("CARGO_MANIFEST_DIR");
-  let out_dir = match env::var_os("OUT_DIR") {
+  let out_dir = match env::var_os("CARGO_MANIFEST_DIR") {
     None => return Ok(()),
     Some(out_dir) => out_dir,
   };
@@ -35,10 +34,13 @@ fn main() -> Result<(), Error> {
   };
 
   println!(
-    "cargo:warning= {} completion file is generated: {:?}",
+    "cargo:warning={} completion file is generated: {:?}",
     app.get_name(),
     path
   );
-  //todo print something about how to source completions.
+  println!(
+    "cargo:warning=enable this by running `source {:?}`",
+    path
+  );
   Ok(())
 }
