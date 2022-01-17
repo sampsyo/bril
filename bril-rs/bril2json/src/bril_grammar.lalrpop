@@ -1,0 +1,230 @@
+#![allow(clippy::needless_lifetimes)]
+#![allow(clippy::just_underscores_and_digits)]
+#![allow(clippy::clone_on_copy)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::deprecated_cfg_attr)]
+#![allow(clippy::single_char_pattern)]
+
+use std::str::FromStr;
+use bril_rs::{Program, Function, Argument, Code, Instruction, ConstOps, EffectOps, ValueOps, Type, Literal};
+
+grammar;
+
+match {
+    r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
+    r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // func
+} else {
+    r"\s*" => { }, /// Whitespace
+    r"#[^\n\r]*[\n\r]*" => { }, /// Comments
+    "const",
+    "jmp",
+    "br",
+    "int",
+    "bool",
+    "float",
+    "ptr",
+    "ret",
+    "print",
+    "nop",
+    "store",
+    "free",
+    "speculate",
+    "commit",
+    "guard",
+    "add",
+    "sub",
+    "mul",
+    "div",
+    "eq",
+    "lt",
+    "gt",
+    "le",
+    "ge",
+    "not",
+    "and",
+    "or",
+    "call",
+    "id",
+    "phi",
+    "fadd",
+    "fsub",
+    "fmul",
+    "fdiv",
+    "feq",
+    "flt",
+    "fgt",
+    "fle",
+    "fge",
+    "alloc",
+    "load",
+    "ptradd",
+    "<", ">", "{", "}", "(", ")", "@", ".", "=", ";", ":", ",", r"true|false",
+} else {
+    r"(\+|-)?[0-9]+", // int
+    r"(\+|-)?[0-9]*\.[0-9]+", // float
+    r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
+}
+
+pub Program : Program = {
+    <f :(<Function>)*> => Program {
+        functions : f,
+    }
+}
+
+Function : Function = {
+    <f: Func> <a: (Argument_List)?> <t:OutputType?> "{" <c :(<Code>)*> "}" => {let a = a.unwrap_or_default(); Function {
+        name : f,
+        args : a,
+        return_type : t,
+        instrs: c,
+    }}
+}
+
+OutputType : Type = {
+    ":" <t:Type> => t
+}
+
+Argument_List : Vec<Argument> = {
+    "(" <a :(<Argument> ","?)*> ")" => a,
+}
+
+Argument : Argument = {
+   <i:Ident> ":" <t: Type> => Argument {
+        name : i,
+        arg_type : t,
+    }
+}
+
+Code : Code = {
+    <l: Label> ":" => Code::Label{ label : l},
+    <i: Instruction> => Code::Instruction(i),
+}
+
+pub Instruction : Instruction = {
+    <i:Ident> ":" <t: Type> "=" <c: ConstOps> <l: Literal> ";" => Instruction::Constant {
+        op : c,
+        dest : i,
+        const_type : t,
+        value : l,
+    },
+    <i:Ident> ":" <t:Type> "=" <v:ValueOps> <f :(<Args>)*> ";" => {
+        let mut a_vec = Vec::new();
+        let mut f_vec = Vec::new();
+        let mut l_vec = Vec::new();
+        f.into_iter().for_each(|x|
+            if x.starts_with("@") {
+                f_vec.push(x.strip_prefix("@").unwrap().to_owned())
+            } else if x.starts_with(".") {
+                l_vec.push(x.strip_prefix(".").unwrap().to_owned())
+            } else {a_vec.push(x)});
+        Instruction::Value {
+            op: v,
+            dest: i,
+            op_type : t,
+            args: a_vec,
+            funcs: f_vec,
+            labels: l_vec,
+        }
+    },
+    <e:EffectOps> <f :(<Args>)*> ";" => {
+        let mut a_vec = Vec::new();
+        let mut f_vec = Vec::new();
+        let mut l_vec = Vec::new();
+        f.into_iter().for_each(|x|
+            if x.starts_with("@") {
+                f_vec.push(x.strip_prefix("@").unwrap().to_owned())
+            } else if x.starts_with(".") {
+                l_vec.push(x.strip_prefix(".").unwrap().to_owned())
+            } else {a_vec.push(x)});
+        Instruction::Effect {
+            op: e,
+            args: a_vec,
+            funcs: f_vec,
+            labels: l_vec,
+        }
+    }
+
+}
+
+ConstOps : ConstOps = {
+    "const" => ConstOps::Const,
+}
+
+EffectOps : EffectOps = {
+    "jmp" => EffectOps::Jump,
+    "br" => EffectOps::Branch,
+    "call" => EffectOps::Call,
+    "ret" => EffectOps::Return,
+    "print" => EffectOps::Print,
+    "nop" => EffectOps::Nop,
+    "store" => EffectOps::Store,
+    "free" => EffectOps::Free,
+    "speculate" => EffectOps::Speculate,
+    "commit" => EffectOps::Commit,
+    "guard" => EffectOps::Guard,
+}
+
+ValueOps : ValueOps = {
+    "add" => ValueOps::Add,
+    "sub" => ValueOps::Sub,
+    "mul" => ValueOps::Mul,
+    "div" => ValueOps::Div,
+    "eq" => ValueOps::Eq,
+    "lt" => ValueOps::Lt,
+    "gt" => ValueOps::Gt,
+    "le" => ValueOps::Le,
+    "ge" => ValueOps::Ge,
+    "not" => ValueOps::Not,
+    "and" => ValueOps::And,
+    "or" => ValueOps::Or,
+    "call" => ValueOps::Call,
+    "id" => ValueOps::Id,
+    "phi" => ValueOps::Phi,
+    "fadd" => ValueOps::Fadd,
+    "fsub" => ValueOps::Fsub,
+    "fmul" => ValueOps::Fmul,
+    "fdiv" => ValueOps::Fdiv,
+    "feq" => ValueOps::Feq,
+    "flt" => ValueOps::Flt,
+    "fgt" => ValueOps::Fgt,
+    "fle" => ValueOps::Fle,
+    "fge" => ValueOps::Fge,
+    "alloc" => ValueOps::Alloc,
+    "load" => ValueOps::Load,
+    "ptradd" => ValueOps::PtrAdd,
+}
+
+Type : Type = {
+    "int" => Type::Int,
+    "bool" => Type::Bool,
+    "float" => Type::Float,
+    "ptr" "<" <t:Type> ">" => Type::Pointer(Box::new(t)),
+}
+
+pub Ident: String = <s : r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => s.to_string();
+
+Args: String = {
+    <f:Func> => format!("@{}", f),
+    <l:Label> => format!(".{}", l),
+    <i:Ident> => i,
+}
+
+pub Func : String = {
+    <i:r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix("@").unwrap().to_owned(),
+}
+
+
+Label: String = {
+    <i:r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix(".").unwrap().to_owned(),
+}
+
+Literal: Literal = {
+    <n: Num> => Literal::Int(n),
+    <b: Bool> => Literal::Bool(b),
+    <f: Float> => Literal::Float(f),
+}
+
+Num: i64 = <s:r"(\+|-)?[0-9]+"> => i64::from_str(s).unwrap();
+Bool: bool = <b: r"true|false"> => bool::from_str(b).unwrap();
+Float: f64 = <f:r"(\+|-)?[0-9]*\.[0-9]+"> => f64::from_str(f).unwrap();

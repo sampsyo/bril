@@ -26,14 +26,14 @@ impl Display for Program {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Function {
-    pub name: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<Argument>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub instrs: Vec<Code>,
+    pub name: String,
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<Type>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instrs: Vec<Code>,
 }
 
 impl Display for Function {
@@ -94,32 +94,32 @@ impl Display for Code {
 #[serde(untagged)]
 pub enum Instruction {
     Constant {
-        op: ConstOps,
         dest: String,
+        op: ConstOps,
         #[serde(rename = "type")]
         const_type: Type,
         value: Literal,
     },
     Value {
-        op: ValueOps,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        args: Vec<String>,
         dest: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        funcs: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        labels: Vec<String>,
+        op: ValueOps,
         #[serde(rename = "type")]
         op_type: Type,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        args: Vec<String>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        funcs: Vec<String>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        labels: Vec<String>,
     },
     Effect {
-        op: EffectOps,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         args: Vec<String>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         funcs: Vec<String>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
+        op: EffectOps,
     },
 }
 
@@ -396,7 +396,6 @@ pub fn load_program() -> Program {
 }
 
 pub fn output_program(p: &Program) {
-    io::stdout()
-        .write_all(serde_json::to_string(p).unwrap().as_bytes())
-        .unwrap();
+    serde_json::to_writer_pretty(io::stdout(), p).unwrap();
+    io::stdout().write_all(b"\n").unwrap();
 }

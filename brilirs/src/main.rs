@@ -17,6 +17,7 @@ fn main() {
     args.args,
     args.profile,
     args.check,
+    args.text,
   ) {
     eprintln!("error: {}", e);
     std::process::exit(2)

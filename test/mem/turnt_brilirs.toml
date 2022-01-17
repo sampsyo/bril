@@ -1,1 +1,1 @@
-command = "bril2json < {filename} | cargo run --manifest-path ../../brilirs/Cargo.toml -- {args}"
+command = "cargo run --manifest-path ../../brilirs/Cargo.toml -- --file {filename} --text {args}"

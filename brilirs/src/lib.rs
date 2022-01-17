@@ -19,8 +19,16 @@ pub fn run_input<T: std::io::Write>(
   input_args: Vec<String>,
   profiling: bool,
   check: bool,
+  text: bool,
 ) -> Result<(), InterpError> {
-  let prog = bril_rs::load_program_from_read(input);
+  // It's a little confusing because of the naming conventions.
+  //      - bril_rs takes file.json as input
+  //      - bril2json takes file.bril as input
+  let prog = if text {
+    bril2json::load_program_from_read(input)
+  } else {
+    bril_rs::load_program_from_read(input)
+  };
   let bbprog = basic_block::BBProgram::new(prog)?;
   check::type_check(&bbprog)?;
 

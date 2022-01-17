@@ -1,0 +1,20 @@
+[package]
+name = "bril2json"
+version = "0.1.0"
+authors = ["Patrick LaFontaine <32135464+Pat-Lafon@users.noreply.github.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lalrpop-util = {version = "0.19.6", features = ["lexer"]}
+regex = "1"
+
+# Add a build-time dependency on the lalrpop library:
+[build-dependencies]
+lalrpop = "0.19.6"
+
+[dependencies.bril-rs]
+version = "0.1.0"
+path = "../../bril-rs"
+features = ["ssa", "memory", "float", "speculate"]
