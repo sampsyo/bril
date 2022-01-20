@@ -1,0 +1,2 @@
+command = "cargo run --manifest-path ../../bril-rs/bril2json/Cargo.toml < {filename}"
+output.json = "-"

@@ -1,6 +1,6 @@
 use bril_rs::{Function, Instruction, Program};
-use fxhash::FxHashMap;
 use error::InterpError;
+use fxhash::FxHashMap;
 
 use crate::error;
 

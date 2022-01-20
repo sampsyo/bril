@@ -451,7 +451,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
         let arg0 = get_value(value_store, 0, args);
         return Ok(Some(arg0.clone()));
       }
-      None => {}
+      None => return Ok(None),
     },
     Print => {
       writeln!(
@@ -508,6 +508,7 @@ fn execute<'a, T: std::io::Write>(
     let curr_block = &func.blocks[curr_block_idx];
     let curr_instrs = &curr_block.instrs;
     let curr_numified_instrs = &curr_block.numified_instrs;
+    // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
     *instruction_count += curr_instrs.len() as u32;
     last_label = current_label;
     current_label = curr_block.label.as_ref();
@@ -598,7 +599,7 @@ fn parse_args(
   mut env: Environment,
   args: &[bril_rs::Argument],
   args_as_nums: &[u32],
-  inputs: &[&str],
+  inputs: &[String],
 ) -> Result<Environment, InterpError> {
   if args.is_empty() && inputs.is_empty() {
     Ok(env)
@@ -656,13 +657,13 @@ fn parse_args(
 pub fn execute_main<T: std::io::Write>(
   prog: &BBProgram,
   mut out: T,
-  input_args: &[&str],
+  input_args: &[String],
   profiling: bool,
 ) -> Result<(), InterpError> {
   let main_func = prog.get("main").ok_or(InterpError::NoMainFunction)?;
 
   if main_func.return_type.is_some() {
-    return Err(InterpError::NonEmptyRetForfunc(main_func.name.clone()));
+    return Err(InterpError::NonEmptyRetForFunc(main_func.name.clone()));
   }
 
   let env = Environment::new(main_func.num_of_vars);

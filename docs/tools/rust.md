@@ -17,12 +17,19 @@ features = ["ssa", "memory", "float", "speculate"]
 
 Each of the extensions to [Bril core][core] is feature gated. To ignore an extension, remove its corresponding string from the `features` list.
 
-There are two helper functions, `load_program`, which will read a valid Bril program from stdin, and `output_program` which writes your Bril program to stdout. Otherwise, this library can be treated like any other [serde][] JSON representation.
+There are two helper functions: `load_program` will read a valid Bril program from stdin, and `output_program` will write your Bril program to stdout. Otherwise, this library can be treated like any other [serde][] JSON representation.
 
-Examples
+Tools
 ---
 
-There is currently a very trivial example that uses this interface to create a rust implementation of `bril2txt`. Run it with `cargo run --example bril2txt`.
+This library supports fully compatible Rust implementations of `bril2txt` and `bril2json`.
+
+For ease of use, these tools can be installed and added to your path by running the following in `bril-rs/`:
+
+    $ cargo install --path . --example bril2txt
+    $ cargo install --path ./bril2json
+
+Make sure that `~/.cargo/bin` is on your path.
 
 Development
 -----------

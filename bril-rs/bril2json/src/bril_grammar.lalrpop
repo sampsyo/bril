@@ -1,0 +1,150 @@
+#![allow(clippy::needless_lifetimes)]
+#![allow(clippy::just_underscores_and_digits)]
+#![allow(clippy::clone_on_copy)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::deprecated_cfg_attr)]
+#![allow(clippy::single_char_pattern)]
+
+use std::str::FromStr;
+use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal};
+
+grammar;
+
+match {
+    r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
+    r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // func
+    "const", "true", "false",
+} else {
+    r"\s*" => { }, /// Whitespace
+    r"#[^\n\r]*[\n\r]*" => { }, /// Comments
+    "<", ">", "{", "}", "(", ")", "@", ".", "=", ";", ":", ",",
+    r"(\+|-)?[0-9]+", // int
+    r"(\+|-)?[0-9]*\.[0-9]+", // float
+    r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
+}
+
+pub AbstractProgram : AbstractProgram = {
+    <f :(<AbstractFunction>)*> => AbstractProgram {
+        functions : f,
+    }
+}
+
+AbstractFunction : AbstractFunction = {
+    <f: Func> <a: (Argument_List)?> <t:OutputType?> "{" <c :(<AbstractCode>)*> "}" => {let a = a.unwrap_or_default(); AbstractFunction {
+        name : f,
+        args : a,
+        return_type : t,
+        instrs: c,
+    }}
+}
+
+OutputType : AbstractType = {
+    ":" <t:AbstractType> => t
+}
+
+Argument_List : Vec<AbstractArgument> = {
+    "(" <a :(<AbstractArgument> ","?)*> ")" => a,
+}
+
+AbstractArgument : AbstractArgument = {
+   <i:Ident> ":" <t: AbstractType> => AbstractArgument {
+        name : i,
+        arg_type : t,
+    }
+}
+
+AbstractCode : AbstractCode = {
+    <l: Label> ":" => AbstractCode::Label{ label : l},
+    <i: AbstractInstruction> => AbstractCode::Instruction(i),
+}
+
+AbstractInstruction : AbstractInstruction = {
+    <i:Ident> ":" <t: AbstractType> "=" <c: ConstOps> <l: Literal> ";" => AbstractInstruction::Constant {
+        op : c,
+        dest : i,
+        const_type : t,
+        value : l,
+    },
+    <i:Ident> ":" <t:AbstractType> "=" <v:Ident> <f :(<Args>)*> ";" => {
+        let mut a_vec = Vec::new();
+        let mut f_vec = Vec::new();
+        let mut l_vec = Vec::new();
+        f.into_iter().for_each(|x|
+            if x.starts_with("@") {
+                f_vec.push(x.strip_prefix("@").unwrap().to_owned())
+            } else if x.starts_with(".") {
+                l_vec.push(x.strip_prefix(".").unwrap().to_owned())
+            } else {a_vec.push(x)});
+        AbstractInstruction::Value {
+            op: v,
+            dest: i,
+            op_type : t,
+            args: a_vec,
+            funcs: f_vec,
+            labels: l_vec,
+        }
+    },
+    <e:Ident> <f :(<Args>)*> ";" => {
+        let mut a_vec = Vec::new();
+        let mut f_vec = Vec::new();
+        let mut l_vec = Vec::new();
+        f.into_iter().for_each(|x|
+            if x.starts_with("@") {
+                f_vec.push(x.strip_prefix("@").unwrap().to_owned())
+            } else if x.starts_with(".") {
+                l_vec.push(x.strip_prefix(".").unwrap().to_owned())
+            } else {a_vec.push(x)});
+        AbstractInstruction::Effect {
+            op: e,
+            args: a_vec,
+            funcs: f_vec,
+            labels: l_vec,
+        }
+    }
+
+}
+
+ConstOps : ConstOps = {
+    "const" => ConstOps::Const,
+}
+
+AbstractType : AbstractType = {
+    <t:Ident> => AbstractType::Primitive(t),
+    <p:Ident> "<" <t:AbstractType> ">" => AbstractType::Parameterized(p, Box::new(t)),
+}
+
+// We can't match on const because of a reduce-reduce conflict
+Ident: String = {
+    <s : r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => s.to_string(),
+    "true" => "true".to_owned(),
+    "false" => "false".to_owned(),
+}
+
+Args: String = {
+    <f:Func> => format!("@{}", f),
+    <l:Label> => format!(".{}", l),
+    <i:Ident> => i,
+}
+
+pub Func : String = {
+    <i:r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix("@").unwrap().to_owned(),
+}
+
+
+Label: String = {
+    <i:r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix(".").unwrap().to_owned(),
+}
+
+Literal: Literal = {
+    <n: Num> => Literal::Int(n),
+    <b: Bool> => Literal::Bool(b),
+    <f: Float> => Literal::Float(f),
+}
+
+Num: i64 = <s:r"(\+|-)?[0-9]+"> => i64::from_str(s).unwrap();
+Bool: bool = {
+    "true" => true,
+    "false" => false,
+}
+Float: f64 = <f:r"(\+|-)?[0-9]*\.[0-9]+"> => f64::from_str(f).unwrap();
