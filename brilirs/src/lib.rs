@@ -5,7 +5,7 @@
 #![allow(clippy::cargo_common_metadata)]
 #![allow(clippy::too_many_arguments)]
 
-use error::InterpError;
+use std::error::Error;
 
 mod basic_block;
 mod check;
@@ -20,12 +20,12 @@ pub fn run_input<T: std::io::Write>(
   profiling: bool,
   check: bool,
   text: bool,
-) -> Result<(), InterpError> {
+) -> Result<(), Box<dyn Error>> {
   // It's a little confusing because of the naming conventions.
   //      - bril_rs takes file.json as input
   //      - bril2json takes file.bril as input
   let prog = if text {
-    bril2json::load_program_from_read(input)
+    bril2json::load_abstract_program_from_read(input).try_into()?
   } else {
     bril_rs::load_program_from_read(input)
   };

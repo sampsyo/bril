@@ -7,14 +7,14 @@
 #![allow(clippy::single_char_pattern)]
 
 use std::str::FromStr;
-use bril_rs::{Program, Function, Argument, Code, Instruction, ConstOps, EffectOps, ValueOps, Type, Literal};
+use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal};
 
 grammar;
 
 match {
     r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
     r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // func
-    "const", "int", "float", "bool", "ptr", "true", "false",
+    "const", "true", "false",
 } else {
     r"\s*" => { }, /// Whitespace
     r"#[^\n\r]*[\n\r]*" => { }, /// Comments
@@ -24,14 +24,14 @@ match {
     r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
 }
 
-pub Program : Program = {
-    <f :(<Function>)*> => Program {
+pub AbstractProgram : AbstractProgram = {
+    <f :(<AbstractFunction>)*> => AbstractProgram {
         functions : f,
     }
 }
 
-Function : Function = {
-    <f: Func> <a: (Argument_List)?> <t:OutputType?> "{" <c :(<Code>)*> "}" => {let a = a.unwrap_or_default(); Function {
+AbstractFunction : AbstractFunction = {
+    <f: Func> <a: (Argument_List)?> <t:OutputType?> "{" <c :(<AbstractCode>)*> "}" => {let a = a.unwrap_or_default(); AbstractFunction {
         name : f,
         args : a,
         return_type : t,
@@ -39,34 +39,34 @@ Function : Function = {
     }}
 }
 
-OutputType : Type = {
-    ":" <t:Type> => t
+OutputType : AbstractType = {
+    ":" <t:AbstractType> => t
 }
 
-Argument_List : Vec<Argument> = {
-    "(" <a :(<Argument> ","?)*> ")" => a,
+Argument_List : Vec<AbstractArgument> = {
+    "(" <a :(<AbstractArgument> ","?)*> ")" => a,
 }
 
-Argument : Argument = {
-   <i:Ident> ":" <t: Type> => Argument {
+AbstractArgument : AbstractArgument = {
+   <i:Ident> ":" <t: AbstractType> => AbstractArgument {
         name : i,
         arg_type : t,
     }
 }
 
-Code : Code = {
-    <l: Label> ":" => Code::Label{ label : l},
-    <i: Instruction> => Code::Instruction(i),
+AbstractCode : AbstractCode = {
+    <l: Label> ":" => AbstractCode::Label{ label : l},
+    <i: AbstractInstruction> => AbstractCode::Instruction(i),
 }
 
-Instruction : Instruction = {
-    <i:Ident> ":" <t: Type> "=" <c: ConstOps> <l: Literal> ";" => Instruction::Constant {
+AbstractInstruction : AbstractInstruction = {
+    <i:Ident> ":" <t: AbstractType> "=" <c: ConstOps> <l: Literal> ";" => AbstractInstruction::Constant {
         op : c,
         dest : i,
         const_type : t,
         value : l,
     },
-    <i:Ident> ":" <t:Type> "=" <v:ValueOps> <f :(<Args>)*> ";" => {
+    <i:Ident> ":" <t:AbstractType> "=" <v:Ident> <f :(<Args>)*> ";" => {
         let mut a_vec = Vec::new();
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
@@ -76,7 +76,7 @@ Instruction : Instruction = {
             } else if x.starts_with(".") {
                 l_vec.push(x.strip_prefix(".").unwrap().to_owned())
             } else {a_vec.push(x)});
-        Instruction::Value {
+        AbstractInstruction::Value {
             op: v,
             dest: i,
             op_type : t,
@@ -85,7 +85,7 @@ Instruction : Instruction = {
             labels: l_vec,
         }
     },
-    <e:EffectOps> <f :(<Args>)*> ";" => {
+    <e:Ident> <f :(<Args>)*> ";" => {
         let mut a_vec = Vec::new();
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
@@ -95,7 +95,7 @@ Instruction : Instruction = {
             } else if x.starts_with(".") {
                 l_vec.push(x.strip_prefix(".").unwrap().to_owned())
             } else {a_vec.push(x)});
-        Instruction::Effect {
+        AbstractInstruction::Effect {
             op: e,
             args: a_vec,
             funcs: f_vec,
@@ -109,70 +109,14 @@ ConstOps : ConstOps = {
     "const" => ConstOps::Const,
 }
 
-EffectOps : EffectOps = {
-    <e:Ident> => match e.as_ref() {
-        "jmp" => EffectOps::Jump,
-        "br" => EffectOps::Branch,
-        "call" => EffectOps::Call,
-        "ret" => EffectOps::Return,
-        "print" => EffectOps::Print,
-        "nop" => EffectOps::Nop,
-        "store" => EffectOps::Store,
-        "free" => EffectOps::Free,
-        "speculate" => EffectOps::Speculate,
-        "commit" => EffectOps::Commit,
-        "guard" => EffectOps::Guard,
-        x => panic!("Unexpected EffectOp: {}", x),
-    }
-}
-
-ValueOps : ValueOps = {
-    <v:Ident> => match v.as_ref() {
-        "add" => ValueOps::Add,
-        "sub" => ValueOps::Sub,
-        "mul" => ValueOps::Mul,
-        "div" => ValueOps::Div,
-        "eq" => ValueOps::Eq,
-        "lt" => ValueOps::Lt,
-        "gt" => ValueOps::Gt,
-        "le" => ValueOps::Le,
-        "ge" => ValueOps::Ge,
-        "not" => ValueOps::Not,
-        "and" => ValueOps::And,
-        "or" => ValueOps::Or,
-        "call" => ValueOps::Call,
-        "id" => ValueOps::Id,
-        "phi" => ValueOps::Phi,
-        "fadd" => ValueOps::Fadd,
-        "fsub" => ValueOps::Fsub,
-        "fmul" => ValueOps::Fmul,
-        "fdiv" => ValueOps::Fdiv,
-        "feq" => ValueOps::Feq,
-        "flt" => ValueOps::Flt,
-        "fgt" => ValueOps::Fgt,
-        "fle" => ValueOps::Fle,
-        "fge" => ValueOps::Fge,
-        "alloc" => ValueOps::Alloc,
-        "load" => ValueOps::Load,
-        "ptradd" => ValueOps::PtrAdd,
-        x => panic!("Unexpected EffectOp: {}", x),
-    }
-}
-
-Type : Type = {
-    "int" => Type::Int,
-    "bool" => Type::Bool,
-    "float" => Type::Float,
-    "ptr" "<" <t:Type> ">" => Type::Pointer(Box::new(t)),
+AbstractType : AbstractType = {
+    <t:Ident> => AbstractType::Primitive(t),
+    <p:Ident> "<" <t:AbstractType> ">" => AbstractType::Parameterized(p, Box::new(t)),
 }
 
 // We can't match on const because of a reduce-reduce conflict
 Ident: String = {
     <s : r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => s.to_string(),
-    "int" => "int".to_owned(),
-    "float" => "float".to_owned(),
-    "bool" => "bool".to_owned(),
-    "ptr" => "ptr".to_owned(),
     "true" => "true".to_owned(),
     "false" => "false".to_owned(),
 }
