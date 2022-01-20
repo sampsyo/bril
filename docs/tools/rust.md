@@ -25,6 +25,7 @@ Tools
 This library supports fully compatible Rust implementations of `bril2txt` and `bril2json`.
 
 For ease of use, these tools can be installed and added to your path by running the following in `bril-rs/`:
+
     $ cargo install --path . --example bril2txt
     $ cargo install --path ./bril2json
 
