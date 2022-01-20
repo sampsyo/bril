@@ -27,23 +27,9 @@ or
 
 Similar to [type-infer](infer.md), `brilirs` can be used to typecheck and validate your Bril JSON program by passing the `--check` flag (similar to `cargo --check`).
 
+To see all of the supported flags, run:
 
-        brilirs 0.1.0
-        Wil Thomason <wil.thomason@gmail.com>
-
-        USAGE:
-            brilirs [OPTIONS] [ARGS]...
-
-        ARGS:
-            <ARGS>...    Arguments for the main function
-
-        OPTIONS:
-            -c, --check          Flag to only typecheck/validate the bril program
-            -f, --file <FILE>    The bril file to run. stdin is assumed if file is not provided
-            -h, --help           Print help information
-            -p, --profile        Flag to output the total number of dynamic instructions
-            -t, --text           Flag for when the bril program is in text form
-            -V, --version        Print version information
+    $ brilirs --help
 
 
 [rust]: https://www.rust-lang.org
