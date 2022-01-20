@@ -235,7 +235,7 @@ impl<'de> Deserialize<'de> for AbstractType {
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_map(AbstractTypeVisitor::new())
+        deserializer.deserialize_any(AbstractTypeVisitor::new())
     }
 }
 

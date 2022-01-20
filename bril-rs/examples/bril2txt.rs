@@ -1,5 +1,5 @@
-use bril_rs::load_program;
+use bril_rs::load_abstract_program;
 
 fn main() {
-    print!("{}", load_program());
+    print!("{}", load_abstract_program());
 }
