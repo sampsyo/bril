@@ -407,6 +407,8 @@ def main():
         fname = sys.argv[1]
 
     prog = to_ssa(json.load(f))
+    if 'structs' not in prog:
+        prog['structs'] = []
 
     main_args = []
 

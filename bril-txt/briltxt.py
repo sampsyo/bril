@@ -66,10 +66,13 @@ class JSONTransformer(lark.Transformer):
     def start(self, items):
         structs = [i for i in items if 'mbrs' in i]
         funcs = [i for i in items if 'mbrs' not in i]
-        return {
-            'structs': structs,
-            'functions': funcs,
-        }
+        if structs:
+            return {
+                'structs': structs,
+                'functions': funcs,
+            }
+        else:
+            return { 'functions': funcs }
 
     def func(self, items):
         name, args, typ = items[:3]
