@@ -1,0 +1,39 @@
+struct point = {
+    x: int;
+    y: int;
+}
+
+@print_point(p: ptr<point>) {
+    px: ptr<int> = getmbr p x;
+    py: ptr<int> = getmbr p y;
+
+    xv: int = load px;
+    yv: int = load py;
+    
+    print xv yv;
+}
+
+@main(a: int, b: int) {
+    one: int = const 1;
+    two: int = const 2;
+    z: ptr<point> = alloc two;
+    z1: ptr<point> = ptradd z one;
+
+    z0x: ptr<int> = getmbr z x;
+    z0y: ptr<int> = getmbr z y;
+    store z0x a;
+    store z0y b;
+
+    z1x: ptr<int> = getmbr z1 x;
+    z1y: ptr<int> = getmbr z1 y;
+
+    c: int = mul a b;
+    d: int = add a b;
+    store z1x c;
+    store z1y d;
+
+    call @print_point z;
+    call @print_point z1;
+
+    free z;
+}
