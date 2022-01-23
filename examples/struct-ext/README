@@ -1,0 +1,5 @@
+The program brilc implements a Bril->LLVM compiler that supports the struct
+extension.
+
+For more on the Struct extension, see the blog post:
+https://www.cs.cornell.edu/courses/cs6120/2020fa/blog/brilc/
