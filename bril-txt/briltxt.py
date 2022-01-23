@@ -67,7 +67,7 @@ class JSONTransformer(lark.Transformer):
         structs = [i for i in items if 'mbrs' in i]
         funcs = [i for i in items if 'mbrs' not in i]
         return {
-            'structs' : structs,
+            'structs': structs,
             'functions': funcs,
         }
 
@@ -104,8 +104,8 @@ class JSONTransformer(lark.Transformer):
         name = items.pop(0)
         typ = items.pop(0)
         return {
-            'name' : name,
-            'type' : typ,
+            'name': name,
+            'type': typ,
         }
 
     def arg_list(self, items):
