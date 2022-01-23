@@ -72,7 +72,9 @@ class JSONTransformer(lark.Transformer):
                 'functions': funcs,
             }
         else:
-            return { 'functions': funcs }
+            return {
+                'functions': funcs,
+            }
 
     def func(self, items):
         name, args, typ = items[:3]
