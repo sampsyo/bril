@@ -17,7 +17,10 @@ __version__ = '0.0.1'
 # Text format parser.
 
 GRAMMAR = """
-start: func*
+start: (struct | func)*
+
+struct: STRUCT IDENT "=" "{" mbr* "}"
+mbr: IDENT ":" type ";"
 
 func: FUNC ["(" arg_list? ")"] [tyann] "{" instr* "}"
 arg_list: | arg ("," arg)*
@@ -36,15 +39,18 @@ op: IDENT (FUNC | LABEL | IDENT)*
 lit: SIGNED_INT  -> int
   | BOOL         -> bool
   | SIGNED_FLOAT -> float
+  | "nullptr"    -> nullptr
 
-type: IDENT "<" type ">" -> paramtype
-    | IDENT              -> primtype
+type: IDENT "<" type ">"  -> paramtype
+    | IDENT               -> primtype
 
 BOOL: "true" | "false"
+STRUCT: "struct"
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 FUNC: "@" IDENT
 LABEL: "." IDENT
 COMMENT: /#.*/
+
 
 %import common.SIGNED_INT
 %import common.SIGNED_FLOAT
@@ -58,7 +64,17 @@ COMMENT: /#.*/
 
 class JSONTransformer(lark.Transformer):
     def start(self, items):
-        return {'functions': items}
+        structs = [i for i in items if 'mbrs' in i]
+        funcs = [i for i in items if 'mbrs' not in i]
+        if structs:
+            return {
+                'structs': structs,
+                'functions': funcs,
+            }
+        else:
+            return {
+                'functions': funcs,
+            }
 
     def func(self, items):
         name, args, typ = items[:3]
@@ -74,6 +90,22 @@ class JSONTransformer(lark.Transformer):
         return func
 
     def arg(self, items):
+        name = items.pop(0)
+        typ = items.pop(0)
+        return {
+            'name': name,
+            'type': typ,
+        }
+
+    def struct(self, items):
+        name = items[1]
+        mbrs = items[2:]
+        return {
+            'name': name,
+            'mbrs': mbrs,
+        }
+
+    def mbr(self, items):
         name = items.pop(0)
         typ = items.pop(0)
         return {
@@ -153,6 +185,9 @@ class JSONTransformer(lark.Transformer):
 
     def float(self, items):
         return float(items[0])
+
+    def nullptr(self, items):
+        return 0
 
 
 def parse_bril(txt):

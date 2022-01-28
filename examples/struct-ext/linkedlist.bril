@@ -1,0 +1,63 @@
+struct int_list = {
+    elt: int;
+    next: ptr<int_list>;
+}
+
+@cons (head: int, tail:ptr<int_list>): ptr<int_list> {
+    one: int = const 1;
+    p: ptr<int_list> = alloc one;
+
+    phead: ptr<int> = getmbr p elt;
+    ptail: ptr<ptr<int_list>> = getmbr p next;
+
+    store phead head;
+    store ptail tail;
+
+    ret p;
+}
+
+@print_list (list: ptr<int_list>) {
+    empty: bool = isnull list;
+    br empty .end .print;
+.print:
+    xp: ptr<int> = getmbr list elt;
+    x: int = load xp;
+    print x;
+
+    tp: ptr<ptr<int_list>> = getmbr list next;
+    t: ptr<int_list> = load tp;
+    call @print_list t;
+.end:
+    ret;
+}
+
+@free_list (list: ptr<int_list>) {
+    empty: bool = isnull list;
+    br empty .end .freetail;
+.freetail:
+    tp: ptr<ptr<int_list>> = getmbr list next;
+    t: ptr<int_list> = load tp;
+    call @free_list t;
+    free list;
+.end:
+    ret;
+}
+
+@main {
+    a: int = const 2;
+    b: int = const 3;
+    c: int = const 5;
+    d: int = const 8;
+
+    n: ptr<int_list> = const nullptr;
+
+    s0: ptr<int_list> = call @cons a n;
+    s1: ptr<int_list> = call @cons b s0;
+    s2: ptr<int_list> = call @cons c s1;
+    s3: ptr<int_list> = call @cons d s2;
+
+    call @print_list s3;
+    call @free_list s3;
+
+    ret;
+}
