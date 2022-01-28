@@ -2,10 +2,10 @@
 
 # Mark Moeller:
 
-import json
 import sys
 
 TERM = 'jmp', 'br', 'ret'
+
 
 # From Lesson 2
 def form_blocks(body):
@@ -20,7 +20,7 @@ def form_blocks(body):
                 yield cur_block
                 cur_block = []
 
-        else: # label
+        else:  # label
             if len(cur_block) != 0:
                 yield cur_block
 
@@ -28,6 +28,7 @@ def form_blocks(body):
 
     if len(cur_block) != 0:
         yield cur_block
+
 
 class CFG:
     # Constructs a new cfg (names, blocks, edges), where:
@@ -47,7 +48,7 @@ class CFG:
         # When we encounter jumps to labels that haven't appeared yet, add the
         # label here with a list of blocks that need to jump TO that label
         # label -> [list of blocks forward-jumping to it]
-        resolve = {} 
+        resolve = {}
 
         def make_edge(idx, label):
             if label in labels:
@@ -58,7 +59,7 @@ class CFG:
                 else:
                     resolve[label] = [idx]
 
-        for i,block in enumerate(form_blocks(func['instrs'])):
+        for i, block in enumerate(form_blocks(func['instrs'])):
 
             self.blocks.append(block)
             self.edges.append([])
@@ -71,7 +72,8 @@ class CFG:
 
             self.names.append(name)
 
-            if 'op' in block[-1] and (block[-1]['op'] == 'br' or block[-1]['op'] == 'jmp'):
+            if 'op' in block[-1] and (block[-1]['op'] == 'br' or
+                                      block[-1]['op'] == 'jmp'):
                 for label in block[-1]['labels']:
                     make_edge(i, label)
 
@@ -80,7 +82,7 @@ class CFG:
 
         self.n = len(self.names)
 
-        for lab,idcs in resolve.items():
+        for lab, idcs in resolve.items():
             for idx in idcs:
                 self.edges[idx].append(labels[lab])
 
@@ -93,7 +95,7 @@ class CFG:
         for i in range(self.n):
             self.preds.append([])
 
-        for k,v in enumerate(self.edges):
+        for k, v in enumerate(self.edges):
             for d in v:
                 self.preds[d].append(k)
 
@@ -113,7 +115,6 @@ class CFG:
         GRAY = 1
         BLACK = 2
 
-        visited = []
         colors = [WHITE] * self.n
 
         def dfs_visit(node):
@@ -132,9 +133,10 @@ class CFG:
             if next_tree:
                 next_tree()
 
-    # Return the indeces in reverse-post-order 
+    # Return the indices in reverse-post-order.
     def rpo(self):
         visited = []
+
         def post_visit(i):
             visited.append(i)
 
@@ -180,22 +182,21 @@ class CFG:
 
         return nl_list
 
-
-
-
     def to_dot(self):
         s = "digraph g {\n"
 
-        for u,nbrs in enumerate(self.edges):
+        for u, nbrs in enumerate(self.edges):
             for v in nbrs:
-                s += self.names[u].replace('.','_') + " -> " + self.names[v].replace('.','_') + ";\n"
+                s += (self.names[u].replace('.', '_') + " -> " +
+                      self.names[v].replace('.', '_') + ";\n")
 
         s += "}\n"
         return s
 
     def print_names(self):
-        for i,n in enumerate(self.names):
+        for i, n in enumerate(self.names):
             print("{} {}".format(i, n))
+
 
 # ------------------------------------------------------------------------------
 # Dataflow functions for SSA Reaching Definitions
@@ -223,21 +224,25 @@ def rd_xfer(in_b, block, idx):
 
     out_b = in_b.copy()
 
-    for i,inst in enumerate(block):
+    for i, inst in enumerate(block):
         if 'dest' in inst:
             if inst['dest'] in out_b and out_b[inst['dest']] != idx:
-                print("warning: illegal redef of var `{}`.".format(inst['dest'])
-                + "This function assumes SSA.", file=sys.stderr)
+                print(
+                    "warning: illegal redef of var `{}`.".format(inst['dest'])
+                    + "This function assumes SSA.",
+                    file=sys.stderr
+                )
             out_b[inst['dest']] = idx
 
     return out_b
+
 
 def rd_merge(pred_list):
 
     result = {}
 
     for p in pred_list:
-        for k,v in p.items():
+        for k, v in p.items():
             if k in result and v != result[k]:
                 print("warning: illegal redef of var `{}` (multiple blocks).".format(v) +
                         " This function assumes SSA.", file=sys.stderr)

@@ -7,6 +7,7 @@
 
 from brilpy import *
 from ssa import to_ssa
+import json
 
 # Constant header for every program, including:
 #   - LLVM preamble stuff
