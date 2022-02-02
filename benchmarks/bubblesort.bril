@@ -1,0 +1,98 @@
+# Bubble Sort for a list containing 5 elements. It is sorted in ascending order. 
+# It can be easily extended to list with any other length. 
+
+# input: size (5) and elements
+# output: sorted elements in ascending order
+
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;
+# Pack data into array manually. Cannot use loop because of the different var name.     
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    ret array;
+}
+
+@print_array(array: ptr<int>, size: int) {
+    i: int = const 0;
+    one: int = const 1;
+.loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+.body:
+    loc: ptr<int> = ptradd array i;
+    val: int = load loc;
+    print val;
+.loop_end:
+    i: int = add i one;
+    jmp .loop;
+.done:
+    ret;
+}
+
+@swap_cond(array: ptr<int>, j: int) {
+    one: int = const 1;
+    j_add_1: int = add j one;
+    loc: ptr<int> = ptradd array j;
+    loc_next: ptr<int> = ptradd array j_add_1;
+    elem_a: int = load loc;
+    elem_b: int = load loc_next;
+    
+    cond: bool = gt elem_a elem_b;
+    br cond .swap .done;
+.swap:
+    store loc elem_b;
+    store loc_next elem_a;
+.done:
+    ret;
+}
+
+# ARGS: 5 3 10 1 9 7
+@main(size: int, n1: int, n2: int, n3: int, n4: int, n5: int) {
+# Pack the input elements into an array with a starting pointer
+    array: ptr<int> = call @pack size n1 n2 n3 n4 n5;
+
+# Bubble Sort
+one: int = const 1;
+i: int = const 0;
+j: int = const 0;
+sizei: int = sub size one;
+.loopi:
+    condi: bool = lt i sizei;
+    br condi .bodyi .donei;
+.bodyi:
+    sizej: int = sub size i;
+    sizej: int = sub sizej one;
+.loopj:
+    condj: bool = lt j sizej;
+    br condj .bodyj .donej;
+.bodyj:
+    call @swap_cond array j;
+.loop_endj:
+    j: int = add j one;
+    jmp .loopj;
+.donej:
+    j: int = const 0;
+.loopi_end:
+    i: int = add i one;
+    jmp .loopi;
+.donei:
+
+# Print array
+    call @print_array array size;
+
+    free array;
+}
