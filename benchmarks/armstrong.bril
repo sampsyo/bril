@@ -1,0 +1,58 @@
+# ARGS: 407
+@main(input : int) {
+  zero : int = const 0;
+  ten : int = const 10;
+  sum : int = const 0;
+  digits : int = call @getDigits input;
+  tmp : int = id input;
+.loop:
+  b : bool = gt tmp zero;
+  br b .body .done;
+.body:
+  digit : int = call @mod tmp ten;
+  pow : int = call @power digit digits;
+  sum : int = add sum pow;
+  tmp : int = div tmp ten;
+  jmp .loop;
+.done:
+  res : bool = eq input sum;
+  print res;
+}
+
+@getDigits(n : int) : int {
+  ten : int = const 10;
+  zero : int = const 0;
+  one : int = const 1;
+  div : int = div n ten;
+  cond : bool = eq div zero;
+  br cond .then .else;
+.then:
+  ret one;
+.else:
+  rec : int = call @getDigits div;
+  res : int = add rec one;
+  ret res;
+}
+
+@mod(a: int, b: int): int {
+  q: int = div a b;
+  aq: int = mul b q;
+  mod: int = sub a aq;
+  ret mod; 
+}
+
+@power(base : int, exp : int) : int {
+  ten : int = const 10;
+  zero : int = const 0;
+  one : int = const 1;
+  res : int = const 1;
+.loop:
+  b : bool = eq exp zero;
+  br b .done .body;
+.body:
+  res : int = mul res base;
+  exp : int = sub exp one;
+  jmp .loop;
+.done:
+  ret res;
+}

@@ -7,6 +7,7 @@ The `bench` directory in the Bril repository contains a fledgling suite of micro
 The current benchmarks are:
 
 * `ackermann`: Print the value of `Ack(m, n)`, the [two-argument Ackermann–Péter function][ackermann].
+* `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `digial-root`: Computes the digital root of the input number.
@@ -49,4 +50,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [euclid]: https://en.wikipedia.org/wiki/Euclidean_algorithm#Euclidean_division
 [eight_queens]: https://en.wikipedia.org/wiki/Eight_queens_puzzle
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
+[armstrong]: https://en.wikipedia.org/wiki/Narcissistic_number
 [trialdivision]:https://en.wikipedia.org/wiki/Trial_division
