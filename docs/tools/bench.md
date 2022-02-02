@@ -33,7 +33,7 @@ The current benchmarks are:
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `binary-fmt`: Print the binary format for the given positive integer.
-* `primes-between`: Print the primes int the interval `[a, b]`.
+* `primes-between`: Print the primes in the interval `[a, b]`.
 * `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order. 
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
