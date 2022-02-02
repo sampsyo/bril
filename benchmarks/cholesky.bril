@@ -1,0 +1,230 @@
+# Cholesky decomposition algorithm
+
+# Cholesky decomposition transforms a Hermitian, 
+# positive-definite matrixinto the product of a 
+# lower triangular matrix and its conjugate transpose.
+# It is useful for numerical methods such as
+# Monte Carlo Simulation or solving systems of
+# linear equations.
+
+# Use a linear congruential generator to generate random numbers.
+# `seq` is the state of the random number generator.
+# Returns a value between 0 and max
+@rand(seq: ptr<float>, max: float) : float {
+  a: float = const 25214903917.0;
+  c: float = const 11.0;
+  m: float = const 281474976710656.0;
+  x: float = load seq;
+  ax: float = fmul a x;
+  axpc: float = fadd ax c;
+  next: float = fdiv axpc m;
+  next: float = fmul next m;
+  next: float = fsub axpc next;
+  store seq next;
+  val: float = fdiv next max;
+  val: float = fmul val max;
+  val: float = fsub next val;
+  ret val;
+}
+
+# Generates a random array of length `size`
+@randarray(size: int, rng: ptr<float>) : ptr<float> {
+  arr: ptr<float> = alloc size;
+  i: int = const 0;
+  max: float = const 1000.0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  val: float = call @rand rng max;
+  loc: ptr<float> = ptradd arr i;
+  store loc val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# Prints an array
+@printarray(size: int, arr: ptr<float>) {
+  i: int = const 0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<float> = ptradd arr i;
+  val: float = load loc;
+  print val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}
+
+# Naive matrix muliplication algorithm
+# `arr1`, `arr2`, and `dest` are `size` x `size` matrices
+# `dest` will contain `arr1` x `arr2`
+@matmul(size: int, arr1: ptr<float>, arr2: ptr<float>, dest: ptr<float>) {
+  one: int = const 1;
+  row: int = const 0;
+.row.loop:
+  cond: bool = lt row size;
+  br cond .row.body .row.done;
+.row.body:
+  col: int = const 0;
+.col.loop:
+  cond: bool = lt col size;
+  br cond .col.body .col.done;
+.col.body:
+  sum: float = const 0.0;
+  i: int = const 0;
+.sum.loop:
+  cond: bool = lt i size;
+  br cond .sum.body .sum.done;
+.sum.body:
+  lidx: int = mul row size;
+  lidx: int = add lidx i;
+  ridx: int = mul i size;
+  ridx: int = add ridx col;
+  lvalloc: ptr<float> = ptradd arr1 lidx;
+  lval: float = load lvalloc;
+  rvalloc: ptr<float> = ptradd arr2 ridx;
+  rval: float = load rvalloc;
+  prod: float = fmul lval rval;
+  sum: float = fadd sum prod;
+.sum.loop_end:
+  i: int = add i one;
+  jmp .sum.loop;
+.sum.done:
+  idx: int = mul row size;
+  idx: int = add idx col;
+  loc: ptr<int> = ptradd dest idx;
+  store loc sum;
+.col.loop_end:
+  col: int = add col one;
+  jmp .col.loop;
+.col.done:
+.row.loop_end:
+  row: int = add row one;
+  jmp .row.loop;
+.row.done:
+  ret;
+}
+
+# Matrix transpose function
+# `input` and `output` are `size` x `size` matrices
+# transposed `input` matrix is stored to `output` matrix
+@transpose(size: int, input: ptr<float>, output: ptr<float>) {
+  one: int = const 1;
+  row: int = const 0;
+.row.loop: 
+  cond: bool = lt row size;
+  br cond .row.body .row.done;
+.row.body:
+  col: int = const 0;
+.col.loop:
+  cond: bool = lt col size;
+  br cond .col.body .col.done;
+.col.body:
+  srcidx: int = mul row size;
+  srcidx: int = add srcidx col;
+  dstidx: int = mul col size;
+  dstidx: int = add dstidx row;
+  srcptr: ptr<float> = ptradd input srcidx;
+  dstptr: ptr<float> = ptradd output dstidx;
+  value: float =  load srcptr;
+  store dstptr value;
+.col.loop_end:
+  col: int = add col one;
+  jmp .col.loop;
+.col.done:
+.row.loop_end:
+  row: int = add row one;
+  jmp .row.loop;
+.row.done:
+  ret; 
+}
+
+# Square root function
+@sqrt(input: float, output: float) {
+  n: float = id input;
+  v1: float = const 0.00001;
+  precision: float = id v1;
+  v2: float = id n;
+  x: float = id v2;
+  v3: bool = const true;
+  notdone: bool = id v3;
+.for.cond.4:
+  v5: bool = id notdone;
+  br v5 .for.body.4 .for.end.4;
+.for.body.4:
+  v6: float = id n;
+  v7: float = id x;
+  v8: float = fdiv v6 v7;
+  root: float = id v8;
+  v9: float = id x;
+  v10: float = id root;
+  v11: float = fadd v9 v10;
+  root: float = id v11;
+  v12: float = const 0.5;
+  v13: float = id root;
+  v14: float = fmul v12 v13;
+  root: float = id v14;
+  v15: float = id root;
+  v16: float = id x;
+  v17: float = fsub v15 v16;
+  diff: float = id v17;
+  v19: float = id diff;
+  v20: float = const 0;
+  v21: bool = flt v19 v20;
+  br v21 .then.18 .else.18;
+.then.18:
+  v22: float = const 0;
+  v23: float = id diff;
+  v24: float = fsub v22 v23;
+  diff: float = id v24;
+  jmp .endif.18;
+.else.18:
+.endif.18:
+  v26: float = id diff;
+  v27: float = id precision;
+  v28: bool = flt v26 v27;
+  br v28 .then.25 .else.25;
+.then.25:
+  v29: bool = const false;
+  notdone: bool = id v29;
+  jmp .endif.25;
+.else.25:
+.endif.25:
+  v30: float = id root;
+  x: float = id v30;
+  jmp .for.cond.4;
+.for.end.4:
+  output: float = id x;
+  v32: int = const 0;
+}
+
+
+# ARGS: 16
+@main(size: int) {
+  one: int = const 1;
+  seed: float = const 109658.0;
+  rng: ptr<float> = alloc one;
+  store rng seed;
+  sqsize: int = mul size size;
+  arr1: ptr<float> = call @randarray sqsize rng;
+  arr1_transposed: ptr<float> = call @randarray sqsize rng;
+  hermitian: ptr<float> = call @randarray sqsize rng;
+  call @transpose size arr1 arr1_transposed;
+  call @matmul size arr1 arr1_transposed hermitian;
+  # call @printarray sqsize arr1;
+  free arr1;
+  free arr1_transposed;
+  free hermitian;
+  free rng;
+  ret;
+}
