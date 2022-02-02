@@ -13,6 +13,7 @@ The current benchmarks are:
 * `digial-root`: Computes the digital root of the input number.
 * `eight-queens`: Counts the number of solutions for *n* queens problem, a generalization of [Eight queens puzzle][eight_queens].
 * `euclid`: Calculates the greatest common divisor between two large numbers using the [Euclidean Algorithm][euclid] with a helper function for the modulo operator.
+* `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
@@ -24,12 +25,14 @@ The current benchmarks are:
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `recfact`: Compute *n!* using recursive function calls.
+* `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `binary-fmt`: Print the binary format for the given positive integer.
+* `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order. 
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -48,3 +51,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [eight_queens]: https://en.wikipedia.org/wiki/Eight_queens_puzzle
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
 [armstrong]: https://en.wikipedia.org/wiki/Narcissistic_number
+[trialdivision]:https://en.wikipedia.org/wiki/Trial_division

@@ -1,0 +1,92 @@
+@main {
+  v0: int = const 20;
+  a: int = id v0;
+  v1: int = id a;
+  call @relative_primes v1;
+  v2: int = const 0;
+}
+@mod(a: int, b: int): int {
+  v0: int = id a;
+  v1: int = id b;
+  v2: int = div v0 v1;
+  v3: int = mul v2 v1;
+  v4: int = sub v0 v3;
+  ret v4;
+}
+@gcd(a: int, b: int): int {
+  v1: int = id b;
+  v2: int = id a;
+  v3: bool = gt v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = id a;
+  tmp: int = id v4;
+  v5: int = id b;
+  a: int = id v5;
+  v6: int = id tmp;
+  b: int = id v6;
+  jmp .endif.0;
+.else.0:
+.endif.0:
+  v8: int = id a;
+  v9: int = const 0;
+  v10: bool = eq v8 v9;
+  br v10 .then.7 .else.7;
+.then.7:
+  v11: int = id b;
+  ret v11;
+  jmp .endif.7;
+.else.7:
+  v13: int = id b;
+  v14: int = const 0;
+  v15: bool = eq v13 v14;
+  br v15 .then.12 .else.12;
+.then.12:
+  v16: int = id a;
+  ret v16;
+  jmp .endif.12;
+.else.12:
+.endif.12:
+.endif.7:
+  v17: int = id a;
+  v18: int = id b;
+  remainder: int = call @mod v17 v18;
+  remainder: int = id remainder;
+  v19: int = id b;
+  v20: int = id remainder;
+  g: int = call @gcd v19 v20;
+  g: int = id g;
+  v21: int = id g;
+  ret v21;
+}
+@relative_primes(a: int) {
+  v1: int = id a;
+  b: int = id v1;
+.for.cond.0:
+  v2: int = id b;
+  v3: int = const 1;
+  v4: bool = ge v2 v3;
+  br v4 .for.body.0 .for.end.0;
+.for.body.0:
+  v5: int = id a;
+  v6: int = id b;
+  g: int = call @gcd v5 v6;
+  g: int = id g;
+  v8: int = id g;
+  v9: int = const 1;
+  v10: bool = eq v8 v9;
+  br v10 .then.7 .else.7;
+.then.7:
+  v11: int = id b;
+  print v11;
+  v12: int = const 0;
+  jmp .endif.7;
+.else.7:
+.endif.7:
+  v13: int = id b;
+  v14: int = const 1;
+  v15: int = sub v13 v14;
+  b: int = id v15;
+  jmp .for.cond.0;
+.for.end.0:
+}
