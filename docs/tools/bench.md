@@ -7,6 +7,8 @@ The `bench` directory in the Bril repository contains a fledgling suite of micro
 The current benchmarks are:
 
 * `ackermann`: Print the value of `Ack(m, n)`, the [two-argument Ackermann–Péter function][ackermann].
+* `adler32`: Computes the [Adler-32 Checksum][adler32] of an integer array.
+* `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `digial-root`: Computes the digital root of the input number.
@@ -32,7 +34,9 @@ The current benchmarks are:
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `primes-between`: Print the primes int the interval `[a, b]`.
+* `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order. 
+* `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -51,3 +55,8 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [eight_queens]: https://en.wikipedia.org/wiki/Eight_queens_puzzle
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
 [trialdivision]:https://en.wikipedia.org/wiki/Trial_division
+[adj]: https://en.wikipedia.org/wiki/Adjacency_matrix
+[csr]: https://en.wikipedia.org/wiki/Sparse_matrix
+[armstrong]: https://en.wikipedia.org/wiki/Narcissistic_number
+[trialdivision]:https://en.wikipedia.org/wiki/Trial_division
+[adler32]: https://en.wikipedia.org/wiki/Adler-32
