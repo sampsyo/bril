@@ -33,6 +33,7 @@ The current benchmarks are:
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order. 
+* `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
