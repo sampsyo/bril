@@ -29,6 +29,7 @@ The current benchmarks are:
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `binary-fmt`: Print the binary format for the given positive integer.
+* `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -46,3 +47,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [euclid]: https://en.wikipedia.org/wiki/Euclidean_algorithm#Euclidean_division
 [eight_queens]: https://en.wikipedia.org/wiki/Eight_queens_puzzle
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
+[adj]: https://en.wikipedia.org/wiki/Adjacency_matrix
+[csr]: https://en.wikipedia.org/wiki/Sparse_matrix
