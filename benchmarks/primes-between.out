@@ -1,57 +1,168 @@
-# Prints the primes in the interval [a, b]
-@main(a : int, b : int) {
-  .for.outer.init: # start at interval unless a < 2, then start at 2.
-    t0 : int = const 2;
-    t1 : bool = lt a t0;
-    br t1 .true .false;
-  .true:
-    t2 : int = const 2; #i
-    jmp .for.outer.cond;
-  .false:
-    t2 : int = id a; # i
-  .for.outer.cond:
-    t3 : bool = le t2 b;
-    br t3 .for.outer.body .for.outer.end;
-  .for.outer.body:
-    t4 : int = const 1;
-    t5 : bool = eq t4 t4; # isPrime
-  .for.inner.init:
-    t6 : int = const 2; # j
-    t7 : int = const 2;
-  .for.inner.cond:
-    t8 : int = div t2 t7;
-    t9 : bool = le t6 t8;
-    br t9 .for.inner.body .for.inner.end;
-  .for.inner.body:
-    t10 : int = call @mod t2 t6;
-    t11 : int = const 0;
-    t12 : bool = eq t10 t11;
-    br t12 .if.inner.body .if.inner.end;
-  .if.inner.body:
-    t13 : int = const 1;
-    t14 : int = const 2;
-    t5 : bool = eq t13 t14; # t13 and t14 never equal to eachother
-    jmp .for.inner.end;
-  .if.inner.end:
-    t15 : int = const 1;
-    t6 : int = add t15 t6;
-    jmp .for.inner.cond;
-  .for.inner.end:
-    t16 : int = const 1;
-    t6 : int = add t6 t16;
-    br t5 .if.outer.body .if.outer.end;
-  .if.outer.body:
-    print t2;
-  .if.outer.end:
-    t17 : int = const 1;
-    t2 : int = add t2 t17;
-    jmp .for.outer.cond;
-  .for.outer.end:
-}
-
-@mod(a : int, b : int) : int {
-  t1 : int = div a b;
-  t2 : int = mul b t1;
-  t3 : int = sub a t2;
-  ret t3;
-}
+2
+3
+5
+7
+11
+13
+17
+19
+23
+29
+31
+37
+41
+43
+47
+53
+59
+61
+67
+71
+73
+79
+83
+89
+97
+101
+103
+107
+109
+113
+127
+131
+137
+139
+149
+151
+157
+163
+167
+173
+179
+181
+191
+193
+197
+199
+211
+223
+227
+229
+233
+239
+241
+251
+257
+263
+269
+271
+277
+281
+283
+293
+307
+311
+313
+317
+331
+337
+347
+349
+353
+359
+367
+373
+379
+383
+389
+397
+401
+409
+419
+421
+431
+433
+439
+443
+449
+457
+461
+463
+467
+479
+487
+491
+499
+503
+509
+521
+523
+541
+547
+557
+563
+569
+571
+577
+587
+593
+599
+601
+607
+613
+617
+619
+631
+641
+643
+647
+653
+659
+661
+673
+677
+683
+691
+701
+709
+719
+727
+733
+739
+743
+751
+757
+761
+769
+773
+787
+797
+809
+811
+821
+823
+827
+829
+839
+853
+857
+859
+863
+877
+881
+883
+887
+907
+911
+919
+929
+937
+941
+947
+953
+967
+971
+977
+983
+991
+997
