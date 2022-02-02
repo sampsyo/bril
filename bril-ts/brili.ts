@@ -629,7 +629,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   case "store": {
     let target = getPtr(instr, state.env, 0);
-    state.heap.write(target.loc, getArgument(instr, state.env, 1));
+    state.heap.write(target.loc, getArgument(instr, state.env, 1, target.type));
     return NEXT;
   }
 
