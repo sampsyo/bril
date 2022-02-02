@@ -638,6 +638,10 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         state.heap.write(target.loc, getBool(instr, state.env, 1));
         break;
       }
+      case "float": {
+        state.heap.write(target.loc, getFloat(instr, state.env, 1));
+        break;
+      }
       default: {
         state.heap.write(target.loc, getPtr(instr, state.env, 1));
         break;
