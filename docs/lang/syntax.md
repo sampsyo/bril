@@ -130,4 +130,4 @@ All syntax objects can optionally have a `pos` field to reflect a source positio
 
 The `pos` object has two keys: `row` (the line number) and `col` (the column number within the line).
 Front-end compilers that generate Bril code may add this information to help with debugging, but tools can't require it to exist (or to follow any specific rules).
-The [text format parser](tools/text.md), for example, can optionally add source positions.
+The [text format parser](../tools/text.md), for example, can optionally add source positions.
