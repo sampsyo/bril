@@ -139,7 +139,7 @@
 .sum.done:
   idx: int = mul row size;
   idx: int = add idx col;
-  loc: ptr<int> = ptradd dest idx;
+  loc: ptr<float> = ptradd dest idx;
   store loc sum;
 .col.loop_end:
   col: int = add col one;
@@ -291,10 +291,10 @@
   a_ij_ptr: ptr<float> = ptradd arr1 ij_index;
   b_ij_ptr: ptr<float> = ptradd arr2 ij_index;
   jj_ptr: ptr<float> = ptradd arr2 jj_index;
-  a_ij = load a_ij_ptr;
-  b_ij = load b_ij_ptr;
-  b_jj = load jj_ptr;
-  value = fdiv a_ij b_jj;
+  a_ij: float = load a_ij_ptr;
+  b_ij: float = load b_ij_ptr;
+  b_jj: float = load jj_ptr;
+  value: float = fdiv a_ij b_jj;
   store b_ij_ptr value;
 .j.loop_end:
   j: int = add j one;
