@@ -56,10 +56,9 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [euclid]: https://en.wikipedia.org/wiki/Euclidean_algorithm#Euclidean_division
 [eight_queens]: https://en.wikipedia.org/wiki/Eight_queens_puzzle
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
-[trialdivision]:https://en.wikipedia.org/wiki/Trial_division
+[trialdivision]: https://en.wikipedia.org/wiki/Trial_division
 [adj]: https://en.wikipedia.org/wiki/Adjacency_matrix
 [csr]: https://en.wikipedia.org/wiki/Sparse_matrix
 [armstrong]: https://en.wikipedia.org/wiki/Narcissistic_number
-[trialdivision]:https://en.wikipedia.org/wiki/Trial_division
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
