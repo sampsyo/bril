@@ -63,6 +63,10 @@ COMMENT: /#.*/
 
 
 class JSONTransformer(lark.Transformer):
+    def __init__(self, include_pos=False):
+        super().__init__()
+        self.include_pos = include_pos
+
     def start(self, items):
         structs = [i for i in items if 'mbrs' in i]
         funcs = [i for i in items if 'mbrs' not in i]
@@ -158,7 +162,7 @@ class JSONTransformer(lark.Transformer):
             out['funcs'] = funcs
         if labels:
             out['labels'] = labels
-        if True:
+        if self.include_pos:
             out['pos'] = {'row': row, 'col': col}
         return out
 
@@ -194,10 +198,14 @@ class JSONTransformer(lark.Transformer):
         return 0
 
 
-def parse_bril(txt):
+def parse_bril(txt, include_pos=False):
+    """Parse a Bril program and return a JSON string.
+
+    Optionally include source position information.
+    """
     parser = lark.Lark(GRAMMAR, maybe_placeholders=True)
     tree = parser.parse(txt)
-    data = JSONTransformer().transform(tree)
+    data = JSONTransformer(include_pos).transform(tree)
     return json.dumps(data, indent=2, sort_keys=True)
 
 
@@ -286,7 +294,7 @@ def print_prog(prog):
 # Command-line entry points.
 
 def bril2json():
-    print(parse_bril(sys.stdin.read()))
+    print(parse_bril(sys.stdin.read(), '-p' in sys.argv[1:]))
 
 
 def bril2txt():
