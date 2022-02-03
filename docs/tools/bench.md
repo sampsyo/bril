@@ -36,6 +36,7 @@ The current benchmarks are:
 * `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order. 
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
+* `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.  
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -58,3 +59,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [armstrong]: https://en.wikipedia.org/wiki/Narcissistic_number
 [trialdivision]:https://en.wikipedia.org/wiki/Trial_division
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
+[uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
