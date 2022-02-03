@@ -7,44 +7,62 @@
 # Monte Carlo Simulation or solving systems of
 # linear equations.
 
-# Use a linear congruential generator to generate random numbers.
-# `seq` is the state of the random number generator.
-# Returns a value between 0 and max
-@rand(seq: ptr<float>, max: float) : float {
-  a: float = const 25214903917.0;
-  c: float = const 11.0;
-  m: float = const 281474976710656.0;
-  x: float = load seq;
-  ax: float = fmul a x;
-  axpc: float = fadd ax c;
-  next: float = fdiv axpc m;
-  next: float = fmul next m;
-  next: float = fsub axpc next;
-  store seq next;
-  val: float = fdiv next max;
-  val: float = fmul val max;
-  val: float = fsub next val;
-  ret val;
-}
-
-# Generates a random array of length `size`
-@randarray(size: int, rng: ptr<float>) : ptr<float> {
-  arr: ptr<float> = alloc size;
-  i: int = const 0;
-  max: float = const 1000.0;
+# Fill 4x4 array
+@fillarray() : ptr<float> {
+  a00: float = const 34;
+  a01: float = const 28;
+  a02: float = const 38;
+  a03: float = const 29;
+  a10: float = const 26;
+  a11: float = const 78;
+  a12: float = const 91;
+  a13: float = const 83;
+  a20: float = const 67;
+  a21: float = const 92;
+  a22: float = const 56;
+  a23: float = const 92;
+  a30: float = const 67;
+  a31: float = const 826;
+  a32: float = const 38;
+  a33: float = const 43;
+  
+  size: int = const 16;
+  return_ptr: ptr<float> = alloc size;
+  arr: ptr<float> = id return_ptr;
   one: int = const 1;
-.loop:
-  cond: bool = lt i size;
-  br cond .body .done;
-.body:
-  val: float = call @rand rng max;
-  loc: ptr<float> = ptradd arr i;
-  store loc val;
-.loop_end:
-  i: int = add i one;
-  jmp .loop;
-.done:
-  ret arr;
+  store arr a00;
+  arr: ptr<float> = ptradd arr one;
+  store arr a01;
+  arr: ptr<float> = ptradd arr one;
+  store arr a02;
+  arr: ptr<float> = ptradd arr one;
+  store arr a03;
+  arr: ptr<float> = ptradd arr one;
+  store arr a10;
+  arr: ptr<float> = ptradd arr one;
+  store arr a11;
+  arr: ptr<float> = ptradd arr one;
+  store arr a12;
+  arr: ptr<float> = ptradd arr one;
+  store arr a13;
+  arr: ptr<float> = ptradd arr one;
+  store arr a20;
+  arr: ptr<float> = ptradd arr one;
+  store arr a21;
+  arr: ptr<float> = ptradd arr one;
+  store arr a22;
+  arr: ptr<float> = ptradd arr one;
+  store arr a23;
+  arr: ptr<float> = ptradd arr one;
+  store arr a30;
+  arr: ptr<float> = ptradd arr one;
+  store arr a31;
+  arr: ptr<float> = ptradd arr one;
+  store arr a32;
+  arr: ptr<float> = ptradd arr one;
+  store arr a33;
+
+  ret return_ptr;
 }
 
 # Prints an array
@@ -150,7 +168,7 @@
 }
 
 # Square root function
-@sqrt(input: float, output: float) {
+@sqrt(input: float) : float {
   n: float = id input;
   v1: float = const 0.00001;
   precision: float = id v1;
@@ -204,27 +222,111 @@
   x: float = id v30;
   jmp .for.cond.4;
 .for.end.4:
-  output: float = id x;
-  v32: int = const 0;
+  ret x;
 }
 
-
-# ARGS: 16
-@main(size: int) {
+# Cholesky decomposition
+@cholesky(size: int, arr1: ptr<float>) {
   one: int = const 1;
-  seed: float = const 109658.0;
-  rng: ptr<float> = alloc one;
-  store rng seed;
+  i: int = const 0;
+.i.loop:
+  condi: bool = lt i size;
+  br condi .i.body .i.done;
+.i.body:
+  j: int = const 0;
+.j.loop:
+  condj: bool = lt j i;
+  br condj .j.body .j.done;
+.j.body:
+  k: int = const 0;
+.k.loop:
+  condk: bool = lt k j;
+  br condk .k.body .k.done;
+.k.body:
+  # prepare indices
+  ik_index: int = mul i size;
+  ik_index: int = add ik_index k;
+  jk_index: int = mul j size;
+  jk_index: int = add jk_index k;
+  ij_index: int = mul i size;
+  ij_index: int = add ij_index j;
+  # load values
+  ik_ptr: ptr<float> = ptradd arr1 ik_index;
+  a_ik: float = load ik_ptr;
+  jk_ptr: ptr<float> = ptradd arr1 jk_index;
+  a_jk: float = load jk_ptr;
+  ij_ptr: ptr<float> = ptradd arr1 ij_index;
+  a_ij: float = load ij_ptr;
+  value: float = fmul a_ik a_jk;
+  value: float = fsub a_ij value;
+  store ij_ptr value;
+.k.loop_end:
+  k: int = add k one;
+  jmp .k.loop;
+.k.done:
+  # j loop body continues
+  ij_index: int = mul i size;
+  ij_index: int = add ij_index j;
+  jj_index: int = mul j size;
+  jj_index: int = add jj_index j;
+  ij_ptr: ptr<float> = ptradd arr1 ij_index;
+  jj_ptr: ptr<float> = ptradd arr1 jj_index;
+  a_ij = load ij_ptr;
+  a_jj = load jj_ptr;
+  value = fdiv a_ij a_jj;
+  store ij_ptr value;
+.j.loop_end:
+  j: int = add j one;
+  jmp .j.loop;
+.j.done:
+  # i loop body continues
+  k2: int = const 0;
+.k2.loop:
+  condk2: bool = lt k2 i;
+  br condk2 .k2.body .k2.done;
+.k2.body: 
+  ik2_index: int = mul i size;
+  ik2_index: int = add ik2_index k2;
+  ii_index: int = mul i size;
+  ii_index: int = add ii_index i;
+  ik2_ptr: ptr<float> = ptradd arr1 ik2_index;
+  ii_ptr: ptr<float> = ptradd arr1 ii_index;
+  a_ik2: float = load ik2_ptr;
+  a_ii: float = load ii_ptr;
+  value: float = fmul a_ik2 a_ik2;
+  value: float = fsub a_ii value;
+  store ii_ptr value;
+.k2.loop_end:
+  k2: int = add k2 one;
+  jmp .k2.loop;
+.k2.done:
+  # i loop body continues;
+  ii_index: int = mul i size;
+  ii_index: int = add ii_index i;
+  ii_ptr: ptr<float> = ptradd arr1 ii_index;
+  value: float = load ii_ptr;
+  sqrt_value : float = call @sqrt value;
+  store ii_ptr sqrt_value;
+.i.loop_end:
+  i: int = add i one;
+  jmp .i.loop;
+.i.done:
+  ret;
+}
+
+@main() {
+  one: int = const 1;
+  size: int = const 4;
   sqsize: int = mul size size;
-  arr1: ptr<float> = call @randarray sqsize rng;
-  arr1_transposed: ptr<float> = call @randarray sqsize rng;
-  hermitian: ptr<float> = call @randarray sqsize rng;
+  arr1: ptr<float> = call @fillarray;
+  arr1_transposed: ptr<float> = call @fillarray;
+  hermitian: ptr<float> = call @fillarray;
   call @transpose size arr1 arr1_transposed;
   call @matmul size arr1 arr1_transposed hermitian;
-  # call @printarray sqsize arr1;
+  call @cholesky size hermitian;
+  call @printarray sqsize hermitian;
   free arr1;
   free arr1_transposed;
   free hermitian;
-  free rng;
   ret;
 }
