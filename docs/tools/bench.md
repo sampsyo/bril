@@ -7,8 +7,11 @@ The `bench` directory in the Bril repository contains a fledgling suite of micro
 The current benchmarks are:
 
 * `ackermann`: Print the value of `Ack(m, n)`, the [two-argument Ackermann–Péter function][ackermann].
+* `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `adler32`: Computes the [Adler-32 Checksum][adler32] of an integer array.
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
+* `binary-fmt`: Print the binary format for the given positive integer.
+* `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order.
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `digial-root`: Computes the digital root of the input number.
@@ -24,21 +27,18 @@ The current benchmarks are:
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
+* `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
+* `primes-between`: Print the primes in the interval `[a, b]`.
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `recfact`: Compute *n!* using recursive function calls.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
+* `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
-* `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
-* `binary-fmt`: Print the binary format for the given positive integer.
-* `primes-between`: Print the primes in the interval `[a, b]`.
-* `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
-* `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order. 
-* `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
-* `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.  
+* `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
