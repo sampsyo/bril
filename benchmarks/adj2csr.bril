@@ -1,0 +1,158 @@
+# This benchmark convert a graph in adjacency matrix format to Compressed Sparse Row (CSR) format
+# The input graph is randomly generated using random matrix generator
+
+# The following rand, randarray, printarray functions reuse the code from
+# benchmarks/mat-mul.bril
+
+# Use a linear congruential generator to generate random numbers.
+# `seq` is the state of the random number generator.
+# Returns a value between 0 and max
+@rand(seq: ptr<int>, max: int) : int {
+  a: int = const 25214903917;
+  c: int = const 11;
+  m: int = const 281474976710656;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  next: int = mul next m;
+  next: int = sub axpc next;
+  store seq next;
+  val: int = div next max;
+  val: int = mul val max;
+  val: int = sub next val;
+  ret val;
+}
+
+# Generates a random array of length `size`
+@randarray(size: int, rng: ptr<int>) : ptr<int> {
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  max: int = const 2; # 0 or 1 for adjacency matrices
+  one: int = const 1;
+  zero: int = const 0;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  val: int = call @rand rng max;
+  if_cond: bool = lt val zero; # test if < 0
+  br if_cond .if_body .if_done;
+.if_body:
+  val: int = const 0;
+.if_done:
+  loc: ptr<int> = ptradd arr i;
+  store loc val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# Prints an array
+@printarray(size: int, arr: ptr<int>) {
+  i: int = const 0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<int> = ptradd arr i;
+  val: int = load loc;
+  print val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}
+
+@zeroarray(size: int) : ptr<int> {
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  zero: int = const 0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<int> = ptradd arr i;
+  store loc zero;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# Convert adjacency matrix to Compressed Sparse Row (CSR) format
+# `adjmat` is a `num_nodes` x `num_nodes` adjacency matrix
+# `csr_offset` contains the offset array
+# `csr_edges` contains the edges
+# The csr_edges[offset] (offset \in (csr_offset[src], csr_offset[src+1])) means
+#   there exists an edge from `src` to `csr_edges[offset]`
+# return number of edges
+@adj2csr(num_nodes: int, adjmat: ptr<int>, csr_offset: ptr<int>, csr_edges: ptr<int>) : int {
+  num_edges: int = const 0;
+  row: int = const 0;
+  one: int = const 1;
+.iter_row:
+  row_cond: bool = lt row num_nodes;
+  col: int = const 0;
+  br row_cond .iter_col .row_done;
+.iter_col:
+  col_cond: bool = lt col num_nodes;
+  br col_cond .col_body .col_done;
+.col_body:
+  row_tmp: int = mul row num_nodes;
+  node_idx: int = add row_tmp col;
+  node_loc: ptr<int> = ptradd adjmat node_idx;
+  node_val: int = load node_loc;
+  cond: bool = eq node_val one;
+  br cond .if_body .col_end;
+.if_body:
+  edge_loc: ptr<int> = ptradd csr_edges num_edges;
+  store edge_loc col;
+  num_edges: int = add num_edges one;
+.col_end:
+  col: int = add col one;
+  jmp .iter_col;
+.col_done:
+  offset_loc: ptr<int> = ptradd csr_offset row;
+  store offset_loc num_edges;
+.row_end:
+  row: int = add row one;
+  jmp .iter_row;
+.row_done:
+  ret num_edges;
+}
+
+# this will generate a graph with 32 nodes and 255 edges
+# ARGS: 32 2348512
+@main(num_nodes: int, seed: int) {
+  one: int = const 1;
+  rng: ptr<int> = alloc one;
+  store rng seed;
+
+  # at most `sqsize` number of edges
+  sqsize: int = mul num_nodes num_nodes;
+  adjmat: ptr<int> = call @randarray sqsize rng;
+  csr_offset: ptr<int> = call @zeroarray sqsize;
+  csr_edges: ptr<int> = call @zeroarray sqsize;
+
+  num_edges: int = call @adj2csr num_nodes adjmat csr_offset csr_edges;
+
+  print num_nodes;
+  print num_edges;
+
+  call @printarray sqsize adjmat;
+  call @printarray num_nodes csr_offset;
+  call @printarray num_edges csr_edges;
+
+  free adjmat;
+  free csr_offset;
+  free csr_edges;
+  free rng;
+  ret;
+}
