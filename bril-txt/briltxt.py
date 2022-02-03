@@ -91,6 +91,8 @@ class JSONTransformer(lark.Transformer):
             func['args'] = args
         if typ:
             func['type'] = typ
+        if self.include_pos:
+            func['pos'] = {'row': name.line, 'col': name.column}
         return func
 
     def arg(self, items):
