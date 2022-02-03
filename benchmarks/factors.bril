@@ -31,5 +31,5 @@
   jmp .loopcheck;
 
 .loopend:
-  ret one;
+  # nothing, just drop out to EoF
 }
