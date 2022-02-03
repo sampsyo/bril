@@ -65,4 +65,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [armstrong]: https://en.wikipedia.org/wiki/Narcissistic_number
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
-[riemann]: https://en.wikipedia.org/wiki/Riemann_sum#:~:text=In%20mathematics%2C%20a%20Riemann%20sum,integral%20by%20a%20finite%20sum.&text=One%20very%20common%20application%20is,of%20curves%20and%20other%20approximations.
+[riemann]: https://en.wikipedia.org/wiki/Riemann_sum
