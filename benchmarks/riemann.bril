@@ -3,7 +3,7 @@
 @main {
     a: float = const 2.0;
     b: float = const 10.0;
-    n: float = const 8.0;
+    n: float = const 100000.0;
     left : float = call @left_riemann a b n;
     print left;
     midpoint: float = call @midpoint_riemann a b n;
@@ -36,6 +36,7 @@
     i = fsub i one;
     jmp .while.header;
     .while.end:
+    sum = fmul sum delta;
     ret sum;
 }
 
@@ -57,6 +58,7 @@
     i = fsub i one;
     jmp .while.header;
     .while.end:
+    sum = fmul sum delta;
     ret sum;
 }
 
@@ -82,5 +84,6 @@
     i = fsub i one;
     jmp .while.header;
     .while.end:
+    sum = fmul sum delta;
     ret sum;
 }
