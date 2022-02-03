@@ -1,0 +1,9 @@
+# ARGS: -p
+@main {
+  v0: int = const 1;
+  v1: int = const 2;
+  jmp .label;
+.label:
+  v2: int = add v0 v1;
+  print v2;
+}
