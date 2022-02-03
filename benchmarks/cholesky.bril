@@ -65,6 +65,25 @@
   ret return_ptr;
 }
 
+# Fill array with zeros
+@zeros(sqsize: int) : ptr<float> {
+  arr: ptr<float> = alloc sqsize;
+  i: int = const 0;
+  one: int = const 1;
+  zero: float = const 0;
+.loop:
+  cond: bool = lt i sqsize;
+  br cond .body .done;
+.body:
+  loc: ptr<float> = ptradd arr i;
+  store loc zero;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
 # Prints an array
 @printarray(size: int, arr: ptr<float>) {
   i: int = const 0;
@@ -226,7 +245,7 @@
 }
 
 # Cholesky decomposition
-@cholesky(size: int, arr1: ptr<float>) {
+@cholesky(size: int, arr1: ptr<float>, arr2: ptr<float>) {
   one: int = const 1;
   i: int = const 0;
 .i.loop:
@@ -235,7 +254,7 @@
 .i.body:
   j: int = const 0;
 .j.loop:
-  condj: bool = lt j i;
+  condj: bool = le j i;
   br condj .j.body .j.done;
 .j.body:
   k: int = const 0;
@@ -251,13 +270,13 @@
   ij_index: int = mul i size;
   ij_index: int = add ij_index j;
   # load values
-  ik_ptr: ptr<float> = ptradd arr1 ik_index;
-  a_ik: float = load ik_ptr;
-  jk_ptr: ptr<float> = ptradd arr1 jk_index;
-  a_jk: float = load jk_ptr;
+  ik_ptr: ptr<float> = ptradd arr2 ik_index;
+  b_ik: float = load ik_ptr;
+  jk_ptr: ptr<float> = ptradd arr2 jk_index;
+  b_jk: float = load jk_ptr;
   ij_ptr: ptr<float> = ptradd arr1 ij_index;
   a_ij: float = load ij_ptr;
-  value: float = fmul a_ik a_jk;
+  value: float = fmul b_ik b_jk;
   value: float = fsub a_ij value;
   store ij_ptr value;
 .k.loop_end:
@@ -269,44 +288,26 @@
   ij_index: int = add ij_index j;
   jj_index: int = mul j size;
   jj_index: int = add jj_index j;
-  ij_ptr: ptr<float> = ptradd arr1 ij_index;
-  jj_ptr: ptr<float> = ptradd arr1 jj_index;
-  a_ij = load ij_ptr;
-  a_jj = load jj_ptr;
-  value = fdiv a_ij a_jj;
-  store ij_ptr value;
+  a_ij_ptr: ptr<float> = ptradd arr1 ij_index;
+  b_ij_ptr: ptr<float> = ptradd arr2 ij_index;
+  jj_ptr: ptr<float> = ptradd arr2 jj_index;
+  a_ij = load a_ij_ptr;
+  b_ij = load b_ij_ptr;
+  b_jj = load jj_ptr;
+  value = fdiv a_ij b_jj;
+  store b_ij_ptr value;
 .j.loop_end:
   j: int = add j one;
   jmp .j.loop;
 .j.done:
-  # i loop body continues
-  k2: int = const 0;
-.k2.loop:
-  condk2: bool = lt k2 i;
-  br condk2 .k2.body .k2.done;
-.k2.body: 
-  ik2_index: int = mul i size;
-  ik2_index: int = add ik2_index k2;
-  ii_index: int = mul i size;
-  ii_index: int = add ii_index i;
-  ik2_ptr: ptr<float> = ptradd arr1 ik2_index;
-  ii_ptr: ptr<float> = ptradd arr1 ii_index;
-  a_ik2: float = load ik2_ptr;
-  a_ii: float = load ii_ptr;
-  value: float = fmul a_ik2 a_ik2;
-  value: float = fsub a_ii value;
-  store ii_ptr value;
-.k2.loop_end:
-  k2: int = add k2 one;
-  jmp .k2.loop;
-.k2.done:
   # i loop body continues;
   ii_index: int = mul i size;
   ii_index: int = add ii_index i;
-  ii_ptr: ptr<float> = ptradd arr1 ii_index;
-  value: float = load ii_ptr;
+  a_ii_ptr: ptr<float> = ptradd arr1 ii_index;
+  b_ii_ptr: ptr<float> = ptradd arr2 ii_index;
+  value: float = load a_ii_ptr;
   sqrt_value : float = call @sqrt value;
-  store ii_ptr sqrt_value;
+  store b_ii_ptr sqrt_value;
 .i.loop_end:
   i: int = add i one;
   jmp .i.loop;
@@ -321,12 +322,14 @@
   arr1: ptr<float> = call @fillarray;
   arr1_transposed: ptr<float> = call @fillarray;
   hermitian: ptr<float> = call @fillarray;
+  res: ptr<float> = call @zeros sqsize;
   call @transpose size arr1 arr1_transposed;
   call @matmul size arr1 arr1_transposed hermitian;
-  call @cholesky size hermitian;
-  call @printarray sqsize hermitian;
+  call @cholesky size hermitian res;
+  call @printarray sqsize res;
   free arr1;
   free arr1_transposed;
   free hermitian;
+  free res;
   ret;
 }
