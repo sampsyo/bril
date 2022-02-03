@@ -141,7 +141,6 @@ class JSONTransformer(lark.Transformer):
 
     def op(self, items):
         op_token = items.pop(0)
-        row, col = op_token.line, op_token.column
         opcode = str(op_token)
 
         funcs = []
@@ -163,7 +162,7 @@ class JSONTransformer(lark.Transformer):
         if labels:
             out['labels'] = labels
         if self.include_pos:
-            out['pos'] = {'row': row, 'col': col}
+            out['pos'] = {'row': op_token.line, 'col': op_token.column}
         return out
 
     def eop(self, items):
@@ -172,9 +171,12 @@ class JSONTransformer(lark.Transformer):
 
     def label(self, items):
         name, = items
-        return {
+        out = {
             'label': str(name)[1:]  # Strip `.`.
         }
+        if self.include_pos:
+            out['pos'] = {'row': name.line, 'col': name.column}
+        return out
 
     def int(self, items):
         return int(str(items[0]))
