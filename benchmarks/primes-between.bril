@@ -1,0 +1,58 @@
+# ARGS: 1 1000
+# Prints the primes in the interval [a, b]
+@main(a : int, b : int) {
+  .for.outer.init: # start at interval unless a < 2, then start at 2.
+    t0 : int = const 2;
+    t1 : bool = lt a t0;
+    br t1 .true .false;
+  .true:
+    t2 : int = const 2; #i
+    jmp .for.outer.cond;
+  .false:
+    t2 : int = id a; # i
+  .for.outer.cond:
+    t3 : bool = le t2 b;
+    br t3 .for.outer.body .for.outer.end;
+  .for.outer.body:
+    t4 : int = const 1;
+    t5 : bool = eq t4 t4; # isPrime
+  .for.inner.init:
+    t6 : int = const 2; # j
+    t7 : int = const 2;
+  .for.inner.cond:
+    t8 : int = div t2 t7;
+    t9 : bool = le t6 t8;
+    br t9 .for.inner.body .for.inner.end;
+  .for.inner.body:
+    t10 : int = call @mod t2 t6;
+    t11 : int = const 0;
+    t12 : bool = eq t10 t11;
+    br t12 .if.inner.body .if.inner.end;
+  .if.inner.body:
+    t13 : int = const 1;
+    t14 : int = const 2;
+    t5 : bool = eq t13 t14; # t13 and t14 never equal to eachother
+    jmp .for.inner.end;
+  .if.inner.end:
+    t15 : int = const 1;
+    t6 : int = add t15 t6;
+    jmp .for.inner.cond;
+  .for.inner.end:
+    t16 : int = const 1;
+    t6 : int = add t6 t16;
+    br t5 .if.outer.body .if.outer.end;
+  .if.outer.body:
+    print t2;
+  .if.outer.end:
+    t17 : int = const 1;
+    t2 : int = add t2 t17;
+    jmp .for.outer.cond;
+  .for.outer.end:
+}
+
+@mod(a : int, b : int) : int {
+  t1 : int = div a b;
+  t2 : int = mul b t1;
+  t3 : int = sub a t2;
+  ret t3;
+}
