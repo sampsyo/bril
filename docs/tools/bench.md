@@ -19,6 +19,7 @@ The current benchmarks are:
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `loopfact`: Compute *n!* imperatively using a loop.
+* `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
