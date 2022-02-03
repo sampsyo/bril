@@ -19,6 +19,7 @@ The current benchmarks are:
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `loopfact`: Compute *n!* imperatively using a loop.
+* `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
@@ -37,6 +38,7 @@ The current benchmarks are:
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order. 
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `cholesky`: Perform Cholesky decomposition of a Hermitian and positive definite matrix. The result is validated by comparing with Python's `scipy.linalg.cholesky`. 
+* `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.  
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -59,3 +61,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [armstrong]: https://en.wikipedia.org/wiki/Narcissistic_number
 [trialdivision]:https://en.wikipedia.org/wiki/Trial_division
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
+[uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
