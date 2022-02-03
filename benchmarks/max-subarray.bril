@@ -1,0 +1,82 @@
+# Max subarray problem
+
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int, n6: int, n7: int, n8: int, n9: int, n10: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;    
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n6;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n7;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n8;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n9;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n10;
+    ret array;
+}
+
+@max(n: int, m: int) : int {
+  condi: bool = lt n m;
+  br condi .less .biggereq;
+.less:
+  ret m;
+.biggereq:
+  ret n;
+}
+
+# ARGS: 10 1 2 3 4 5 -10 -10 50 50 -12
+@main(size: int, n1: int, n2: int, n3: int, n4: int, n5: int, n6: int, n7: int, n8: int, n9: int, n10: int) {
+    array: ptr<int> = call @pack size n1 n2 n3 n4 n5 n6 n7 n8 n9 n10;
+    
+    sum: int = const 0;
+    max_sum: int = const 0;
+
+    one: int = const 1;
+    zero: int = const 0;
+    i: int = const 0;
+  .loop:
+    condi: bool = lt i size;
+    br condi .bodyi .done;
+  .bodyi:
+
+    # array[i]
+    loc: ptr<int> = ptradd array i;
+    elem: int = load loc;
+
+    # sum = max(0, sum + array[i]);
+    sum_incr: int = add sum elem;
+    sum: int = call @max zero sum_incr;
+   
+    # max_sum = max(max_sum, sum);
+    max_sum: int = call @max max_sum sum;
+
+    # incr i
+    i: int = add i one;
+    jmp .loop;
+  .done:
+
+    print max_sum;
+
+    free array;
+}
