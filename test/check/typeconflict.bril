@@ -1,0 +1,4 @@
+@main {
+  a: bool = const true;
+  a: int = const 4;
+}

@@ -1,0 +1,3 @@
+id arg type int does not match type bool
+id arg type int does not match type undefined
+id should have one arg, not 0

@@ -1,0 +1,1 @@
+b has type bool, but arg 1 should have type int
