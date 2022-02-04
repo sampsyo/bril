@@ -1,0 +1,2 @@
+command = "bril2json -p < {filename} | brilck"
+output.err = "2"
