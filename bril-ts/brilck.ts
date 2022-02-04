@@ -10,7 +10,18 @@ interface OpType {
 }
 
 const OP_TYPES: {[key: string]: OpType} = {
-  'add': {'args': ['int', 'int'], 'dest': 'int'}
+  'add': {'args': ['int', 'int'], 'dest': 'int'},
+  'mul': {'args': ['int', 'int'], 'dest': 'int'},
+  'sub': {'args': ['int', 'int'], 'dest': 'int'},
+  'div': {'args': ['int', 'int'], 'dest': 'int'},
+  'eq': {'args': ['int', 'int'], 'dest': 'bool'},
+  'lt': {'args': ['int', 'int'], 'dest': 'bool'},
+  'gt': {'args': ['int', 'int'], 'dest': 'bool'},
+  'le': {'args': ['int', 'int'], 'dest': 'bool'},
+  'ge': {'args': ['int', 'int'], 'dest': 'bool'},
+  'not': {'args': ['bool'], 'dest': 'bool'},
+  'and': {'args': ['bool', 'bool'], 'dest': 'bool'},
+  'or': {'args': ['bool', 'bool'], 'dest': 'bool'},
 };
 
 const CONST_TYPES: {[key: string]: string} = {
