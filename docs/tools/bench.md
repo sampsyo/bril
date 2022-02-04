@@ -26,6 +26,7 @@ The current benchmarks are:
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
+* `n_root`: Calculate nth root of a float using newton's method.
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `pascals-row`: Computes a row in Pascal's Triangle.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
