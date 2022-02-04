@@ -4,6 +4,15 @@ import {readStdin} from './util';
 
 type TypeEnv = Map<bril.Ident, bril.Type>;
 
+interface OpType {
+  args: bril.Type[],
+  dest?: bril.Type,
+}
+
+const OP_TYPES: {[key: string]: OpType} = {
+  'add': {'args': ['int', 'int'], 'dest': 'int'}
+};
+
 /**
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
  * with the old type for the variable.
@@ -24,7 +33,58 @@ function addType(env: TypeEnv, id: bril.Ident, type: bril.Type) {
 function checkInstr(
   env: TypeEnv, labels: Set<bril.Ident>, instr: bril.Instruction
 ) {
+  // Do we know this operation?
+  let opType = OP_TYPES[instr.op];
+  if (!opType) {
+    console.error(`unknown opcode ${instr.op}`);
+    return;
+  }
 
+  // Check the argument count.
+  let args: bril.Ident[];
+  if ('args' in instr && instr.args !== undefined) {
+    args = instr.args;
+  } else {
+    args = [];
+  }
+  if (args.length !== opType.args.length) {
+    console.error(
+      `${instr.op} needs ${opType.args.length} args; found ${args.length}`
+    );
+  }
+
+  // Check the argument types.
+  for (let i = 0; i < args.length; ++i) {
+    let argType = env.get(args[i]);
+    if (!argType) {
+      console.error(`${args[i]} (arg ${i}) undefined`);
+      continue;
+    }
+    if (opType.args[i] !== argType) {
+      console.error(
+        `${args[i]} has type ${argType}, but arg ${i} should ` +
+        `have type ${opType.args[i]}`
+      );
+    }
+  }
+
+  // Check destination type.
+  if ('type' in instr) {
+    if ('dest' in opType) {
+      if (instr.type !== opType.dest) {
+        console.error(
+          `result type of ${instr.op} should be ${opType.dest}, ` +
+          `but found ${instr.type}`
+        );
+      }
+    } else {
+      console.error(`${instr.op} should have no result type`);
+    }
+  } else {
+    if ('dest' in opType) {
+      console.error(`missing result type ${opType.dest} for ${instr.op}`);
+    }
+  }
 }
 
 function checkFunc(func: bril.Function) {
