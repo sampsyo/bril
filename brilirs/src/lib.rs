@@ -25,9 +25,9 @@ pub fn run_input<T: std::io::Write>(
   //      - bril_rs takes file.json as input
   //      - bril2json takes file.bril as input
   let prog = if text {
-    bril2json::load_abstract_program_from_read(input, true).try_into()?
+    bril2json::parse_abstract_program_from_read(input, true).try_into()?
   } else {
-    bril_rs::load_program_from_read(input)
+    bril_rs::load_abstract_program_from_read(input).try_into()?
   };
   let bbprog = basic_block::BBProgram::new(prog)?;
   check::type_check(&bbprog)?;

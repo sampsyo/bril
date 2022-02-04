@@ -48,7 +48,7 @@ impl Lines {
     }
 }
 
-pub fn load_abstract_program_from_read<R: std::io::Read>(
+pub fn parse_abstract_program_from_read<R: std::io::Read>(
     mut input: R,
     use_pos: bool,
 ) -> AbstractProgram {
@@ -60,6 +60,6 @@ pub fn load_abstract_program_from_read<R: std::io::Read>(
         .unwrap()
 }
 
-pub fn load_abstract_program(use_pos: bool) -> AbstractProgram {
-    load_abstract_program_from_read(std::io::stdin(), use_pos)
+pub fn parse_abstract_program(use_pos: bool) -> AbstractProgram {
+    parse_abstract_program_from_read(std::io::stdin(), use_pos)
 }

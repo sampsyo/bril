@@ -7,5 +7,4 @@
         - replace string lookup with indexing a vec
         - optimize contexts?
 - Improve documentation
-- Better errors with line numbers?
 - Appease Clippy Overlord
