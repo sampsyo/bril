@@ -9,6 +9,15 @@
 @argint(x: int) {
 }
 
+@noret {
+  x: int = const 5;
+  ret x;
+}
+
+@yesret(): int {
+  ret;
+}
+
 @main {
   call @foo;
   a: int = call @nothing;

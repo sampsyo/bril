@@ -87,7 +87,7 @@ function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
   }
 }
 
-function checkInstr(env: Env, instr: bril.Operation) {
+function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined) {
   let args = instr.args ?? [];
 
   // Check for special cases.
@@ -141,6 +141,21 @@ function checkInstr(env: Env, instr: bril.Operation) {
       checkArgs(env, args, funcType.args);
     }
 
+    return;
+  } else if (instr.op === "ret") {
+    if (ret) {
+      if (args.length === 0) {
+        console.error(`missing return value in function with return type`);
+      } else if (args.length !== 1) {
+        console.error(`cannot return multiple values`);
+      } else {
+        checkArgs(env, args, [ret]);
+      }
+    } else {
+      if (args.length !== 0) {
+        console.error(`returning value in function without a return type`);
+      }
+    }
     return;
   }
 
@@ -242,7 +257,7 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
       if (instr.op === 'const') {
         checkConst(instr);
       } else {
-        checkInstr({vars, labels, funcs}, instr);
+        checkInstr({vars, labels, funcs}, instr, func.type);
       }
     }
   }
