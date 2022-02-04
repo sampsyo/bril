@@ -48,12 +48,26 @@ function addType(env: TypeEnv, id: bril.Ident, type: bril.Type) {
 }
 
 function checkInstr(
-  env: TypeEnv, labels: Set<bril.Ident>, instr: bril.Instruction
+  env: TypeEnv, labels: Set<bril.Ident>, instr: bril.Operation
 ) {
+  let args = instr.args ?? [];
+
   // Check for special cases.
   if (instr.op === "print") {
     if ('type' in instr) {
       console.error(`print should have no result type`);
+    }
+    return;
+  } else if (instr.op === "id") {
+    if (args.length !== 1) {
+      console.error(`id should have one arg, not ${args.length}`);
+      return;
+    }
+    let argType = env.get(args[0]);
+    if (!argType) {
+      console.error(`${args[0]} is undefined`);
+    } else if (instr.type !== argType) {
+      console.error(`id arg type ${argType} does not match type ${instr.type}`);
     }
     return;
   }
@@ -66,12 +80,6 @@ function checkInstr(
   }
 
   // Check the argument count.
-  let args: bril.Ident[];
-  if ('args' in instr && instr.args !== undefined) {
-    args = instr.args;
-  } else {
-    args = [];
-  }
   if (args.length !== opType.args.length) {
     console.error(
       `${instr.op} needs ${opType.args.length} args; found ${args.length}`
