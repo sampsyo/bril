@@ -7,6 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap         = { version = "3.0", features = ["derive"] }
 lalrpop-util = {version = "0.19.6", features = ["lexer"]}
 regex = "1"
 
@@ -17,4 +18,4 @@ lalrpop = "0.19.6"
 [dependencies.bril-rs]
 version = "0.1.0"
 path = "../../bril-rs"
-features = ["ssa", "memory", "float", "speculate"]
+features = ["ssa", "memory", "float", "speculate", "position"]
