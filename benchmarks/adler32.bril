@@ -22,7 +22,7 @@
   loc: ptr<int> = id arr;
 .loop:
   store loc curr;
-  loc: prt<int> = ptradd loc one;
+  loc: ptr<int> = ptradd loc one;
   curr: int = add curr one;
   continue: bool = lt curr size;
   br continue .loop .exit;
