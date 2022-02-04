@@ -5,12 +5,20 @@
         {
           "dest": "v0",
           "op": "const",
+          "pos": {
+            "col": 3,
+            "row": 3
+          },
           "type": "int",
           "value": 1
         },
         {
           "dest": "v1",
           "op": "const",
+          "pos": {
+            "col": 3,
+            "row": 4
+          },
           "type": "int",
           "value": 2
         },
