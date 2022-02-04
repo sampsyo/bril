@@ -3,7 +3,7 @@
       a1: int = call @area x1 y1;
       a2: int = call @area x2 y2;
       res: int = sub a1 a2;
-      a1_bigger: boolean = gt a1 a2;
+      a1_bigger: bool = gt a1 a2;
       br a1_bigger .end .flip;
 .flip:
       neg1: int = const -1;
