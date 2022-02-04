@@ -1,13 +1,18 @@
 #!/usr/bin/env node
-import { ResolvedTypeReferenceDirective } from 'typescript';
 import * as bril from './bril';
 import {readStdin} from './util';
 
+interface FuncType {
+  'ret': bril.Type | undefined,
+  'args': bril.Type[],
+}
 type VarEnv = Map<bril.Ident, bril.Type>;
+type FuncEnv = Map<bril.Ident, FuncType>;
 
 interface Env {
   vars: VarEnv;
   labels: Set<bril.Ident>;
+  funcs: FuncEnv;
 }
 
 interface OpType {
@@ -85,6 +90,29 @@ function checkInstr(env: Env, instr: bril.Operation) {
       console.error(`${args[0]} is undefined`);
     } else if (instr.type !== argType) {
       console.error(`id arg type ${argType} does not match type ${instr.type}`);
+    }
+    return;
+  } else if (instr.op == "call") {
+    let funcs = instr.funcs ?? [];
+    if (funcs.length !== 1) {
+      console.error(`call should have one function, not ${funcs.length}`);
+      return;
+    }
+    let funcType = env.funcs.get(funcs[0]);
+    if (!funcType) {
+      console.error(`function @${funcs[0]} undefined`);
+      return;
+    }
+    if (funcType.ret) {
+      if ('type' in instr) {
+        if (instr.type !== funcType.ret) {
+          console.error(
+            `@${funcs[0]} returns type ${funcType.ret}, not ${instr.type}`
+          );
+        }
+      }
+    } else if ('type' in instr) {
+      console.error(`@${funcs[0]} does not return a value`);
     }
     return;
   }
@@ -173,7 +201,7 @@ function checkConst(instr: bril.Constant) {
   }
 }
 
-function checkFunc(func: bril.Function) {
+function checkFunc(funcs: FuncEnv, func: bril.Function) {
   let vars: VarEnv = new Map();
   let labels = new Set<bril.Ident>();
 
@@ -199,15 +227,25 @@ function checkFunc(func: bril.Function) {
       if (instr.op === 'const') {
         checkConst(instr);
       } else {
-        checkInstr({vars, labels}, instr);
+        checkInstr({vars, labels, funcs}, instr);
       }
     }
   }
 }
 
 function checkProg(prog: bril.Program) {
+  // Gather up function types.
+  let funcEnv: FuncEnv = new Map();
   for (let func of prog.functions) {
-    checkFunc(func);
+    funcEnv.set(func.name, {
+      'ret': func.type,
+      'args': func.args?.map(a => a.type) ?? [],
+    });
+  }
+
+  // Check each function.
+  for (let func of prog.functions) {
+    checkFunc(funcEnv, func);
   }
 }
 

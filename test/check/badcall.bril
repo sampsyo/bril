@@ -1,0 +1,14 @@
+@nothing {
+}
+
+@retint(): int {
+  x: int = const 5;
+  ret x;
+}
+
+@main {
+  call @foo;
+  a: int = call @nothing;
+  call @nothing @nothing;
+  b: bool = call @retint;
+}

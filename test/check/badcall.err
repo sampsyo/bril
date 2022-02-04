@@ -1,0 +1,5 @@
+unknown opcode ret
+function @foo undefined
+@nothing does not return a value
+call should have one function, not 2
+@retint returns type int, not bool
