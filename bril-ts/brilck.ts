@@ -71,6 +71,22 @@ function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
   }
 }
 
+function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
+  for (let i = 0; i < args.length; ++i) {
+    let argType = env.vars.get(args[i]);
+    if (!argType) {
+      console.error(`${args[i]} (arg ${i}) undefined`);
+      continue;
+    }
+    if (params[i] !== argType) {
+      console.error(
+        `${args[i]} has type ${argType}, but arg ${i} should ` +
+        `have type ${params[i]}`
+      );
+    }
+  }
+}
+
 function checkInstr(env: Env, instr: bril.Operation) {
   let args = instr.args ?? [];
 
@@ -98,11 +114,13 @@ function checkInstr(env: Env, instr: bril.Operation) {
       console.error(`call should have one function, not ${funcs.length}`);
       return;
     }
+
     let funcType = env.funcs.get(funcs[0]);
     if (!funcType) {
       console.error(`function @${funcs[0]} undefined`);
       return;
     }
+
     if (funcType.ret) {
       if ('type' in instr) {
         if (instr.type !== funcType.ret) {
@@ -114,6 +132,15 @@ function checkInstr(env: Env, instr: bril.Operation) {
     } else if ('type' in instr) {
       console.error(`@${funcs[0]} does not return a value`);
     }
+    
+    if (args.length !== funcType.args.length) {
+      console.error(
+        `@${funcs[0]} expects ${funcType.args.length} args, not ${args.length}`
+      );
+    } else {
+      checkArgs(env, args, funcType.args);
+    }
+
     return;
   }
 
@@ -132,19 +159,7 @@ function checkInstr(env: Env, instr: bril.Operation) {
   }
 
   // Check the argument types.
-  for (let i = 0; i < args.length; ++i) {
-    let argType = env.vars.get(args[i]);
-    if (!argType) {
-      console.error(`${args[i]} (arg ${i}) undefined`);
-      continue;
-    }
-    if (opType.args[i] !== argType) {
-      console.error(
-        `${args[i]} has type ${argType}, but arg ${i} should ` +
-        `have type ${opType.args[i]}`
-      );
-    }
-  }
+  checkArgs(env, args, opType.args);
 
   // Check destination type.
   if ('type' in instr) {
