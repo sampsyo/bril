@@ -247,7 +247,11 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
     if ('dest' in instr) {
       addType(vars, instr.dest, instr.type);
     } else if ('label' in instr) {
-      labels.add(instr.label);
+      if (labels.has(instr.label)) {
+        console.error(`multiply defined label .${instr.label}`);
+      } else {
+        labels.add(instr.label);
+      }
     }
   }
 
