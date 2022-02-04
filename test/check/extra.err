@@ -1,0 +1,2 @@
+add needs 2 args; found 3
+a has type int, but arg 2 should have type undefined

@@ -16,7 +16,7 @@ const OP_TYPES: {[key: string]: OpType} = {
 const CONST_TYPES: {[key: string]: string} = {
   'int': 'number',
   'float': 'number',
-  'bool': 'bool',
+  'bool': 'boolean',
 };
 
 /**
