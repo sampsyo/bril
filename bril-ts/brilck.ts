@@ -33,6 +33,14 @@ function addType(env: TypeEnv, id: bril.Ident, type: bril.Type) {
 function checkInstr(
   env: TypeEnv, labels: Set<bril.Ident>, instr: bril.Instruction
 ) {
+  // Check for special cases.
+  if (instr.op === "print") {
+    if ('type' in instr) {
+      console.error(`print should have no result type`);
+    }
+    return;
+  }
+
   // Do we know this operation?
   let opType = OP_TYPES[instr.op];
   if (!opType) {
