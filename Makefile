@@ -4,6 +4,7 @@ TESTS := test/parse/*.bril \
 	test/ts*/*.ts \
 	test/mem/*.bril \
 	test/fail/*.bril \
+	test/check/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/*.bril
 
