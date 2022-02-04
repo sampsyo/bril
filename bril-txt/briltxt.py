@@ -131,6 +131,8 @@ class JSONTransformer(lark.Transformer):
         }
         if type:
             out['type'] = type
+        if self.include_pos:
+            out['pos'] = {'row': dest.line, 'col': dest.column}
         return out
 
     def vop(self, items):
