@@ -42,6 +42,8 @@ impl TryFrom<AbstractFunction> for Function {
             instrs,
             name,
             return_type,
+            #[cfg(feature = "position")]
+            pos,
         }: AbstractFunction,
     ) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -58,6 +60,8 @@ impl TryFrom<AbstractFunction> for Function {
                 None => None,
                 Some(t) => Some(t.try_into()?),
             },
+            #[cfg(feature = "position")]
+            pos,
         })
     }
 }
@@ -78,7 +82,15 @@ impl TryFrom<AbstractCode> for Code {
     type Error = ConversionError;
     fn try_from(c: AbstractCode) -> Result<Self, Self::Error> {
         Ok(match c {
-            AbstractCode::Label { label } => Self::Label { label },
+            AbstractCode::Label {
+                label,
+                #[cfg(feature = "position")]
+                pos,
+            } => Self::Label {
+                label,
+                #[cfg(feature = "position")]
+                pos,
+            },
             AbstractCode::Instruction(i) => Self::Instruction(i.try_into()?),
         })
     }
@@ -93,11 +105,15 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 op,
                 const_type,
                 value,
+                #[cfg(feature = "position")]
+                pos,
             } => Self::Constant {
                 dest,
                 op,
                 const_type: const_type.try_into()?,
                 value,
+                #[cfg(feature = "position")]
+                pos,
             },
             AbstractInstruction::Value {
                 args,
@@ -106,12 +122,16 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 labels,
                 op,
                 op_type,
+                #[cfg(feature = "position")]
+                pos,
             } => Self::Value {
                 args,
                 dest,
                 funcs,
                 labels,
                 op_type: op_type.try_into()?,
+                #[cfg(feature = "position")]
+                pos,
                 op: match op.as_ref() {
                     "add" => ValueOps::Add,
                     "mul" => ValueOps::Mul,
@@ -161,10 +181,14 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 funcs,
                 labels,
                 op,
+                #[cfg(feature = "position")]
+                pos,
             } => Self::Effect {
                 args,
                 funcs,
                 labels,
+                #[cfg(feature = "position")]
+                pos,
                 op: match op.as_ref() {
                     "jmp" => EffectOps::Jump,
                     "br" => EffectOps::Branch,

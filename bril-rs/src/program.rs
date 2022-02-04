@@ -23,6 +23,9 @@ pub struct Function {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<Code>,
     pub name: String,
+    #[cfg(feature = "position")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pos: Option<Position>,
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<Type>,
@@ -69,14 +72,23 @@ impl Display for Argument {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Code {
-    Label { label: String },
+    Label {
+        label: String,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
+    },
     Instruction(Instruction),
 }
 
 impl Display for Code {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Code::Label { label } => write!(f, ".{}:", label),
+            Code::Label {
+                label,
+                #[cfg(feature = "position")]
+                    pos: _,
+            } => write!(f, ".{}:", label),
             Code::Instruction(instr) => write!(f, "  {}", instr),
         }
     }
@@ -88,6 +100,9 @@ pub enum Instruction {
     Constant {
         dest: String,
         op: ConstOps,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
         #[serde(rename = "type")]
         const_type: Type,
         value: Literal,
@@ -101,6 +116,9 @@ pub enum Instruction {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
         op: ValueOps,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
         #[serde(rename = "type")]
         op_type: Type,
     },
@@ -112,6 +130,9 @@ pub enum Instruction {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
         op: EffectOps,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
     },
 }
 
@@ -123,6 +144,8 @@ impl Display for Instruction {
                 dest,
                 const_type,
                 value,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
                 write!(f, "{}: {} = {} {};", dest, const_type, op, value)
             }
@@ -133,6 +156,8 @@ impl Display for Instruction {
                 args,
                 funcs,
                 labels,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
                 write!(f, "{}: {} = {}", dest, op_type, op)?;
                 for func in funcs {
@@ -151,6 +176,8 @@ impl Display for Instruction {
                 args,
                 funcs,
                 labels,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
                 write!(f, "{}", op)?;
                 for func in funcs {
@@ -375,4 +402,10 @@ impl Literal {
             Literal::Float(_) => Type::Float,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct Position {
+    pub col: u64,
+    pub row: u64,
 }
