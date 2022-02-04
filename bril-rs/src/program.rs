@@ -136,6 +136,17 @@ pub enum Instruction {
     },
 }
 
+#[cfg(feature = "position")]
+impl Instruction {
+    pub fn get_pos(&self) -> Option<Position> {
+        match self {
+            Instruction::Constant { pos, .. }
+            | Instruction::Value { pos, .. }
+            | Instruction::Effect { pos, .. } => *pos,
+        }
+    }
+}
+
 impl Display for Instruction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -404,7 +415,7 @@ impl Literal {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct Position {
     pub col: u64,
     pub row: u64,
