@@ -7,6 +7,8 @@ type TypeEnv = Map<bril.Ident, bril.Type>;
 interface OpType {
   args: bril.Type[],
   dest?: bril.Type,
+  labels?: number,
+  funcs?: number,
 }
 
 const OP_TYPES: {[key: string]: OpType} = {
@@ -22,6 +24,8 @@ const OP_TYPES: {[key: string]: OpType} = {
   'not': {'args': ['bool'], 'dest': 'bool'},
   'and': {'args': ['bool', 'bool'], 'dest': 'bool'},
   'or': {'args': ['bool', 'bool'], 'dest': 'bool'},
+  'jmp': {'args': [], 'labels': 1},
+  'br': {'args': ['bool'], 'labels': 2},
 };
 
 const CONST_TYPES: {[key: string]: string} = {
@@ -116,6 +120,19 @@ function checkInstr(
   } else {
     if ('dest' in opType) {
       console.error(`missing result type ${opType.dest} for ${instr.op}`);
+    }
+  }
+  
+  // Check labels.
+  let labs = instr.labels ?? [];
+  let labCount = opType.labels ?? 0;
+  if (labs.length !== labCount) {
+    console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
+  } else {
+    for (let lab of labs) {
+      if (!labels.has(lab)) {
+        console.error(`label .${lab} undefined`);
+      }
     }
   }
 }

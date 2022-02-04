@@ -1,0 +1,4 @@
+label .bad undefined
+br needs 2 labels; found 1
+br needs 2 labels; found 3
+not needs 0 labels; found 1
