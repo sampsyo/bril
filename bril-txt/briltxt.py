@@ -62,6 +62,11 @@ COMMENT: /#.*/
 """.strip()
 
 
+def _pos(token):
+    """Generate a position dict from a Lark token."""
+    return {'row': token.line, 'col': token.column}
+
+
 class JSONTransformer(lark.Transformer):
     def __init__(self, include_pos=False):
         super().__init__()
@@ -92,7 +97,7 @@ class JSONTransformer(lark.Transformer):
         if typ:
             func['type'] = typ
         if self.include_pos:
-            func['pos'] = {'row': name.line, 'col': name.column}
+            func['pos'] = _pos(name)
         return func
 
     def arg(self, items):
@@ -132,7 +137,7 @@ class JSONTransformer(lark.Transformer):
         if type:
             out['type'] = type
         if self.include_pos:
-            out['pos'] = {'row': dest.line, 'col': dest.column}
+            out['pos'] = _pos(dest)
         return out
 
     def vop(self, items):
@@ -166,7 +171,7 @@ class JSONTransformer(lark.Transformer):
         if labels:
             out['labels'] = labels
         if self.include_pos:
-            out['pos'] = {'row': op_token.line, 'col': op_token.column}
+            out['pos'] = _pos(op_token)
         return out
 
     def eop(self, items):
@@ -179,7 +184,7 @@ class JSONTransformer(lark.Transformer):
             'label': str(name)[1:]  # Strip `.`.
         }
         if self.include_pos:
-            out['pos'] = {'row': name.line, 'col': name.column}
+            out['pos'] = _pos(name)
         return out
 
     def int(self, items):
