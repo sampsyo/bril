@@ -1,9 +1,17 @@
+use std::fmt::Display;
+
 use crate::{
     AbstractArgument, AbstractCode, AbstractFunction, AbstractInstruction, AbstractProgram,
-    AbstractType, Argument, Code, EffectOps, Function, Instruction, Program, Type, ValueOps,
+    AbstractType, Argument, Code, EffectOps, Function, Instruction, Position, Program, Type,
+    ValueOps,
 };
 
 use thiserror::Error;
+
+// This is a nifty trick to supply a global value for pos when it is not defined
+#[cfg(not(feature = "position"))]
+#[allow(non_upper_case_globals)]
+const pos: Option<Position> = None;
 
 // Having the #[error(...)] for all variants derives the Display trait as well
 #[derive(Error, Debug)]
@@ -20,10 +28,56 @@ pub enum ConversionError {
 
     #[error("Expected an effect operation, found {0}")]
     InvalidEffectOps(String),
+
+    #[error("Missing type signature")]
+    MissingType,
+}
+
+impl ConversionError {
+    pub fn add_pos(self, pos_var: Option<Position>) -> PositionalConversionError {
+        match self {
+            //Self::PositionalConversionErrorConversion(e) => e,
+            _ => PositionalConversionError {
+                e: Box::new(self),
+                pos: pos_var,
+            },
+        }
+    }
+}
+
+#[derive(Error, Debug)]
+pub struct PositionalConversionError {
+    e: Box<ConversionError>,
+    pos: Option<Position>,
+}
+
+impl PositionalConversionError {
+    pub fn new(e: ConversionError) -> Self {
+        Self {
+            e: Box::new(e),
+            pos: None,
+        }
+    }
+}
+
+impl Display for PositionalConversionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            #[cfg(feature = "position")]
+            PositionalConversionError { e, pos: Some(pos) } => {
+                write!(f, "Line {}, Column {}: {}", pos.row, pos.col, e)
+            }
+            #[cfg(not(feature = "position"))]
+            PositionalConversionError { e: _, pos: Some(_) } => {
+                unreachable!()
+            }
+            PositionalConversionError { e, pos: None } => write!(f, "{}", e),
+        }
+    }
 }
 
 impl TryFrom<AbstractProgram> for Program {
-    type Error = ConversionError;
+    type Error = PositionalConversionError;
     fn try_from(AbstractProgram { functions }: AbstractProgram) -> Result<Self, Self::Error> {
         Ok(Self {
             functions: functions
@@ -35,7 +89,7 @@ impl TryFrom<AbstractProgram> for Program {
 }
 
 impl TryFrom<AbstractFunction> for Function {
-    type Error = ConversionError;
+    type Error = PositionalConversionError;
     fn try_from(
         AbstractFunction {
             args,
@@ -50,7 +104,8 @@ impl TryFrom<AbstractFunction> for Function {
             args: args
                 .into_iter()
                 .map(std::convert::TryInto::try_into)
-                .collect::<Result<Vec<Argument>, _>>()?,
+                .collect::<Result<Vec<Argument>, _>>()
+                .map_err(|e| e.add_pos(pos))?,
             instrs: instrs
                 .into_iter()
                 .map(std::convert::TryInto::try_into)
@@ -58,7 +113,7 @@ impl TryFrom<AbstractFunction> for Function {
             name,
             return_type: match return_type {
                 None => None,
-                Some(t) => Some(t.try_into()?),
+                Some(t) => Some(t.try_into().map_err(|e: ConversionError| e.add_pos(pos))?),
             },
             #[cfg(feature = "position")]
             pos,
@@ -79,7 +134,7 @@ impl TryFrom<AbstractArgument> for Argument {
 }
 
 impl TryFrom<AbstractCode> for Code {
-    type Error = ConversionError;
+    type Error = PositionalConversionError;
     fn try_from(c: AbstractCode) -> Result<Self, Self::Error> {
         Ok(match c {
             AbstractCode::Label {
@@ -97,7 +152,7 @@ impl TryFrom<AbstractCode> for Code {
 }
 
 impl TryFrom<AbstractInstruction> for Instruction {
-    type Error = ConversionError;
+    type Error = PositionalConversionError;
     fn try_from(i: AbstractInstruction) -> Result<Self, Self::Error> {
         Ok(match i {
             AbstractInstruction::Constant {
@@ -110,7 +165,9 @@ impl TryFrom<AbstractInstruction> for Instruction {
             } => Self::Constant {
                 dest,
                 op,
-                const_type: const_type.try_into()?,
+                const_type: const_type
+                    .try_into()
+                    .map_err(|e: ConversionError| e.add_pos(pos))?,
                 value,
                 #[cfg(feature = "position")]
                 pos,
@@ -129,7 +186,9 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 dest,
                 funcs,
                 labels,
-                op_type: op_type.try_into()?,
+                op_type: op_type
+                    .try_into()
+                    .map_err(|e: ConversionError| e.add_pos(pos))?,
                 #[cfg(feature = "position")]
                 pos,
                 op: match op.as_ref() {
@@ -173,7 +232,10 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "load" => ValueOps::Load,
                     #[cfg(feature = "memory")]
                     "ptradd" => ValueOps::PtrAdd,
-                    v => return Err(ConversionError::InvalidValueOps(v.to_string())),
+                    v => {
+                        return Err(ConversionError::InvalidValueOps(v.to_string()))
+                            .map_err(|e| e.add_pos(pos))
+                    }
                 },
             },
             AbstractInstruction::Effect {
@@ -206,10 +268,24 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "commit" => EffectOps::Commit,
                     #[cfg(feature = "speculate")]
                     "guard" => EffectOps::Guard,
-                    e => return Err(ConversionError::InvalidEffectOps(e.to_string())),
+                    e => {
+                        return Err(ConversionError::InvalidEffectOps(e.to_string()))
+                            .map_err(|e| e.add_pos(pos))
+                    }
                 },
             },
         })
+    }
+}
+
+impl TryFrom<Option<AbstractType>> for Type {
+    type Error = ConversionError;
+
+    fn try_from(value: Option<AbstractType>) -> Result<Self, Self::Error> {
+        match value {
+            Some(t) => t.try_into(),
+            None => Err(ConversionError::MissingType),
+        }
     }
 }
 

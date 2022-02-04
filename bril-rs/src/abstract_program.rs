@@ -114,7 +114,7 @@ pub enum AbstractInstruction {
         #[serde(skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
         #[serde(rename = "type")]
-        const_type: AbstractType,
+        const_type: Option<AbstractType>,
         value: Literal,
     },
     Value {
@@ -130,7 +130,7 @@ pub enum AbstractInstruction {
         #[serde(skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
         #[serde(rename = "type")]
-        op_type: AbstractType,
+        op_type: Option<AbstractType>,
     },
     Effect {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -156,9 +156,10 @@ impl Display for AbstractInstruction {
                 value,
                 #[cfg(feature = "position")]
                     pos: _,
-            } => {
-                write!(f, "{}: {} = {} {};", dest, const_type, op, value)
-            }
+            } => match const_type {
+                Some(const_type) => write!(f, "{}: {} = {} {};", dest, const_type, op, value),
+                None => write!(f, "{} = {} {};", dest, op, value),
+            },
             AbstractInstruction::Value {
                 op,
                 dest,
@@ -169,7 +170,10 @@ impl Display for AbstractInstruction {
                 #[cfg(feature = "position")]
                     pos: _,
             } => {
-                write!(f, "{}: {} = {}", dest, op_type, op)?;
+                match op_type {
+                    Some(op_type) => write!(f, "{}: {} = {}", dest, op_type, op)?,
+                    None => write!(f, "{} = {}", dest, op)?,
+                }
                 for func in funcs {
                     write!(f, " @{}", func)?;
                 }

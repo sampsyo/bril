@@ -74,14 +74,14 @@ AbstractCode : AbstractCode = {
 }
 
 AbstractInstruction : AbstractInstruction = {
-    <loc:@L> <i:Ident> ":" <t: AbstractType> "=" <c: ConstOps> <l: Literal> ";" => AbstractInstruction::Constant {
+    <loc:@L> <i:Ident> ":" <t: AbstractType?> "=" <c: ConstOps> <l: Literal> ";" => AbstractInstruction::Constant {
         op : c,
         dest : i,
         const_type : t,
         value : l,
         pos : lines.get_position(loc),
     },
-    <loc:@L> <i:Ident> ":" <t:AbstractType> "=" <v:Ident> <f :(<Args>)*> ";" => {
+    <loc:@L> <i:Ident> ":" <t:AbstractType?> "=" <v:Ident> <f :(<Args>)*> ";" => {
         let mut a_vec = Vec::new();
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
