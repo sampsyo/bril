@@ -1,0 +1,45 @@
+@main {
+  v0: int = const 5;
+  x: int = id v0;
+  v1: int = id x;
+  call @generateNthRow v1;
+  v2: int = const 0;
+}
+@generateNthRow(x: int) {
+  v0: int = const 1;
+  prev: int = id v0;
+  v1: int = id prev;
+  print v1;
+  v2: int = const 0;
+  v4: int = const 0;
+  i: int = id v4;
+.for.cond.3:
+  v5: int = id i;
+  v6: int = id x;
+  v7: bool = lt v5 v6;
+  br v7 .for.body.3 .for.end.3;
+.for.body.3:
+  v8: int = id x;
+  v9: int = id i;
+  v10: int = sub v8 v9;
+  temp: int = id v10;
+  v11: int = id temp;
+  v12: int = const 1;
+  v13: int = add v11 v12;
+  temp: int = id v13;
+  v14: int = id prev;
+  v15: int = id temp;
+  v16: int = mul v14 v15;
+  curr: int = id v16;
+  v17: int = id curr;
+  print v17;
+  v18: int = const 0;
+  v19: int = id curr;
+  prev: int = id v19;
+  v20: int = id i;
+  v21: int = const 1;
+  v22: int = add v20 v21;
+  i: int = id v22;
+  jmp .for.cond.3;
+.for.end.3:
+}
