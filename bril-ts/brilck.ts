@@ -13,6 +13,12 @@ const OP_TYPES: {[key: string]: OpType} = {
   'add': {'args': ['int', 'int'], 'dest': 'int'}
 };
 
+const CONST_TYPES: {[key: string]: string} = {
+  'int': 'number',
+  'float': 'number',
+  'bool': 'bool',
+};
+
 /**
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
  * with the old type for the variable.
@@ -95,6 +101,29 @@ function checkInstr(
   }
 }
 
+function checkConst(instr: bril.Constant) {
+  if (!('type' in instr)) {
+    console.error(`const missing type`);
+    return;
+  }
+  if (typeof instr.type !== 'string') {
+    console.error(`const of non-primitive type ${instr.type}`);
+    return;
+  }
+
+  let valType = CONST_TYPES[instr.type];
+  if (!valType) {
+    console.error(`unknown const type ${instr.type}`);
+    return;
+  }
+
+  if (typeof instr.value !== valType) {
+    console.error(
+      `const value ${instr.value} does not match type ${instr.type}`
+    );
+  }
+}
+
 function checkFunc(func: bril.Function) {
   let env: TypeEnv = new Map();
   let labels = new Set<bril.Ident>();
@@ -118,7 +147,11 @@ function checkFunc(func: bril.Function) {
   // Check each instruction.
   for (let instr of func.instrs) {
     if ('op' in instr) {
-      checkInstr(env, labels, instr);
+      if (instr.op === 'const') {
+        checkConst(instr);
+      } else {
+        checkInstr(env, labels, instr);
+      }
     }
   }
 }
