@@ -26,6 +26,15 @@ const OP_TYPES: {[key: string]: OpType} = {
   'or': {'args': ['bool', 'bool'], 'dest': 'bool'},
   'jmp': {'args': [], 'labels': 1},
   'br': {'args': ['bool'], 'labels': 2},
+  'fadd': {'args': ['float', 'float'], 'dest': 'float'},
+  'fmul': {'args': ['float', 'float'], 'dest': 'float'},
+  'fsub': {'args': ['float', 'float'], 'dest': 'float'},
+  'fdiv': {'args': ['float', 'float'], 'dest': 'float'},
+  'feq': {'args': ['float', 'float'], 'dest': 'bool'},
+  'flt': {'args': ['float', 'float'], 'dest': 'bool'},
+  'fgt': {'args': ['float', 'float'], 'dest': 'bool'},
+  'fle': {'args': ['float', 'float'], 'dest': 'bool'},
+  'fge': {'args': ['float', 'float'], 'dest': 'bool'},
 };
 
 const CONST_TYPES: {[key: string]: string} = {
