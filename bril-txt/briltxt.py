@@ -146,6 +146,8 @@ class JSONTransformer(lark.Transformer):
         if type:
             out['type'] = type
         out.update(op)
+        if self.include_pos:
+            out['pos'] = _pos(dest)
         return out
 
     def op(self, items):

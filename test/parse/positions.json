@@ -47,7 +47,7 @@
           "dest": "v2",
           "op": "add",
           "pos": {
-            "col": 13,
+            "col": 3,
             "row": 7
           },
           "type": "int"
