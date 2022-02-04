@@ -1,0 +1,10 @@
+- Support Speculative execution in brilirs
+- Support structs in bril-rs and brilirs
+- bril-rs to LLVM compiler?
+- Optimize brilirs:
+    - replace the naive memory management support with a more optimized version
+    - optimize brilirs for function calls
+        - replace string lookup with indexing a vec
+        - optimize contexts?
+- Improve documentation
+- Appease Clippy Overlord

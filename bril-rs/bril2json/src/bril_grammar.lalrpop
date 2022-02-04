@@ -5,11 +5,24 @@
 #![allow(clippy::new_without_default)]
 #![allow(clippy::deprecated_cfg_attr)]
 #![allow(clippy::single_char_pattern)]
+#![allow(clippy::no_effect_underscore_binding)]
+#![allow(clippy::unnested_or_patterns)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::trivially_copy_pass_by_ref)]
+#![allow(clippy::missing_const_for_fn)]
+#![allow(clippy::unnecessary_wraps)]
+#![allow(clippy::redundant_pub_crate)]
+#![allow(clippy::cloned_instead_of_copied)]
+#![allow(clippy::too_many_lines)]
+#![allow(clippy::use_self)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::cast_sign_loss)]
 
 use std::str::FromStr;
+use crate::Lines;
 use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal};
 
-grammar;
+grammar(lines : &Lines);
 
 match {
     r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
@@ -31,11 +44,12 @@ pub AbstractProgram : AbstractProgram = {
 }
 
 AbstractFunction : AbstractFunction = {
-    <f: Func> <a: (Argument_List)?> <t:OutputType?> "{" <c :(<AbstractCode>)*> "}" => {let a = a.unwrap_or_default(); AbstractFunction {
+    <loc:@L> <f: Func> <a: (Argument_List)?> <t:OutputType?> "{" <c :(<AbstractCode>)*> "}" => {let a = a.unwrap_or_default(); AbstractFunction {
         name : f,
         args : a,
         return_type : t,
         instrs: c,
+        pos : lines.get_position(loc),
     }}
 }
 
@@ -55,27 +69,29 @@ AbstractArgument : AbstractArgument = {
 }
 
 AbstractCode : AbstractCode = {
-    <l: Label> ":" => AbstractCode::Label{ label : l},
+    <loc:@L> <l: Label> ":" => AbstractCode::Label{ label : l, pos : lines.get_position(loc)},
     <i: AbstractInstruction> => AbstractCode::Instruction(i),
 }
 
 AbstractInstruction : AbstractInstruction = {
-    <i:Ident> ":" <t: AbstractType> "=" <c: ConstOps> <l: Literal> ";" => AbstractInstruction::Constant {
+    <loc:@L> <i:Ident> <t:(":" <AbstractType>)?> "=" <c: ConstOps> <l: Literal> ";" => AbstractInstruction::Constant {
         op : c,
         dest : i,
         const_type : t,
         value : l,
+        pos : lines.get_position(loc),
     },
-    <i:Ident> ":" <t:AbstractType> "=" <v:Ident> <f :(<Args>)*> ";" => {
+    <loc:@L> <i:Ident> <t:(":" <AbstractType>)?> "=" <v:Ident> <f :(<Args>)*> ";" => {
         let mut a_vec = Vec::new();
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
-        f.into_iter().for_each(|x|
+        for x in f {
             if x.starts_with("@") {
-                f_vec.push(x.strip_prefix("@").unwrap().to_owned())
+                f_vec.push(x.strip_prefix("@").unwrap().to_owned());
             } else if x.starts_with(".") {
-                l_vec.push(x.strip_prefix(".").unwrap().to_owned())
-            } else {a_vec.push(x)});
+                l_vec.push(x.strip_prefix(".").unwrap().to_owned());
+            } else {a_vec.push(x);}
+        }
         AbstractInstruction::Value {
             op: v,
             dest: i,
@@ -83,23 +99,26 @@ AbstractInstruction : AbstractInstruction = {
             args: a_vec,
             funcs: f_vec,
             labels: l_vec,
+            pos : lines.get_position(loc),
         }
     },
-    <e:Ident> <f :(<Args>)*> ";" => {
+    <loc:@L> <e:Ident> <f :(<Args>)*> ";" => {
         let mut a_vec = Vec::new();
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
-        f.into_iter().for_each(|x|
+        for x in f {
             if x.starts_with("@") {
-                f_vec.push(x.strip_prefix("@").unwrap().to_owned())
+                f_vec.push(x.strip_prefix("@").unwrap().to_owned());
             } else if x.starts_with(".") {
-                l_vec.push(x.strip_prefix(".").unwrap().to_owned())
-            } else {a_vec.push(x)});
+                l_vec.push(x.strip_prefix(".").unwrap().to_owned());
+            } else {a_vec.push(x);}
+        }
         AbstractInstruction::Effect {
             op: e,
             args: a_vec,
             funcs: f_vec,
             labels: l_vec,
+            pos : lines.get_position(loc),
         }
     }
 

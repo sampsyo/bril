@@ -3,6 +3,9 @@ use std::marker::PhantomData;
 
 use crate::{program::Literal, ConstOps};
 
+#[cfg(feature = "position")]
+use crate::program::Position;
+
 use serde::{Deserialize, Serialize};
 
 use serde::de::{self, Error, MapAccess, Visitor};
@@ -30,6 +33,9 @@ pub struct AbstractFunction {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<AbstractCode>,
     pub name: String,
+    #[cfg(feature = "position")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pos: Option<Position>,
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<AbstractType>,
@@ -76,14 +82,23 @@ impl Display for AbstractArgument {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum AbstractCode {
-    Label { label: String },
+    Label {
+        label: String,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
+    },
     Instruction(AbstractInstruction),
 }
 
 impl Display for AbstractCode {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            AbstractCode::Label { label } => write!(f, ".{}:", label),
+            AbstractCode::Label {
+                label,
+                #[cfg(feature = "position")]
+                    pos: _,
+            } => write!(f, ".{}:", label),
             AbstractCode::Instruction(instr) => write!(f, "  {}", instr),
         }
     }
@@ -95,8 +110,11 @@ pub enum AbstractInstruction {
     Constant {
         dest: String,
         op: ConstOps,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
         #[serde(rename = "type")]
-        const_type: AbstractType,
+        const_type: Option<AbstractType>,
         value: Literal,
     },
     Value {
@@ -108,8 +126,11 @@ pub enum AbstractInstruction {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
         op: String,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
         #[serde(rename = "type")]
-        op_type: AbstractType,
+        op_type: Option<AbstractType>,
     },
     Effect {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -119,6 +140,9 @@ pub enum AbstractInstruction {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
         op: String,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
     },
 }
 
@@ -130,9 +154,12 @@ impl Display for AbstractInstruction {
                 dest,
                 const_type,
                 value,
-            } => {
-                write!(f, "{}: {} = {} {};", dest, const_type, op, value)
-            }
+                #[cfg(feature = "position")]
+                    pos: _,
+            } => match const_type {
+                Some(const_type) => write!(f, "{}: {} = {} {};", dest, const_type, op, value),
+                None => write!(f, "{} = {} {};", dest, op, value),
+            },
             AbstractInstruction::Value {
                 op,
                 dest,
@@ -140,8 +167,13 @@ impl Display for AbstractInstruction {
                 args,
                 funcs,
                 labels,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
-                write!(f, "{}: {} = {}", dest, op_type, op)?;
+                match op_type {
+                    Some(op_type) => write!(f, "{}: {} = {}", dest, op_type, op)?,
+                    None => write!(f, "{} = {}", dest, op)?,
+                }
                 for func in funcs {
                     write!(f, " @{}", func)?;
                 }
@@ -158,6 +190,8 @@ impl Display for AbstractInstruction {
                 args,
                 funcs,
                 labels,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
                 write!(f, "{}", op)?;
                 for func in funcs {

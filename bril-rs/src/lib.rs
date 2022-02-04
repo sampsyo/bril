@@ -4,6 +4,7 @@
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::cargo_common_metadata)]
+#![allow(clippy::too_many_lines)]
 
 pub mod conversion;
 pub mod program;

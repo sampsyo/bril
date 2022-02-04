@@ -26,8 +26,7 @@ This library supports fully compatible Rust implementations of `bril2txt` and `b
 
 For ease of use, these tools can be installed and added to your path by running the following in `bril-rs/`:
 
-    $ cargo install --path . --example bril2txt
-    $ cargo install --path ./bril2json
+    $ make install
 
 Make sure that `~/.cargo/bin` is on your path.
 
@@ -39,6 +38,8 @@ To maintain consistency and cleanliness, run:
 ```bash
 cargo fmt
 cargo clippy
+make test
+make features
 ```
 
 [rust]: https://www.rust-lang.org
