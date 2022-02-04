@@ -1,8 +1,14 @@
 #!/usr/bin/env node
+import { ResolvedTypeReferenceDirective } from 'typescript';
 import * as bril from './bril';
 import {readStdin} from './util';
 
-type TypeEnv = Map<bril.Ident, bril.Type>;
+type VarEnv = Map<bril.Ident, bril.Type>;
+
+interface Env {
+  vars: VarEnv;
+  labels: Set<bril.Ident>;
+}
 
 interface OpType {
   args: bril.Type[],
@@ -47,7 +53,7 @@ const CONST_TYPES: {[key: string]: string} = {
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
  * with the old type for the variable.
  */
-function addType(env: TypeEnv, id: bril.Ident, type: bril.Type) {
+function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
   let oldType = env.get(id);
   if (oldType) {
     if (oldType !== type) {
@@ -60,9 +66,7 @@ function addType(env: TypeEnv, id: bril.Ident, type: bril.Type) {
   }
 }
 
-function checkInstr(
-  env: TypeEnv, labels: Set<bril.Ident>, instr: bril.Operation
-) {
+function checkInstr(env: Env, instr: bril.Operation) {
   let args = instr.args ?? [];
 
   // Check for special cases.
@@ -76,7 +80,7 @@ function checkInstr(
       console.error(`id should have one arg, not ${args.length}`);
       return;
     }
-    let argType = env.get(args[0]);
+    let argType = env.vars.get(args[0]);
     if (!argType) {
       console.error(`${args[0]} is undefined`);
     } else if (instr.type !== argType) {
@@ -101,7 +105,7 @@ function checkInstr(
 
   // Check the argument types.
   for (let i = 0; i < args.length; ++i) {
-    let argType = env.get(args[i]);
+    let argType = env.vars.get(args[i]);
     if (!argType) {
       console.error(`${args[i]} (arg ${i}) undefined`);
       continue;
@@ -139,7 +143,7 @@ function checkInstr(
     console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
   } else {
     for (let lab of labs) {
-      if (!labels.has(lab)) {
+      if (!env.labels.has(lab)) {
         console.error(`label .${lab} undefined`);
       }
     }
@@ -170,20 +174,20 @@ function checkConst(instr: bril.Constant) {
 }
 
 function checkFunc(func: bril.Function) {
-  let env: TypeEnv = new Map();
+  let vars: VarEnv = new Map();
   let labels = new Set<bril.Ident>();
 
   // Initilize the type environment with the arguments.
   if (func.args) {
     for (let arg of func.args) {
-      addType(env, arg.name, arg.type);
+      addType(vars, arg.name, arg.type);
     }
   }
 
   // Gather up all the types of the local variables and all the label names.
   for (let instr of func.instrs) {
     if ('dest' in instr) {
-      addType(env, instr.dest, instr.type);
+      addType(vars, instr.dest, instr.type);
     } else if ('label' in instr) {
       labels.add(instr.label);
     }
@@ -195,7 +199,7 @@ function checkFunc(func: bril.Function) {
       if (instr.op === 'const') {
         checkConst(instr);
       } else {
-        checkInstr(env, labels, instr);
+        checkInstr({vars, labels}, instr);
       }
     }
   }
