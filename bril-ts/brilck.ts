@@ -84,6 +84,18 @@ function typeEq(a: bril.Type, b: bril.Type): boolean {
   }
 }
 
+/**
+ * Format a type as a human-readable string.
+ */
+function typeFmt(t: bril.Type): string {
+  if (typeof t === "string") {
+    return t;
+  } else if (typeof t === "object") {
+    return `ptr<${typeFmt(t.ptr)}>`;
+  }
+  return "undefined";  // This shouldn't happen.
+}
+
 function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
   for (let i = 0; i < args.length; ++i) {
     let argType = env.vars.get(args[i]);
@@ -93,8 +105,8 @@ function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
     }
     if (!typeEq(params[i], argType)) {
       console.error(
-        `${args[i]} has type ${argType}, but arg ${i} should ` +
-        `have type ${params[i]}`
+        `${args[i]} has type ${typeFmt(argType)}, but arg ${i} should ` +
+        `have type ${typeFmt(params[i])}`
       );
     }
   }
@@ -118,7 +130,10 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     if (!argType) {
       console.error(`${args[0]} is undefined`);
     } else if (!typeEq(instr.type, argType)) {
-      console.error(`id arg type ${argType} does not match type ${instr.type}`);
+      console.error(
+        `id arg type ${typeFmt(argType)} does not match ` +
+        `type ${typeFmt(instr.type)}`
+      );
     }
     return;
   } else if (instr.op == "call") {
@@ -138,7 +153,8 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       if ('type' in instr) {
         if (!typeEq(instr.type, funcType.ret)) {
           console.error(
-            `@${funcs[0]} returns type ${funcType.ret}, not ${instr.type}`
+            `@${funcs[0]} returns type ${typeFmt(funcType.ret)}, ` +
+            `not ${typeFmt(instr.type)}`
           );
         }
       }
@@ -194,16 +210,18 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     if (opType.dest) {
       if (!typeEq(instr.type, opType.dest)) {
         console.error(
-          `result type of ${instr.op} should be ${opType.dest}, ` +
-          `but found ${instr.type}`
+          `result type of ${instr.op} should be ${typeFmt(opType.dest)}, ` +
+          `but found ${typeFmt(instr.type)}`
         );
       }
     } else {
       console.error(`${instr.op} should have no result type`);
     }
   } else {
-    if ('dest' in opType) {
-      console.error(`missing result type ${opType.dest} for ${instr.op}`);
+    if (opType.dest) {
+      console.error(
+        `missing result type ${typeFmt(opType.dest)} for ${instr.op}`
+      );
     }
   }
   
@@ -227,19 +245,19 @@ function checkConst(instr: bril.Constant) {
     return;
   }
   if (typeof instr.type !== 'string') {
-    console.error(`const of non-primitive type ${instr.type}`);
+    console.error(`const of non-primitive type ${typeFmt(instr.type)}`);
     return;
   }
 
   let valType = CONST_TYPES[instr.type];
   if (!valType) {
-    console.error(`unknown const type ${instr.type}`);
+    console.error(`unknown const type ${typeFmt(instr.type)}`);
     return;
   }
 
   if (typeof instr.value !== valType) {
     console.error(
-      `const value ${instr.value} does not match type ${instr.type}`
+      `const value ${instr.value} does not match type ${typeFmt(instr.type)}`
     );
   }
 }
