@@ -61,13 +61,26 @@ const CONST_TYPES: {[key: string]: string} = {
 function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
   let oldType = env.get(id);
   if (oldType) {
-    if (oldType !== type) {
+    if (!typeEq(oldType, type)) {
       console.error(
         `new type ${type} for ${id} conflicts with old type ${oldType}`
       );
     }
   } else {
     env.set(id, type);
+  }
+}
+
+/**
+ * Check for type equality.
+ */
+function typeEq(a: bril.Type, b: bril.Type): boolean {
+  if (typeof a === "string" && typeof b === "string") {
+    return a == b;
+  } else if (typeof a === "object" && typeof b === "object") {
+    return typeEq(a.ptr, b.ptr);
+  } else {
+    return false;
   }
 }
 
@@ -78,7 +91,7 @@ function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
       console.error(`${args[i]} (arg ${i}) undefined`);
       continue;
     }
-    if (params[i] !== argType) {
+    if (!typeEq(params[i], argType)) {
       console.error(
         `${args[i]} has type ${argType}, but arg ${i} should ` +
         `have type ${params[i]}`
@@ -104,7 +117,7 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     let argType = env.vars.get(args[0]);
     if (!argType) {
       console.error(`${args[0]} is undefined`);
-    } else if (instr.type !== argType) {
+    } else if (!typeEq(instr.type, argType)) {
       console.error(`id arg type ${argType} does not match type ${instr.type}`);
     }
     return;
@@ -123,7 +136,7 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
 
     if (funcType.ret) {
       if ('type' in instr) {
-        if (instr.type !== funcType.ret) {
+        if (!typeEq(instr.type, funcType.ret)) {
           console.error(
             `@${funcs[0]} returns type ${funcType.ret}, not ${instr.type}`
           );
@@ -178,8 +191,8 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
 
   // Check destination type.
   if ('type' in instr) {
-    if ('dest' in opType) {
-      if (instr.type !== opType.dest) {
+    if (opType.dest) {
+      if (!typeEq(instr.type, opType.dest)) {
         console.error(
           `result type of ${instr.op} should be ${opType.dest}, ` +
           `but found ${instr.type}`
