@@ -60,21 +60,30 @@ function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
 }
 
 /**
- * Look up type variables in TypeEnv, leaving non-variable types unchanged.
+ * Look up type variables in TypeEnv, leaving non-variable types and undefined
+ * type variables unchanged.
  */
 function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
   if (!tenv) {
     return type;
   }
-  if (typeof type !== 'object' || !('tv' in type)) {
-    return type;
+
+  // Do we have a type variable to look up?
+  if (typeof type === 'object' && 'tv' in type) {
+    let res = tenv.get(type.tv);
+    if (res) {
+      return res;
+    } else {
+      return type;
+    }
   }
-  let res = tenv.get(type.tv);
-  if (res) {
-    return res;
-  } else {
-    return type;
+
+  // Do we need to recursively look up inside this type?
+  if (typeof type === 'object' && 'ptr' in type) {
+    return {ptr: typeLookup(type.ptr, tenv)};
   }
+
+  return type;
 }
 
 /**
