@@ -128,28 +128,29 @@ function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[], name: stri
 /**
  * Check an instruction's arguments and labels against a type specification.
  */
-function checkTypes(env: Env, instr: bril.Operation, type: OpType) {
+function checkTypes(env: Env, instr: bril.Operation, type: OpType, name?: string) {
   let args = instr.args ?? [];
+  name = name ?? instr.op;
 
   // Check the argument types.
-  checkArgs(env, args, type.args, instr.op);
+  checkArgs(env, args, type.args, name);
 
   // Check destination type.
   if ('type' in instr) {
     if (type.dest) {
       if (!typeEq(instr.type, type.dest)) {
         console.error(
-          `result type of ${instr.op} should be ${typeFmt(type.dest)}, ` +
+          `result type of ${name} should be ${typeFmt(type.dest)}, ` +
           `but found ${typeFmt(instr.type)}`
         );
       }
     } else {
-      console.error(`${instr.op} should have no result type`);
+      console.error(`${name} should have no result type`);
     }
   } else {
     if (type.dest) {
       console.error(
-        `missing result type ${typeFmt(type.dest)} for ${instr.op}`
+        `missing result type ${typeFmt(type.dest)} for ${name}`
       );
     }
   }
@@ -199,22 +200,11 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       console.error(`function @${funcs[0]} undefined`);
       return;
     }
-
-    if (funcType.ret) {
-      if ('type' in instr) {
-        if (!typeEq(instr.type, funcType.ret)) {
-          console.error(
-            `@${funcs[0]} returns type ${typeFmt(funcType.ret)}, ` +
-            `not ${typeFmt(instr.type)}`
-          );
-        }
-      }
-    } else if ('type' in instr) {
-      console.error(`@${funcs[0]} does not return a value`);
-    }
     
-    checkArgs(env, args, funcType.args, `@${funcs[0]}`);
-
+    checkTypes(env, instr, {
+      'args': funcType.args,
+      'dest': funcType.ret,
+    }, `@${funcs[0]}`);
     return;
   } else if (instr.op === "ret") {
     if (ret) {

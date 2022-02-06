@@ -1,9 +1,9 @@
 returning value in function without a return type
 missing return value in function with return type
 function @foo undefined
-@nothing does not return a value
+@nothing should have no result type
 call should have one function, not 2
-@retint returns type int, not bool
+result type of @retint should be int, but found bool
 b has type bool, but arg 0 for @argint should have type int
 @argint expects 1 args, not 0
 @argint expects 1 args, not 2
