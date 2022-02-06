@@ -124,43 +124,32 @@ function typeFmt(t: bril.Type): string {
 }
 
 /**
- * Check that an argument list matches a parameter type list.
- */
-function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[], name: string) {
-  // Check argument count.
-  if (args.length !== params.length) {
-    console.error(
-      `${name} expects ${params.length} args, not ${args.length}`
-    );
-    return;
-  }
-
-  // Check each argument.
-  let argc = Math.min(args.length, params.length);
-  for (let i = 0; i < argc; ++i) {
-    let argType = env.vars.get(args[i]);
-    if (!argType) {
-      console.error(`${args[i]} (arg ${i}) undefined`);
-      continue;
-    }
-    if (!typeEq(params[i], argType)) {
-      console.error(
-        `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
-        `should have type ${typeFmt(params[i])}`
-      );
-    }
-  }
-}
-
-/**
  * Check an instruction's arguments and labels against a type signature.
  */
-function checkTypes(env: Env, instr: bril.Operation, sig: Signature, name?: string) {
+function checkSig(env: Env, instr: bril.Operation, sig: Signature, name?: string) {
   let args = instr.args ?? [];
   name = name ?? instr.op;
 
-  // Check the argument types.
-  checkArgs(env, args, sig.args, name);
+  // Check arguments.
+  if (args.length !== sig.args.length) {
+    console.error(
+      `${name} expects ${sig.args.length} args, not ${args.length}`
+    );
+  } else {
+    for (let i = 0; i < args.length; ++i) {
+      let argType = env.vars.get(args[i]);
+      if (!argType) {
+        console.error(`${args[i]} (arg ${i}) undefined`);
+        continue;
+      }
+      if (!typeEq(sig.args[i], argType)) {
+        console.error(
+          `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
+          `should have type ${typeFmt(sig.args[i])}`
+        );
+      }
+    }
+  }
 
   // Check destination type.
   if ('type' in instr) {
@@ -212,7 +201,7 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
     if (!('type' in instr)) {
       console.error(`missing result type for id`);
     } else {
-      checkTypes(env, instr, {
+      checkSig(env, instr, {
         args: [instr.type],
         dest: instr.type,
       });
@@ -232,7 +221,7 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
       return;
     }
 
-    checkTypes(env, instr, {
+    checkSig(env, instr, {
       args: funcType.args,
       dest: funcType.ret,
     }, `@${funcs[0]}`);
@@ -247,7 +236,7 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
       } else if (args.length !== 1) {
         console.error(`cannot return multiple values`);
       } else {
-        checkTypes(env, instr, {args: [env.ret]});
+        checkSig(env, instr, {args: [env.ret]});
       }
     } else {
       if (args.length !== 0) {
@@ -258,7 +247,7 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
   },
 };
 
-function checkInstr(env: Env, instr: bril.Operation) {
+function checkOp(env: Env, instr: bril.Operation) {
   let args = instr.args ?? [];
 
   // Check for special cases.
@@ -268,14 +257,13 @@ function checkInstr(env: Env, instr: bril.Operation) {
     return;
   }
 
-  // Do we have a type for this operation?
+  // General case: use the operation's signature.
   let opType = OP_SIGS[instr.op];
   if (!opType) {
     console.error(`unknown opcode ${instr.op}`);
     return;
   }
-
-  checkTypes(env, instr, opType);
+  checkSig(env, instr, opType);
 }
 
 function checkConst(instr: bril.Constant) {
@@ -331,7 +319,7 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
       if (instr.op === 'const') {
         checkConst(instr);
       } else {
-        checkInstr({vars, labels, funcs, ret: func.type}, instr);
+        checkOp({vars, labels, funcs, ret: func.type}, instr);
       }
     }
   }
