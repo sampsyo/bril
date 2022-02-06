@@ -213,7 +213,7 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       } else if (args.length !== 1) {
         console.error(`cannot return multiple values`);
       } else {
-        checkArgs(env, args, [ret], 'ret');
+        checkTypes(env, instr, {'args': [ret]});
       }
     } else {
       if (args.length !== 0) {
