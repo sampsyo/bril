@@ -178,20 +178,13 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     }
     return;
   } else if (instr.op === "id") {
-    if (args.length !== 1) {
-      console.error(`id should have one arg, not ${args.length}`);
-      return;
-    }
-    let argType = env.vars.get(args[0]);
-    if (!argType) {
-      console.error(`${args[0]} is undefined`);
-    } else if (!instr.type) {
+    if (!instr.type) {
       console.error(`missing result type for id`);
-    } else if (!typeEq(instr.type, argType)) {
-      console.error(
-        `id arg type ${typeFmt(argType)} does not match ` +
-        `type ${typeFmt(instr.type)}`
-      );
+    } else {
+      checkTypes(env, instr, {
+        'args': [instr.type],
+        'dest': instr.type,
+      });
     }
     return;
   } else if (instr.op == "call") {

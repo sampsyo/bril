@@ -1,1 +1,1 @@
-id arg type ptr<int> does not match type ptr<float>
+a has type ptr<int>, but arg 0 for id should have type ptr<float>
