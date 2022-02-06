@@ -101,7 +101,7 @@ export const OP_SIGS: {[key: string]: Signature | PolySignature} = {
   'fge': {args: ['float', 'float'], dest: 'bool'},
   
   // Memory.
-  'alloc': {tvar: {tv: 'T'}, sig: {args: [{tv: 'T'}], dest: {ptr: {tv: 'T'}}}},
+  'alloc': {tvar: {tv: 'T'}, sig: {args: ['int'], dest: {ptr: {tv: 'T'}}}},
   'free': {tvar: {tv: 'T'}, sig: {args: [{ptr: {tv: 'T'}}]}},
   'store': {tvar: {tv: 'T'}, sig: {args: [{ptr: {tv: 'T'}}, {tv: 'T'}]}},
   'load': {tvar: {tv: 'T'}, sig: {args: [{ptr: {tv: 'T'}}], dest: {tv: 'T'}}},

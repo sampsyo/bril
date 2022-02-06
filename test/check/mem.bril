@@ -1,5 +1,6 @@
 @main(i: int) {
   p: ptr<int> = alloc i;
+  r: ptr<float> = alloc i;
   store p i;
   j: int = load p;
   q: ptr<int> = ptradd p i;
