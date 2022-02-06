@@ -169,17 +169,20 @@ function checkTypes(env: Env, instr: bril.Operation, type: OpType, name?: string
   }
 }
 
-function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined) {
-  let args = instr.args ?? [];
+type CheckFunc = (env: Env, instr: bril.Operation, ret: bril.Type | undefined) => void;
 
-  // Check for special cases.
-  if (instr.op === "print") {
+/**
+ * Special-case logic for checking some special functions.
+ */
+const INSTR_CHECKS: {[key: string]: CheckFunc} = {
+  print: (env, instr, ret) => {
     if ('type' in instr) {
       console.error(`print should have no result type`);
     }
-    return;
-  } else if (instr.op === "id") {
-    if (!instr.type) {
+  },
+
+  id: (env, instr, ret) => {
+    if (!('type' in instr)) {
       console.error(`missing result type for id`);
     } else {
       checkTypes(env, instr, {
@@ -187,8 +190,9 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
         dest: instr.type,
       });
     }
-    return;
-  } else if (instr.op == "call") {
+  },
+
+  call: (env, instr, ret) => {
     let funcs = instr.funcs ?? [];
     if (funcs.length !== 1) {
       console.error(`call should have one function, not ${funcs.length}`);
@@ -200,13 +204,16 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       console.error(`function @${funcs[0]} undefined`);
       return;
     }
-    
+
     checkTypes(env, instr, {
       args: funcType.args,
       dest: funcType.ret,
     }, `@${funcs[0]}`);
     return;
-  } else if (instr.op === "ret") {
+  },
+
+  ret: (env, instr, ret) => {
+    let args = instr.args ?? [];
     if (ret) {
       if (args.length === 0) {
         console.error(`missing return value in function with return type`);
@@ -221,9 +228,20 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       }
     }
     return;
+  },
+};
+
+function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined) {
+  let args = instr.args ?? [];
+
+  // Check for special cases.
+  let check_func = INSTR_CHECKS[instr.op];
+  if (check_func) {
+    check_func(env, instr, ret);
+    return;
   }
 
-  // Do we know this operation?
+  // Do we have a type for this operation?
   let opType = OP_TYPES[instr.op];
   if (!opType) {
     console.error(`unknown opcode ${instr.op}`);
