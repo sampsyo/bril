@@ -1,7 +1,7 @@
 import * as bril from './bril';
 
 /**
- * The type signature for an operation.
+ * An abstract type signature.
  *
  * Describes the shape and types of all the ingredients for a Bril operation
  * instruction: arguments, result, labels, and functions.
@@ -28,13 +28,28 @@ export interface BaseSignature<T> {
   funcs?: number,
 }
 
+/**
+ * The concrete type signature for an operation.
+ */
 export type Signature = BaseSignature<bril.Type>;
 
+/**
+ * A polymorphic type variable.
+ */
 export type TVar = string;
 
+/**
+ * Like bril.Type, except that type variables may occur at the leaves.
+ */
+export type PolyType = bril.PrimType | TVar | {"ptr": PolyType};
+
+/**
+ * A polymorphic type signature, universally quantified over a single
+ * type variable.
+ */
 export interface PolySignature {
     tvar: TVar;
-    sig: BaseSignature<bril.Type | TVar>;
+    sig: BaseSignature<PolyType>;
 }
 
 /**

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { BaseType } from 'typescript';
 import * as bril from './bril';
-import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature} from './types';
+import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './types';
 import {readStdin, unreachable} from './util';
 
 /**
@@ -60,7 +60,10 @@ function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
   }
 }
 
-function typeLookup(type: bril.Type | TVar, tenv: TypeEnv | undefined): bril.Type | TVar {
+/**
+ * Look up type variables in TypeEnv, leaving non-variable types unchanged.
+ */
+function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
   if (!tenv) {
     return type;
   }
@@ -81,7 +84,7 @@ function typeLookup(type: bril.Type | TVar, tenv: TypeEnv | undefined): bril.Typ
  * If a type environemnt is supplied, attempt to unify any unset type
  * variables occuring in `b` to make the types match.
  */
-function typeEq(a: bril.Type, b: bril.Type | TVar, tenv?: TypeEnv): boolean {
+function typeEq(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
   // Shall we bind a type variable in b?
   b = typeLookup(b, tenv);
   if (typeof b === "string" && tenv?.has(b)) {
@@ -102,7 +105,7 @@ function typeEq(a: bril.Type, b: bril.Type | TVar, tenv?: TypeEnv): boolean {
 /**
  * Format a type as a human-readable string.
  */
-function typeFmt(t: bril.Type | TVar): string {
+function typeFmt(t: PolyType): string {
   if (typeof t === "string") {
     return t;
   } else if (typeof t === "object") {
@@ -122,7 +125,7 @@ function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignatu
   name = name ?? instr.op;
 
   // Are we handling a polymorphic signature?
-  let sig: BaseSignature<bril.Type | TVar>;
+  let sig: BaseSignature<PolyType>;
   let tenv: TypeEnv = new Map();
   if ('tvar' in psig) {
     sig = psig.sig;
