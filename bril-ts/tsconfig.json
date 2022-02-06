@@ -3,7 +3,6 @@
         "strict": true,
         "outDir": "build",
         "target": "es6",
-        "lib": ["es2019"],
         "module": "commonjs",
         "sourceMap": true
     }
