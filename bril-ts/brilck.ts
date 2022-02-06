@@ -1,58 +1,45 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import {readStdin} from './util';
+import {Signature, FuncType, OP_SIGS} from './types';
+import {readStdin, unreachable} from './util';
 
-interface FuncType {
-  'ret': bril.Type | undefined,
-  'args': bril.Type[],
-}
-type VarEnv = Map<bril.Ident, bril.Type>;
-type FuncEnv = Map<bril.Ident, FuncType>;
-
-interface Env {
-  vars: VarEnv;
-  labels: Set<bril.Ident>;
-  funcs: FuncEnv;
-}
-
-interface OpType {
-  args: bril.Type[],
-  dest?: bril.Type,
-  labels?: number,
-  funcs?: number,
-}
-
-const OP_TYPES: {[key: string]: OpType} = {
-  'add': {'args': ['int', 'int'], 'dest': 'int'},
-  'mul': {'args': ['int', 'int'], 'dest': 'int'},
-  'sub': {'args': ['int', 'int'], 'dest': 'int'},
-  'div': {'args': ['int', 'int'], 'dest': 'int'},
-  'eq': {'args': ['int', 'int'], 'dest': 'bool'},
-  'lt': {'args': ['int', 'int'], 'dest': 'bool'},
-  'gt': {'args': ['int', 'int'], 'dest': 'bool'},
-  'le': {'args': ['int', 'int'], 'dest': 'bool'},
-  'ge': {'args': ['int', 'int'], 'dest': 'bool'},
-  'not': {'args': ['bool'], 'dest': 'bool'},
-  'and': {'args': ['bool', 'bool'], 'dest': 'bool'},
-  'or': {'args': ['bool', 'bool'], 'dest': 'bool'},
-  'jmp': {'args': [], 'labels': 1},
-  'br': {'args': ['bool'], 'labels': 2},
-  'fadd': {'args': ['float', 'float'], 'dest': 'float'},
-  'fmul': {'args': ['float', 'float'], 'dest': 'float'},
-  'fsub': {'args': ['float', 'float'], 'dest': 'float'},
-  'fdiv': {'args': ['float', 'float'], 'dest': 'float'},
-  'feq': {'args': ['float', 'float'], 'dest': 'bool'},
-  'flt': {'args': ['float', 'float'], 'dest': 'bool'},
-  'fgt': {'args': ['float', 'float'], 'dest': 'bool'},
-  'fle': {'args': ['float', 'float'], 'dest': 'bool'},
-  'fge': {'args': ['float', 'float'], 'dest': 'bool'},
-};
-
+/**
+ * The JavaScript types of Bril constant values.
+ */
 const CONST_TYPES: {[key: string]: string} = {
   'int': 'number',
   'float': 'number',
   'bool': 'boolean',
 };
+
+type VarEnv = Map<bril.Ident, bril.Type>;
+type FuncEnv = Map<bril.Ident, FuncType>;
+
+/**
+ * A typing environment that we can use to check instructions within
+ * a single function.
+ */
+interface Env {
+  /**
+   * The types of all variables defined in the function.
+   */
+  vars: VarEnv;
+
+  /**
+   * The names of all the labels in the function.
+   */
+  labels: Set<bril.Ident>;
+
+  /**
+   * The defined functions in the program.
+   */
+  funcs: FuncEnv;
+
+  /**
+   * The return type of the current function.
+   */
+  ret: bril.Type | undefined;
+}
 
 /**
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
@@ -61,7 +48,7 @@ const CONST_TYPES: {[key: string]: string} = {
 function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
   let oldType = env.get(id);
   if (oldType) {
-    if (oldType !== type) {
+    if (!typeEq(oldType, type)) {
       console.error(
         `new type ${type} for ${id} conflicts with old type ${oldType}`
       );
@@ -71,44 +58,117 @@ function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
   }
 }
 
-function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
-  for (let i = 0; i < args.length; ++i) {
-    let argType = env.vars.get(args[i]);
-    if (!argType) {
-      console.error(`${args[i]} (arg ${i}) undefined`);
-      continue;
+/**
+ * Check for type equality.
+ */
+function typeEq(a: bril.Type, b: bril.Type): boolean {
+  if (typeof a === "string" && typeof b === "string") {
+    return a == b;
+  } else if (typeof a === "object" && typeof b === "object") {
+    return typeEq(a.ptr, b.ptr);
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Format a type as a human-readable string.
+ */
+function typeFmt(t: bril.Type): string {
+  if (typeof t === "string") {
+    return t;
+  } else if (typeof t === "object") {
+    return `ptr<${typeFmt(t.ptr)}>`;
+  }
+  unreachable(t);
+}
+
+/**
+ * Check an instruction's arguments and labels against a type signature.
+ */
+function checkSig(env: Env, instr: bril.Operation, sig: Signature, name?: string) {
+  let args = instr.args ?? [];
+  name = name ?? instr.op;
+
+  // Check arguments.
+  if (args.length !== sig.args.length) {
+    console.error(
+      `${name} expects ${sig.args.length} args, not ${args.length}`
+    );
+  } else {
+    for (let i = 0; i < args.length; ++i) {
+      let argType = env.vars.get(args[i]);
+      if (!argType) {
+        console.error(`${args[i]} (arg ${i}) undefined`);
+        continue;
+      }
+      if (!typeEq(sig.args[i], argType)) {
+        console.error(
+          `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
+          `should have type ${typeFmt(sig.args[i])}`
+        );
+      }
     }
-    if (params[i] !== argType) {
+  }
+
+  // Check destination type.
+  if ('type' in instr) {
+    if (sig.dest) {
+      if (!typeEq(instr.type, sig.dest)) {
+        console.error(
+          `result type of ${name} should be ${typeFmt(sig.dest)}, ` +
+          `but found ${typeFmt(instr.type)}`
+        );
+      }
+    } else {
+      console.error(`${name} should have no result type`);
+    }
+  } else {
+    if (sig.dest) {
       console.error(
-        `${args[i]} has type ${argType}, but arg ${i} should ` +
-        `have type ${params[i]}`
+        `missing result type ${typeFmt(sig.dest)} for ${name}`
       );
+    }
+  }
+
+  // Check labels.
+  let labs = instr.labels ?? [];
+  let labCount = sig.labels ?? 0;
+  if (labs.length !== labCount) {
+    console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
+  } else {
+    for (let lab of labs) {
+      if (!env.labels.has(lab)) {
+        console.error(`label .${lab} undefined`);
+      }
     }
   }
 }
 
-function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined) {
-  let args = instr.args ?? [];
+type CheckFunc = (env: Env, instr: bril.Operation) => void;
 
-  // Check for special cases.
-  if (instr.op === "print") {
+/**
+ * Special-case logic for checking some special functions.
+ */
+const INSTR_CHECKS: {[key: string]: CheckFunc} = {
+  print: (env, instr) => {
     if ('type' in instr) {
       console.error(`print should have no result type`);
     }
-    return;
-  } else if (instr.op === "id") {
-    if (args.length !== 1) {
-      console.error(`id should have one arg, not ${args.length}`);
-      return;
+  },
+
+  id: (env, instr) => {
+    if (!('type' in instr)) {
+      console.error(`missing result type for id`);
+    } else {
+      checkSig(env, instr, {
+        args: [instr.type],
+        dest: instr.type,
+      });
     }
-    let argType = env.vars.get(args[0]);
-    if (!argType) {
-      console.error(`${args[0]} is undefined`);
-    } else if (instr.type !== argType) {
-      console.error(`id arg type ${argType} does not match type ${instr.type}`);
-    }
-    return;
-  } else if (instr.op == "call") {
+  },
+
+  call: (env, instr) => {
     let funcs = instr.funcs ?? [];
     if (funcs.length !== 1) {
       console.error(`call should have one function, not ${funcs.length}`);
@@ -121,35 +181,22 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       return;
     }
 
-    if (funcType.ret) {
-      if ('type' in instr) {
-        if (instr.type !== funcType.ret) {
-          console.error(
-            `@${funcs[0]} returns type ${funcType.ret}, not ${instr.type}`
-          );
-        }
-      }
-    } else if ('type' in instr) {
-      console.error(`@${funcs[0]} does not return a value`);
-    }
-    
-    if (args.length !== funcType.args.length) {
-      console.error(
-        `@${funcs[0]} expects ${funcType.args.length} args, not ${args.length}`
-      );
-    } else {
-      checkArgs(env, args, funcType.args);
-    }
-
+    checkSig(env, instr, {
+      args: funcType.args,
+      dest: funcType.ret,
+    }, `@${funcs[0]}`);
     return;
-  } else if (instr.op === "ret") {
-    if (ret) {
+  },
+
+  ret: (env, instr) => {
+    let args = instr.args ?? [];
+    if (env.ret) {
       if (args.length === 0) {
         console.error(`missing return value in function with return type`);
       } else if (args.length !== 1) {
         console.error(`cannot return multiple values`);
       } else {
-        checkArgs(env, args, [ret]);
+        checkSig(env, instr, {args: [env.ret]});
       }
     } else {
       if (args.length !== 0) {
@@ -157,55 +204,26 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       }
     }
     return;
+  },
+};
+
+function checkOp(env: Env, instr: bril.Operation) {
+  let args = instr.args ?? [];
+
+  // Check for special cases.
+  let check_func = INSTR_CHECKS[instr.op];
+  if (check_func) {
+    check_func(env, instr);
+    return;
   }
 
-  // Do we know this operation?
-  let opType = OP_TYPES[instr.op];
+  // General case: use the operation's signature.
+  let opType = OP_SIGS[instr.op];
   if (!opType) {
     console.error(`unknown opcode ${instr.op}`);
     return;
   }
-
-  // Check the argument count.
-  if (args.length !== opType.args.length) {
-    console.error(
-      `${instr.op} needs ${opType.args.length} args; found ${args.length}`
-    );
-  }
-
-  // Check the argument types.
-  checkArgs(env, args, opType.args);
-
-  // Check destination type.
-  if ('type' in instr) {
-    if ('dest' in opType) {
-      if (instr.type !== opType.dest) {
-        console.error(
-          `result type of ${instr.op} should be ${opType.dest}, ` +
-          `but found ${instr.type}`
-        );
-      }
-    } else {
-      console.error(`${instr.op} should have no result type`);
-    }
-  } else {
-    if ('dest' in opType) {
-      console.error(`missing result type ${opType.dest} for ${instr.op}`);
-    }
-  }
-  
-  // Check labels.
-  let labs = instr.labels ?? [];
-  let labCount = opType.labels ?? 0;
-  if (labs.length !== labCount) {
-    console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
-  } else {
-    for (let lab of labs) {
-      if (!env.labels.has(lab)) {
-        console.error(`label .${lab} undefined`);
-      }
-    }
-  }
+  checkSig(env, instr, opType);
 }
 
 function checkConst(instr: bril.Constant) {
@@ -214,19 +232,19 @@ function checkConst(instr: bril.Constant) {
     return;
   }
   if (typeof instr.type !== 'string') {
-    console.error(`const of non-primitive type ${instr.type}`);
+    console.error(`const of non-primitive type ${typeFmt(instr.type)}`);
     return;
   }
 
   let valType = CONST_TYPES[instr.type];
   if (!valType) {
-    console.error(`unknown const type ${instr.type}`);
+    console.error(`unknown const type ${typeFmt(instr.type)}`);
     return;
   }
 
   if (typeof instr.value !== valType) {
     console.error(
-      `const value ${instr.value} does not match type ${instr.type}`
+      `const value ${instr.value} does not match type ${typeFmt(instr.type)}`
     );
   }
 }
@@ -261,7 +279,7 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
       if (instr.op === 'const') {
         checkConst(instr);
       } else {
-        checkInstr({vars, labels, funcs}, instr, func.type);
+        checkOp({vars, labels, funcs, ret: func.type}, instr);
       }
     }
   }
@@ -272,8 +290,8 @@ function checkProg(prog: bril.Program) {
   let funcEnv: FuncEnv = new Map();
   for (let func of prog.functions) {
     funcEnv.set(func.name, {
-      'ret': func.type,
-      'args': func.args?.map(a => a.type) ?? [],
+      ret: func.type,
+      args: func.args?.map(a => a.type) ?? [],
     });
   }
 
@@ -287,8 +305,5 @@ async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
   checkProg(prog);
 }
-
-// Make unhandled promise rejections terminate.
-process.on('unhandledRejection', e => { throw e });
 
 main();
