@@ -96,6 +96,9 @@ function typeFmt(t: bril.Type): string {
   unreachable(t);
 }
 
+/**
+ * Check that an argument list matches a parameter type list.
+ */
 function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[], name: string) {
   // Check argument count.
   if (args.length !== params.length) {
@@ -118,6 +121,49 @@ function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[], name: stri
         `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
         `should have type ${typeFmt(params[i])}`
       );
+    }
+  }
+}
+
+/**
+ * Check an instruction's arguments and labels against a type specification.
+ */
+function checkTypes(env: Env, instr: bril.Operation, type: OpType) {
+  let args = instr.args ?? [];
+
+  // Check the argument types.
+  checkArgs(env, args, type.args, instr.op);
+
+  // Check destination type.
+  if ('type' in instr) {
+    if (type.dest) {
+      if (!typeEq(instr.type, type.dest)) {
+        console.error(
+          `result type of ${instr.op} should be ${typeFmt(type.dest)}, ` +
+          `but found ${typeFmt(instr.type)}`
+        );
+      }
+    } else {
+      console.error(`${instr.op} should have no result type`);
+    }
+  } else {
+    if (type.dest) {
+      console.error(
+        `missing result type ${typeFmt(type.dest)} for ${instr.op}`
+      );
+    }
+  }
+
+  // Check labels.
+  let labs = instr.labels ?? [];
+  let labCount = type.labels ?? 0;
+  if (labs.length !== labCount) {
+    console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
+  } else {
+    for (let lab of labs) {
+      if (!env.labels.has(lab)) {
+        console.error(`label .${lab} undefined`);
+      }
     }
   }
 }
@@ -201,41 +247,7 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     return;
   }
 
-  // Check the argument types.
-  checkArgs(env, args, opType.args, instr.op);
-
-  // Check destination type.
-  if ('type' in instr) {
-    if (opType.dest) {
-      if (!typeEq(instr.type, opType.dest)) {
-        console.error(
-          `result type of ${instr.op} should be ${typeFmt(opType.dest)}, ` +
-          `but found ${typeFmt(instr.type)}`
-        );
-      }
-    } else {
-      console.error(`${instr.op} should have no result type`);
-    }
-  } else {
-    if (opType.dest) {
-      console.error(
-        `missing result type ${typeFmt(opType.dest)} for ${instr.op}`
-      );
-    }
-  }
-  
-  // Check labels.
-  let labs = instr.labels ?? [];
-  let labCount = opType.labels ?? 0;
-  if (labs.length !== labCount) {
-    console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
-  } else {
-    for (let lab of labs) {
-      if (!env.labels.has(lab)) {
-        console.error(`label .${lab} undefined`);
-      }
-    }
-  }
+  checkTypes(env, instr, opType);
 }
 
 function checkConst(instr: bril.Constant) {
