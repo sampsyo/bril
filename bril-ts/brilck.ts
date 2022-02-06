@@ -36,14 +36,20 @@ interface Env {
   ret: bril.Type | undefined;
 }
 
-interface OpType {
+/**
+ * The type signature for an operation.
+ * 
+ * Describes the shape and types of all the ingredients for a Bril operation
+ * instruction: arguments, result, labels, and functions.
+ */
+interface Signature {
   args: bril.Type[],
   dest?: bril.Type,
   labels?: number,
   funcs?: number,
 }
 
-const OP_TYPES: {[key: string]: OpType} = {
+const OP_SIGS: {[key: string]: Signature} = {
   'add': {args: ['int', 'int'], dest: 'int'},
   'mul': {args: ['int', 'int'], dest: 'int'},
   'sub': {args: ['int', 'int'], dest: 'int'},
@@ -147,21 +153,21 @@ function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[], name: stri
 }
 
 /**
- * Check an instruction's arguments and labels against a type specification.
+ * Check an instruction's arguments and labels against a type signature.
  */
-function checkTypes(env: Env, instr: bril.Operation, type: OpType, name?: string) {
+function checkTypes(env: Env, instr: bril.Operation, sig: Signature, name?: string) {
   let args = instr.args ?? [];
   name = name ?? instr.op;
 
   // Check the argument types.
-  checkArgs(env, args, type.args, name);
+  checkArgs(env, args, sig.args, name);
 
   // Check destination type.
   if ('type' in instr) {
-    if (type.dest) {
-      if (!typeEq(instr.type, type.dest)) {
+    if (sig.dest) {
+      if (!typeEq(instr.type, sig.dest)) {
         console.error(
-          `result type of ${name} should be ${typeFmt(type.dest)}, ` +
+          `result type of ${name} should be ${typeFmt(sig.dest)}, ` +
           `but found ${typeFmt(instr.type)}`
         );
       }
@@ -169,16 +175,16 @@ function checkTypes(env: Env, instr: bril.Operation, type: OpType, name?: string
       console.error(`${name} should have no result type`);
     }
   } else {
-    if (type.dest) {
+    if (sig.dest) {
       console.error(
-        `missing result type ${typeFmt(type.dest)} for ${name}`
+        `missing result type ${typeFmt(sig.dest)} for ${name}`
       );
     }
   }
 
   // Check labels.
   let labs = instr.labels ?? [];
-  let labCount = type.labels ?? 0;
+  let labCount = sig.labels ?? 0;
   if (labs.length !== labCount) {
     console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
   } else {
@@ -263,7 +269,7 @@ function checkInstr(env: Env, instr: bril.Operation) {
   }
 
   // Do we have a type for this operation?
-  let opType = OP_TYPES[instr.op];
+  let opType = OP_SIGS[instr.op];
   if (!opType) {
     console.error(`unknown opcode ${instr.op}`);
     return;
