@@ -1,1 +1,1 @@
-b has type bool, but arg 1 should have type int
+b has type bool, but arg 1 for add should have type int

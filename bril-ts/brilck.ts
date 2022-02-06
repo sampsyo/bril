@@ -96,7 +96,16 @@ function typeFmt(t: bril.Type): string {
   unreachable(t);
 }
 
-function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
+function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[], name: string) {
+  // Check argument count.
+  if (args.length !== params.length) {
+    console.error(
+      `${name} expects ${params.length} args, not ${args.length}`
+    );
+    return;
+  }
+
+  // Check each argument.
   let argc = Math.min(args.length, params.length);
   for (let i = 0; i < argc; ++i) {
     let argType = env.vars.get(args[i]);
@@ -106,8 +115,8 @@ function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
     }
     if (!typeEq(params[i], argType)) {
       console.error(
-        `${args[i]} has type ${typeFmt(argType)}, but arg ${i} should ` +
-        `have type ${typeFmt(params[i])}`
+        `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
+        `should have type ${typeFmt(params[i])}`
       );
     }
   }
@@ -165,13 +174,7 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       console.error(`@${funcs[0]} does not return a value`);
     }
     
-    if (args.length !== funcType.args.length) {
-      console.error(
-        `@${funcs[0]} expects ${funcType.args.length} args, not ${args.length}`
-      );
-    } else {
-      checkArgs(env, args, funcType.args);
-    }
+    checkArgs(env, args, funcType.args, `@${funcs[0]}`);
 
     return;
   } else if (instr.op === "ret") {
@@ -181,7 +184,7 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       } else if (args.length !== 1) {
         console.error(`cannot return multiple values`);
       } else {
-        checkArgs(env, args, [ret]);
+        checkArgs(env, args, [ret], 'ret');
       }
     } else {
       if (args.length !== 0) {
@@ -198,15 +201,8 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     return;
   }
 
-  // Check the argument count.
-  if (args.length !== opType.args.length) {
-    console.error(
-      `${instr.op} needs ${opType.args.length} args; found ${args.length}`
-    );
-  }
-
   // Check the argument types.
-  checkArgs(env, args, opType.args);
+  checkArgs(env, args, opType.args, instr.op);
 
   // Check destination type.
   if ('type' in instr) {
