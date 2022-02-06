@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { BinaryLike } from 'crypto';
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 
