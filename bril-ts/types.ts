@@ -87,6 +87,7 @@ export const OP_SIGS: {[key: string]: Signature | PolySignature} = {
   'jmp': {args: [], 'labels': 1},
   'br': {args: ['bool'], 'labels': 2},
   'id': {tvar: {tv: 'T'}, sig: {args: [{tv: 'T'}], dest: {tv: 'T'}}},
+  'nop': {args: []},
 
   // Floating point.
   'fadd': {args: ['float', 'float'], dest: 'float'},
