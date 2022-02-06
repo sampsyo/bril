@@ -1,1 +1,1 @@
-id arg type [object Object] does not match type [object Object]
+id arg type ptr<int> does not match type ptr<float>
