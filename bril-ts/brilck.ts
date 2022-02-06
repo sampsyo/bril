@@ -3,8 +3,8 @@ import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 
 interface FuncType {
-  'ret': bril.Type | undefined,
-  'args': bril.Type[],
+  ret: bril.Type | undefined,
+  args: bril.Type[],
 }
 type VarEnv = Map<bril.Ident, bril.Type>;
 type FuncEnv = Map<bril.Ident, FuncType>;
@@ -23,29 +23,29 @@ interface OpType {
 }
 
 const OP_TYPES: {[key: string]: OpType} = {
-  'add': {'args': ['int', 'int'], 'dest': 'int'},
-  'mul': {'args': ['int', 'int'], 'dest': 'int'},
-  'sub': {'args': ['int', 'int'], 'dest': 'int'},
-  'div': {'args': ['int', 'int'], 'dest': 'int'},
-  'eq': {'args': ['int', 'int'], 'dest': 'bool'},
-  'lt': {'args': ['int', 'int'], 'dest': 'bool'},
-  'gt': {'args': ['int', 'int'], 'dest': 'bool'},
-  'le': {'args': ['int', 'int'], 'dest': 'bool'},
-  'ge': {'args': ['int', 'int'], 'dest': 'bool'},
-  'not': {'args': ['bool'], 'dest': 'bool'},
-  'and': {'args': ['bool', 'bool'], 'dest': 'bool'},
-  'or': {'args': ['bool', 'bool'], 'dest': 'bool'},
-  'jmp': {'args': [], 'labels': 1},
-  'br': {'args': ['bool'], 'labels': 2},
-  'fadd': {'args': ['float', 'float'], 'dest': 'float'},
-  'fmul': {'args': ['float', 'float'], 'dest': 'float'},
-  'fsub': {'args': ['float', 'float'], 'dest': 'float'},
-  'fdiv': {'args': ['float', 'float'], 'dest': 'float'},
-  'feq': {'args': ['float', 'float'], 'dest': 'bool'},
-  'flt': {'args': ['float', 'float'], 'dest': 'bool'},
-  'fgt': {'args': ['float', 'float'], 'dest': 'bool'},
-  'fle': {'args': ['float', 'float'], 'dest': 'bool'},
-  'fge': {'args': ['float', 'float'], 'dest': 'bool'},
+  'add': {args: ['int', 'int'], dest: 'int'},
+  'mul': {args: ['int', 'int'], dest: 'int'},
+  'sub': {args: ['int', 'int'], dest: 'int'},
+  'div': {args: ['int', 'int'], dest: 'int'},
+  'eq': {args: ['int', 'int'], dest: 'bool'},
+  'lt': {args: ['int', 'int'], dest: 'bool'},
+  'gt': {args: ['int', 'int'], dest: 'bool'},
+  'le': {args: ['int', 'int'], dest: 'bool'},
+  'ge': {args: ['int', 'int'], dest: 'bool'},
+  'not': {args: ['bool'], dest: 'bool'},
+  'and': {args: ['bool', 'bool'], dest: 'bool'},
+  'or': {args: ['bool', 'bool'], dest: 'bool'},
+  'jmp': {args: [], 'labels': 1},
+  'br': {args: ['bool'], 'labels': 2},
+  'fadd': {args: ['float', 'float'], dest: 'float'},
+  'fmul': {args: ['float', 'float'], dest: 'float'},
+  'fsub': {args: ['float', 'float'], dest: 'float'},
+  'fdiv': {args: ['float', 'float'], dest: 'float'},
+  'feq': {args: ['float', 'float'], dest: 'bool'},
+  'flt': {args: ['float', 'float'], dest: 'bool'},
+  'fgt': {args: ['float', 'float'], dest: 'bool'},
+  'fle': {args: ['float', 'float'], dest: 'bool'},
+  'fge': {args: ['float', 'float'], dest: 'bool'},
 };
 
 const CONST_TYPES: {[key: string]: string} = {
@@ -183,8 +183,8 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       console.error(`missing result type for id`);
     } else {
       checkTypes(env, instr, {
-        'args': [instr.type],
-        'dest': instr.type,
+        args: [instr.type],
+        dest: instr.type,
       });
     }
     return;
@@ -202,8 +202,8 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     }
     
     checkTypes(env, instr, {
-      'args': funcType.args,
-      'dest': funcType.ret,
+      args: funcType.args,
+      dest: funcType.ret,
     }, `@${funcs[0]}`);
     return;
   } else if (instr.op === "ret") {
@@ -213,7 +213,7 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
       } else if (args.length !== 1) {
         console.error(`cannot return multiple values`);
       } else {
-        checkTypes(env, instr, {'args': [ret]});
+        checkTypes(env, instr, {args: [ret]});
       }
     } else {
       if (args.length !== 0) {
@@ -297,8 +297,8 @@ function checkProg(prog: bril.Program) {
   let funcEnv: FuncEnv = new Map();
   for (let func of prog.functions) {
     funcEnv.set(func.name, {
-      'ret': func.type,
-      'args': func.args?.map(a => a.type) ?? [],
+      ret: func.type,
+      args: func.args?.map(a => a.type) ?? [],
     });
   }
 
