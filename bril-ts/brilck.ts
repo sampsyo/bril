@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import {Signature, FuncType, OP_SIGS} from './types';
+import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './types';
 import {readStdin, unreachable} from './util';
 
 /**
@@ -14,6 +14,7 @@ const CONST_TYPES: {[key: string]: string} = {
 
 type VarEnv = Map<bril.Ident, bril.Type>;
 type FuncEnv = Map<bril.Ident, FuncType>;
+type TypeEnv = Map<string, bril.Type>;
 
 /**
  * A typing environment that we can use to check instructions within
@@ -59,13 +60,54 @@ function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
 }
 
 /**
- * Check for type equality.
+ * Look up type variables in TypeEnv, leaving non-variable types and undefined
+ * type variables unchanged.
  */
-function typeEq(a: bril.Type, b: bril.Type): boolean {
+function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
+  if (!tenv) {
+    return type;
+  }
+
+  // Do we have a type variable to look up?
+  if (typeof type === 'object' && 'tv' in type) {
+    let res = tenv.get(type.tv);
+    if (res) {
+      return res;
+    } else {
+      return type;
+    }
+  }
+
+  // Do we need to recursively look up inside this type?
+  if (typeof type === 'object' && 'ptr' in type) {
+    return {ptr: typeLookup(type.ptr, tenv)};
+  }
+
+  return type;
+}
+
+/**
+ * Check for type equality.
+ *
+ * If a type environemnt is supplied, attempt to unify any unset type
+ * variables occuring in `b` to make the types match.
+ */
+function typeEq(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
+  // Shall we bind a type variable in b?
+  b = typeLookup(b, tenv);
+  if (typeof b === "object" && 'tv' in b) {
+    if (!tenv) {
+      throw `got type variable ${b.tv} but no type environment`;
+    }
+    tenv.set(b.tv, a);
+    return true;
+  }
+
+  // Normal type comparison.
   if (typeof a === "string" && typeof b === "string") {
     return a == b;
   } else if (typeof a === "object" && typeof b === "object") {
-    return typeEq(a.ptr, b.ptr);
+    return typeEq(a.ptr, b.ptr, tenv);
   } else {
     return false;
   }
@@ -74,23 +116,60 @@ function typeEq(a: bril.Type, b: bril.Type): boolean {
 /**
  * Format a type as a human-readable string.
  */
-function typeFmt(t: bril.Type): string {
+function typeFmt(t: PolyType): string {
   if (typeof t === "string") {
     return t;
   } else if (typeof t === "object") {
-    return `ptr<${typeFmt(t.ptr)}>`;
+    if ('tv' in t) {
+      return t.tv;
+    } else {
+      return `ptr<${typeFmt(t.ptr)}>`;
+    }
   }
   unreachable(t);
 }
 
 /**
  * Check an instruction's arguments and labels against a type signature.
+ *
+ * `sig` may be either a concrete signature or a polymorphic one, in which case
+ * we try unify the quantified type. `name` optionally gives a name for the
+ * operation to use in error messages; otherwise, we use `instr`'s opcode.
  */
-function checkSig(env: Env, instr: bril.Operation, sig: Signature, name?: string) {
-  let args = instr.args ?? [];
+function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignature, name?: string) {
   name = name ?? instr.op;
 
+  // Are we handling a polymorphic signature?
+  let sig: BaseSignature<PolyType>;
+  let tenv: TypeEnv = new Map();
+  if ('tvar' in psig) {
+    sig = psig.sig;
+  } else {
+    sig = psig;
+  }
+
+  // Check destination type.
+  if ('type' in instr) {
+    if (sig.dest) {
+      if (!typeEq(instr.type, sig.dest, tenv)) {
+        console.error(
+          `result type of ${name} should be ${typeFmt(typeLookup(sig.dest, tenv))}, ` +
+          `but found ${typeFmt(instr.type)}`
+        );
+      }
+    } else {
+      console.error(`${name} should have no result type`);
+    }
+  } else {
+    if (sig.dest) {
+      console.error(
+        `missing result type ${typeFmt(typeLookup(sig.dest, tenv))} for ${name}`
+      );
+    }
+  }
+
   // Check arguments.
+  let args = instr.args ?? [];
   if (args.length !== sig.args.length) {
     console.error(
       `${name} expects ${sig.args.length} args, not ${args.length}`
@@ -102,32 +181,12 @@ function checkSig(env: Env, instr: bril.Operation, sig: Signature, name?: string
         console.error(`${args[i]} (arg ${i}) undefined`);
         continue;
       }
-      if (!typeEq(sig.args[i], argType)) {
+      if (!typeEq(argType, sig.args[i], tenv)) {
         console.error(
           `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
-          `should have type ${typeFmt(sig.args[i])}`
+          `should have type ${typeFmt(typeLookup(sig.args[i], tenv))}`
         );
       }
-    }
-  }
-
-  // Check destination type.
-  if ('type' in instr) {
-    if (sig.dest) {
-      if (!typeEq(instr.type, sig.dest)) {
-        console.error(
-          `result type of ${name} should be ${typeFmt(sig.dest)}, ` +
-          `but found ${typeFmt(instr.type)}`
-        );
-      }
-    } else {
-      console.error(`${name} should have no result type`);
-    }
-  } else {
-    if (sig.dest) {
-      console.error(
-        `missing result type ${typeFmt(sig.dest)} for ${name}`
-      );
     }
   }
 
@@ -154,17 +213,6 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
   print: (env, instr) => {
     if ('type' in instr) {
       console.error(`print should have no result type`);
-    }
-  },
-
-  id: (env, instr) => {
-    if (!('type' in instr)) {
-      console.error(`missing result type for id`);
-    } else {
-      checkSig(env, instr, {
-        args: [instr.type],
-        dest: instr.type,
-      });
     }
   },
 
@@ -218,12 +266,12 @@ function checkOp(env: Env, instr: bril.Operation) {
   }
 
   // General case: use the operation's signature.
-  let opType = OP_SIGS[instr.op];
-  if (!opType) {
+  let sig = OP_SIGS[instr.op];
+  if (!sig) {
     console.error(`unknown opcode ${instr.op}`);
     return;
   }
-  checkSig(env, instr, opType);
+  checkSig(env, instr, sig);
 }
 
 function checkConst(instr: bril.Constant) {
