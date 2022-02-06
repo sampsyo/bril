@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 import * as bril from './bril';
+import {Signature, FuncType, OP_SIGS} from './types';
 import {readStdin, unreachable} from './util';
 
-interface FuncType {
-  ret: bril.Type | undefined,
-  args: bril.Type[],
-}
+/**
+ * The JavaScript types of Bril constant values.
+ */
+const CONST_TYPES: {[key: string]: string} = {
+  'int': 'number',
+  'float': 'number',
+  'bool': 'boolean',
+};
+
 type VarEnv = Map<bril.Ident, bril.Type>;
 type FuncEnv = Map<bril.Ident, FuncType>;
 
@@ -34,51 +40,6 @@ interface Env {
    */
   ret: bril.Type | undefined;
 }
-
-/**
- * The type signature for an operation.
- * 
- * Describes the shape and types of all the ingredients for a Bril operation
- * instruction: arguments, result, labels, and functions.
- */
-interface Signature {
-  args: bril.Type[],
-  dest?: bril.Type,
-  labels?: number,
-  funcs?: number,
-}
-
-const OP_SIGS: {[key: string]: Signature} = {
-  'add': {args: ['int', 'int'], dest: 'int'},
-  'mul': {args: ['int', 'int'], dest: 'int'},
-  'sub': {args: ['int', 'int'], dest: 'int'},
-  'div': {args: ['int', 'int'], dest: 'int'},
-  'eq': {args: ['int', 'int'], dest: 'bool'},
-  'lt': {args: ['int', 'int'], dest: 'bool'},
-  'gt': {args: ['int', 'int'], dest: 'bool'},
-  'le': {args: ['int', 'int'], dest: 'bool'},
-  'ge': {args: ['int', 'int'], dest: 'bool'},
-  'not': {args: ['bool'], dest: 'bool'},
-  'and': {args: ['bool', 'bool'], dest: 'bool'},
-  'or': {args: ['bool', 'bool'], dest: 'bool'},
-  'jmp': {args: [], 'labels': 1},
-  'br': {args: ['bool'], 'labels': 2},
-  'fadd': {args: ['float', 'float'], dest: 'float'},
-  'fmul': {args: ['float', 'float'], dest: 'float'},
-  'fsub': {args: ['float', 'float'], dest: 'float'},
-  'fdiv': {args: ['float', 'float'], dest: 'float'},
-  'feq': {args: ['float', 'float'], dest: 'bool'},
-  'flt': {args: ['float', 'float'], dest: 'bool'},
-  'fgt': {args: ['float', 'float'], dest: 'bool'},
-  'fle': {args: ['float', 'float'], dest: 'bool'},
-  'fge': {args: ['float', 'float'], dest: 'bool'},
-};
-
-const CONST_TYPES: {[key: string]: string} = {
-  'int': 'number',
-  'float': 'number',
-  'bool': 'boolean',
-};
 
 /**
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
