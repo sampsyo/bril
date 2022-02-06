@@ -36,7 +36,7 @@ export type Signature = BaseSignature<bril.Type>;
 /**
  * A polymorphic type variable.
  */
-export type TVar = string;
+export type TVar = {"tv": string};
 
 /**
  * Like bril.Type, except that type variables may occur at the leaves.
@@ -86,7 +86,7 @@ export const OP_SIGS: {[key: string]: Signature | PolySignature} = {
   'or': {args: ['bool', 'bool'], dest: 'bool'},
   'jmp': {args: [], 'labels': 1},
   'br': {args: ['bool'], 'labels': 2},
-  'id': {tvar: 'T', sig: {args: ['T'], dest: 'T'}},
+  'id': {tvar: {tv: 'T'}, sig: {args: [{tv: 'T'}], dest: {tv: 'T'}}},
 
   // Floating point.
   'fadd': {args: ['float', 'float'], dest: 'float'},

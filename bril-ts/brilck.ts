@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { BaseType } from 'typescript';
 import * as bril from './bril';
 import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './types';
 import {readStdin, unreachable} from './util';
@@ -15,7 +14,7 @@ const CONST_TYPES: {[key: string]: string} = {
 
 type VarEnv = Map<bril.Ident, bril.Type>;
 type FuncEnv = Map<bril.Ident, FuncType>;
-type TypeEnv = Map<TVar, bril.Type | null>;
+type TypeEnv = Map<string, bril.Type>;
 
 /**
  * A typing environment that we can use to check instructions within
@@ -67,10 +66,10 @@ function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
   if (!tenv) {
     return type;
   }
-  if (typeof type !== "string") {
+  if (typeof type !== 'object' || !('tv' in type)) {
     return type;
   }
-  let res = tenv.get(type);
+  let res = tenv.get(type.tv);
   if (res) {
     return res;
   } else {
@@ -87,8 +86,11 @@ function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
 function typeEq(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
   // Shall we bind a type variable in b?
   b = typeLookup(b, tenv);
-  if (typeof b === "string" && tenv?.has(b)) {
-    tenv.set(b, a);
+  if (typeof b === "object" && 'tv' in b) {
+    if (!tenv) {
+      throw `got type variable ${b.tv} but no type environment`;
+    }
+    tenv.set(b.tv, a);
     return true;
   }
 
@@ -109,7 +111,11 @@ function typeFmt(t: PolyType): string {
   if (typeof t === "string") {
     return t;
   } else if (typeof t === "object") {
-    return `ptr<${typeFmt(t.ptr)}>`;
+    if ('tv' in t) {
+      return t.tv;
+    } else {
+      return `ptr<${typeFmt(t.ptr)}>`;
+    }
   }
   unreachable(t);
 }
@@ -129,7 +135,6 @@ function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignatu
   let tenv: TypeEnv = new Map();
   if ('tvar' in psig) {
     sig = psig.sig;
-    tenv.set(psig.tvar, null);
   } else {
     sig = psig;
   }
