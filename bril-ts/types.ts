@@ -6,16 +6,16 @@ import * as bril from './bril';
  * Describes the shape and types of all the ingredients for a Bril operation
  * instruction: arguments, result, labels, and functions.
  */
-export interface Signature {
+export interface BaseSignature<T> {
   /**
    * The types of each argument to the operation.
    */
-  args: bril.Type[],
+  args: T[],
 
   /**
    * The result type, if non-void.
    */
-  dest?: bril.Type,
+  dest?: T,
 
   /**
    * The number of labels required for the operation.
@@ -26,6 +26,15 @@ export interface Signature {
    * The number of function names required for the operation.
    */
   funcs?: number,
+}
+
+export type Signature = BaseSignature<bril.Type>;
+
+export type TVar = string;
+
+export interface PolySignature {
+    tvar: TVar;
+    sig: BaseSignature<bril.Type | TVar>;
 }
 
 /**
@@ -46,7 +55,7 @@ export interface FuncType {
 /**
  * Type signatures for the Bril operations we know.
  */
-export const OP_SIGS: {[key: string]: Signature} = {
+export const OP_SIGS: {[key: string]: Signature | PolySignature} = {
   // Core.
   'add': {args: ['int', 'int'], dest: 'int'},
   'mul': {args: ['int', 'int'], dest: 'int'},
@@ -62,6 +71,7 @@ export const OP_SIGS: {[key: string]: Signature} = {
   'or': {args: ['bool', 'bool'], dest: 'bool'},
   'jmp': {args: [], 'labels': 1},
   'br': {args: ['bool'], 'labels': 2},
+  'id': {tvar: 'T', sig: {args: ['T'], dest: 'T'}},
 
   // Floating point.
   'fadd': {args: ['float', 'float'], dest: 'float'},
