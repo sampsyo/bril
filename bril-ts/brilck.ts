@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { BinaryLike } from 'crypto';
 import * as bril from './bril';
 import {readStdin, unreachable} from './util';
 
@@ -9,10 +10,30 @@ interface FuncType {
 type VarEnv = Map<bril.Ident, bril.Type>;
 type FuncEnv = Map<bril.Ident, FuncType>;
 
+/**
+ * A typing environment that we can use to check instructions within
+ * a single function.
+ */
 interface Env {
+  /**
+   * The types of all variables defined in the function.
+   */
   vars: VarEnv;
+
+  /**
+   * The names of all the labels in the function.
+   */
   labels: Set<bril.Ident>;
+
+  /**
+   * The defined functions in the program.
+   */
   funcs: FuncEnv;
+
+  /**
+   * The return type of the current function.
+   */
+  ret: bril.Type | undefined;
 }
 
 interface OpType {
@@ -169,19 +190,19 @@ function checkTypes(env: Env, instr: bril.Operation, type: OpType, name?: string
   }
 }
 
-type CheckFunc = (env: Env, instr: bril.Operation, ret: bril.Type | undefined) => void;
+type CheckFunc = (env: Env, instr: bril.Operation) => void;
 
 /**
  * Special-case logic for checking some special functions.
  */
 const INSTR_CHECKS: {[key: string]: CheckFunc} = {
-  print: (env, instr, ret) => {
+  print: (env, instr) => {
     if ('type' in instr) {
       console.error(`print should have no result type`);
     }
   },
 
-  id: (env, instr, ret) => {
+  id: (env, instr) => {
     if (!('type' in instr)) {
       console.error(`missing result type for id`);
     } else {
@@ -192,7 +213,7 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
     }
   },
 
-  call: (env, instr, ret) => {
+  call: (env, instr) => {
     let funcs = instr.funcs ?? [];
     if (funcs.length !== 1) {
       console.error(`call should have one function, not ${funcs.length}`);
@@ -212,15 +233,15 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
     return;
   },
 
-  ret: (env, instr, ret) => {
+  ret: (env, instr) => {
     let args = instr.args ?? [];
-    if (ret) {
+    if (env.ret) {
       if (args.length === 0) {
         console.error(`missing return value in function with return type`);
       } else if (args.length !== 1) {
         console.error(`cannot return multiple values`);
       } else {
-        checkTypes(env, instr, {args: [ret]});
+        checkTypes(env, instr, {args: [env.ret]});
       }
     } else {
       if (args.length !== 0) {
@@ -231,13 +252,13 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
   },
 };
 
-function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined) {
+function checkInstr(env: Env, instr: bril.Operation) {
   let args = instr.args ?? [];
 
   // Check for special cases.
   let check_func = INSTR_CHECKS[instr.op];
   if (check_func) {
-    check_func(env, instr, ret);
+    check_func(env, instr);
     return;
   }
 
@@ -304,7 +325,7 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
       if (instr.op === 'const') {
         checkConst(instr);
       } else {
-        checkInstr({vars, labels, funcs}, instr, func.type);
+        checkInstr({vars, labels, funcs, ret: func.type}, instr);
       }
     }
   }
