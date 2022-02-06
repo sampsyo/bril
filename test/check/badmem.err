@@ -1,0 +1,10 @@
+f has type float, but arg 0 for alloc should have type int
+result type of alloc should be ptr<T>, but found int
+f has type float, but arg 1 for store should have type int
+i has type int, but arg 0 for store should have type ptr<T>
+p has type ptr<int>, but arg 0 for load should have type ptr<T>
+i has type int, but arg 0 for load should have type ptr<T>
+p has type ptr<int>, but arg 0 for ptradd should have type ptr<T>
+i has type int, but arg 0 for ptradd should have type ptr<T>
+p has type ptr<int>, but arg 1 for ptradd should have type int
+i has type int, but arg 0 for free should have type ptr<T>

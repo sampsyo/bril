@@ -98,7 +98,7 @@ function typeEq(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
   if (typeof a === "string" && typeof b === "string") {
     return a == b;
   } else if (typeof a === "object" && typeof b === "object") {
-    return typeEq(a.ptr, b.ptr);
+    return typeEq(a.ptr, b.ptr, tenv);
   } else {
     return false;
   }
