@@ -12,6 +12,6 @@ export function readStdin(): Promise<string> {
   });
 }
 
-export function unreachable(x: never) {
+export function unreachable(x: never): never {
   throw "impossible case reached";
 }

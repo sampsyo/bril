@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as bril from './bril';
-import {readStdin} from './util';
+import {readStdin, unreachable} from './util';
 
 interface FuncType {
   'ret': bril.Type | undefined,
@@ -93,11 +93,12 @@ function typeFmt(t: bril.Type): string {
   } else if (typeof t === "object") {
     return `ptr<${typeFmt(t.ptr)}>`;
   }
-  return "undefined";  // This shouldn't happen.
+  unreachable(t);
 }
 
 function checkArgs(env: Env, args: bril.Ident[], params: bril.Type[]) {
-  for (let i = 0; i < args.length; ++i) {
+  let argc = Math.min(args.length, params.length);
+  for (let i = 0; i < argc; ++i) {
     let argType = env.vars.get(args[i]);
     if (!argType) {
       console.error(`${args[i]} (arg ${i}) undefined`);
@@ -129,6 +130,8 @@ function checkInstr(env: Env, instr: bril.Operation, ret: bril.Type | undefined)
     let argType = env.vars.get(args[0]);
     if (!argType) {
       console.error(`${args[0]} is undefined`);
+    } else if (!instr.type) {
+      console.error(`missing result type for id`);
     } else if (!typeEq(instr.type, argType)) {
       console.error(
         `id arg type ${typeFmt(argType)} does not match ` +
@@ -318,8 +321,5 @@ async function main() {
   let prog = JSON.parse(await readStdin()) as bril.Program;
   checkProg(prog);
 }
-
-// Make unhandled promise rejections terminate.
-process.on('unhandledRejection', e => { throw e });
 
 main();
