@@ -11,15 +11,13 @@
   constant_fold6: bool = ge b a;
 
   should_fold1: bool = eq arg1 arg1;
-  should_fold2: bool = ne arg1 arg1;
-  should_fold3: bool = le arg1 arg1;
-  should_fold4: bool = ge arg1 arg1;
+  should_fold2: bool = le arg1 arg1;
+  should_fold3: bool = ge arg1 arg1;
 
   no_fold1: bool = eq arg1 arg2;
-  no_fold2: bool = ne arg1 arg2;
-  no_fold3: bool = le arg1 arg2;
-  no_fold4: bool = ge arg1 arg2;
+  no_fold2: bool = le arg1 arg2;
+  no_fold3: bool = ge arg1 arg2;
 
-  no_fold5: bool = lt arg1 arg1;
-  no_fold6: bool = gt arg2 arg2;
+  no_fold4: bool = lt arg1 arg1;
+  no_fold5: bool = gt arg2 arg2;
 }
