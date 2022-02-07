@@ -43,14 +43,21 @@ interface Env {
 }
 
 /**
+ * An optional filename for error messages.
+ */
+let CHECK_FILE: string | undefined;
+
+/**
  * Print an error message, possibly with a source position.
  */
 function err(msg: string, pos: bril.Position | undefined) {
   if (pos) {
-    console.error(`${pos.row}:${pos.col}: ${msg}`);
-  } else {
-    console.error(msg);
+    msg = `${pos.row}:${pos.col}: ${msg}`;
   }
+  if (CHECK_FILE) {
+    msg = `${CHECK_FILE}:${msg}`;
+  }
+  console.error(msg);
 }
 
 /**
@@ -367,6 +374,9 @@ function checkProg(prog: bril.Program) {
 }
 
 async function main() {
+  if (process.argv[2]) {
+    CHECK_FILE = process.argv[2];
+  }
   let prog = JSON.parse(await readStdin()) as bril.Program;
   checkProg(prog);
 }

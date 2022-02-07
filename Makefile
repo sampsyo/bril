@@ -9,7 +9,7 @@ TESTS := test/parse/*.bril \
 	benchmarks/*.bril
 
 CHECKS := test/parse/*.bril \
-	test/interp*/*.bril \
+	test/interp/*.bril \
 	test/mem/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/*.bril
@@ -20,7 +20,7 @@ test:
 
 .PHONY: check
 check:
-	for fn in $(CHECKS) ; do echo $$fn ; bril2json -p < $$fn | brilck ; done
+	for fn in $(CHECKS) ; do bril2json -p < $$fn | brilck $$fn ; done
 
 .PHONY: book
 book:
