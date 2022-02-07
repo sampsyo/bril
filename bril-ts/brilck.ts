@@ -45,7 +45,7 @@ interface Env {
 /**
  * Print an error message, possibly with a source position.
  */
-function err(msg: string, pos: bril.Position | undefined = undefined) {
+function err(msg: string, pos: bril.Position | undefined) {
   if (pos) {
     console.error(`${pos.row}:${pos.col}: ${msg}`);
   } else {
@@ -57,12 +57,13 @@ function err(msg: string, pos: bril.Position | undefined = undefined) {
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
  * with the old type for the variable.
  */
-function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
+function addType(env: VarEnv, id: bril.Ident, type: bril.Type, pos: bril.Position | undefined) {
   let oldType = env.get(id);
   if (oldType) {
     if (!typeEq(oldType, type)) {
       err(
-        `new type ${type} for ${id} conflicts with old type ${oldType}`
+        `new type ${type} for ${id} conflicts with old type ${oldType}`,
+        pos
       );
     }
   } else {
@@ -320,14 +321,14 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
   // Initilize the type environment with the arguments.
   if (func.args) {
     for (let arg of func.args) {
-      addType(vars, arg.name, arg.type);
+      addType(vars, arg.name, arg.type, func.pos);
     }
   }
 
   // Gather up all the types of the local variables and all the label names.
   for (let instr of func.instrs) {
     if ('dest' in instr) {
-      addType(vars, instr.dest, instr.type);
+      addType(vars, instr.dest, instr.type, instr.pos);
     } else if ('label' in instr) {
       if (labels.has(instr.label)) {
         err(`multiply defined label .${instr.label}`, instr.pos);
