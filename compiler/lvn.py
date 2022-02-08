@@ -72,12 +72,20 @@ def maybe_rename_dest_store_old(var_counts, dest, value):
 
 
 def make_lookup(dest, type, value):
-    return {
-        'dest': dest,
-        'op': 'id',
-        'args': [idx_to_home_var(value_to_idx[value])],
-        'type': type
-    }
+    if value[0] == 'const':
+        return {
+            'dest': dest,
+            'op': 'const',
+            'value': value[1],
+            'type': type
+        }
+    else:
+        return {
+            'dest': dest,
+            'op': 'id',
+            'args': [idx_to_home_var(value_to_idx[value])],
+            'type': type
+        }
 
 
 def do_lvn():
