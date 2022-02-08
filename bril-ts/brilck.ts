@@ -276,6 +276,21 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
     }
     return;
   },
+  
+  phi: (env, instr) => {
+    let args = instr.args ?? [];
+    if (!('type' in instr)) {
+      err(`phi needs a result type`, instr.pos);
+      return;
+    }
+    
+    // Construct a signature with uniform argument types.
+    let argTypes: bril.Type[] = [];
+    for (let i = 0; i < args.length; ++i) {
+      argTypes.push(instr.type);
+    }
+    checkSig(env, instr, {args: argTypes, dest: instr.type, labels: args.length});
+  },
 };
 
 function checkOp(env: Env, instr: bril.Operation) {
