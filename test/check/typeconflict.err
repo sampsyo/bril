@@ -1,1 +1,1 @@
-new type int for a conflicts with old type bool
+3:3: new type int for a conflicts with old type bool

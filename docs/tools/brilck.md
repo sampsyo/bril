@@ -20,3 +20,6 @@ Just pipe a Bril program into `brilck`:
 
 It will print any problems it finds to standard error.
 (If it doesn't find any problems, it doesn't print anything at all.)
+
+You can optionally provide a filename as a (sole) command-line argument.
+This filename will appear in any error messages for easier parsing when many files are involved.

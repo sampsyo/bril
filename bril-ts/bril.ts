@@ -15,12 +15,17 @@ export type PrimType = "int" | "bool" | "float";
 /**
  * Parameterized types. (We only have pointers for now.)
  */
-export type ParamType = {"ptr": Type};
+export type ParamType = {ptr: Type};
 
 /**
  * Value types.
  */
 export type Type = PrimType | ParamType;
+
+/**
+ * An (always optional) source code position.
+ */
+export type Position = {row: number, col: number};
 
 /**
  * Common fields in any operation.
@@ -29,6 +34,7 @@ interface Op {
   args?: Ident[];
   funcs?: Ident[];
   labels?: Ident[];
+  pos?: Position;
 }
 
 /**
@@ -70,6 +76,7 @@ export interface Constant {
   value: Value;
   dest: Ident;
   type: Type;
+  pos?: Position;
 }
 
 
@@ -109,6 +116,7 @@ export type OpCode = ValueOpCode | EffectOpCode;
  */
 export interface Label {
   label: Ident;
+  pos?: Position;
 }
 
 /*
@@ -127,6 +135,7 @@ export interface Function {
   args?: Argument[];
   instrs: (Instruction | Label)[];
   type?: Type;
+  pos?: Position;
 }
 
 /**

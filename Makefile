@@ -8,9 +8,19 @@ TESTS := test/parse/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/*.bril
 
+CHECKS := test/parse/*.bril \
+	test/interp/*.bril \
+	test/mem/*.bril \
+	examples/test/*/*.bril \
+	benchmarks/*.bril
+
 .PHONY: test
 test:
 	turnt $(TURNTARGS) $(TESTS)
+
+.PHONY: check
+check:
+	for fn in $(CHECKS) ; do bril2json -p < $$fn | brilck $$fn ; done
 
 .PHONY: book
 book:
