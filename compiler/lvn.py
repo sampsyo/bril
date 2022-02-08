@@ -15,6 +15,10 @@ def insert_var(var, value):
         table.append((value, var))
         value_to_idx[value] = idx
 
+    if value[0] == 'id':
+        print(value, table, file=sys.stderr)
+        value = idx_to_value(value[1])
+
     # always map the variable to the index
     var_to_idx[var] = value_to_idx[value]
 
@@ -53,8 +57,6 @@ def make_value(instr):
     if op in COMMUTATIVE:
         args = sorted(args)
 
-    ans = op, *args
-    #print(f"{instr}, -> {ans}", file=sys.stderr)
     return op, *args
 
 
@@ -69,11 +71,12 @@ def maybe_rename_dest_store_old(var_counts, dest, value):
     return dest
 
 
-def make_lookup(dest, value):
+def make_lookup(dest, type, value):
     return {
         'dest': dest,
         'op': 'id',
-        'args': [idx_to_home_var(value_to_idx[value])]
+        'args': [idx_to_home_var(value_to_idx[value])],
+        'type': type
     }
 
 
@@ -100,14 +103,9 @@ def do_lvn():
 
                     # If the value is already there, replace instruction with lookup
                     if value in value_to_idx:
-                        instr = make_lookup(dest, value)
+                        instr = make_lookup(dest, instr['type'], value)
                         value = make_value(instr)
-                        instr['op'] = 'id'
-
-                    if instr['op'] == 'id':
-                        assert len(instr['args']) == 1
-                        idx = var_to_idx[instr['args'][0]]
-                        value = idx_to_value(idx)
+                        print(instr, file=sys.stderr)
 
                     # If variable is going to be overwritten again...
                     dest = maybe_rename_dest_store_old(var_counts, dest, value)
@@ -116,14 +114,13 @@ def do_lvn():
                     insert_var(dest, value)
                     instr['dest'] = dest
 
-                if instr['op'] != 'id':
-                    if 'args' in instr:
-                        new_args = [idx_to_home_var(idx) for idx in value[1:]]
-                        # Replace arg indices with their home variables
-                        instr['args'] = new_args
-                    elif 'value' in instr:
-                        instr['value'] = value[1]
-                    new_instrs.append(instr)
+                if 'args' in instr:
+                    new_args = [idx_to_home_var(idx) for idx in value[1:]]
+                    # Replace arg indices with their home variables
+                    instr['args'] = new_args
+                elif 'value' in instr:
+                    instr['value'] = value[1]
+                new_instrs.append(instr)
 
             else: # if its not an op, then just put it back unchanged
                 new_instrs.append(instr)
