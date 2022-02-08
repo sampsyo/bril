@@ -1,7 +1,6 @@
 @main(arg1: int, arg2: int) {
   a: int = const 4;
   b: int = const 3;
-  constant_fold1: bool = const true;
   constant_fold2: bool = const false;
   constant_fold3: bool = const false;
   constant_fold4: bool = const true;
