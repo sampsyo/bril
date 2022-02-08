@@ -15,10 +15,6 @@ def insert_var(var, value):
         table.append((value, var))
         value_to_idx[value] = idx
 
-    if value[0] == 'id':
-        print(value, table, file=sys.stderr)
-        value = idx_to_value(value[1])
-
     # always map the variable to the index
     var_to_idx[var] = value_to_idx[value]
 
@@ -52,6 +48,10 @@ def make_value(instr):
         args = [instr['value']]
     else:
         assert False, f"idk what to do with {instr}"
+
+    if op == 'id':
+        assert len(args) == 1
+        return idx_to_value(args[0])
 
     # Transform args to canonical ordering if op is commutative
     if op in COMMUTATIVE:
