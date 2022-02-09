@@ -6,6 +6,7 @@ COMMUTATIVE = {'add', 'mul'}
 var_to_idx = dict()
 value_to_idx = dict()
 table = [] # idx is #, then contains tuples of (value, home)
+lvn_vars = 0
 
 
 def insert_var(var, value):
@@ -73,7 +74,9 @@ def maybe_rename_dest_store_old(var_counts, dest, value):
     if var_counts[dest] > 0:
         # Insert old value so we know what it was when we try to use it
         insert_var(dest, value)
-        dest = f'_{dest}_{var_counts[dest] + 1}'
+        global lvn_vars
+        dest = f'lvn.{lvn_vars}'
+        lvn_vars += 1
         assert dest not in var_counts, \
             f"Alas, {dest} is not a unique variable name"
     return dest
