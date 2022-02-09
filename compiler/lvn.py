@@ -3,11 +3,12 @@ import sys
 from collections import defaultdict
 from functools import reduce
 
+DEBUG = False
 COMMUTATIVE = {'add', 'mul', 'or', 'and', 'eq'}
 CAST_VALUE = {
     'int': int,
     # This is already handled by JSON
-    'bool': lambda v: v
+    'bool': lambda v: bool(v)
 }
 EXPRESSIONS = {
     'add': lambda a, b: a + b,
@@ -65,31 +66,35 @@ def compute_expression(value, const_vals, do_special_cases=False):
         for simplification in SIMPLIFICATIONS[op]:
             ans = simplification.simplify(*const_vals)
             if ans is not None:
-                print(f"                     {value[0]}{const_vals} -> {val}", file=sys.stderr)
                 if isinstance(ans, tuple):
-                    assert ans[1][0] == 'variable'
-                    return ('id', value[1], ans[1][1])
+                    assert ans[0] == 'variable'
+                    return ('id', value[1], ans[1])
                 else:
-                    val = ans
-                break
+                    return ('const', value[1], val)
 
-    if val is None:
-        is_consts = [not isinstance(val, tuple) for val in const_vals]
-        if reduce(lambda a, b: a and b, is_consts, True):
+    is_consts = [not isinstance(val, tuple) for val in const_vals]
+    if reduce(lambda a, b: a and b, is_consts, True):
+        try:
             val = EXPRESSIONS[value[0]](*const_vals)
-        else:
-            return None
+            return ('const', value[1], val)
+        except Exception:
+            return value
+    else:
+        return value
 
-    assert not isinstance(val, tuple)
-    return ('const', value[1], val)
+
+def debug_msg(*args):
+    if DEBUG:
+        print(*args, file=sys.stderr)
 
 
 class VarMapping:
-    def __init__(self):
+    def __init__(self, compute_constant_ops=True, do_special_cases=True):
         self.var_to_idx = dict()
         self.value_to_idx = dict()
         self.table = [] # idx is #, then contains tuples of (value, home)
-
+        self.compute_constant_ops = compute_constant_ops
+        self.do_special_cases = do_special_cases
 
     def insert_var(self, var, value):
         # If it's not already in the table, add it
@@ -136,16 +141,11 @@ class VarMapping:
             # This needs to be an enum or something if we ever handle tuples
             return ('variable', idx)
 
-    def _simplify_value(self, value):
+    def _compute_constant_expressions(self, value):
         vals = [self._const_value_from_index(idx) for idx in value[2:]]
-        try:
-            new_value = compute_expression(value, vals)
-            if new_value is None:
-                return value
-            else:
-                return new_value
-        except Exception:
-            return value
+        return compute_expression(
+            value, vals, do_special_cases=self.do_special_cases
+        )
 
     def make_value(self, instr):
         op = instr['op']
@@ -159,8 +159,8 @@ class VarMapping:
                 indices = sorted(indices)
 
             value = op, type, *indices
-            if op not in {'const', 'id'}:
-                value = self._simplify_value(value)
+            if op not in {'const', 'id'} and self.compute_constant_ops:
+                value = self._compute_constant_expressions(value)
             return value
         elif 'value' in instr:
             return (op, instr['type'], instr['value'])
@@ -220,16 +220,21 @@ def do_lvn():
                    f"Unrecognized instruction key {key}"
 
             if 'op' in instr and instr['op'] not in {'jmp', 'br'}:
-                value = var_table.make_value(instr)
+                old_instr = instr
+                old_value = var_table.make_value(instr)
+
                 # If we simplified the value into a constant, replace the instr
-                if value[0] == 'const' and instr['op'] != 'const':
-                    instr = const_instr(instr['dest'], value)
-                value = var_table.unroll_ids(value)
-                print(f"{instr} -> {value}", file=sys.stderr)
+                if old_value[0] == 'const' and instr['op'] != 'const':
+                    instr = const_instr(instr['dest'], old_value)
+                    debug_msg(f"Replaced {old_instr} w/ constant {instr} when got value")
+                    old_instr = old_instr
+                debug_msg(f"Converted instruction {instr} to value {old_value}")
+
+                value = var_table.unroll_ids(old_value)
+                debug_msg(f"Unrolled id lookups for {old_value} -> {value}")
 
                 if 'dest' in instr:
                     dest = instr['dest']
-                    old_instr = instr
 
                     # If the value is already there, replace with id or constant
                     if value in var_table.value_to_idx:
@@ -250,14 +255,15 @@ def do_lvn():
                     # Put the value in the destination
                     var_table.insert_var(dest, value)
 
-                    print(f"{old_instr} -> {instr} -> {value}", file=sys.stderr)
+                    debug_msg(f"{old_instr} -> {instr} -> {value}")
 
                 if 'args' in instr:
                     # Replace arg indices with their home variables
-                    print(var_table.table, file=sys.stderr)
-                    instr['args'] = var_table.indices_to_vars(value[1:])
+                    debug_msg(f"Table: {var_table.table}")
+                    instr['args'] = var_table.indices_to_vars(value[2:])
 
                 if value[0] == 'const':
+                    debug_msg(f"Constant {instr} should describe {value}")
                     assert instr['op'] == 'const'
                     assert instr['type'] == value[1]
                     assert instr['value'] == value[2]
