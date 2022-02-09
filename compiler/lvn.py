@@ -21,7 +21,7 @@ def insert_var(var, value):
 
 def idx_to_home_var(idx):
     value = table[idx][0]
-    if value is not None and value[0] == 'id':
+    if value[0] == 'id':
         assert len(value) == 2
         return idx_to_home_var(value[1])
     return table[idx][1]
@@ -29,7 +29,7 @@ def idx_to_home_var(idx):
 
 def idx_to_value(idx):
     value = table[idx][0]
-    if value is not None and value[0] == 'id':
+    if value[0] == 'id':
         assert len(value) == 2
         return idx_to_value(value[1])
     return value
@@ -54,7 +54,7 @@ def make_value(instr):
             # (like a function arg, or after a jump), so if it's not there
             # then add it.
             if arg not in var_to_idx:
-                insert_var(arg, None)
+                insert_var(arg, ("arg", arg))
             args.append(var_to_idx[arg])
     elif 'value' in instr:
         args = [instr['value']]
@@ -98,12 +98,15 @@ def make_lookup(dest, type, value):
 
 def do_lvn():
     global var_to_idx
+    global value_to_idx
+    global table
+
     prog = json.load(sys.stdin)
     # does this happen within a function or across a program?
     for func in prog['functions']:
         if 'args' in func:
             for arg in func['args']:
-                insert_var(arg['name'], None)
+                insert_var(arg['name'], ('arg', arg['name']))
 
         var_counts = count_variables(func)
         new_instrs = []
