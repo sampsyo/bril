@@ -42,7 +42,11 @@ def make_value(instr):
     if 'args' in instr:
         args = []
         for arg in instr['args']:
-            assert arg in var_to_idx, f"Variable {arg} not previously defined"
+            # We can actually refer to an argument that hasn't been defined
+            # (like a function arg, or after a jump), so if it's not there
+            # then add it.
+            if arg not in var_to_idx:
+                insert_var(arg, None)
             args.append(var_to_idx[arg])
     elif 'value' in instr:
         args = [instr['value']]
@@ -89,12 +93,13 @@ def make_lookup(dest, type, value):
 
 
 def do_lvn():
+    global var_to_idx
     prog = json.load(sys.stdin)
     # does this happen within a function or across a program?
     for func in prog['functions']:
         if 'args' in func:
             for arg in func['args']:
-                insert_var(arg['name'], arg['name'])
+                insert_var(arg['name'], None)
 
         var_counts = count_variables(func)
         new_instrs = []
@@ -131,6 +136,10 @@ def do_lvn():
                 new_instrs.append(instr)
 
             else: # if its not an op, then just put it back unchanged
+                # If it's a label instruction, then we don't actually know what
+                # the variables are any more
+                if 'label' in instr:
+                    var_to_idx = dict()
                 new_instrs.append(instr)
 
         func['instrs'] = new_instrs
