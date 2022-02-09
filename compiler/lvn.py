@@ -16,32 +16,26 @@ class VarMapping:
         if value not in self.value_to_idx:
             idx = len(self.table)
             self.table.append((value, var))
+            # This is only set on insert, so it is correct
             self.value_to_idx[value] = idx
 
         # always map the variable to the index
+        # this means we remap on reassignment, which is correct
         self.var_to_idx[var] = self.value_to_idx[value]
 
-    def var_to_idx(self, var):
-        # This gets set for every variable, and is remapped on reassignment
-        return self.var_to_idx[var]
-
-    def value_to_idx(self, value):
-        # This only gets set the first time we insert, so this code is correct
-        return self.value_to_idx[value]
-
-    def idx_to_home_var(self, idx):
+    def _idx_to_home_var(self, idx):
         return self.table[idx][1]
 
-    def idx_to_value(self, idx):
+    def _idx_to_value(self, idx):
         return self.table[idx][0]
 
     def value_to_home_var(self, value):
-        return self.idx_to_home_var(self.value_to_idx[value])
+        return self._idx_to_home_var(self.value_to_idx[value])
 
     def unroll_ids(self, value):
         if value[0] == 'id':
             assert len(value) == 2
-            return self.unroll_ids(self.idx_to_value(value[1]))
+            return self.unroll_ids(self._idx_to_value(value[1]))
         return value
 
     def add_unseen_variables(self, args):
@@ -49,17 +43,14 @@ class VarMapping:
             if arg not in self.var_to_idx:
                 self.insert_var(arg, ('arg', arg))
 
-    def vars_to_indices(self, args):
-        return [self.var_to_idx[arg] for arg in args]
-
     def indices_to_vars(self, indices):
-        return [self.idx_to_home_var(idx) for idx in indices]
+        return [self._idx_to_home_var(idx) for idx in indices]
 
     def make_value(self, instr):
         op = instr['op']
         if 'args' in instr:
             self.add_unseen_variables(instr['args'])
-            args = self.vars_to_indices(instr['args'])
+            args = [self.var_to_idx[arg] for arg in instr['args']]
             if op in COMMUTATIVE:
                 args = sorted(args)
             return op, *args
