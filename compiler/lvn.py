@@ -101,11 +101,12 @@ def do_lvn():
     prog = json.load(sys.stdin)
     renamed_var_count = 0
 
-    # does this happen within a function or across a program?
     for func in prog['functions']:
         var_table = VarMapping()
         if 'args' in func:
-            var_table.add_unseen_variables(func['args'])
+            var_table.add_unseen_variables([
+                arg['name'] for arg in func['args']
+            ])
 
         var_counts = count_variables(func)
         new_instrs = []
