@@ -34,10 +34,9 @@ fn main() -> Result<(), Error> {
   };
 
   println!(
-    "cargo:warning={} completion file is generated: {:?}",
-    app.get_name(),
-    path
+    "cargo:warning={} completion file is generated: {path:?}",
+    app.get_name()
   );
-  println!("cargo:warning=enable this by running `source {:?}`", path);
+  println!("cargo:warning=enable this by running `source {path:?}`");
   Ok(())
 }

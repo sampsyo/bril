@@ -20,7 +20,7 @@ pub struct AbstractProgram {
 impl Display for AbstractProgram {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for func in &self.functions {
-            writeln!(f, "{}", func)?;
+            writeln!(f, "{func}")?;
         }
         Ok(())
     }
@@ -50,16 +50,16 @@ impl Display for AbstractFunction {
                 if i != 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "{}", arg)?;
+                write!(f, "{arg}")?;
             }
             write!(f, ")")?;
         }
         if let Some(tpe) = self.return_type.as_ref() {
-            write!(f, ": {}", tpe)?;
+            write!(f, ": {tpe}")?;
         }
         writeln!(f, " {{")?;
         for instr in &self.instrs {
-            writeln!(f, "{}", instr)?;
+            writeln!(f, "{instr}")?;
         }
         write!(f, "}}")?;
         Ok(())
@@ -98,8 +98,8 @@ impl Display for AbstractCode {
                 label,
                 #[cfg(feature = "position")]
                     pos: _,
-            } => write!(f, ".{}:", label),
-            AbstractCode::Instruction(instr) => write!(f, "  {}", instr),
+            } => write!(f, ".{label}:"),
+            AbstractCode::Instruction(instr) => write!(f, "  {instr}"),
         }
     }
 }
@@ -157,8 +157,8 @@ impl Display for AbstractInstruction {
                 #[cfg(feature = "position")]
                     pos: _,
             } => match const_type {
-                Some(const_type) => write!(f, "{}: {} = {} {};", dest, const_type, op, value),
-                None => write!(f, "{} = {} {};", dest, op, value),
+                Some(const_type) => write!(f, "{dest}: {const_type} = {op} {value};"),
+                None => write!(f, "{dest} = {op} {value};"),
             },
             AbstractInstruction::Value {
                 op,
@@ -171,17 +171,17 @@ impl Display for AbstractInstruction {
                     pos: _,
             } => {
                 match op_type {
-                    Some(op_type) => write!(f, "{}: {} = {}", dest, op_type, op)?,
-                    None => write!(f, "{} = {}", dest, op)?,
+                    Some(op_type) => write!(f, "{dest}: {op_type} = {op}")?,
+                    None => write!(f, "{dest} = {op}")?,
                 }
                 for func in funcs {
-                    write!(f, " @{}", func)?;
+                    write!(f, " @{func}")?;
                 }
                 for arg in args {
-                    write!(f, " {}", arg)?;
+                    write!(f, " {arg}")?;
                 }
                 for label in labels {
-                    write!(f, " .{}", label)?;
+                    write!(f, " .{label}")?;
                 }
                 write!(f, ";")
             }
@@ -193,15 +193,15 @@ impl Display for AbstractInstruction {
                 #[cfg(feature = "position")]
                     pos: _,
             } => {
-                write!(f, "{}", op)?;
+                write!(f, "{op}")?;
                 for func in funcs {
-                    write!(f, " @{}", func)?;
+                    write!(f, " @{func}")?;
                 }
                 for arg in args {
-                    write!(f, " {}", arg)?;
+                    write!(f, " {arg}")?;
                 }
                 for label in labels {
-                    write!(f, " .{}", label)?;
+                    write!(f, " .{label}")?;
                 }
                 write!(f, ";")
             }
@@ -292,9 +292,9 @@ impl Serialize for AbstractType {
 impl Display for AbstractType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            AbstractType::Primitive(t) => write!(f, "{}", t),
+            AbstractType::Primitive(t) => write!(f, "{t}"),
 
-            AbstractType::Parameterized(t, at) => write!(f, "{}<{}>", t, at),
+            AbstractType::Parameterized(t, at) => write!(f, "{t}<{at}>"),
         }
     }
 }

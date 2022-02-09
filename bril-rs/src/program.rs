@@ -10,7 +10,7 @@ pub struct Program {
 impl Display for Program {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for func in &self.functions {
-            writeln!(f, "{}", func)?;
+            writeln!(f, "{func}")?;
         }
         Ok(())
     }
@@ -40,16 +40,16 @@ impl Display for Function {
                 if i != 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "{}", arg)?;
+                write!(f, "{arg}")?;
             }
             write!(f, ")")?;
         }
         if let Some(tpe) = self.return_type.as_ref() {
-            write!(f, ": {}", tpe)?;
+            write!(f, ": {tpe}")?;
         }
         writeln!(f, " {{")?;
         for instr in &self.instrs {
-            writeln!(f, "{}", instr)?;
+            writeln!(f, "{instr}")?;
         }
         write!(f, "}}")?;
         Ok(())
@@ -88,8 +88,8 @@ impl Display for Code {
                 label,
                 #[cfg(feature = "position")]
                     pos: _,
-            } => write!(f, ".{}:", label),
-            Code::Instruction(instr) => write!(f, "  {}", instr),
+            } => write!(f, ".{label}:"),
+            Code::Instruction(instr) => write!(f, "  {instr}"),
         }
     }
 }
@@ -158,7 +158,7 @@ impl Display for Instruction {
                 #[cfg(feature = "position")]
                     pos: _,
             } => {
-                write!(f, "{}: {} = {} {};", dest, const_type, op, value)
+                write!(f, "{dest}: {const_type} = {op} {value};")
             }
             Instruction::Value {
                 op,
@@ -170,15 +170,15 @@ impl Display for Instruction {
                 #[cfg(feature = "position")]
                     pos: _,
             } => {
-                write!(f, "{}: {} = {}", dest, op_type, op)?;
+                write!(f, "{dest}: {op_type} = {op}")?;
                 for func in funcs {
-                    write!(f, " @{}", func)?;
+                    write!(f, " @{func}")?;
                 }
                 for arg in args {
-                    write!(f, " {}", arg)?;
+                    write!(f, " {arg}")?;
                 }
                 for label in labels {
-                    write!(f, " .{}", label)?;
+                    write!(f, " .{label}")?;
                 }
                 write!(f, ";")
             }
@@ -190,15 +190,15 @@ impl Display for Instruction {
                 #[cfg(feature = "position")]
                     pos: _,
             } => {
-                write!(f, "{}", op)?;
+                write!(f, "{op}")?;
                 for func in funcs {
-                    write!(f, " @{}", func)?;
+                    write!(f, " @{func}")?;
                 }
                 for arg in args {
-                    write!(f, " {}", arg)?;
+                    write!(f, " {arg}")?;
                 }
                 for label in labels {
-                    write!(f, " .{}", label)?;
+                    write!(f, " .{label}")?;
                 }
                 write!(f, ";")
             }
@@ -379,7 +379,7 @@ impl Display for Type {
             #[cfg(feature = "float")]
             Type::Float => write!(f, "float"),
             #[cfg(feature = "memory")]
-            Type::Pointer(tpe) => write!(f, "ptr<{}>", tpe),
+            Type::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
         }
     }
 }
@@ -396,10 +396,10 @@ pub enum Literal {
 impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Literal::Int(i) => write!(f, "{}", i),
-            Literal::Bool(b) => write!(f, "{}", b),
+            Literal::Int(i) => write!(f, "{i}"),
+            Literal::Bool(b) => write!(f, "{b}"),
             #[cfg(feature = "float")]
-            Literal::Float(x) => write!(f, "{}", x),
+            Literal::Float(x) => write!(f, "{x}"),
         }
     }
 }

@@ -83,9 +83,9 @@ impl Display for PositionalInterpError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       PositionalInterpError { e, pos: Some(pos) } => {
-        write!(f, "Line {}, Column {}: {}", pos.row, pos.col, e)
+        write!(f, "Line {}, Column {}: {e}", pos.row, pos.col)
       }
-      PositionalInterpError { e, pos: None } => write!(f, "{}", e),
+      PositionalInterpError { e, pos: None } => write!(f, "{e}"),
     }
   }
 }

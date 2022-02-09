@@ -65,13 +65,13 @@ impl Display for PositionalConversionError {
         match self {
             #[cfg(feature = "position")]
             PositionalConversionError { e, pos: Some(pos) } => {
-                write!(f, "Line {}, Column {}: {}", pos.row, pos.col, e)
+                write!(f, "Line {}, Column {}: {e}", pos.row, pos.col)
             }
             #[cfg(not(feature = "position"))]
             PositionalConversionError { e: _, pos: Some(_) } => {
                 unreachable!()
             }
-            PositionalConversionError { e, pos: None } => write!(f, "{}", e),
+            PositionalConversionError { e, pos: None } => write!(f, "{e}"),
         }
     }
 }
