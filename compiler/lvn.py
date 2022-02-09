@@ -60,15 +60,13 @@ class VarMapping:
         if 'args' in instr:
             self.add_unseen_variables(instr['args'])
             args = self.vars_to_indices(instr['args'])
+            if op in COMMUTATIVE:
+                args = sorted(args)
+            return op, *args
         elif 'value' in instr:
-            args = [instr['value']]
+            return (op, instr['type'], instr['value'])
         else:
             assert False, f"idk how to make value for {instr}"
-
-        if op in COMMUTATIVE:
-            args = sorted(args)
-
-        return op, *args
 
 
 def count_variables(func):
@@ -81,8 +79,8 @@ def count_variables(func):
 
 def const_instr(dest, type, value):
     assert value[0] == 'const'
-    assert len(value) == 2
-    return {'dest': dest, 'op': 'const', 'value': value[1], 'type': type}
+    assert len(value) == 3
+    return {'dest': dest, 'op': 'const', 'value': value[2], 'type': value[1]}
 
 
 def id_instr(dest, type, home_var):
@@ -121,6 +119,7 @@ def do_lvn():
 
                 if 'dest' in instr:
                     dest = instr['dest']
+                    old_instr = instr
 
                     # If the value is already there, replace with id
                     if value in var_table.value_to_idx:
@@ -145,13 +144,13 @@ def do_lvn():
 
                     print(f"{old_instr} -> {instr} -> {value}", file=sys.stderr)
 
-
                 if 'args' in instr:
                     # Replace arg indices with their home variables
                     instr['args'] = var_table.indices_to_vars(value[1:])
                 elif 'value' in instr:
-                    assert len(value) == 2
-                    instr['value'] = value[1]
+                    assert len(value) == 3
+                    instr['type'] = value[1]
+                    instr['value'] = value[2]
 
                 new_instrs.append(instr)
 
