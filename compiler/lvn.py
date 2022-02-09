@@ -99,19 +99,17 @@ def id_instr(dest, type, home_var):
     return {'dest': dest, 'op': 'id', 'args': [home_var], 'type': type}
 
 
-def maybe_rename_dest(var_table, var_counts, lvn_count, dest, value):
+def name_dest(var_counts, lvn_count, dest):
     var_counts[dest] -= 1
     if var_counts[dest] > 0:
-        var_table.insert_var(dest, value)
         dest = f'lvn.{dest}.{lvn_count}'
-        lvn_count += 1
         assert dest not in var_counts, f"Alas, {dest} is used"
-    return dest, lvn_count
+    return dest
 
 
 def do_lvn():
     prog = json.load(sys.stdin)
-    lvn_renamed_var_count = 0
+    renamed_var_count = 0
 
     # does this happen within a function or across a program?
     for func in prog['functions']:
@@ -145,15 +143,18 @@ def do_lvn():
                         if value[0] == 'const':
                             instr = const_instr(dest, instr['type'], value)
 
-                    # If variable is going to be overwritten again, rename it
-                    dest, lvn_renamed_var_count = maybe_rename_dest(
-                        var_table, var_counts, lvn_renamed_var_count,
-                        instr['dest'], value
-                    )
-                    instr['dest'] = dest
+                    # If the var gets used again, rename it
+                    new_dest = name_dest(var_counts, renamed_var_count, dest)
+                    if new_dest != dest:
+                        var_table.insert_var(dest, value)
+                        instr['dest'] = dest = new_dest
+                        renamed_var_count += 1
 
                     # Put the value in the destination
                     var_table.insert_var(dest, value)
+
+                    print(f"{old_instr} -> {instr} -> {value}", file=sys.stderr)
+
 
                 if 'args' in instr:
                     # Replace arg indices with their home variables
