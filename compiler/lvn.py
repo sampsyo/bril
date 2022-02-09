@@ -30,20 +30,10 @@ class VarMapping:
         return self.value_to_idx[value]
 
     def idx_to_home_var(self, idx):
-        # This needs to be unpacked to go through ids
-        value = self.table[idx][0]
-        if value[0] == 'id':
-            assert len(value) == 2
-            return self.idx_to_home_var(value[1])
         return self.table[idx][1]
 
     def idx_to_value(self, idx):
-        # This need to be unpacked to go through ids
-        value = self.table[idx][0]
-        if value[0] == 'id':
-            assert len(value) == 2
-            return self.idx_to_value(value[1])
-        return value
+        return self.table[idx][0]
 
     def value_to_home_var(self, value):
         return self.idx_to_home_var(self.value_to_idx[value])
