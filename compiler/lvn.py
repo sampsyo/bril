@@ -2,7 +2,7 @@ import json
 import sys
 from collections import defaultdict
 
-COMMUTATIVE = {'add', 'mul'}
+COMMUTATIVE = {'add', 'mul', 'or', 'and', 'eq'}
 
 
 class VarMapping:
