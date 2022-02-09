@@ -119,6 +119,7 @@ def do_lvn():
                     if value in var_table.value_to_idx:
                         home_var = var_table.idx_to_home_var(var_table.value_to_idx[value])
                         instr = id_instr(instr['dest'], instr['type'], home_var)
+                        value = var_table.make_value(instr)
 
                     # If we're iding a constant, replace it with the constant
                     if instr['op'] == 'id':
