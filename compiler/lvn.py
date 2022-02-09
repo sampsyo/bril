@@ -10,7 +10,6 @@ class VarMapping:
         self.var_to_idx = dict()
         self.value_to_idx = dict()
         self.table = [] # idx is #, then contains tuples of (value, home)
-        self.lvn_vars = 0
 
     def insert_var(self, var, value):
         # If it's not already in the table, add it
@@ -75,21 +74,6 @@ class VarMapping:
 
         return op, *args
 
-    def maybe_rename_dest_store_old(self, var_counts, dest, value):
-        var_counts[dest] -= 1
-        if var_counts[dest] > 0:
-            # Insert old value so we know what it was when we try to use it
-            self.insert_var(dest, value)
-            dest = f'lvn.{self.lvn_vars}'
-            self.lvn_vars += 1
-            assert dest not in var_counts, f"Alas, {dest} is not a unique name"
-        return dest
-
-    def new_cache(self):
-        new = VarMapping()
-        new.lvn_vars = self.lvn_vars
-        return new
-
 
 def count_variables(func):
     ans = defaultdict(lambda : 0)
@@ -111,6 +95,8 @@ def id_instr(dest, type, home_var):
 
 def do_lvn():
     prog = json.load(sys.stdin)
+    lvn_renamed_var_count = 0
+
     # does this happen within a function or across a program?
     for func in prog['functions']:
         var_table = VarMapping()
@@ -140,8 +126,16 @@ def do_lvn():
                             instr = const_instr(instr['dest'], instr['type'], value)
 
                     # If variable is going to be overwritten again, rename it
-                    dest = var_table.maybe_rename_dest_store_old(var_counts, instr['dest'], value)
-                    instr['dest'] = dest
+                    dest = instr['dest']
+                    var_counts[dest] -= 1
+                    if var_counts[dest] > 0:
+                        var_table.insert_var(dest, value)
+                        dest = f'lvn.{lvn_renamed_var_count}'
+                        lvn_renamed_var_count += 1
+                        assert dest not in var_counts, f"Alas, {dest} is used"
+                        instr['dest'] = dest
+
+                    print(f"{old_instr} -> {instr} -> {value}", file=sys.stderr)
 
                     # Put the value in the destination
                     var_table.insert_var(dest, value)
@@ -150,14 +144,16 @@ def do_lvn():
                     # Replace arg indices with their home variables
                     instr['args'] = [var_table.idx_to_home_var(idx) for idx in value[1:]]
                 elif 'value' in instr:
+                    assert len(value) == 2
                     instr['value'] = value[1]
+
                 new_instrs.append(instr)
 
             else:
                 # If it's a label instruction, then we might have jumped and
                 # so we need to drop the cache
                 if 'label' in instr:
-                    var_table = var_table.new_cache()
+                    var_table = VarMapping()
 
                 # if its not an op, then just put it back unchanged
                 new_instrs.append(instr)
