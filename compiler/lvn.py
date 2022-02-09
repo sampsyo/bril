@@ -47,11 +47,33 @@ class VarMapping:
         return value
 
     def unroll_ids(self, value):
-        print(value, file=sys.stderr)
         if value[0] == 'id':
             assert len(value) == 2
             return self.unroll_ids(self.idx_to_value(value[1]))
         return value
+
+    def add_unseen_variables(self, args):
+        for arg in args:
+            if arg not in self.var_to_idx:
+                self.insert_var(arg, ('arg', arg))
+
+    def vars_to_indices(self, args):
+        return [self.var_to_idx[arg] for arg in args]
+
+    def make_value(self, instr):
+        op = instr['op']
+        if 'args' in instr:
+            self.add_unseen_variables(instr['args'])
+            args = self.vars_to_indices(instr['args'])
+        elif 'value' in instr:
+            args = [instr['value']]
+        else:
+            assert False, f"idk how to make value for {instr}"
+
+        if op in COMMUTATIVE:
+            args = sorted(args)
+
+        return op, *args
 
     def maybe_rename_dest_store_old(self, var_counts, dest, value):
         var_counts[dest] -= 1
@@ -77,52 +99,14 @@ def count_variables(func):
     return ans
 
 
-def make_lookup(var_table, dest, type, value):
-    if value[0] == 'const':
-        return {
-            'dest': dest,
-            'op': 'const',
-            'value': value[1],
-            'type': type
-        }
-    else:
-        if value[0] == 'id':
-            idx = value[1]
-        else:
-            idx = var_table.value_to_idx[value]
-        return {
-            'dest': dest,
-            'op': 'id',
-            'args': [var_table.idx_to_home_var(idx)],
-            'type': type
-        }
+def const_instr(dest, type, value):
+    assert value[0] == 'const'
+    assert len(value) == 2
+    return {'dest': dest, 'op': 'const', 'value': value[1], 'type': type}
 
 
-def make_value(var_table, instr):
-    op = instr['op']
-
-    # Replace every arg with its variable index
-    if 'args' in instr:
-        args = []
-        for arg in instr['args']:
-            # We can actually refer to an argument that hasn't been defined
-            # (like a function arg, or after a jump), so if it's not there
-            # then add it.
-            if arg not in var_table.var_to_idx:
-                #assert arg is str, f"tried to put invalid {arg} as argument"
-                var_table.insert_var(arg, ("arg", arg))
-            args.append(var_table.var_to_idx[arg])
-    elif 'value' in instr:
-        args = [instr['value']]
-    else:
-        assert False, f"idk what to do with {instr}"
-
-    # Transform args to canonical ordering if op is commutative
-    if op in COMMUTATIVE:
-        args = sorted(args)
-
-    value = op, *args
-    return value
+def id_instr(dest, type, home_var):
+    return {'dest': dest, 'op': 'id', 'args': [home_var], 'type': type}
 
 
 def do_lvn():
@@ -131,8 +115,7 @@ def do_lvn():
     for func in prog['functions']:
         var_table = VarMapping()
         if 'args' in func:
-            for arg in func['args']:
-                var_table.insert_var(arg['name'], ('arg', arg['name']))
+            var_table.add_unseen_variables(func['args'])
 
         var_counts = count_variables(func)
         new_instrs = []
@@ -142,30 +125,30 @@ def do_lvn():
                    f"Unrecognized instruction key {key}, code might not work..."
 
             if 'op' in instr and instr['op'] not in {'jmp', 'br'}:
-                value = make_value(var_table, instr)
+                value = var_table.make_value(instr)
+                value = var_table.unroll_ids(value)
 
                 if 'dest' in instr:
-                    dest = instr['dest']
-
                     # If the value is already there, replace instruction with lookup
-                    if value in var_table.value_to_idx or instr['op'] == 'id':
-                        old_instr = instr
-                        value = var_table.unroll_ids(value)
-                        instr = make_lookup(var_table, dest, instr['type'], value)
-                        value = make_value(var_table, instr)
-                        print(f"replacement {old_instr} -> {instr} -> {value}", file=sys.stderr)
+                    if value in var_table.value_to_idx:
+                        home_var = var_table.idx_to_home_var(var_table.value_to_idx[value])
+                        instr = id_instr(instr['dest'], instr['type'], home_var)
 
-                    # If variable is going to be overwritten again...
-                    dest = var_table.maybe_rename_dest_store_old(var_counts, dest, value)
+                    # If we're iding a constant, replace it with the constant
+                    if instr['op'] == 'id':
+                        if value[0] == 'const':
+                            instr = const_instr(instr['dest'], instr['type'], value)
+
+                    # If variable is going to be overwritten again, rename it
+                    dest = var_table.maybe_rename_dest_store_old(var_counts, instr['dest'], value)
+                    instr['dest'] = dest
 
                     # Put the value in the destination
                     var_table.insert_var(dest, value)
-                    instr['dest'] = dest
 
                 if 'args' in instr:
-                    new_args = [var_table.idx_to_home_var(idx) for idx in value[1:]]
                     # Replace arg indices with their home variables
-                    instr['args'] = new_args
+                    instr['args'] = [var_table.idx_to_home_var(idx) for idx in value[1:]]
                 elif 'value' in instr:
                     instr['value'] = value[1]
                 new_instrs.append(instr)
