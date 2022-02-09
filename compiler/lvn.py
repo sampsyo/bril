@@ -20,11 +20,19 @@ def insert_var(var, value):
 
 
 def idx_to_home_var(idx):
+    value = table[idx][0]
+    if value is not None and value[0] == 'id':
+        assert len(value) == 2
+        return idx_to_home_var(value[1])
     return table[idx][1]
 
 
 def idx_to_value(idx):
-    return table[idx][0]
+    value = table[idx][0]
+    if value is not None and value[0] == 'id':
+        assert len(value) == 2
+        return idx_to_value(value[1])
+    return value
 
 
 def count_variables(func):
@@ -52,10 +60,6 @@ def make_value(instr):
         args = [instr['value']]
     else:
         assert False, f"idk what to do with {instr}"
-
-    if op == 'id':
-        assert len(args) == 1
-        return idx_to_value(args[0])
 
     # Transform args to canonical ordering if op is commutative
     if op in COMMUTATIVE:
