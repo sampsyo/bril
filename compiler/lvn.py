@@ -35,24 +35,30 @@ class VarMapping:
             return self.unroll_ids(self._idx_to_value(value[1]))
         return value
 
-    def _var_to_idx_unroll_id(self, var):
-        value = self._idx_to_value(self.var_to_idx[var])
-        value = self.unroll_ids(value)
-        return self.value_to_idx[value]
-
     def add_unseen_variables(self, args):
         for arg in args:
             if arg not in self.var_to_idx:
                 self.insert_var(arg, ('arg', arg))
 
+    def _replace_indices_through_idx(self, indices):
+        ans = []
+        for idx in indices:
+            value = self._idx_to_value(idx)
+            value = self.unroll_ids(value)
+            ans.append(self.value_to_idx[value])
+        return ans
+
     def make_value(self, instr):
         op = instr['op']
         if 'args' in instr:
             self.add_unseen_variables(instr['args'])
-            args = [self._var_to_idx_unroll_id(arg) for arg in instr['args']]
+            indices = [self.var_to_idx[arg] for arg in instr['args']]
+
+            indices = self._replace_indices_through_idx(indices)
             if op in COMMUTATIVE:
-                args = sorted(args)
-            return op, *args
+                indices = sorted(indices)
+
+            return op, *indices
         elif 'value' in instr:
             return (op, instr['type'], instr['value'])
         else:
