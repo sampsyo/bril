@@ -7,8 +7,7 @@ DEBUG = False
 COMMUTATIVE = {'add', 'mul', 'or', 'and', 'eq'}
 CAST_VALUE = {
     'int': int,
-    # This is already handled by JSON
-    'bool': lambda v: bool(v)
+    'bool': bool
 }
 EXPRESSIONS = {
     'add': lambda a, b: a + b,
@@ -39,6 +38,7 @@ class Simplification:
                 return self.render_result(arg2)
         if self.val == arg2:
             return self.render_result(arg1)
+        # return None if this simplification doesn't do anything
         return None
 
     def render_result(self, other):
@@ -141,12 +141,6 @@ class VarMapping:
             # This needs to be an enum or something if we ever handle tuples
             return ('variable', idx)
 
-    def _compute_constant_expressions(self, value):
-        vals = [self._const_value_from_index(idx) for idx in value[2:]]
-        return compute_expression(
-            value, vals, do_special_cases=self.do_special_cases
-        )
-
     def make_value(self, instr):
         op = instr['op']
         type = instr['type'] if 'type' in instr else None
@@ -160,7 +154,10 @@ class VarMapping:
 
             value = op, type, *indices
             if op not in {'const', 'id'} and self.compute_constant_ops:
-                value = self._compute_constant_expressions(value)
+                vals = [self._const_value_from_index(idx) for idx in value[2:]]
+                value = compute_expression(
+                    value, vals, do_special_cases=self.do_special_cases
+                )
             return value
         elif 'value' in instr:
             return (op, instr['type'], instr['value'])
