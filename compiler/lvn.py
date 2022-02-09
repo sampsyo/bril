@@ -31,8 +31,8 @@ class VarMapping:
 
     def unroll_ids(self, value):
         if value[0] == 'id':
-            assert len(value) == 2
-            return self.unroll_ids(self._idx_to_value(value[1]))
+            assert len(value) == 3
+            return self.unroll_ids(self._idx_to_value(value[2]))
         return value
 
     def add_unseen_variables(self, args):
@@ -50,6 +50,7 @@ class VarMapping:
 
     def make_value(self, instr):
         op = instr['op']
+        type = instr['type'] if 'type' in instr else None
         if 'args' in instr:
             self.add_unseen_variables(instr['args'])
             indices = [self.var_to_idx[arg] for arg in instr['args']]
@@ -58,7 +59,9 @@ class VarMapping:
             if op in COMMUTATIVE:
                 indices = sorted(indices)
 
-            return op, *indices
+            value = op, type, *indices
+
+            return value
         elif 'value' in instr:
             return (op, instr['type'], instr['value'])
         else:
