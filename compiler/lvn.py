@@ -68,7 +68,7 @@ def count_variables(func):
     return ans
 
 
-def const_instr(dest, type, value):
+def const_instr(dest, value):
     assert value[0] == 'const'
     assert len(value) == 3
     return {'dest': dest, 'op': 'const', 'value': value[2], 'type': value[1]}
@@ -112,16 +112,14 @@ def do_lvn():
                     dest = instr['dest']
                     old_instr = instr
 
-                    # If the value is already there, replace with id
+                    # If the value is already there, replace with id or constant
                     if value in var_table.value_to_idx:
                         home_var = var_table.value_to_home_var(value)
-                        instr = id_instr(dest, instr['type'], home_var)
-                        value = var_table.make_value(instr)
-
-                    # If we're iding a constant, replace it with the constant
-                    if instr['op'] == 'id':
                         if value[0] == 'const':
-                            instr = const_instr(dest, instr['type'], value)
+                            instr = const_instr(dest, value)
+                        else:
+                            instr = id_instr(dest, instr['type'], home_var)
+                        value = var_table.make_value(instr)
 
                     # If the var gets used again, rename it
                     new_dest = name_dest(var_counts, renamed_var_count, dest)
