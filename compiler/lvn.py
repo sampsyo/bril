@@ -38,6 +38,11 @@ class VarMapping:
             return self.unroll_ids(self._idx_to_value(value[1]))
         return value
 
+    def _var_to_idx_unroll_id(self, var):
+        value = self._idx_to_value(self.var_to_idx[var])
+        value = self.unroll_ids(value)
+        return self.value_to_idx[value]
+
     def add_unseen_variables(self, args):
         for arg in args:
             if arg not in self.var_to_idx:
@@ -50,7 +55,7 @@ class VarMapping:
         op = instr['op']
         if 'args' in instr:
             self.add_unseen_variables(instr['args'])
-            args = [self.var_to_idx[arg] for arg in instr['args']]
+            args = [self._var_to_idx_unroll_id(arg) for arg in instr['args']]
             if op in COMMUTATIVE:
                 args = sorted(args)
             return op, *args
@@ -119,7 +124,7 @@ def do_lvn():
                             instr = const_instr(dest, value)
                         else:
                             instr = id_instr(dest, instr['type'], home_var)
-                        value = var_table.make_value(instr)
+                            value = var_table.make_value(instr)
 
                     # If the var gets used again, rename it
                     new_dest = name_dest(var_counts, renamed_var_count, dest)
