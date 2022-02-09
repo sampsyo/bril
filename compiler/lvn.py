@@ -25,11 +25,71 @@ EXPRESSIONS = {
 }
 
 
+class Simplification:
+    def __init__(self, trigger, val, result):
+        assert trigger in {'either', '2'}
+        self.trigger = trigger
+        self.val = val
+        self.result = result
+
+    def simplify(self, arg1, arg2):
+        if self.trigger == 'either':
+            if self.val == arg1:
+                return self.render_result(arg2)
+        if self.val == arg2:
+            return self.render_result(arg1)
+        return None
+
+    def render_result(self, other):
+        res = other if self.result == 'identity' else self.result
+        return res
+
+
+SIMPLIFICATIONS = {
+    'add': [Simplification('either', 0, 'identity')],
+    'mul': [Simplification('either', 1, 'identity')],
+    'sub': [Simplification('2', 0, 'identity')],
+    'div': [Simplification('2', 1, 'identity')],
+    'and': [Simplification('either', True, 'identity'),
+            Simplification('either', False, False)],
+    'or':  [Simplification('either', False, 'identity'),
+            Simplification('either', True, True)]
+}
+
+
+def compute_expression(value, const_vals, do_special_cases=False):
+    op = value[0]
+    val = None
+
+    if op in SIMPLIFICATIONS and do_special_cases:
+        for simplification in SIMPLIFICATIONS[op]:
+            ans = simplification.simplify(*const_vals)
+            if ans is not None:
+                print(f"                     {value[0]}{const_vals} -> {val}", file=sys.stderr)
+                if isinstance(ans, tuple):
+                    assert ans[1][0] == 'variable'
+                    return ('id', value[1], ans[1][1])
+                else:
+                    val = ans
+                break
+
+    if val is None:
+        is_consts = [not isinstance(val, tuple) for val in const_vals]
+        if reduce(lambda a, b: a and b, is_consts, True):
+            val = EXPRESSIONS[value[0]](*const_vals)
+        else:
+            return None
+
+    assert not isinstance(val, tuple)
+    return ('const', value[1], val)
+
+
 class VarMapping:
     def __init__(self):
         self.var_to_idx = dict()
         self.value_to_idx = dict()
         self.table = [] # idx is #, then contains tuples of (value, home)
+
 
     def insert_var(self, var, value):
         # If it's not already in the table, add it
@@ -68,26 +128,23 @@ class VarMapping:
             ans.append(self.value_to_idx[value])
         return ans
 
-    def _const_value_from_idx(self, idx):
+    def _const_value_from_index(self, idx):
         value = self._idx_to_value(idx)
-        val = CAST_VALUE[value[1]](value[2])
-        #print(f"Converting value -> {idx} -> {value} -> {val} = {CAST_VALUE[value[1]]}({value[2]})", file=sys.stderr)
-        return val
+        if value[0] == 'const':
+            return CAST_VALUE[value[1]](value[2])
+        else:
+            # This needs to be an enum or something if we ever handle tuples
+            return ('variable', idx)
 
     def _simplify_value(self, value):
-        consts = [self._idx_to_value(idx)[0] == 'const' for idx in value[2:]]
-        print(f"Simplifying {value}: {consts}", file=sys.stderr)
-        all_consts = reduce(lambda a, b: a and b, consts, True)
-        if all_consts and value[0] in EXPRESSIONS:
-            try:
-                vals = [self._const_value_from_idx(idx) for idx in value[2:]]
-                #print(f"Simplifying {value}: {consts} -> {vals}", file=sys.stderr)
-                new_value = ('const', value[1], EXPRESSIONS[value[0]](*vals))
-                print(f"            {value}: {consts} -> {vals} -> {new_value}", file=sys.stderr)
-                return new_value
-            except Exception:
+        vals = [self._const_value_from_index(idx) for idx in value[2:]]
+        try:
+            new_value = compute_expression(value, vals)
+            if new_value is None:
                 return value
-        else:
+            else:
+                return new_value
+        except Exception:
             return value
 
     def make_value(self, instr):
