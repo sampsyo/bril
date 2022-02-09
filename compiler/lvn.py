@@ -143,6 +143,11 @@ def do_lvn():
                     print(var_table.table, file=sys.stderr)
                     instr['args'] = var_table.indices_to_vars(value[1:])
 
+                if value[0] == 'const':
+                    assert instr['op'] == 'const'
+                    assert instr['type'] == value[1]
+                    assert instr['value'] == value[2]
+
                 new_instrs.append(instr)
 
             else:
