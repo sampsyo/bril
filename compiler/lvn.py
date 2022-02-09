@@ -1,8 +1,28 @@
 import json
 import sys
 from collections import defaultdict
+from functools import reduce
 
 COMMUTATIVE = {'add', 'mul', 'or', 'and', 'eq'}
+CAST_VALUE = {
+    'int': int,
+    # This is already handled by JSON
+    'bool': lambda v: v
+}
+EXPRESSIONS = {
+    'add': lambda a, b: a + b,
+    'mul': lambda a, b: a * b,
+    'sub': lambda a, b: a - b,
+    'div': lambda a, b: a / b,
+    'eq': lambda a, b: a == b,
+    'lt': lambda a, b: a < b,
+    'gt': lambda a, b: a > b,
+    'le': lambda a, b: a <= b,
+    'ge': lambda a, b: a >= b,
+    'not': lambda a: not a,
+    'and': lambda a, b: a and b,
+    'or': lambda a, b: a or b
+}
 
 
 class VarMapping:
@@ -48,6 +68,28 @@ class VarMapping:
             ans.append(self.value_to_idx[value])
         return ans
 
+    def _const_value_from_idx(self, idx):
+        value = self._idx_to_value(idx)
+        val = CAST_VALUE[value[1]](value[2])
+        #print(f"Converting value -> {idx} -> {value} -> {val} = {CAST_VALUE[value[1]]}({value[2]})", file=sys.stderr)
+        return val
+
+    def _simplify_value(self, value):
+        consts = [self._idx_to_value(idx)[0] == 'const' for idx in value[2:]]
+        print(f"Simplifying {value}: {consts}", file=sys.stderr)
+        all_consts = reduce(lambda a, b: a and b, consts, True)
+        if all_consts and value[0] in EXPRESSIONS:
+            try:
+                vals = [self._const_value_from_idx(idx) for idx in value[2:]]
+                #print(f"Simplifying {value}: {consts} -> {vals}", file=sys.stderr)
+                new_value = ('const', value[1], EXPRESSIONS[value[0]](*vals))
+                print(f"            {value}: {consts} -> {vals} -> {new_value}", file=sys.stderr)
+                return new_value
+            except Exception:
+                return value
+        else:
+            return value
+
     def make_value(self, instr):
         op = instr['op']
         type = instr['type'] if 'type' in instr else None
@@ -60,7 +102,8 @@ class VarMapping:
                 indices = sorted(indices)
 
             value = op, type, *indices
-
+            if op not in {'const', 'id'}:
+                value = self._simplify_value(value)
             return value
         elif 'value' in instr:
             return (op, instr['type'], instr['value'])
@@ -121,7 +164,11 @@ def do_lvn():
 
             if 'op' in instr and instr['op'] not in {'jmp', 'br'}:
                 value = var_table.make_value(instr)
+                # If we simplified the value into a constant, replace the instr
+                if value[0] == 'const' and instr['op'] != 'const':
+                    instr = const_instr(instr['dest'], value)
                 value = var_table.unroll_ids(value)
+                print(f"{instr} -> {value}", file=sys.stderr)
 
                 if 'dest' in instr:
                     dest = instr['dest']
