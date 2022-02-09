@@ -45,6 +45,9 @@ class VarMapping:
             return self.idx_to_value(value[1])
         return value
 
+    def value_to_home_var(self, value):
+        return self.idx_to_value(self.value_to_idx(value))
+
     def unroll_ids(self, value):
         if value[0] == 'id':
             assert len(value) == 2
@@ -58,6 +61,9 @@ class VarMapping:
 
     def vars_to_indices(self, args):
         return [self.var_to_idx[arg] for arg in args]
+
+    def indices_to_vars(self, indices):
+        return [self.idx_to_home_var(idx) for idx in indices]
 
     def make_value(self, instr):
         op = instr['op']
@@ -93,6 +99,16 @@ def id_instr(dest, type, home_var):
     return {'dest': dest, 'op': 'id', 'args': [home_var], 'type': type}
 
 
+def maybe_rename_dest(var_table, var_counts, lvn_count, dest, value):
+    var_counts[dest] -= 1
+    if var_counts[dest] > 0:
+        var_table.insert_var(dest, value)
+        dest = f'lvn.{dest}.{lvn_count}'
+        lvn_count += 1
+        assert dest not in var_counts, f"Alas, {dest} is used"
+    return dest, lvn_count
+
+
 def do_lvn():
     prog = json.load(sys.stdin)
     lvn_renamed_var_count = 0
@@ -107,43 +123,41 @@ def do_lvn():
         new_instrs = []
         for instr in func['instrs']:
             for key in instr.keys():
-                assert key in {'op', 'dest', 'args', 'type', 'funcs', 'value', 'label', 'labels'}, \
-                   f"Unrecognized instruction key {key}, code might not work..."
+                assert key in {'op', 'dest', 'args', 'type', 'funcs', 'value',
+                               'label', 'labels'}, \
+                   f"Unrecognized instruction key {key}"
 
             if 'op' in instr and instr['op'] not in {'jmp', 'br'}:
                 value = var_table.make_value(instr)
                 value = var_table.unroll_ids(value)
 
                 if 'dest' in instr:
-                    # If the value is already there, replace instruction with lookup
+                    dest = instr['dest']
+
+                    # If the value is already there, replace with id
                     if value in var_table.value_to_idx:
-                        home_var = var_table.idx_to_home_var(var_table.value_to_idx[value])
-                        instr = id_instr(instr['dest'], instr['type'], home_var)
+                        home_var = var_table.value_to_home_var(value)
+                        instr = id_instr(dest, instr['type'], home_var)
                         value = var_table.make_value(instr)
 
                     # If we're iding a constant, replace it with the constant
                     if instr['op'] == 'id':
                         if value[0] == 'const':
-                            instr = const_instr(instr['dest'], instr['type'], value)
+                            instr = const_instr(dest, instr['type'], value)
 
                     # If variable is going to be overwritten again, rename it
-                    dest = instr['dest']
-                    var_counts[dest] -= 1
-                    if var_counts[dest] > 0:
-                        var_table.insert_var(dest, value)
-                        dest = f'lvn.{lvn_renamed_var_count}'
-                        lvn_renamed_var_count += 1
-                        assert dest not in var_counts, f"Alas, {dest} is used"
-                        instr['dest'] = dest
-
-                    print(f"{old_instr} -> {instr} -> {value}", file=sys.stderr)
+                    dest, lvn_renamed_var_count = maybe_rename_dest(
+                        var_table, var_counts, lvn_renamed_var_count,
+                        instr['dest'], value
+                    )
+                    instr['dest'] = dest
 
                     # Put the value in the destination
                     var_table.insert_var(dest, value)
 
                 if 'args' in instr:
                     # Replace arg indices with their home variables
-                    instr['args'] = [var_table.idx_to_home_var(idx) for idx in value[1:]]
+                    instr['args'] = var_table.indices_to_vars(value[1:])
                 elif 'value' in instr:
                     assert len(value) == 2
                     instr['value'] = value[1]
