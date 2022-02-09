@@ -46,7 +46,7 @@ class VarMapping:
         return value
 
     def value_to_home_var(self, value):
-        return self.idx_to_value(self.value_to_idx(value))
+        return self.idx_to_home_var(self.value_to_idx[value])
 
     def unroll_ids(self, value):
         if value[0] == 'id':
