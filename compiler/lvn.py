@@ -29,9 +29,6 @@ class VarMapping:
     def _idx_to_value(self, idx):
         return self.table[idx][0]
 
-    def value_to_home_var(self, value):
-        return self._idx_to_home_var(self.value_to_idx[value])
-
     def unroll_ids(self, value):
         if value[0] == 'id':
             assert len(value) == 2
@@ -48,9 +45,6 @@ class VarMapping:
             if arg not in self.var_to_idx:
                 self.insert_var(arg, ('arg', arg))
 
-    def indices_to_vars(self, indices):
-        return [self._idx_to_home_var(idx) for idx in indices]
-
     def make_value(self, instr):
         op = instr['op']
         if 'args' in instr:
@@ -63,6 +57,12 @@ class VarMapping:
             return (op, instr['type'], instr['value'])
         else:
             assert False, f"idk how to make value for {instr}"
+
+    def indices_to_vars(self, indices):
+        return [self._idx_to_home_var(idx) for idx in indices]
+
+    def value_to_home_var(self, value):
+        return self._idx_to_home_var(self.value_to_idx[value])
 
 
 def count_variables(func):
