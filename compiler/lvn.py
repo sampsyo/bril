@@ -140,11 +140,8 @@ def do_lvn():
 
                 if 'args' in instr:
                     # Replace arg indices with their home variables
+                    print(var_table.table, file=sys.stderr)
                     instr['args'] = var_table.indices_to_vars(value[1:])
-                elif 'value' in instr:
-                    assert len(value) == 3
-                    instr['type'] = value[1]
-                    instr['value'] = value[2]
 
                 new_instrs.append(instr)
 
