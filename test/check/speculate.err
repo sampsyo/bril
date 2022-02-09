@@ -1,0 +1,7 @@
+6:3: speculate expects 0 args, not 1
+7:3: speculate should have no result type
+9:3: commit expects 0 args, not 1
+10:3: commit should have no result type
+12:3: guard expects 1 args, not 0
+13:3: guard needs 1 labels; found 0
+14:3: guard should have no result type

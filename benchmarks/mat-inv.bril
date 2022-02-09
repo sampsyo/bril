@@ -7,7 +7,7 @@
   three :int = const 3;
   trip_r :int = mul three r;
   index :int = add c trip_r;
-  ptr :ptr<int> = ptradd matrix index;
+  ptr :ptr<float> = ptradd matrix index;
   res :float = load ptr;
   ret res;
 }
@@ -51,7 +51,7 @@
   det :float = fadd det to_add;
   det :float = fsub det to_sub;
   i :int = add i one;
-  i_lt_three = lt i three;
+  i_lt_three: bool = lt i three;
   br i_lt_three .loop .done;
 .done:
   ret det;
@@ -152,7 +152,7 @@
 
 # Prints an array
 ## borrowed with slight modification from mat-mul.bril
-@printarray(size: int, arr: ptr<bril>) {
+@printarray(size: int, arr: ptr<float>) {
   i: int = const 0;
   one: int = const 1;
 .loop:
