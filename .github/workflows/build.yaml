@@ -68,7 +68,7 @@ jobs:
       - name: mdbook
         run: mdbook build
       - name: rsync
-        if: ${{github.event_name=='push' && github.ref=='refs/heads/master'}}
+        if: ${{github.event_name=='push' && github.ref=='refs/heads/main'}}
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
