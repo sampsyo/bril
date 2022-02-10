@@ -2,9 +2,21 @@ on:
   push:
     branches:
      - main
+    paths:
+     - 'brilirs/**/*.rs'
+     - 'brilirs/**/*.toml'
+     - 'bril-rs/**/*.rs'
+     - 'bril-rs/**/*.toml'
+     - 'bril-rs/**/*.lalrpop'
   pull_request:
     branches:
      - main
+    paths:
+     - 'brilirs/**/*.rs'
+     - 'brilirs/**/*.toml'
+     - 'bril-rs/**/*.rs'
+     - 'bril-rs/**/*.toml'
+     - 'bril-rs/**/*.lalrpop'
 
 name: Workflow checks for rust code
 
