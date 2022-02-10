@@ -266,6 +266,7 @@ def do_lvn():
                     assert instr['value'] == value[2]
 
                 new_instrs.append(instr)
+                debug_msg("")
 
             else:
                 # If it's a label instruction, then we might have jumped and
