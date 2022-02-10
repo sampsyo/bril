@@ -17,6 +17,7 @@
 #![allow(clippy::use_self)]
 #![allow(clippy::needless_pass_by_value)]
 #![allow(clippy::cast_sign_loss)]
+#![allow(clippy::must_use_candidate)]
 
 use std::str::FromStr;
 use crate::Lines;
