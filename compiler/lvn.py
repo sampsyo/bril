@@ -70,7 +70,7 @@ def compute_expression(value, const_vals, do_special_cases=False):
                     assert ans[0] == 'variable'
                     return ('id', value[1], ans[1])
                 else:
-                    return ('const', value[1], val)
+                    return ('const', value[1], ans)
 
     is_consts = [not isinstance(val, tuple) for val in const_vals]
     if reduce(lambda a, b: a and b, is_consts, True):
