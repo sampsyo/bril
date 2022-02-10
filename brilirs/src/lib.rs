@@ -1,7 +1,6 @@
 // The group clippy::pedantic is not used as it ends up being more annoying than useful
 #![warn(clippy::all, clippy::nursery, clippy::cargo)]
 // todo these are allowed to appease clippy but should be addressed some day
-#![allow(clippy::missing_errors_doc)]
 #![allow(clippy::cargo_common_metadata)]
 #![allow(clippy::too_many_arguments)]
 

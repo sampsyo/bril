@@ -34,6 +34,7 @@ pub enum ConversionError {
 }
 
 impl ConversionError {
+    #[must_use]
     pub fn add_pos(self, pos_var: Option<Position>) -> PositionalConversionError {
         match self {
             //Self::PositionalConversionErrorConversion(e) => e,
@@ -52,6 +53,7 @@ pub struct PositionalConversionError {
 }
 
 impl PositionalConversionError {
+    #[must_use]
     pub fn new(e: ConversionError) -> Self {
         Self {
             e: Box::new(e),
@@ -296,11 +298,11 @@ impl TryFrom<AbstractType> for Type {
             AbstractType::Primitive(t) if t == "int" => Self::Int,
             AbstractType::Primitive(t) if t == "bool" => Self::Bool,
             #[cfg(feature = "float")]
-            AbstractType::Primitive(t) if t == "float" => Type::Float,
+            AbstractType::Primitive(t) if t == "float" => Self::Float,
             AbstractType::Primitive(t) => return Err(ConversionError::InvalidPrimitive(t)),
             #[cfg(feature = "memory")]
             AbstractType::Parameterized(t, ty) if t == "ptr" => {
-                Type::Pointer(Box::new((*ty).try_into()?))
+                Self::Pointer(Box::new((*ty).try_into()?))
             }
             AbstractType::Parameterized(t, ty) => {
                 return Err(ConversionError::InvalidParameterized(t, ty.to_string()))

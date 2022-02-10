@@ -230,7 +230,6 @@ impl<'a> From<&'a Value> for &'a Pointer {
 }
 
 // todo do this with less function arguments
-#[allow(clippy::float_cmp)]
 #[inline(always)]
 fn execute_value_op<'a, T: std::io::Write>(
   prog: &'a BBProgram,

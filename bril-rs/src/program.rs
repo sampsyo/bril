@@ -138,7 +138,8 @@ pub enum Instruction {
 
 #[cfg(feature = "position")]
 impl Instruction {
-    pub fn get_pos(&self) -> Option<Position> {
+    #[must_use]
+    pub const fn get_pos(&self) -> Option<Position> {
         match self {
             Instruction::Constant { pos, .. }
             | Instruction::Value { pos, .. }
@@ -405,6 +406,7 @@ impl Display for Literal {
 }
 
 impl Literal {
+    #[must_use]
     pub const fn get_type(&self) -> Type {
         match self {
             Literal::Int(_) => Type::Int,

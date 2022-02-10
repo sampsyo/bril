@@ -1,6 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 // todo these are allowed to appease clippy but should be addressed some day
-#![allow(clippy::must_use_candidate)]
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::cargo_common_metadata)]
 
@@ -60,6 +59,7 @@ pub fn parse_abstract_program_from_read<R: std::io::Read>(
         .unwrap()
 }
 
+#[must_use]
 pub fn parse_abstract_program(use_pos: bool) -> AbstractProgram {
     parse_abstract_program_from_read(std::io::stdin(), use_pos)
 }
