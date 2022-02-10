@@ -3,6 +3,8 @@
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::cargo_common_metadata)]
 
+// Tell the github workflow check to not format the generated rust program bril_grammar.rs
+#[rustfmt::skip]
 pub mod bril_grammar;
 pub mod cli;
 use bril_rs::{AbstractProgram, Position};
