@@ -170,6 +170,13 @@ class VarMapping:
     def value_to_home_var(self, value):
         return self._idx_to_home_var(self.value_to_idx[value])
 
+    def rename(self, old_name, new_name):
+        idx = self.var_to_idx[old_name]
+        # If we're renaming a variable which is being used as a home variable
+        # we need to go update that to its new name
+        if self._idx_to_home_var(idx) == old_name:
+            self.table[idx] = (self.table[idx][0], new_name)
+
 
 def count_variables(func):
     ans = defaultdict(lambda : 0)
@@ -246,6 +253,7 @@ def do_lvn():
                     new_dest = name_dest(var_counts, renamed_var_count, dest)
                     if new_dest != dest:
                         var_table.insert_var(dest, value)
+                        var_table.rename(dest, new_dest)
                         instr['dest'] = dest = new_dest
                         renamed_var_count += 1
 
