@@ -1,3 +1,4 @@
+# RETURN: 0
 @main(i: int) {
   p: ptr<int> = alloc i;
   r: ptr<float> = alloc i;
