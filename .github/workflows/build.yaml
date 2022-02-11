@@ -18,6 +18,10 @@ jobs:
             cache: 'yarn'
             cache-dependency-path: 'bril-ts/yarn.lock'
 
+      - uses: actions/cache@v2
+        with:
+            path: ~/.cache/pip
+            key: ${{ runner.os }}-pip
       - uses: actions/setup-python@v2
         with:
             python-version: '3.10'
@@ -49,10 +53,13 @@ jobs:
             cache: 'yarn'
             cache-dependency-path: 'bril-ts/yarn.lock'
 
+      - uses: actions/cache@v2
+        with:
+            path: ~/.cache/pip
+            key: ${{ runner.os }}-pip
       - uses: actions/setup-python@v2
         with:
             python-version: '3.10'
-            cache: 'pip'
 
       - name: Install TypeScript tools
         run: cd bril-ts ; yarn ; yarn build ; yarn link
