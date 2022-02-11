@@ -23,7 +23,8 @@ def eliminate_redundant_assigns_in_basic_block(block):
     for i, instr in enumerate(block):
         if 'args' in instr:
             for arg in instr['args']:
-                del assigned_but_unused[arg]
+                if arg in assigned_but_unused:
+                    del assigned_but_unused[arg]
         if 'dest' in instr:
             if instr['dest'] in assigned_but_unused:
                 del block[assigned_but_unused[instr['dest']]]
