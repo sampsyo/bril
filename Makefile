@@ -20,7 +20,10 @@ test:
 
 .PHONY: check
 check:
-	for fn in $(CHECKS) ; do bril2json -p < $$fn | brilck $$fn ; done
+	for fn in $(CHECKS) ; do \
+		bril2json -p < $$fn | brilck $$fn || failed=1 ; \
+	done ; \
+	exit $$failed
 
 .PHONY: book
 book:
