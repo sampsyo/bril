@@ -48,9 +48,15 @@ interface Env {
 let CHECK_FILE: string | undefined;
 
 /**
+ * The total number of errors we encounter.
+ */
+let ERRORS: number = 0;
+
+/**
  * Print an error message, possibly with a source position.
  */
 function err(msg: string, pos: bril.Position | undefined) {
+  ERRORS++;
   if (pos) {
     msg = `${pos.row}:${pos.col}: ${msg}`;
   }
@@ -394,6 +400,9 @@ async function main() {
   }
   let prog = JSON.parse(await readStdin()) as bril.Program;
   checkProg(prog);
+  if (ERRORS) {
+    process.exit(1);
+  }
 }
 
 main();

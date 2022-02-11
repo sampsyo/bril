@@ -12,31 +12,23 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - uses: actions/cache@v2
-        id: yarn-cache
+      - uses: actions/setup-node@v2
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+            node-version: '17'
+            cache: 'yarn'
+            cache-dependency-path: 'bril-ts/yarn.lock'
 
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip
-
-      - uses: actions/setup-node@v2-beta
+            path: ~/.cache/pip
+            key: ${{ runner.os }}-pip
+      - uses: actions/setup-python@v2
         with:
-            node-version: '12'
+            python-version: '3.10'
+
       - name: Install TypeScript tools
         run: cd bril-ts ; yarn ; yarn build ; yarn link
 
-      - uses: actions/setup-python@v2
-        with:
-            python-version: 3.8
       - name: Install Flit
         run: pip install flit
       - name: Install Python tools
@@ -48,6 +40,38 @@ jobs:
         run: echo '::add-matcher::.github/tap-matcher.json'
       - name: Tests
         run: PATH=$PATH:`yarn global bin` make test TURNTARGS=-v
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+            node-version: '17'
+            cache: 'yarn'
+            cache-dependency-path: 'bril-ts/yarn.lock'
+
+      - uses: actions/cache@v2
+        with:
+            path: ~/.cache/pip
+            key: ${{ runner.os }}-pip
+      - uses: actions/setup-python@v2
+        with:
+            python-version: '3.10'
+
+      - name: Install TypeScript tools
+        run: cd bril-ts ; yarn ; yarn build ; yarn link
+
+      - name: Install Flit
+        run: pip install flit
+      - name: Install Python tools
+        run: cd bril-txt ; flit install --symlink
+
+      - name: Problem matcher
+        run: echo '::add-matcher::.github/brilck-matcher.json'
+      - name: brilck
+        run: PATH=$PATH:`yarn global bin` make check
 
   style:
     runs-on: ubuntu-latest
