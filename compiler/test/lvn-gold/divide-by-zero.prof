@@ -1,0 +1,14 @@
+/Users/aaron/projects/grad_school/cs6120/bril/bril-ts/build/brili.js:789
+process.on('unhandledRejection', e => { throw e; });
+                                        ^
+
+RangeError: Division by zero
+    at evalInstr (/Users/aaron/projects/grad_school/cs6120/bril/bril-ts/build/brili.js:402:51)
+    at evalFunc (/Users/aaron/projects/grad_school/cs6120/bril/bril-ts/build/brili.js:635:26)
+    at evalProg (/Users/aaron/projects/grad_school/cs6120/bril/bril-ts/build/brili.js:763:5)
+    at /Users/aaron/projects/grad_school/cs6120/bril/bril-ts/build/brili.js:775:13
+    at Generator.next (<anonymous>)
+    at fulfilled (/Users/aaron/projects/grad_school/cs6120/bril/bril-ts/build/brili.js:6:58)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+
+Node.js v17.4.0

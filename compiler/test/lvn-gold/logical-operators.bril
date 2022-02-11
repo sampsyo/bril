@@ -1,0 +1,26 @@
+# ARGS: true false
+
+@main(arg1: bool, arg2: bool) {
+  t: int = const true;
+  f: int = const false;
+
+  constant_fold1: bool = and f t;
+  constant_fold2: bool = and t f;
+  constant_fold3: bool = or t f;
+  constant_fold4: bool = or f t;
+  constant_fold5: bool = not t;
+  constant_fold6: bool = not f;
+
+  should_fold1: bool = and f arg1;
+  should_fold2: bool = and arg1 f;
+  should_fold3: bool = or t arg1;
+  should_fold4: bool = or arg1 t;
+
+  no_fold1: bool = and t arg1;
+  no_fold2: bool = and arg1 t;
+  no_fold3: bool = or f arg1;
+  no_fold4: bool = or arg1 f;
+  no_fold5: bool = and arg1 arg2;
+  no_fold6: bool = or arg1 arg2;
+  no_fold7: bool = not arg1;
+}
