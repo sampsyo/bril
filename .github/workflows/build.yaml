@@ -38,6 +38,35 @@ jobs:
       - name: Tests
         run: PATH=$PATH:`yarn global bin` make test TURNTARGS=-v
 
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+            node-version: '17'
+            cache: 'yarn'
+            cache-dependency-path: 'bril-ts/yarn.lock'
+
+      - uses: actions/setup-python@v2
+        with:
+            python-version: 3.10
+            cache: 'pip'
+
+      - name: Install TypeScript tools
+        run: cd bril-ts ; yarn ; yarn build ; yarn link
+
+      - name: Install Flit
+        run: pip install flit
+      - name: Install Python tools
+        run: cd bril-txt ; flit install --symlink
+
+      - name: Problem matcher
+        run: echo '::add-matcher::.github/brilck-matcher.json'
+      - name: brilck
+        run: PATH=$PATH:`yarn global bin` make check
+
   style:
     runs-on: ubuntu-latest
     steps:
