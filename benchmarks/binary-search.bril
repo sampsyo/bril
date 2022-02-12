@@ -3,22 +3,6 @@
 # Output: Index of target, or -1 if not found
 # Adopted pack and print_array code from bubblesort by Jiajie Li
 
-@main() {
-    target: int = const 7;
-    size: int = const 5;
-    e1: int = const 1;
-    e2: int = const 2;
-    e3: int = const 6;
-    e4: int = const 7;
-    e5: int = const 11;
-    zero: int = const 0;
-    four: int = const 4;
-    array: ptr<int> = call @pack size e1 e2 e3 e4 e5;
-    output: int = call @binary_search array target zero four;
-    print output;
-    free array;
-}
-
 @pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int) : ptr<int> {
     one: int = const 1;
     i: int = const 0;
@@ -93,4 +77,20 @@
 .end:
     output: int = id negone;
     ret output;
+}
+
+@main() {
+    target: int = const 7;
+    size: int = const 5;
+    e1: int = const 1;
+    e2: int = const 2;
+    e3: int = const 6;
+    e4: int = const 7;
+    e5: int = const 11;
+    zero: int = const 0;
+    four: int = const 4;
+    array: ptr<int> = call @pack size e1 e2 e3 e4 e5;
+    output: int = call @binary_search array target zero four;
+    print output;
+    free array;
 }
