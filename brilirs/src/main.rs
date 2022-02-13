@@ -19,7 +19,7 @@ fn main() {
     args.check,
     args.text,
   ) {
-    eprintln!("error: {}", e);
+    eprintln!("error: {e}");
     std::process::exit(2)
   }
 }

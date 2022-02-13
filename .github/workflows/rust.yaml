@@ -1,0 +1,51 @@
+on:
+  push:
+    branches:
+     - main
+    paths:
+     - 'brilirs/**/*.rs'
+     - 'brilirs/**/*.toml'
+     - 'bril-rs/**/*.rs'
+     - 'bril-rs/**/*.toml'
+     - 'bril-rs/**/*.lalrpop'
+  pull_request:
+    branches:
+     - main
+    paths:
+     - 'brilirs/**/*.rs'
+     - 'brilirs/**/*.toml'
+     - 'bril-rs/**/*.rs'
+     - 'bril-rs/**/*.toml'
+     - 'bril-rs/**/*.lalrpop'
+
+name: Workflow checks for rust code
+
+jobs:
+  rust-ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --manifest-path ${{ matrix.path }} --all-targets
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --manifest-path ${{ matrix.path }} --all -- --check
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --manifest-path ${{ matrix.path }} -- -D warnings

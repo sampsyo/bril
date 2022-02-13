@@ -149,10 +149,10 @@ impl Pointer {
 impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      Value::Int(i) => write!(f, "{}", i),
-      Value::Bool(b) => write!(f, "{}", b),
-      Value::Float(v) => write!(f, "{}", v),
-      Value::Pointer(p) => write!(f, "{:?}", p),
+      Value::Int(i) => write!(f, "{i}"),
+      Value::Bool(b) => write!(f, "{b}"),
+      Value::Float(v) => write!(f, "{v}"),
+      Value::Pointer(p) => write!(f, "{p:?}"),
       // This is safe because Uninitialized is only used in relation to memory and immediately errors if this value is returned. Otherwise this value can not appear in the code
       Value::Uninitialized => unsafe { unreachable_unchecked() },
     }
@@ -230,7 +230,6 @@ impl<'a> From<&'a Value> for &'a Pointer {
 }
 
 // todo do this with less function arguments
-#[allow(clippy::float_cmp)]
 #[inline(always)]
 fn execute_value_op<'a, T: std::io::Write>(
   prog: &'a BBProgram,
@@ -696,7 +695,7 @@ pub fn execute_main<T: std::io::Write>(
   }
 
   if profiling {
-    eprintln!("total_dyn_inst: {}", instruction_count);
+    eprintln!("total_dyn_inst: {instruction_count}");
   }
 
   Ok(())

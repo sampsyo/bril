@@ -12,7 +12,7 @@
   i: int = const 1;
 
 .loopstart:
-  keepgoing: int = lt i repeats;
+  keepgoing: bool = lt i repeats;
   br keepgoing .loopbody .endloop;
 
 .loopbody:

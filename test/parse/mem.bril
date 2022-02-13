@@ -16,7 +16,7 @@
   print ab;
   v2: bool = const false;
   store vx v2;
-  v3: ptr<bool> = load vx;
+  v3: ptr<bool> = load v1;
   print v3;
   free vx;
   free v1;

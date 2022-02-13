@@ -26,17 +26,17 @@
     i : float = fsub n one;
     sum : float = const 0.0;
     .while.header:
-    b : bool = feq i negative_one;
-    br b .while.end .while.body;
+    cond : bool = feq i negative_one;
+    br cond .while.end .while.body;
     .while.body:
     offset : float = fmul delta i; 
     x : float = fadd a offset; 
     f_x : float = call @square_function x;
-    sum = fadd sum f_x;
-    i = fsub i one;
+    sum : float = fadd sum f_x;
+    i : float = fsub i one;
     jmp .while.header;
     .while.end:
-    sum = fmul sum delta;
+    sum : float = fmul sum delta;
     ret sum;
 }
 
@@ -48,17 +48,17 @@
     i : float = id n;
     sum : float = const 0.0;
     .while.header:
-    b : bool = feq i zero;
-    br b .while.end .while.body;
+    cond : bool = feq i zero;
+    br cond .while.end .while.body;
     .while.body:
     offset : float = fmul delta i; 
     x : float = fadd a offset; 
     f_x : float = call @square_function x;
-    sum = fadd sum f_x;
-    i = fsub i one;
+    sum : float = fadd sum f_x;
+    i : float = fsub i one;
     jmp .while.header;
     .while.end:
-    sum = fmul sum delta;
+    sum : float = fmul sum delta;
     ret sum;
 }
 
@@ -72,18 +72,18 @@
     i : float = fsub n one;
     sum : float = const 0.0;
     .while.header:
-    b : bool = feq i negative_one;
-    br b .while.end .while.body;
+    cond : bool = feq i negative_one;
+    br cond .while.end .while.body;
     .while.body:
     offset : float = fmul delta i; 
     half_delta : float = fdiv delta two;
-    offset = fadd offset half_delta;
+    offset : float = fadd offset half_delta;
     x : float = fadd a offset; 
     f_x : float = call @square_function x;
-    sum = fadd sum f_x;
-    i = fsub i one;
+    sum : float = fadd sum f_x;
+    i : float = fsub i one;
     jmp .while.header;
     .while.end:
-    sum = fmul sum delta;
+    sum : float = fmul sum delta;
     ret sum;
 }

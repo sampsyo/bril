@@ -43,15 +43,40 @@ interface Env {
 }
 
 /**
+ * An optional filename for error messages.
+ */
+let CHECK_FILE: string | undefined;
+
+/**
+ * The total number of errors we encounter.
+ */
+let ERRORS: number = 0;
+
+/**
+ * Print an error message, possibly with a source position.
+ */
+function err(msg: string, pos: bril.Position | undefined) {
+  ERRORS++;
+  if (pos) {
+    msg = `${pos.row}:${pos.col}: ${msg}`;
+  }
+  if (CHECK_FILE) {
+    msg = `${CHECK_FILE}:${msg}`;
+  }
+  console.error(msg);
+}
+
+/**
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
  * with the old type for the variable.
  */
-function addType(env: VarEnv, id: bril.Ident, type: bril.Type) {
+function addType(env: VarEnv, id: bril.Ident, type: bril.Type, pos: bril.Position | undefined) {
   let oldType = env.get(id);
   if (oldType) {
     if (!typeEq(oldType, type)) {
-      console.error(
-        `new type ${type} for ${id} conflicts with old type ${oldType}`
+      err(
+        `new type ${type} for ${id} conflicts with old type ${oldType}`,
+        pos
       );
     }
   } else {
@@ -152,18 +177,20 @@ function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignatu
   if ('type' in instr) {
     if (sig.dest) {
       if (!typeEq(instr.type, sig.dest, tenv)) {
-        console.error(
+        err(
           `result type of ${name} should be ${typeFmt(typeLookup(sig.dest, tenv))}, ` +
-          `but found ${typeFmt(instr.type)}`
+          `but found ${typeFmt(instr.type)}`,
+          instr.pos
         );
       }
     } else {
-      console.error(`${name} should have no result type`);
+      err(`${name} should have no result type`, instr.pos);
     }
   } else {
     if (sig.dest) {
-      console.error(
-        `missing result type ${typeFmt(typeLookup(sig.dest, tenv))} for ${name}`
+      err(
+        `missing result type ${typeFmt(typeLookup(sig.dest, tenv))} for ${name}`,
+        instr.pos
       );
     }
   }
@@ -171,20 +198,22 @@ function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignatu
   // Check arguments.
   let args = instr.args ?? [];
   if (args.length !== sig.args.length) {
-    console.error(
-      `${name} expects ${sig.args.length} args, not ${args.length}`
+    err(
+      `${name} expects ${sig.args.length} args, not ${args.length}`,
+      instr.pos
     );
   } else {
     for (let i = 0; i < args.length; ++i) {
       let argType = env.vars.get(args[i]);
       if (!argType) {
-        console.error(`${args[i]} (arg ${i}) undefined`);
+        err(`${args[i]} (arg ${i}) undefined`, instr.pos);
         continue;
       }
       if (!typeEq(argType, sig.args[i], tenv)) {
-        console.error(
+        err(
           `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
-          `should have type ${typeFmt(typeLookup(sig.args[i], tenv))}`
+          `should have type ${typeFmt(typeLookup(sig.args[i], tenv))}`,
+          instr.pos
         );
       }
     }
@@ -194,11 +223,11 @@ function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignatu
   let labs = instr.labels ?? [];
   let labCount = sig.labels ?? 0;
   if (labs.length !== labCount) {
-    console.error(`${instr.op} needs ${labCount} labels; found ${labs.length}`);
+    err(`${instr.op} needs ${labCount} labels; found ${labs.length}`, instr.pos);
   } else {
     for (let lab of labs) {
       if (!env.labels.has(lab)) {
-        console.error(`label .${lab} undefined`);
+        err(`label .${lab} undefined`, instr.pos);
       }
     }
   }
@@ -212,20 +241,20 @@ type CheckFunc = (env: Env, instr: bril.Operation) => void;
 const INSTR_CHECKS: {[key: string]: CheckFunc} = {
   print: (env, instr) => {
     if ('type' in instr) {
-      console.error(`print should have no result type`);
+      err(`print should have no result type`, instr.pos);
     }
   },
 
   call: (env, instr) => {
     let funcs = instr.funcs ?? [];
     if (funcs.length !== 1) {
-      console.error(`call should have one function, not ${funcs.length}`);
+      err(`call should have one function, not ${funcs.length}`, instr.pos);
       return;
     }
 
     let funcType = env.funcs.get(funcs[0]);
     if (!funcType) {
-      console.error(`function @${funcs[0]} undefined`);
+      err(`function @${funcs[0]} undefined`, instr.pos);
       return;
     }
 
@@ -240,18 +269,33 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
     let args = instr.args ?? [];
     if (env.ret) {
       if (args.length === 0) {
-        console.error(`missing return value in function with return type`);
+        err(`missing return value in function with return type`, instr.pos);
       } else if (args.length !== 1) {
-        console.error(`cannot return multiple values`);
+        err(`cannot return multiple values`, instr.pos);
       } else {
         checkSig(env, instr, {args: [env.ret]});
       }
     } else {
       if (args.length !== 0) {
-        console.error(`returning value in function without a return type`);
+        err(`returning value in function without a return type`, instr.pos);
       }
     }
     return;
+  },
+  
+  phi: (env, instr) => {
+    let args = instr.args ?? [];
+    if (!('type' in instr)) {
+      err(`phi needs a result type`, instr.pos);
+      return;
+    }
+    
+    // Construct a signature with uniform argument types.
+    let argTypes: bril.Type[] = [];
+    for (let i = 0; i < args.length; ++i) {
+      argTypes.push(instr.type);
+    }
+    checkSig(env, instr, {args: argTypes, dest: instr.type, labels: args.length});
   },
 };
 
@@ -268,7 +312,7 @@ function checkOp(env: Env, instr: bril.Operation) {
   // General case: use the operation's signature.
   let sig = OP_SIGS[instr.op];
   if (!sig) {
-    console.error(`unknown opcode ${instr.op}`);
+    err(`unknown opcode ${instr.op}`, instr.pos);
     return;
   }
   checkSig(env, instr, sig);
@@ -276,23 +320,24 @@ function checkOp(env: Env, instr: bril.Operation) {
 
 function checkConst(instr: bril.Constant) {
   if (!('type' in instr)) {
-    console.error(`const missing type`);
+    err(`const missing type`, instr!.pos);
     return;
   }
   if (typeof instr.type !== 'string') {
-    console.error(`const of non-primitive type ${typeFmt(instr.type)}`);
+    err(`const of non-primitive type ${typeFmt(instr.type)}`, instr.pos);
     return;
   }
 
   let valType = CONST_TYPES[instr.type];
   if (!valType) {
-    console.error(`unknown const type ${typeFmt(instr.type)}`);
+    err(`unknown const type ${typeFmt(instr.type)}`, instr.pos);
     return;
   }
 
   if (typeof instr.value !== valType) {
-    console.error(
-      `const value ${instr.value} does not match type ${typeFmt(instr.type)}`
+    err(
+      `const value ${instr.value} does not match type ${typeFmt(instr.type)}`,
+      instr.pos
     );
   }
 }
@@ -304,17 +349,17 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
   // Initilize the type environment with the arguments.
   if (func.args) {
     for (let arg of func.args) {
-      addType(vars, arg.name, arg.type);
+      addType(vars, arg.name, arg.type, func.pos);
     }
   }
 
   // Gather up all the types of the local variables and all the label names.
   for (let instr of func.instrs) {
     if ('dest' in instr) {
-      addType(vars, instr.dest, instr.type);
+      addType(vars, instr.dest, instr.type, instr.pos);
     } else if ('label' in instr) {
       if (labels.has(instr.label)) {
-        console.error(`multiply defined label .${instr.label}`);
+        err(`multiply defined label .${instr.label}`, instr.pos);
       } else {
         labels.add(instr.label);
       }
@@ -350,8 +395,14 @@ function checkProg(prog: bril.Program) {
 }
 
 async function main() {
+  if (process.argv[2]) {
+    CHECK_FILE = process.argv[2];
+  }
   let prog = JSON.parse(await readStdin()) as bril.Program;
   checkProg(prog);
+  if (ERRORS) {
+    process.exit(1);
+  }
 }
 
 main();

@@ -106,4 +106,9 @@ export const OP_SIGS: {[key: string]: Signature | PolySignature} = {
   'store': {tvar: {tv: 'T'}, sig: {args: [{ptr: {tv: 'T'}}, {tv: 'T'}]}},
   'load': {tvar: {tv: 'T'}, sig: {args: [{ptr: {tv: 'T'}}], dest: {tv: 'T'}}},
   'ptradd': {tvar: {tv: 'T'}, sig: {args: [{ptr: {tv: 'T'}}, 'int'], dest: {ptr: {tv: 'T'}}}},
+
+  // Speculation.
+  'speculate': {args: []},
+  'commit': {args: []},
+  'guard': {args: ['bool'], labels: 1},
 };

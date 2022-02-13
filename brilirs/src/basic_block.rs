@@ -140,7 +140,7 @@ impl BBFunction {
       .collect();
 
     let mut curr_block = BasicBlock::new();
-    for instr in func.instrs.into_iter() {
+    for instr in func.instrs {
       match instr {
         bril_rs::Code::Label { label, pos: _ } => {
           if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
@@ -221,12 +221,7 @@ impl BBFunction {
         // Get the last instruction
         let last_instr = block.instrs.last().cloned();
         if let Some(bril_rs::Instruction::Effect {
-          op: bril_rs::EffectOps::Jump,
-          labels,
-          ..
-        })
-        | Some(bril_rs::Instruction::Effect {
-          op: bril_rs::EffectOps::Branch,
+          op: bril_rs::EffectOps::Jump | bril_rs::EffectOps::Branch,
           labels,
           ..
         }) = last_instr

@@ -5,7 +5,8 @@ src = "docs"
 language = "en"
 
 [output.html]
-default-theme = "ayu"
+preferred-dark-theme = "ayu"
 curly-quotes = true
 git-repository-url = "https://github.com/sampsyo/bril"
 site-url = "https://capra.cs.cornell.edu/bril/"
+edit-url-template = "https://github.com/sampsyo/bril/edit/main/{path}"

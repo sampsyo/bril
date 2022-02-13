@@ -1,0 +1,4 @@
+10:3: x has type int, but arg 0 for phi should have type float
+10:3: y has type int, but arg 1 for phi should have type float
+11:3: phi needs 2 labels; found 1
+12:3: phi needs 1 labels; found 2
