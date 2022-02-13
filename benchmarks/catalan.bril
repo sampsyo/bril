@@ -1,8 +1,8 @@
+# ARGS: 10
 # Compute the 10th element in the catalan sequence, which is given by:
 #   c0 = 0; c(n+1) = sum(ci * c(n-i) for i = 0..n)
-@main {
-  v0: int = const 10;
-  catn: int = call @catalan v0;
+@main(input: int) {
+  catn: int = call @catalan input;
   print catn;
 }
 # Compute the nth term in the catalan sequence

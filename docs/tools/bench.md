@@ -12,6 +12,7 @@ The current benchmarks are:
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order.
+* `catalan`: Print the *n*th term in the [Catalan][catalan] sequence, compute using recursive function calls.
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
 * `cholesky`: Perform Cholesky decomposition of a Hermitian and positive definite matrix. The result is validated by comparing with Python's `scipy.linalg.cholesky`.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
@@ -37,7 +38,7 @@ The current benchmarks are:
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
-* `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark. 
+* `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
@@ -53,6 +54,7 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [gvnblog]: https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/global-value-numbering/
 [sievee]: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 [collatz]: https://en.wikipedia.org/wiki/Collatz_conjecture
+[catalan]: https://en.wikipedia.org/wiki/Catalan_number
 [ackermann]: https://en.wikipedia.org/wiki/Ackermann_function
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
 [matmul]: https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm#Iterative_algorithm
