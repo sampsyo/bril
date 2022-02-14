@@ -24,7 +24,7 @@
   n2: int = sub n idx;
   v1: int = call @catalan idx;
   v2: int = call @catalan n2;
-  elti = mul v1 v2;
+  elti: int = mul v1 v2;
   sum: int = add sum elti;
   idx: int = add idx one;
   jmp .while;
