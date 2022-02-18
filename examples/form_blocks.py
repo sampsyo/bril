@@ -7,6 +7,13 @@ import sys
 # Instructions that terminate a basic block.
 TERMINATORS = 'br', 'jmp', 'ret'
 
+def block_name(block):
+    """
+    Returns the name of a block, defined by the label that is the first
+    instruction in the block.
+    """
+    return block[0]['label']
+
 
 def form_blocks(instrs):
     """Given a list of Bril instructions, generate a sequence of
@@ -21,6 +28,9 @@ def form_blocks(instrs):
 
     # Start with an empty block.
     cur_block = []
+
+    # Make sure block starts with a label
+    yield [ { 'label' : 'entry1' }]
 
     for instr in instrs:
         if 'op' in instr:  # It's an instruction.
