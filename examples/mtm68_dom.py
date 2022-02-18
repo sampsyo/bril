@@ -30,16 +30,18 @@ def find_doms(func):
     blocks = list(form_blocks(func['instrs']))
     cfg = Cfg(blocks)
     reverse_post_order = list(reversed(post_order(blocks[0], cfg, [])))
-    doms = {block_name(block) : set() for block in blocks}
+    doms = {block_name(block) : set(map(block_name, blocks)) for block in blocks}
     dom_changing = True
     while dom_changing:
+        dom_changed = False
         for block in reverse_post_order:
             name = block_name(block)
             preds = cfg.get_pred(name)
-            len_before = 0 if name not in doms else len(doms[name])
+            len_before = len(doms[name])
             doms[name] = {name}.union(intersection(doms, preds))
             len_after = len(doms[name])
-            dom_changing = len_before != len_after
+            dom_changed |= len_before != len_after
+        dom_changing = dom_changed
     return doms
 
 class Tree:
@@ -59,29 +61,42 @@ def reachable(name, cfg, visited):
     return r
 
 def dom_tree_aux(name, doms):
-    children = doms[name].remove(name)
-    if not children:
+    if not doms[name]:
         return Tree(name, None)
     else:
-        ctrees = []
-        for c in children:
-            ctrees.append(dom_tree_aux(c, doms))
-        return Tree(name, ctrees)
+        return Tree(name, [dom_tree_aux(c, doms) for c in doms[name]])
+
 
 def dom_tree(func):
     blocks = list(form_blocks(func['instrs']))
     doms = find_doms(func)
-    doms_inv = {block_name(block) : [] for block in blocks}
+
+    # Invert the mapping
+    doms_inv = {block_name(block) : set() for block in blocks}
     for b, dominated_by_b in doms.items():
         for n in dominated_by_b:
-            doms_inv[n].append(b)
+            doms_inv[n].add(b)
 
+    # Make it strict
+    for k, v in doms_inv.items():
+        v.remove(k)
+
+    # Make it immediate
+    for k1 in doms_inv.keys():
+        for k2 in doms_inv.keys():
+            if k1 == k2:
+                continue
+            else:
+                doms_inv[k1] = doms_inv[k1].difference(doms_inv[k2])
+
+    # Build the tree
     return dom_tree_aux(block_name(blocks[0]), doms_inv)
 
 def print_edges(tree):
     if tree.children:
         for c in tree.children:
-            print(tree.root + " -> " + c.root + ";")
+            print('"' + tree.root + '" -> "' + c.root + '";')
+            print_edges(c)
 
 def print_tree(name, tree):
      print("digraph " + name + " {")
