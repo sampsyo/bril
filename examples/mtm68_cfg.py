@@ -1,3 +1,4 @@
+from form_blocks import block_name
 class Cfg:
     def __init__(self, blocks):
         self.blocks = blocks
@@ -6,7 +7,7 @@ class Cfg:
 
         lbl_to_block = {}
         for block in blocks:
-            lbl = block[0]['label']
+            lbl = block_name(block)
             lbl_to_block[lbl] = block
 
         # Setup first block pred
@@ -36,20 +37,20 @@ class Cfg:
                 self.create_pred(block, next_block)
 
     def create_succ(self, block, next_block):
-        block_name = block[0]['label']
-        if block_name in self.succ.keys() and next_block != None:
-            lst = self.succ[block_name]
+        name = block_name(block)
+        if name in self.succ.keys() and next_block != None:
+            lst = self.succ[name]
             lst.append(next_block)
         elif next_block != None:
-            self.succ[block_name] = [next_block]
+            self.succ[name] = [next_block]
         else:
-            self.succ[block_name] = []
+            self.succ[name] = []
 
     def create_pred(self, block, next_block):
         if next_block is None:
             return
 
-        next_block_name = next_block[0]['label']
+        next_block_name = block_name(next_block)
         if block is None:
             self.pred[next_block_name] = []
             return
@@ -59,11 +60,11 @@ class Cfg:
         else :
             self.pred[next_block_name] = [block]
 
-    def get_succ(self, block_name):
-        return self.succ[block_name]
+    def get_succ(self, name):
+        return self.succ[name]
 
-    def get_pred(self, block_name):
-        return self.pred[block_name]
+    def get_pred(self, name):
+        return self.pred[name]
 
     def remove_vertex(self, v):
         # Remove from blocks
@@ -96,3 +97,41 @@ class Cfg:
             if idx != -1:
                 preds.pop(idx)
                 break
+
+    def get_exits(self):
+        exits = []
+        for block in self.blocks:
+            if len(self.get_succ(block_name(block))) == 0:
+                exits.append(block)
+        return exits
+
+    def post_order(self, block):
+        """
+        Returns the post order traversal of the cfg
+        starting with block.
+        """
+        return self.post_order_aux(block, [])
+
+    def post_order_aux(self, block, visited):
+        """
+        Returns the post order traversel of this cfg
+        where we have already seen all verticies in
+        visited
+        """
+        order = []
+        succs = self.get_succ(block_name(block))
+        for succ in succs:
+            if block_name(succ) not in visited:
+                visited.append(block_name(block))
+                order.extend(self.post_order_aux(succ, visited))
+        order.append(block)
+        return order
+
+    def reverse_post_order(self, block):
+        """
+        Returns the post order traversal of the cfg
+        with the first block in the post order
+        starting with block.
+        """
+        return list(reversed(self.post_order(block)))
+
