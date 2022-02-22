@@ -4,6 +4,41 @@ import json
 from form_blocks import form_blocks, block_name
 from mtm68_cfg import Cfg
 
+def all_paths_s_t(cfg, path, s, t):
+    # If we are at t, we are done constructing path
+    if block_name(s) == block_name(t):
+        return [path]
+
+    # Otherwise we must search for path using successors
+    all_path_lst = []
+    succs = cfg.get_succ(block_name(s))
+    for succ in succs:
+        # Create new path to add to so we can mutate easily
+        new_path = path[:]
+        succ_n = block_name(succ)
+
+        # Do not follow cycles
+        if succ_n not in new_path:
+            new_path.append(succ_n)
+            l = all_paths_s_t(cfg, new_path, succ, t)
+            all_path_lst.extend(l)
+
+    return all_path_lst
+
+def all_paths(func):
+    blocks = list(form_blocks(func['instrs']))
+    cfg = Cfg(blocks)
+    all_paths_lst = []
+    no_succs = []
+    for block in blocks:
+        if len(cfg.get_succ(block_name(block))) == 0:
+            no_succs.append(block)
+    first_b = blocks[0]
+    for exit in no_succs:
+            l = all_paths_s_t(cfg, [block_name(first_b)], first_b, exit)
+            all_paths_lst.extend(l)
+    return all_paths_lst
+
 def intersection(doms, preds):
     if not preds:
         return set()
