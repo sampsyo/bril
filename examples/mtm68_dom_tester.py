@@ -9,28 +9,47 @@ def assert_doms(paths, doms):
                 if k in path:
                     assert b in path
 
+def assert_tree(tree, doms):
+    if tree != None:
+        # Assert tree immediatley dominates all children
+        for c in tree.children:
+            assert c.root in doms[c.root]
+        # Assert holds for rest of tree
+        for c in tree.children:
+            assert_tree(c, doms)
+
+def test_doms(func):
+    print(func['name'])
+    doms = find_doms(func)
+    paths = all_paths(func)
+    assert_doms(paths, doms)
+    print(json.dumps(
+        { k : sorted(list(v)) for k, v in doms.items()},
+        indent=2, sort_keys=True
+    ))
+
+def test_tree(func):
+    tree = dom_tree(func)
+    doms = find_doms(func)
+    assert_tree(tree, doms)
+    print_tree(func['name'], tree)
+
+def test_front(func):
+    front = dom_frontier(func)
+    doms = find_doms(func)
+    print(json.dumps(
+        { k : sorted(list(v)) for k, v in front.items()},
+        indent=2, sort_keys=True
+    ))
+
 def dom_test(prog, arg):
     for func in prog['functions']:
         if arg == 'doms':
-            print(func['name'])
-            doms = find_doms(func)
-            print(json.dumps(
-                { k : sorted(list(v)) for k, v in doms.items()},
-                indent=2, sort_keys=True
-            ))
+            test_doms(func)
         elif arg == 'tree':
-            tree = dom_tree(func)
-            print_tree(func['name'], tree)
+            test_tree(func)
         elif arg == 'front':
-            front = dom_frontier(func)
-            print(json.dumps(
-                { k : sorted(list(v)) for k, v in front.items()},
-                indent=2, sort_keys=True
-            ))
-        elif arg == 'paths':
-            paths = all_paths(func)
-            doms = find_doms(func)
-            assert_doms(paths, doms)
+            test_front(func)
         else:
             print("Unknown arg")
 
