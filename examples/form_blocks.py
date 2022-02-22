@@ -14,7 +14,6 @@ def block_name(block):
     """
     return block[0]['label']
 
-
 def form_blocks(instrs):
     """Given a list of Bril instructions, generate a sequence of
     instruction lists representing the basic blocks in the program.
@@ -26,14 +25,18 @@ def form_blocks(instrs):
     not be empty.
     """
 
+    LABEL_COUNTER = 1
+
     # Start with an empty block.
     cur_block = []
 
-    # Make sure block starts with a label
-    yield [ { 'label' : 'entry1' }]
-
     for instr in instrs:
         if 'op' in instr:  # It's an instruction.
+            # Make sure block starts with a label
+            if not cur_block:
+                cur_block.append({ 'label' : 'entry{}'.format(LABEL_COUNTER) })
+                LABEL_COUNTER += 1
+
             # Add the instruction to the currently-being-formed block.
             cur_block.append(instr)
 

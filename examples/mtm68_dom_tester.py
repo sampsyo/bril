@@ -1,6 +1,6 @@
 import sys
 import json
-from mtm68_dom import print_tree, dom_tree, find_doms
+from mtm68_dom import print_tree, dom_tree, find_doms, dom_frontier
 
 def serialize_sets(obj):
     if isinstance(obj, set):
@@ -18,6 +18,12 @@ def dom_test(prog, arg):
         elif arg == 'tree':
             tree = dom_tree(func)
             print_tree(func['name'], tree)
+        elif arg == 'front':
+            front = dom_frontier(func)
+            print(json.dumps(
+                { k : sorted(list(v)) for k, v in front.items()},
+                indent=2, sort_keys=True
+            ))
         else:
             print("Unknown arg")
 

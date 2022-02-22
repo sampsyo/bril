@@ -49,23 +49,11 @@ class Tree:
         self.root = root
         self.children = children
 
-def reachable(name, cfg, visited):
-    r = set()
-    succs = cfg.get_succ(name)
-    for succ in succs:
-        succ_name = block_name(succ)
-        if succ_name not in visited:
-            visited.add(succ_name)
-            r = reachable(succ_name, cfg, visited)
-            r.add(name)
-    return r
-
 def dom_tree_aux(name, doms):
     if not doms[name]:
-        return Tree(name, None)
+        return Tree(name, [])
     else:
         return Tree(name, [dom_tree_aux(c, doms) for c in doms[name]])
-
 
 def dom_tree(func):
     blocks = list(form_blocks(func['instrs']))
@@ -103,5 +91,25 @@ def print_tree(name, tree):
      print_edges(tree)
      print("}")
 
+def dom_frontier_aux(dom_fr, cfg, tree):
+    if not tree:
+        return set()
+    else:
+        succs = set(map(block_name, cfg.get_succ(tree.root)))
+        children = set() if not tree.children else tree.children
+        front = succs.difference(children)
+        dom_fr[tree.root] = front
+        for c in tree.children:
+            dom_frontier_aux(dom_fr, cfg, c)
+
+
 def dom_frontier(func):
-    return None
+    blocks = list(form_blocks(func['instrs']))
+    cfg = Cfg(blocks)
+    tree = dom_tree(func)
+    dom_fr = { block_name(block): set() for block in blocks }
+
+    dom_frontier_aux(dom_fr, cfg, tree)
+    return dom_fr
+
+
