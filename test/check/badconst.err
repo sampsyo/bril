@@ -1,0 +1,4 @@
+2:3: const value 4 does not match type bool
+3:3: const value true does not match type int
+4:3: const of non-primitive type ptr<int>
+5:3: unknown const type blah

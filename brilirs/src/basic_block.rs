@@ -1,4 +1,4 @@
-use bril_rs::{Function, Instruction, Program};
+use bril_rs::{Function, Instruction, Position, Program};
 use error::InterpError;
 use fxhash::FxHashMap;
 
@@ -116,6 +116,7 @@ pub struct BBFunction {
   // These replacements are found for function args and for code in the BasicBlocks
   pub num_of_vars: u32,
   pub args_as_nums: Vec<u32>,
+  pub pos: Option<Position>,
 }
 
 impl BBFunction {
@@ -139,9 +140,9 @@ impl BBFunction {
       .collect();
 
     let mut curr_block = BasicBlock::new();
-    for instr in func.instrs.into_iter() {
+    for instr in func.instrs {
       match instr {
-        bril_rs::Code::Label { label } => {
+        bril_rs::Code::Label { label, pos: _ } => {
           if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
             if let Some(old_label) = curr_block.label.as_ref() {
               label_map.insert(old_label.to_string(), blocks.len());
@@ -156,6 +157,7 @@ impl BBFunction {
           args,
           funcs,
           labels,
+          pos,
         }) if op == bril_rs::EffectOps::Jump
           || op == bril_rs::EffectOps::Branch
           || op == bril_rs::EffectOps::Return =>
@@ -165,6 +167,7 @@ impl BBFunction {
             args,
             funcs,
             labels,
+            pos,
           };
           curr_block.numified_instrs.push(NumifiedInstruction::create(
             &i,
@@ -204,6 +207,7 @@ impl BBFunction {
         blocks,
         args_as_nums,
         num_of_vars,
+        pos: func.pos,
       },
       label_map,
     )
@@ -217,12 +221,7 @@ impl BBFunction {
         // Get the last instruction
         let last_instr = block.instrs.last().cloned();
         if let Some(bril_rs::Instruction::Effect {
-          op: bril_rs::EffectOps::Jump,
-          labels,
-          ..
-        })
-        | Some(bril_rs::Instruction::Effect {
-          op: bril_rs::EffectOps::Branch,
+          op: bril_rs::EffectOps::Jump | bril_rs::EffectOps::Branch,
           labels,
           ..
         }) = last_instr

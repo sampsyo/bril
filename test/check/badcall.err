@@ -1,0 +1,9 @@
+14:3: returning value in function without a return type
+18:3: missing return value in function with return type
+22:3: function @foo undefined
+23:3: @nothing should have no result type
+24:3: call should have one function, not 2
+25:3: result type of @retint should be int, but found bool
+26:3: b has type bool, but arg 0 for @argint should have type int
+27:3: @argint expects 1 args, not 0
+28:3: @argint expects 1 args, not 2

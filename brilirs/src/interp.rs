@@ -2,7 +2,7 @@ use std::fmt;
 use std::hint::unreachable_unchecked;
 
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
-use crate::error::InterpError;
+use crate::error::{InterpError, PositionalInterpError};
 use bril_rs::Instruction;
 
 use fxhash::FxHashMap;
@@ -149,10 +149,10 @@ impl Pointer {
 impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      Value::Int(i) => write!(f, "{}", i),
-      Value::Bool(b) => write!(f, "{}", b),
-      Value::Float(v) => write!(f, "{}", v),
-      Value::Pointer(p) => write!(f, "{:?}", p),
+      Value::Int(i) => write!(f, "{i}"),
+      Value::Bool(b) => write!(f, "{b}"),
+      Value::Float(v) => write!(f, "{v}"),
+      Value::Pointer(p) => write!(f, "{p:?}"),
       // This is safe because Uninitialized is only used in relation to memory and immediately errors if this value is returned. Otherwise this value can not appear in the code
       Value::Uninitialized => unsafe { unreachable_unchecked() },
     }
@@ -230,7 +230,6 @@ impl<'a> From<&'a Value> for &'a Pointer {
 }
 
 // todo do this with less function arguments
-#[allow(clippy::float_cmp)]
 #[inline(always)]
 fn execute_value_op<'a, T: std::io::Write>(
   prog: &'a BBProgram,
@@ -497,7 +496,7 @@ fn execute<'a, T: std::io::Write>(
   mut value_store: Environment,
   heap: &mut Heap,
   instruction_count: &mut u32,
-) -> Result<Option<Value>, InterpError> {
+) -> Result<Option<Value>, PositionalInterpError> {
   // Map from variable name to value.
   let mut last_label;
   let mut current_label = None;
@@ -526,6 +525,7 @@ fn execute<'a, T: std::io::Write>(
           dest: _,
           const_type,
           value,
+          pos: _,
         } => {
           // Integer literals can be promoted to Floating point
           if const_type == &bril_rs::Type::Float {
@@ -550,6 +550,7 @@ fn execute<'a, T: std::io::Write>(
           args: _,
           labels,
           funcs,
+          pos,
         } => {
           execute_value_op(
             prog,
@@ -563,13 +564,15 @@ fn execute<'a, T: std::io::Write>(
             heap,
             last_label,
             instruction_count,
-          )?;
+          )
+          .map_err(|e| e.add_pos(*pos))?;
         }
         Instruction::Effect {
           op,
           args: _,
           labels: _,
           funcs,
+          pos,
         } => {
           result = execute_effect_op(
             prog,
@@ -583,7 +586,8 @@ fn execute<'a, T: std::io::Write>(
             heap,
             &mut next_block_idx,
             instruction_count,
-          )?;
+          )
+          .map_err(|e| e.add_pos(*pos))?;
         }
       }
     }
@@ -659,17 +663,21 @@ pub fn execute_main<T: std::io::Write>(
   mut out: T,
   input_args: &[String],
   profiling: bool,
-) -> Result<(), InterpError> {
-  let main_func = prog.get("main").ok_or(InterpError::NoMainFunction)?;
+) -> Result<(), PositionalInterpError> {
+  let main_func = prog
+    .get("main")
+    .ok_or_else(|| PositionalInterpError::new(InterpError::NoMainFunction))?;
 
   if main_func.return_type.is_some() {
-    return Err(InterpError::NonEmptyRetForFunc(main_func.name.clone()));
+    return Err(InterpError::NonEmptyRetForFunc(main_func.name.clone()))
+      .map_err(|e| e.add_pos(main_func.pos));
   }
 
   let env = Environment::new(main_func.num_of_vars);
   let mut heap = Heap::default();
 
-  let value_store = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)?;
+  let value_store = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
+    .map_err(|e| e.add_pos(main_func.pos))?;
 
   let mut instruction_count = 0;
 
@@ -683,11 +691,11 @@ pub fn execute_main<T: std::io::Write>(
   )?;
 
   if !heap.is_empty() {
-    return Err(InterpError::MemLeak);
+    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos));
   }
 
   if profiling {
-    eprintln!("total_dyn_inst: {}", instruction_count);
+    eprintln!("total_dyn_inst: {instruction_count}");
   }
 
   Ok(())

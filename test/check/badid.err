@@ -1,0 +1,3 @@
+2:3: a has type int, but arg 0 for id should have type bool
+3:3: missing result type T for id
+4:3: id expects 1 args, not 0

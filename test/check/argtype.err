@@ -1,0 +1,1 @@
+2:3: b has type bool, but arg 1 for add should have type int

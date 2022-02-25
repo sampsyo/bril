@@ -1,9 +1,8 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 // todo these are allowed to appease clippy but should be addressed some day
-#![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
-#![allow(clippy::must_use_candidate)]
 #![allow(clippy::cargo_common_metadata)]
+#![allow(clippy::too_many_lines)]
 
 pub mod conversion;
 pub mod program;
@@ -21,6 +20,7 @@ pub fn load_program_from_read<R: std::io::Read>(mut input: R) -> Program {
     serde_json::from_str(&buffer).unwrap()
 }
 
+#[must_use]
 pub fn load_program() -> Program {
     load_program_from_read(std::io::stdin())
 }
@@ -36,6 +36,7 @@ pub fn load_abstract_program_from_read<R: std::io::Read>(mut input: R) -> Abstra
     serde_json::from_str(&buffer).unwrap()
 }
 
+#[must_use]
 pub fn load_abstract_program() -> AbstractProgram {
     load_abstract_program_from_read(std::io::stdin())
 }

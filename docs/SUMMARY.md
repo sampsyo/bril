@@ -17,6 +17,7 @@
     - [Fast Interpreter](tools/brilirs.md)
     - [Editor Plugin](tools/plugin.md)
     - [Type Inference](tools/infer.md)
+    - [Type Checker](tools/brilck.md)
     - [Benchmarks](tools/bench.md)
     - [OCaml Library](tools/ocaml.md)
     - [Rust Library](tools/rust.md)

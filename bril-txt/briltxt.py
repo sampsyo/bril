@@ -62,7 +62,16 @@ COMMENT: /#.*/
 """.strip()
 
 
+def _pos(token):
+    """Generate a position dict from a Lark token."""
+    return {'row': token.line, 'col': token.column}
+
+
 class JSONTransformer(lark.Transformer):
+    def __init__(self, include_pos=False):
+        super().__init__()
+        self.include_pos = include_pos
+
     def start(self, items):
         structs = [i for i in items if 'mbrs' in i]
         funcs = [i for i in items if 'mbrs' not in i]
@@ -87,6 +96,8 @@ class JSONTransformer(lark.Transformer):
             func['args'] = args
         if typ:
             func['type'] = typ
+        if self.include_pos:
+            func['pos'] = _pos(name)
         return func
 
     def arg(self, items):
@@ -125,6 +136,8 @@ class JSONTransformer(lark.Transformer):
         }
         if type:
             out['type'] = type
+        if self.include_pos:
+            out['pos'] = _pos(dest)
         return out
 
     def vop(self, items):
@@ -133,10 +146,13 @@ class JSONTransformer(lark.Transformer):
         if type:
             out['type'] = type
         out.update(op)
+        if self.include_pos:
+            out['pos'] = _pos(dest)
         return out
 
     def op(self, items):
-        opcode = str(items.pop(0))
+        op_token = items.pop(0)
+        opcode = str(op_token)
 
         funcs = []
         labels = []
@@ -156,6 +172,8 @@ class JSONTransformer(lark.Transformer):
             out['funcs'] = funcs
         if labels:
             out['labels'] = labels
+        if self.include_pos:
+            out['pos'] = _pos(op_token)
         return out
 
     def eop(self, items):
@@ -164,9 +182,12 @@ class JSONTransformer(lark.Transformer):
 
     def label(self, items):
         name, = items
-        return {
+        out = {
             'label': str(name)[1:]  # Strip `.`.
         }
+        if self.include_pos:
+            out['pos'] = _pos(name)
+        return out
 
     def int(self, items):
         return int(str(items[0]))
@@ -190,10 +211,14 @@ class JSONTransformer(lark.Transformer):
         return 0
 
 
-def parse_bril(txt):
+def parse_bril(txt, include_pos=False):
+    """Parse a Bril program and return a JSON string.
+
+    Optionally include source position information.
+    """
     parser = lark.Lark(GRAMMAR, maybe_placeholders=True)
     tree = parser.parse(txt)
-    data = JSONTransformer().transform(tree)
+    data = JSONTransformer(include_pos).transform(tree)
     return json.dumps(data, indent=2, sort_keys=True)
 
 
@@ -282,7 +307,7 @@ def print_prog(prog):
 # Command-line entry points.
 
 def bril2json():
-    print(parse_bril(sys.stdin.read()))
+    print(parse_bril(sys.stdin.read(), '-p' in sys.argv[1:]))
 
 
 def bril2txt():

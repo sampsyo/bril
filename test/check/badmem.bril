@@ -1,0 +1,15 @@
+@main(i: int, f: float) {
+  p: ptr<int> = alloc f;
+  p2: int = alloc i;
+
+  store p f;
+  store i p;
+
+  j: float = load p;
+  i: int = load i;
+
+  q: ptr<float> = ptradd p i;
+  q2: ptr<int> = ptradd i p;
+
+  free i;
+}

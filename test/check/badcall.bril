@@ -1,0 +1,29 @@
+@nothing {
+}
+
+@retint(): int {
+  x: int = const 5;
+  ret x;
+}
+
+@argint(x: int) {
+}
+
+@noret {
+  x: int = const 5;
+  ret x;
+}
+
+@yesret(): int {
+  ret;
+}
+
+@main {
+  call @foo;
+  a: int = call @nothing;
+  call @nothing @nothing;
+  b: bool = call @retint;
+  call @argint b;
+  call @argint;
+  call @argint a a;
+}

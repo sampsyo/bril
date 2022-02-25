@@ -1,0 +1,3 @@
+@main(a: int, b: bool) {
+  c: int = add a b;
+}

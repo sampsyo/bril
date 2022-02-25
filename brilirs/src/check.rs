@@ -1,4 +1,7 @@
-use crate::basic_block::{BBFunction, BBProgram};
+use crate::{
+  basic_block::{BBFunction, BBProgram},
+  error::PositionalInterpError,
+};
 use bril_rs::{ConstOps, EffectOps, Instruction, Type, ValueOps};
 
 use crate::error::InterpError;
@@ -91,6 +94,7 @@ fn type_check_instruction<'a>(
       dest,
       const_type,
       value,
+      pos: _,
     } => {
       if !(const_type == &Type::Float && value.get_type() == Type::Int) {
         check_asmt_type(const_type, &value.get_type())?;
@@ -104,6 +108,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
@@ -120,6 +125,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
@@ -136,6 +142,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(1, args)?;
       check_num_funcs(0, funcs)?;
@@ -151,6 +158,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
@@ -167,6 +175,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(1, args)?;
       check_num_funcs(0, funcs)?;
@@ -181,6 +190,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
@@ -197,6 +207,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
@@ -213,6 +224,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
@@ -248,6 +260,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       if args.len() != labels.len() {
         return Err(InterpError::UnequalPhiNode);
@@ -266,6 +279,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(1, args)?;
       check_num_funcs(0, funcs)?;
@@ -281,6 +295,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(1, args)?;
       check_num_funcs(0, funcs)?;
@@ -296,6 +311,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
@@ -311,6 +327,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(0, args)?;
       check_num_funcs(0, funcs)?;
@@ -322,6 +339,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(1, args)?;
       check_asmt_type(&Type::Bool, get_type(env, 0, args)?)?;
@@ -334,6 +352,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_funcs(0, funcs)?;
       check_num_labels(0, labels)?;
@@ -357,6 +376,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_funcs(0, funcs)?;
       check_num_labels(0, labels)?;
@@ -370,6 +390,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(0, args)?;
       check_num_funcs(0, funcs)?;
@@ -381,6 +402,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
@@ -414,6 +436,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
@@ -427,6 +450,7 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
+      pos: _,
     } => {
       check_num_args(1, args)?;
       check_num_funcs(0, funcs)?;
@@ -439,13 +463,14 @@ fn type_check_instruction<'a>(
       args: _,
       funcs: _,
       labels: _,
+      pos: _,
     } => {
       unimplemented!()
     }
   }
 }
 
-fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), InterpError> {
+fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
   let mut env: FxHashMap<&str, &Type> =
     FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default());
   bbfunc.args.iter().for_each(|a| {
@@ -457,10 +482,9 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Interp
 
   while let Some(b) = work_list.pop() {
     let block = bbfunc.blocks.get(b).unwrap();
-    block
-      .instrs
-      .iter()
-      .try_for_each(|i| type_check_instruction(i, bbfunc, bbprog, &mut env))?;
+    block.instrs.iter().try_for_each(|i| {
+      type_check_instruction(i, bbfunc, bbprog, &mut env).map_err(|e| e.add_pos(i.get_pos()))
+    })?;
     done_list.push(b);
     block.exit.iter().for_each(|e| {
       if !done_list.contains(e) && !work_list.contains(e) {
@@ -472,7 +496,7 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Interp
   Ok(())
 }
 
-pub fn type_check(bbprog: &BBProgram) -> Result<(), InterpError> {
+pub fn type_check(bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
   bbprog
     .func_index
     .iter()

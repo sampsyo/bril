@@ -1,0 +1,96 @@
+# A standard binary search, not super interesting
+# Inputs: An array of 5 elements (fixed), and a target
+# Output: Index of target, or -1 if not found
+# Adopted pack and print_array code from bubblesort by Jiajie Li
+
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;
+# Pack data into array manually. Cannot use loop because of the different var name.
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    ret array;
+}
+
+@print_array(array: ptr<int>, size: int) {
+    i: int = const 0;
+    one: int = const 1;
+.loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+.body:
+    loc: ptr<int> = ptradd array i;
+    val: int = load loc;
+    print val;
+.loop_end:
+    i: int = add i one;
+    jmp .loop;
+.done:
+    ret;
+}
+
+# The function that does the actual computation
+# Left and Right are the search range
+
+@binary_search(array: ptr<int>, target: int, left: int, right: int): int {
+    negone: int = const -1;
+    zero: int = const 0;
+    one: int = const 1;
+    two: int = const 2;
+.check_valid:
+    end_cond: bool = gt left right;
+    br end_cond .end .body;
+.body:
+    mid: int = add left right;
+    mid: int = div mid two;
+.check_equal:
+    midloc: ptr<int> = ptradd array mid;
+    midval: int = load midloc;
+    equal_cond: bool = eq target midval;
+    br equal_cond .found .check_gt;
+.found:
+    ret mid;
+.check_gt:
+    gt_cond: bool = gt target midval;
+    br gt_cond .call_gt .call_lt;
+.call_gt:
+    newleft: int = add left one;
+    output: int = call @binary_search array target newleft right;
+    ret output;
+.call_lt:
+    newright: int = sub right one;
+    output: int = call @binary_search array target left newright;
+    ret output;
+.end:
+    output: int = id negone;
+    ret output;
+}
+
+@main() {
+    target: int = const 7;
+    size: int = const 5;
+    e1: int = const 1;
+    e2: int = const 2;
+    e3: int = const 6;
+    e4: int = const 7;
+    e5: int = const 11;
+    zero: int = const 0;
+    four: int = const 4;
+    array: ptr<int> = call @pack size e1 e2 e3 e4 e5;
+    output: int = call @binary_search array target zero four;
+    print output;
+    free array;
+}

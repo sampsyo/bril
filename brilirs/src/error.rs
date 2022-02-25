@@ -1,3 +1,6 @@
+use std::fmt::Display;
+
+use bril_rs::Position;
 use thiserror::Error;
 
 // Having the #[error(...)] for all variants derives the Display trait as well
@@ -45,4 +48,44 @@ pub enum InterpError {
   BadAsmtType(bril_rs::Type, bril_rs::Type), // (expected, actual). For when the LHS type of an instruction is bad
   #[error("There has been an io error when trying to print: `{0:?}`")]
   IoError(Box<std::io::Error>),
+  #[error("You probably shouldn't see this error, this is here to handle conversions between InterpError and PositionalError")]
+  PositionalInterpErrorConversion(#[from] PositionalInterpError),
+}
+
+impl InterpError {
+  pub fn add_pos(self, pos: Option<Position>) -> PositionalInterpError {
+    match self {
+      Self::PositionalInterpErrorConversion(e) => e,
+      _ => PositionalInterpError {
+        e: Box::new(self),
+        pos,
+      },
+    }
+  }
+}
+
+#[derive(Error, Debug)]
+pub struct PositionalInterpError {
+  e: Box<InterpError>,
+  pos: Option<Position>,
+}
+
+impl PositionalInterpError {
+  pub fn new(e: InterpError) -> Self {
+    Self {
+      e: Box::new(e),
+      pos: None,
+    }
+  }
+}
+
+impl Display for PositionalInterpError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      PositionalInterpError { e, pos: Some(pos) } => {
+        write!(f, "Line {}, Column {}: {e}", pos.row, pos.col)
+      }
+      PositionalInterpError { e, pos: None } => write!(f, "{e}"),
+    }
+  }
 }

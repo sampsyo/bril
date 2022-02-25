@@ -1,0 +1,6 @@
+@main {
+  a: bool = const 4;
+  b: int = const true;
+  c: ptr<int> = const 2;
+  d: blah = const 0;
+}

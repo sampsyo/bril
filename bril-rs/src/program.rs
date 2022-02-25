@@ -10,7 +10,7 @@ pub struct Program {
 impl Display for Program {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for func in &self.functions {
-            writeln!(f, "{}", func)?;
+            writeln!(f, "{func}")?;
         }
         Ok(())
     }
@@ -23,6 +23,9 @@ pub struct Function {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<Code>,
     pub name: String,
+    #[cfg(feature = "position")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pos: Option<Position>,
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<Type>,
@@ -37,16 +40,16 @@ impl Display for Function {
                 if i != 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "{}", arg)?;
+                write!(f, "{arg}")?;
             }
             write!(f, ")")?;
         }
         if let Some(tpe) = self.return_type.as_ref() {
-            write!(f, ": {}", tpe)?;
+            write!(f, ": {tpe}")?;
         }
         writeln!(f, " {{")?;
         for instr in &self.instrs {
-            writeln!(f, "{}", instr)?;
+            writeln!(f, "{instr}")?;
         }
         write!(f, "}}")?;
         Ok(())
@@ -69,15 +72,24 @@ impl Display for Argument {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Code {
-    Label { label: String },
+    Label {
+        label: String,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
+    },
     Instruction(Instruction),
 }
 
 impl Display for Code {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Code::Label { label } => write!(f, ".{}:", label),
-            Code::Instruction(instr) => write!(f, "  {}", instr),
+            Code::Label {
+                label,
+                #[cfg(feature = "position")]
+                    pos: _,
+            } => write!(f, ".{label}:"),
+            Code::Instruction(instr) => write!(f, "  {instr}"),
         }
     }
 }
@@ -88,6 +100,9 @@ pub enum Instruction {
     Constant {
         dest: String,
         op: ConstOps,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
         #[serde(rename = "type")]
         const_type: Type,
         value: Literal,
@@ -101,6 +116,9 @@ pub enum Instruction {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
         op: ValueOps,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
         #[serde(rename = "type")]
         op_type: Type,
     },
@@ -112,7 +130,22 @@ pub enum Instruction {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
         op: EffectOps,
+        #[cfg(feature = "position")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pos: Option<Position>,
     },
+}
+
+#[cfg(feature = "position")]
+impl Instruction {
+    #[must_use]
+    pub const fn get_pos(&self) -> Option<Position> {
+        match self {
+            Instruction::Constant { pos, .. }
+            | Instruction::Value { pos, .. }
+            | Instruction::Effect { pos, .. } => *pos,
+        }
+    }
 }
 
 impl Display for Instruction {
@@ -123,8 +156,10 @@ impl Display for Instruction {
                 dest,
                 const_type,
                 value,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
-                write!(f, "{}: {} = {} {};", dest, const_type, op, value)
+                write!(f, "{dest}: {const_type} = {op} {value};")
             }
             Instruction::Value {
                 op,
@@ -133,16 +168,18 @@ impl Display for Instruction {
                 args,
                 funcs,
                 labels,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
-                write!(f, "{}: {} = {}", dest, op_type, op)?;
+                write!(f, "{dest}: {op_type} = {op}")?;
                 for func in funcs {
-                    write!(f, " @{}", func)?;
+                    write!(f, " @{func}")?;
                 }
                 for arg in args {
-                    write!(f, " {}", arg)?;
+                    write!(f, " {arg}")?;
                 }
                 for label in labels {
-                    write!(f, " .{}", label)?;
+                    write!(f, " .{label}")?;
                 }
                 write!(f, ";")
             }
@@ -151,16 +188,18 @@ impl Display for Instruction {
                 args,
                 funcs,
                 labels,
+                #[cfg(feature = "position")]
+                    pos: _,
             } => {
-                write!(f, "{}", op)?;
+                write!(f, "{op}")?;
                 for func in funcs {
-                    write!(f, " @{}", func)?;
+                    write!(f, " @{func}")?;
                 }
                 for arg in args {
-                    write!(f, " {}", arg)?;
+                    write!(f, " {arg}")?;
                 }
                 for label in labels {
-                    write!(f, " .{}", label)?;
+                    write!(f, " .{label}")?;
                 }
                 write!(f, ";")
             }
@@ -341,7 +380,7 @@ impl Display for Type {
             #[cfg(feature = "float")]
             Type::Float => write!(f, "float"),
             #[cfg(feature = "memory")]
-            Type::Pointer(tpe) => write!(f, "ptr<{}>", tpe),
+            Type::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
         }
     }
 }
@@ -358,15 +397,16 @@ pub enum Literal {
 impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Literal::Int(i) => write!(f, "{}", i),
-            Literal::Bool(b) => write!(f, "{}", b),
+            Literal::Int(i) => write!(f, "{i}"),
+            Literal::Bool(b) => write!(f, "{b}"),
             #[cfg(feature = "float")]
-            Literal::Float(x) => write!(f, "{}", x),
+            Literal::Float(x) => write!(f, "{x}"),
         }
     }
 }
 
 impl Literal {
+    #[must_use]
     pub const fn get_type(&self) -> Type {
         match self {
             Literal::Int(_) => Type::Int,
@@ -375,4 +415,10 @@ impl Literal {
             Literal::Float(_) => Type::Float,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+pub struct Position {
+    pub col: u64,
+    pub row: u64,
 }

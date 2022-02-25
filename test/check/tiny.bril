@@ -1,0 +1,5 @@
+# RETURN: 0
+@main {
+  v: int = const 5;
+  print v;
+}

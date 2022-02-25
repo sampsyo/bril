@@ -1,0 +1,1 @@
+3:3: a has type ptr<int>, but arg 0 for id should have type ptr<float>

@@ -20,13 +20,13 @@ fn main() -> Result<(), Error> {
   let bin_name = app.get_name().to_string();
 
   // This is an attempt at being smart. Instead, one could just generate completion scripts for all of the shells in a completions/ directory and have the user choose the appropriate one.
-  let path = match env!("SHELL") {
-    s if s.contains("bash") => generate_to(Bash, &mut app, bin_name, out_dir)?,
-    s if s.contains("fish") => generate_to(Fish, &mut app, bin_name, out_dir)?,
-    s if s.contains("zsh") => generate_to(Zsh, &mut app, bin_name, out_dir)?,
-    s if s.contains("elvish") => generate_to(Elvish, &mut app, bin_name, out_dir)?,
-    s if s.contains("powershell") => generate_to(PowerShell, &mut app, bin_name, out_dir)?,
-    _ => {
+  let path = match env::var("SHELL") {
+    Ok(s) if s.contains("bash") => generate_to(Bash, &mut app, bin_name, out_dir)?,
+    Ok(s) if s.contains("fish") => generate_to(Fish, &mut app, bin_name, out_dir)?,
+    Ok(s) if s.contains("zsh") => generate_to(Zsh, &mut app, bin_name, out_dir)?,
+    Ok(s) if s.contains("elvish") => generate_to(Elvish, &mut app, bin_name, out_dir)?,
+    Ok(s) if s.contains("powershell") => generate_to(PowerShell, &mut app, bin_name, out_dir)?,
+    Ok(_) | Err(_) => {
       let mut x = PathBuf::new();
       x.push("Your shell could not be detected from the $SHELL environment variable so no shell completions were generated. Check the build.rs file if you want to see how this was generated.");
       x
@@ -34,10 +34,9 @@ fn main() -> Result<(), Error> {
   };
 
   println!(
-    "cargo:warning={} completion file is generated: {:?}",
-    app.get_name(),
-    path
+    "cargo:warning={} completion file is generated: {path:?}",
+    app.get_name()
   );
-  println!("cargo:warning=enable this by running `source {:?}`", path);
+  println!("cargo:warning=enable this by running `source {path:?}`");
   Ok(())
 }

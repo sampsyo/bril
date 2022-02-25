@@ -1,0 +1,17 @@
+@main(x: int, b: bool) {
+  speculate;
+  commit;
+  guard b .l;
+
+  speculate x;
+  y: int = speculate;
+
+  commit x;
+  y: int = commit;
+
+  guard .l;
+  guard b;
+  y: int = guard b .l;
+
+.l:
+}

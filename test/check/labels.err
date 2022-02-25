@@ -1,0 +1,5 @@
+8:1: multiply defined label .bar
+2:3: label .bad undefined
+3:3: br needs 2 labels; found 1
+4:3: br needs 2 labels; found 3
+5:3: not needs 0 labels; found 1
