@@ -98,7 +98,7 @@ def dom_tree_aux(name, doms):
     else:
         return Tree(name, [dom_tree_aux(c, doms) for c in doms[name]])
 
-def dom_tree(func):
+def doms_imm(func):
     blocks = list(form_blocks(func['instrs']))
     doms = find_doms(func)
 
@@ -119,6 +119,13 @@ def dom_tree(func):
                 continue
             else:
                 doms_inv[k1] = doms_inv[k1].difference(doms_inv[k2])
+
+    return doms_inv
+
+
+def dom_tree(func):
+    blocks = list(form_blocks(func['instrs']))
+    doms_inv = dom_imm(func)
 
     # Build the tree
     return dom_tree_aux(block_name(blocks[0]), doms_inv)
