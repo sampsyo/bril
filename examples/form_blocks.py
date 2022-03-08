@@ -25,11 +25,19 @@ def form_blocks(instrs):
     not be empty.
     """
 
+    LABEL_COUNTER = 1
+
     # Start with an entry block
     cur_block = []
 
     for instr in instrs:
         if 'op' in instr:  # It's an instruction.
+
+            # Make sure block starts with a label that has no cycle
+            if not cur_block:
+                cur_block.append({ 'label' : 'entry{}'.format(LABEL_COUNTER) })
+                LABEL_COUNTER += 1
+
             # Add the instruction to the currently-being-formed block.
             cur_block.append(instr)
 
