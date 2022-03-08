@@ -97,11 +97,14 @@ def rename(block, stack, varz, cfg, im_doms, fresh_counter,
             stack[dest].append(new_dest)
             names[dest] += 1
 
-        # Rename phi node args in succs
+    # Rename phi node args in succs
     for succ in cfg.get_succ(bname):
         sname = block_name(succ)
         for p in phis[sname]:
-            phi_args[sname][p].append((stack[p][-1], sname))
+            if stack[p]:
+                phi_args[sname][p].append((stack[p][-1], bname))
+            else:
+                phi_args[sname][p].append(('__undefined', bname))
 
     for b in im_doms[bname]:
         rename(cfg.get_block(b), stack, varz, cfg, im_doms, fresh_counter,
@@ -124,14 +127,12 @@ def rename_blocks(blocks, varz, im_doms, phis):
     entry = blocks[0]
     fresh_counter = { v : 0 for v in varz }
 
-    phi_args = { block_name(b) : {p : []} for b in blocks
-                                          for p in phis[block_name(b)]}
-
-    phi_dests = { block_name(b) : {p : p} for b in blocks
-                                          for p in phis[block_name(b)]}
+    phi_args = { block_name(b) : { p : [] for p in phis[block_name(b)] } for b in blocks }
+    phi_dests = { block_name(b) : { p : p for p in phis[block_name(b)] } for b in blocks }
 
     rename(entry, stack, varz, cfg, im_doms, fresh_counter,
            phis, phi_args, phi_dests)
+
     return phi_args, phi_dests
 
 
