@@ -135,3 +135,8 @@ class Cfg:
         """
         return list(reversed(self.post_order(block)))
 
+    def get_block(self, name):
+        for block in self.blocks:
+            if block_name(block) == name:
+                return block
+        return None

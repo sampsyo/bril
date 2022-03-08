@@ -98,7 +98,7 @@ def dom_tree_aux(name, doms):
     else:
         return Tree(name, [dom_tree_aux(c, doms) for c in doms[name]])
 
-def doms_imm(func):
+def dom_imm(func):
     blocks = list(form_blocks(func['instrs']))
     doms = find_doms(func)
 
@@ -146,7 +146,7 @@ def dom_frontier_aux(dom_fr, cfg, tree):
         return set()
     else:
         succs = set(map(block_name, cfg.get_succ(tree.root)))
-        children = set() if not tree.children else tree.children
+        children = set() if not tree.children else {t.root for t in tree.children}
         front = succs.difference(children)
         dom_fr[tree.root] = front
         for c in tree.children:
