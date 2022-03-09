@@ -149,6 +149,24 @@ def insert_phis(phis, phi_args, phi_dests, types, blocks):
             }
             block.insert(1, phi)
 
+def delete_phis():
+    # Delete phis
+    new_blocks = []
+    for block in blocks:
+        new_block = []
+        for instr in block:
+            if not ('op' in instr and instr['op'] == 'phi'):
+                new_block.append(instr)
+        new_blocks.append(new_block)
+    blocks[:] = new_blocks
+
+def blocks_to_instrs(func, blocks):
+    instrs = []
+    for block in blocks:
+        for instr in block:
+            instrs.append(instr)
+            func['instrs'] = instrs
+
 def to_ssa(prog):
     for func in prog['functions']:
         blocks = list(form_blocks(func['instrs']))
@@ -163,21 +181,44 @@ def to_ssa(prog):
 
         insert_phis(phis, phi_args, phi_dests, typs, blocks)
 
-        instrs = []
-        for block in blocks:
-            for instr in block:
-                instrs.append(instr)
-        func['instrs'] = instrs
+        blocks_to_instrs(func, blocks)
+
+
+def insert_id(pred, instr):
+    to_add = []
+    pname = block_name(pred)
+    if pname in instr['labels']:
+        idx = instr['labels'].index(pname)
+        arg = instr['args'][idx]
+        dest = instr['dest']
+        typ = instr['type']
+        to_add.append({
+            'op'   : 'id',
+            'type' : typ,
+            'args' : [arg],
+            'dest' : dest
+        })
+    pred.extend(to_add)
 
 def from_ssa(prog):
-    pass
+    for func in prog['functions']:
+        blocks = list(form_blocks(func['instrs']))
+        cfg = Cfg(blocks)
+        for block in blocks:
+            for instr in block:
+                if 'op' in instr and instr['op'] == 'phi':
+                    preds = cfg.get_pred(block_name(block))
+                    for pred in preds:
+                        insert_id(pred, instr)
+        blocks_to_instrs(func, blocks)
 
 def ssa(prog, arg):
     if arg == '-t':
         to_ssa(prog)
         json.dump(prog, sys.stdout, indent=2, sort_keys=True)
     elif arg == '-f':
-        pass
+        from_ssa(prog)
+        json.dump(prog, sys.stdout, indent=2, sort_keys=True)
     else:
         print('Invalid argument: ' + arg)
 
