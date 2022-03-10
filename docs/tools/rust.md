@@ -1,7 +1,7 @@
 Rust Library
 ============
 
-This is a no-frills interface between Bril's JSON and your [Rust][] code. It supports the [Bril core][core] along with the [SSA][], [memory][], [floating point][float], and [speculative execution][spec] extensions.
+This is a no-frills interface between Bril's JSON and your [Rust][] code. It supports the [Bril core][core] along with the [SSA][], [memory][], [floating point][float], [speculative execution][spec], and [source positions][pos] extensions.
 
 Use
 ---
@@ -12,7 +12,7 @@ Include this by adding the following to your `Cargo.toml`:
 [dependencies.bril-rs]
 version = "0.1.0"
 path = "../bril-rs"
-features = ["ssa", "memory", "float", "speculate"]
+features = ["ssa", "memory", "float", "speculate", "position"]
 ```
 
 Each of the extensions to [Bril core][core] is feature gated. To ignore an extension, remove its corresponding string from the `features` list.
@@ -49,3 +49,4 @@ make features
 [memory]: ../lang/memory.md
 [float]: ../lang/float.md
 [spec]: ../lang/spec.md
+[pos]: ../lang/syntax.md
