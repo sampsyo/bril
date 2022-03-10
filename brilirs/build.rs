@@ -16,7 +16,7 @@ fn main() -> Result<(), Error> {
     Some(out_dir) => out_dir,
   };
 
-  let mut app = Cli::into_app();
+  let mut app = Cli::command();
   let bin_name = app.get_name().to_string();
 
   // This is an attempt at being smart. Instead, one could just generate completion scripts for all of the shells in a completions/ directory and have the user choose the appropriate one.
