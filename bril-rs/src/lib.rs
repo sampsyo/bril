@@ -1,7 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 // todo these are allowed to appease clippy but should be addressed some day
 #![allow(clippy::missing_panics_doc)]
-#![allow(clippy::cargo_common_metadata)]
 #![allow(clippy::too_many_lines)]
 
 pub mod conversion;
