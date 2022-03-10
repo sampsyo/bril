@@ -117,7 +117,7 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub enum Value {
+enum Value {
   Int(i64),
   Bool(bool),
   Float(f64),
@@ -132,7 +132,7 @@ impl Default for Value {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Pointer {
+struct Pointer {
   base: usize,
   offset: i64,
 }
@@ -658,6 +658,8 @@ fn parse_args(
   }
 }
 
+/// The entrance point to the interpreter. It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [std::io::Write]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [std::io::stderr]
+// todo we could probably output the profiling thing to a user defined location. If the program can output to a file, you should probably also be allowed to output this debug info to a file as well.
 pub fn execute_main<T: std::io::Write>(
   prog: &BBProgram,
   mut out: T,

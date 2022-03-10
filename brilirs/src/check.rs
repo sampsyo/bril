@@ -496,6 +496,9 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Positi
   Ok(())
 }
 
+/// Provides validation of Bril programs. This involves
+/// statically checking the types and number of arguments to Bril
+/// instructions.
 pub fn type_check(bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
   bbprog
     .func_index

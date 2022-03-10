@@ -1,13 +1,16 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
-// todo these are allowed to appease clippy but should be addressed some day
-#![allow(clippy::missing_panics_doc)]
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
 
 // Tell the github workflow check to not format the generated rust program bril_grammar.rs
+#[doc(hidden)]
 #[rustfmt::skip]
 pub mod bril_grammar;
+#[doc(hidden)]
 pub mod cli;
 use bril_rs::{AbstractProgram, Position};
 
+#[doc(hidden)]
 #[derive(Clone)]
 pub struct Lines {
     use_pos: bool,
@@ -48,6 +51,9 @@ impl Lines {
     }
 }
 
+/// The entrance point to the bril2json parser. It takes an ```input```:[`std::io::Read`] which should be the Bril text file. You can control whether it includes source code positions with ```use_pos```.
+/// # Panics
+/// Will panic if the input is not well-formed Bril text
 pub fn parse_abstract_program_from_read<R: std::io::Read>(
     mut input: R,
     use_pos: bool,
@@ -61,6 +67,7 @@ pub fn parse_abstract_program_from_read<R: std::io::Read>(
 }
 
 #[must_use]
+/// A wrapper around [`parse_abstract_program_from_read`] which assumes [`std::io::Stdin`]
 pub fn parse_abstract_program(use_pos: bool) -> AbstractProgram {
     parse_abstract_program_from_read(std::io::stdin(), use_pos)
 }

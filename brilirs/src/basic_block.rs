@@ -4,13 +4,23 @@ use fxhash::FxHashMap;
 
 use crate::error;
 
-// A program represented as basic blocks.
+/// A program represented as basic blocks. This is the IR of brilirs
 #[derive(Debug)]
 pub struct BBProgram {
+  #[doc(hidden)]
   pub func_index: FxHashMap<String, BBFunction>,
 }
 
+impl TryFrom<Program> for BBProgram {
+  type Error = InterpError;
+
+  fn try_from(prog: Program) -> Result<Self, Self::Error> {
+    Self::new(prog)
+  }
+}
+
 impl BBProgram {
+  /// Converts a [`Program`] into a [`BBProgram`]
   pub fn new(prog: Program) -> Result<Self, InterpError> {
     let num_funcs = prog.functions.len();
     let bb = Self {
@@ -27,11 +37,13 @@ impl BBProgram {
     }
   }
 
+  #[doc(hidden)]
   pub fn get(&self, func_name: &str) -> Option<&BBFunction> {
     self.func_index.get(func_name)
   }
 }
 
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct BasicBlock {
   pub label: Option<String>,
@@ -54,6 +66,7 @@ impl BasicBlock {
   }
 }
 
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct NumifiedInstruction {
   pub dest: Option<u32>,
@@ -77,7 +90,7 @@ fn get_num_from_map(
 }
 
 impl NumifiedInstruction {
-  pub fn create(
+  fn create(
     instr: &Instruction,
     num_of_vars: &mut u32,
     num_var_map: &mut FxHashMap<String, u32>,
@@ -105,6 +118,7 @@ impl NumifiedInstruction {
   }
 }
 
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct BBFunction {
   pub name: String,
@@ -120,7 +134,7 @@ pub struct BBFunction {
 }
 
 impl BBFunction {
-  pub fn new(f: Function) -> Self {
+  fn new(f: Function) -> Self {
     let (mut func, label_map) = Self::find_basic_blocks(f);
     func.build_cfg(label_map);
     func
