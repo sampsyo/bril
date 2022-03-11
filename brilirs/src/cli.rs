@@ -1,8 +1,8 @@
-use clap::{AppSettings, Parser};
+use clap::Parser;
 
 #[derive(Parser)]
 #[clap(about, version, author)] // keeps the cli synced with Cargo.toml
-#[clap(setting(AppSettings::AllowHyphenValues))]
+#[clap(allow_hyphen_values(true))]
 pub struct Cli {
   /// Flag to output the total number of dynamic instructions
   #[clap(short, long)]

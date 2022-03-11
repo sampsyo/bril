@@ -12,8 +12,10 @@ use serde::de::{self, Error, MapAccess, Visitor};
 
 use serde::ser::{SerializeMap, Serializer};
 
+/// Equivalent to a file of bril code
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AbstractProgram {
+    /// A list of functions declared in the program
     pub functions: Vec<AbstractFunction>,
 }
 
@@ -26,16 +28,22 @@ impl Display for AbstractProgram {
     }
 }
 
+/// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AbstractFunction {
+    /// Any arguments the function accepts
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<AbstractArgument>,
+    /// The instructions of this function
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instrs: Vec<AbstractCode>,
+    /// The name of the function
     pub name: String,
+    /// The position of this function in the original source code
     #[cfg(feature = "position")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pos: Option<Position>,
+    /// The possible return type of this function
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_type: Option<AbstractType>,
@@ -66,9 +74,14 @@ impl Display for AbstractFunction {
     }
 }
 
+/// An argument of a function
+/// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
+/// Example: a : int
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AbstractArgument {
+    /// a
     pub name: String,
+    /// int
     #[serde(rename = "type")]
     pub arg_type: AbstractType,
 }
@@ -79,15 +92,21 @@ impl Display for AbstractArgument {
     }
 }
 
+/// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
+/// Code is a Label or an Instruction
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum AbstractCode {
+    /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#label>
     Label {
+        /// The name of the label
         label: String,
+        /// Where the label is located in source code
         #[cfg(feature = "position")]
         #[serde(skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
     },
+    /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#instruction>
     Instruction(AbstractInstruction),
 }
 
@@ -104,42 +123,63 @@ impl Display for AbstractCode {
     }
 }
 
+/// <https://capra.cs.cornell.edu/bril/lang/syntax.html#instruction>
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum AbstractInstruction {
+    /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#constant>
     Constant {
+        /// destination variable
         dest: String,
+        /// "const"
         op: ConstOps,
+        /// The source position of the instruction if provided
         #[cfg(feature = "position")]
         #[serde(skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
+        /// Type of variable
         #[serde(rename = "type")]
         const_type: Option<AbstractType>,
+        /// The literal being stored in the variable
         value: Literal,
     },
+    /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#value-operation>
     Value {
+        /// List of variables as arguments
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         args: Vec<String>,
+        /// destination variable
         dest: String,
+        /// List of strings as function names
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         funcs: Vec<String>,
+        /// List of strings as labels
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
+        /// Operation being executed
         op: String,
+        /// The source position of the instruction if provided
         #[cfg(feature = "position")]
         #[serde(skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
+        /// Type of variable
         #[serde(rename = "type")]
         op_type: Option<AbstractType>,
     },
+    /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#effect-operation>
     Effect {
+        /// List of variables as arguments
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         args: Vec<String>,
+        /// List of strings as function names
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         funcs: Vec<String>,
+        /// List of strings as labels
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         labels: Vec<String>,
+        /// Operation being executed
         op: String,
+        /// The source position of the instruction if provided
         #[cfg(feature = "position")]
         #[serde(skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
@@ -209,9 +249,12 @@ impl Display for AbstractInstruction {
     }
 }
 
+/// <https://capra.cs.cornell.edu/bril/lang/syntax.html#type>
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AbstractType {
+    /// For example "bool" => Primitive("bool")
     Primitive(String),
+    /// For example "ptr<bool>" => Parameterized("ptr", Box::new(Primitive("bool")))
     Parameterized(String, Box<Self>),
 }
 

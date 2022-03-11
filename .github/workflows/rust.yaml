@@ -49,3 +49,8 @@ jobs:
         with:
           command: clippy
           args: --manifest-path ${{ matrix.path }} -- -D warnings
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --manifest-path ${{ matrix.path }}

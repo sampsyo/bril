@@ -13,27 +13,35 @@ use thiserror::Error;
 #[allow(non_upper_case_globals)]
 const pos: Option<Position> = None;
 
+/// This is the [`std::error::Error`] implementation for `bril_rs`. This crate currently only supports errors from converting between [`AbstractProgram`] and [Program]
+// todo Should this also wrap Serde errors? In this case, maybe change the name from ConversionError
 // Having the #[error(...)] for all variants derives the Display trait as well
 #[derive(Error, Debug)]
 #[allow(clippy::module_name_repetitions)]
 pub enum ConversionError {
+    /// Expected a primitive type like int or bool, found {0}"
     #[error("Expected a primitive type like int or bool, found {0}")]
     InvalidPrimitive(String),
 
+    /// Expected a parameterized type like ptr, found {0}<{1}>
     #[error("Expected a parameterized type like ptr, found {0}<{1}>")]
     InvalidParameterized(String, String),
 
+    /// Expected an value operation, found {0}
     #[error("Expected an value operation, found {0}")]
     InvalidValueOps(String),
 
+    /// Expected an effect operation, found {0}
     #[error("Expected an effect operation, found {0}")]
     InvalidEffectOps(String),
 
+    /// Missing type signature
     #[error("Missing type signature")]
     MissingType,
 }
 
 impl ConversionError {
+    #[doc(hidden)]
     #[must_use]
     pub fn add_pos(self, pos_var: Option<Position>) -> PositionalConversionError {
         match self {
@@ -46,6 +54,7 @@ impl ConversionError {
     }
 }
 
+/// Wraps [`ConversionError`] to optionally provide source code positions if they are available.
 #[derive(Error, Debug)]
 pub struct PositionalConversionError {
     e: Box<ConversionError>,
@@ -53,6 +62,7 @@ pub struct PositionalConversionError {
 }
 
 impl PositionalConversionError {
+    #[doc(hidden)]
     #[must_use]
     pub fn new(e: ConversionError) -> Self {
         Self {
