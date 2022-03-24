@@ -101,6 +101,49 @@ export class Heap<X> {
     }
 }
 
+class ReferenceCountGarbageCollector {
+  private readonly counts: Map<Key, number>;
+
+  private readonly heap: Heap<Value>;
+
+  constructor(heap : Heap<Value>) {
+    this.counts = new Map();
+    this.heap = heap;
+  }
+
+  alloc(obj : Key) { 
+    counts.put(obj, 0); 
+  }
+
+  dec(obj : Key) {
+    if(!this.counts.has(obj)){
+      throw error(`Could not decrement count of obj ${obj} in ReferenceCountGarbageCollector`);
+    }
+
+    let oldCount = counts.get(obj);
+    this.counts.set(obj, oldCount - 1);
+
+    if(oldCount - 1 == 0) {
+      this.heap.free(obj);
+      this.counts.delete(k);
+    }
+  }
+
+  inc(obj : Key) {
+    if(!this.counts.has(obj)){
+      throw error(`Could not decrement count of obj ${obj} in ReferenceCountGarbageCollector`);
+    }
+
+    let oldCount = counts.get(obj);
+    this.counts.set(obj, oldCount + 1);
+  }
+
+  assign(o : Key, n : Key) {
+    dec(o);
+    inc(n);
+  }
+}
+
 const argCounts: {[key in bril.OpCode]: number | null} = {
   add: 2,
   mul: 2,
@@ -310,6 +353,9 @@ type State = {
 
   // For speculation: the state at the point where speculation began.
   specparent: State | null,
+  
+  // Garbage Collector
+  gc : ReferenceCountGarbageCollector,
 }
 
 /**
@@ -618,18 +664,24 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
     let ptr = alloc(typ, Number(amt), state.heap);
     state.env.set(instr.dest, ptr);
+    state.gc.alloc(ptr); 
     return NEXT;
   }
 
   case "free": {
-    let val = getPtr(instr, state.env, 0);
-    state.heap.free(val.loc);
+    // Note: We no longer make a call to heap.free because it will already have been
+    // freed at the earlist point in time.
+    // let val = getPtr(instr, state.env, 0);
+    // state.heap.free(val.loc);
     return NEXT;
   }
 
   case "store": {
     let target = getPtr(instr, state.env, 0);
     state.heap.write(target.loc, getArgument(instr, state.env, 1, target.type));
+    // NOTE: Bril does not support ptrs to anything except an int. Therefore
+    // we do not have to worry about calling gc.assign() here because the pointer
+    // cannot be a pointer to another heap allocated object.
     return NEXT;
   }
 
@@ -647,7 +699,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   case "ptradd": {
     let ptr = getPtr(instr, state.env, 0)
     let val = getInt(instr, state.env, 1)
-    state.env.set(instr.dest, { loc: ptr.loc.add(Number(val)), type: ptr.type })
+    let newptr = ptr.loc.add(Number(val))
+    state.env.set(instr.dest, { loc: newptr, type: ptr.type })
+    state.gc.assign(ptr, newptr);
     return NEXT;
   }
 
@@ -816,6 +870,7 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
 
 function evalProg(prog: bril.Program) {
   let heap = new Heap<Value>()
+  let gc = new ReferenceCountGarbageCollector(heap);
   let main = findFunc("main", prog.functions);
   if (main === null) {
     console.warn(`no main function defined, doing nothing`);
@@ -843,6 +898,7 @@ function evalProg(prog: bril.Program) {
     lastlabel: null,
     curlabel: null,
     specparent: null,
+    gc,
   }
   evalFunc(main, state);
 
