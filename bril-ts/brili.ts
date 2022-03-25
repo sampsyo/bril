@@ -114,7 +114,7 @@ class ReferenceCountGarbageCollector {
   }
 
   alloc(obj : Key) { 
-    this.counts.set(obj.base, 1); 
+    this.counts.set(obj.base, 0); 
   }
 
   // Decrement all pointers in the environment
@@ -130,29 +130,43 @@ class ReferenceCountGarbageCollector {
   dec(obj : Key) {
     let key = obj.base;
     let oldCount = this.counts.get(key);
-    if(!oldCount) {
+    if(oldCount === undefined) {
       throw error(`Could not decrement count of obj ${key} in ReferenceCountGarbageCollector`);
     }
     this.counts.set(key, oldCount - 1);
 
     if(oldCount - 1 == 0) {
-      this.heap.free(obj);
+      this.heap.free(new Key(key, 0)); 
       this.counts.delete(key);
     }
+  }
+
+  // Increment all pointers in the environment
+  incAll(env: Env) {
+    env.forEach((v, k) => {
+      if (v.hasOwnProperty("loc")) {
+        let p : Pointer  = v as Pointer;
+        this.inc(p.loc);
+      }
+    });
   }
 
   inc(obj : Key) {
     let key = obj.base;
     let oldCount = this.counts.get(key);
-    if(!oldCount) {
-      throw error(`Could not decrement count of obj ${key} in ReferenceCountGarbageCollector`);
+    if(oldCount === undefined) {
+      throw error(`Could not increment count of obj ${key} in ReferenceCountGarbageCollector`);
     }
     this.counts.set(key, oldCount + 1);
   }
 
-  assign(p : Pointer, o : Key) {
-    this.dec(p.loc);
-    this.inc(o);
+  assign(ident: bril.Ident, env : Env, a : Key) {
+    let l = env.get(ident);
+    if(l !== undefined) {
+      let a = l as Pointer;
+      this.dec(a.loc);
+    }
+    this.inc(a);
   }
 }
 
@@ -402,6 +416,9 @@ function evalCall(instr: bril.Operation, state: State): Action {
     // Set the value of the arg in the new (function) environment.
     newEnv.set(params[i].name, value);
   }
+
+  // Pointers on stack must be incremented for GC
+  state.gc.incAll(newEnv);
 
   // Invoke the interpreter on the function.
   let newState: State = {
@@ -680,6 +697,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
     let ptr = alloc(typ, Number(amt), state.heap);
     state.gc.alloc(ptr.loc); 
+    state.gc.assign(instr.dest, state.env, ptr.loc);
     state.env.set(instr.dest, ptr);
     return NEXT;
   }
@@ -716,8 +734,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     let ptr = getPtr(instr, state.env, 0)
     let val = getInt(instr, state.env, 1)
     let newptr = ptr.loc.add(Number(val))
+    state.gc.assign(instr.dest, state.env,  newptr);
     state.env.set(instr.dest, { loc: newptr, type: ptr.type })
-    state.gc.inc(ptr.loc);
     return NEXT;
   }
 
@@ -916,10 +934,11 @@ function evalProg(prog: bril.Program) {
     specparent: null,
     gc,
   }
-  evalFunc(main, state);
 
-  // Pointers on stack must be decremented for GC
-  state.gc.decAll(state.env);
+  gc.incAll(state.env);
+  evalFunc(main, state);
+  gc.decAll(state.env);
+
   if (!heap.isEmpty()) {
     throw error(`Some memory locations have not been freed by end of execution.`);
   }
@@ -927,7 +946,6 @@ function evalProg(prog: bril.Program) {
   if (profiling) {
     console.error(`total_dyn_inst: ${state.icount}`);
   }
-
 }
 
 async function main() {

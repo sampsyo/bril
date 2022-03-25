@@ -1,0 +1,17 @@
+@main {
+  ten: int = const 10;
+  one : int = const 1;
+  ptr1 : ptr<int> = alloc ten;
+  i : int = const 0;
+.loop:
+  cond : bool = lt i ten;
+  br cond .body .done;
+.body:
+  ptr2 : ptr<int> = ptradd ptr1 one;
+  i : int = add i one;
+  jmp .loop;
+.done:
+  free mtptr;
+  print i;
+  ret;
+}

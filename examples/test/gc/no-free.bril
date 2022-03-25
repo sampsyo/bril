@@ -1,0 +1,4 @@
+@main {
+ten: int = const 10;
+myptr: ptr<int> = alloc ten;
+}
