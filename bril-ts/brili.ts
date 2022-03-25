@@ -102,7 +102,9 @@ export class Heap<X> {
 }
 
 class ReferenceCountGarbageCollector {
-  private readonly counts: Map<Key, number>;
+  
+  // Map from Key.base to count
+  private readonly counts: Map<number, number>;
 
   private readonly heap: Heap<Value>;
 
@@ -112,35 +114,45 @@ class ReferenceCountGarbageCollector {
   }
 
   alloc(obj : Key) { 
-    counts.put(obj, 0); 
+    this.counts.set(obj.base, 1); 
+  }
+
+  // Decrement all pointers in the environment
+  decAll(env: Env) {
+    env.forEach((v, k) => {
+      if (v.hasOwnProperty("loc")) {
+        let p : Pointer  = v as Pointer;
+        this.dec(p.loc);
+      }
+    });
   }
 
   dec(obj : Key) {
-    if(!this.counts.has(obj)){
-      throw error(`Could not decrement count of obj ${obj} in ReferenceCountGarbageCollector`);
+    let key = obj.base;
+    let oldCount = this.counts.get(key);
+    if(!oldCount) {
+      throw error(`Could not decrement count of obj ${key} in ReferenceCountGarbageCollector`);
     }
-
-    let oldCount = counts.get(obj);
-    this.counts.set(obj, oldCount - 1);
+    this.counts.set(key, oldCount - 1);
 
     if(oldCount - 1 == 0) {
       this.heap.free(obj);
-      this.counts.delete(k);
+      this.counts.delete(key);
     }
   }
 
   inc(obj : Key) {
-    if(!this.counts.has(obj)){
-      throw error(`Could not decrement count of obj ${obj} in ReferenceCountGarbageCollector`);
+    let key = obj.base;
+    let oldCount = this.counts.get(key);
+    if(!oldCount) {
+      throw error(`Could not decrement count of obj ${key} in ReferenceCountGarbageCollector`);
     }
-
-    let oldCount = counts.get(obj);
-    this.counts.set(obj, oldCount + 1);
+    this.counts.set(key, oldCount + 1);
   }
 
-  assign(o : Key, n : Key) {
-    dec(o);
-    inc(n);
+  assign(p : Pointer, o : Key) {
+    this.dec(p.loc);
+    this.inc(o);
   }
 }
 
@@ -400,9 +412,13 @@ function evalCall(instr: bril.Operation, state: State): Action {
     lastlabel: null,
     curlabel: null,
     specparent: null,  // Speculation not allowed.
+    gc: state.gc,
   }
   let retVal = evalFunc(func, newState);
   state.icount = newState.icount;
+
+  // Pointers on stack must be decremented for GC
+  state.gc.decAll(newEnv);
 
   // Dynamically check the function's return value and type.
   if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
@@ -663,8 +679,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       throw error(`cannot allocate non-pointer type ${instr.type}`);
     }
     let ptr = alloc(typ, Number(amt), state.heap);
+    state.gc.alloc(ptr.loc); 
     state.env.set(instr.dest, ptr);
-    state.gc.alloc(ptr); 
     return NEXT;
   }
 
@@ -701,7 +717,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     let val = getInt(instr, state.env, 1)
     let newptr = ptr.loc.add(Number(val))
     state.env.set(instr.dest, { loc: newptr, type: ptr.type })
-    state.gc.assign(ptr, newptr);
+    state.gc.inc(ptr.loc);
     return NEXT;
   }
 
@@ -902,6 +918,8 @@ function evalProg(prog: bril.Program) {
   }
   evalFunc(main, state);
 
+  // Pointers on stack must be decremented for GC
+  state.gc.decAll(state.env);
   if (!heap.isEmpty()) {
     throw error(`Some memory locations have not been freed by end of execution.`);
   }
