@@ -1,5 +1,5 @@
 @main {
-ten: int = const 10;
-myptr: ptr<int> = alloc ten;
-myptr: ptr<int> = alloc ten;
+  ten: int = const 10;
+  myptr: ptr<int> = alloc ten;
+  myptr: ptr<int> = alloc ten;
 }

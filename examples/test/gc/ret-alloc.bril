@@ -1,8 +1,9 @@
-@f {
+@f : ptr<int> {
   ten: int = const 10;
   myptr: ptr<int> = alloc ten;
+  ret myptr;
 }
 
 @main {
-  call @f;
+  myptr : ptr<int> = call @f;
 }
