@@ -453,6 +453,7 @@ function evalCall(instr: bril.Operation, state: State): Action {
     if (func.type !== undefined) {
       throw error(`non-void function (type: ${func.type}) doesn't return anything`);
     }
+
   } else {  // `instr` is a `ValueOperation`.
     // Expected non-void function
     if (instr.type === undefined) {
@@ -473,8 +474,19 @@ function evalCall(instr: bril.Operation, state: State): Action {
     if (!typeCmp(instr.type, func.type)) {
       throw error(`type of value returned by function does not match declaration`);
     }
+
+    // If retVal is a pointer, we need to bookeep the assignment
+    if(typeof instr.type === "object" && instr.type.hasOwnProperty("ptr")) {
+        let ptr : Pointer = retVal as Pointer;
+        state.gc.assign(instr.dest, state.env, ptr.loc);
+    }
+
     state.env.set(instr.dest, retVal);
   }
+
+  // Pointers on stack must be decremented for GC
+  state.gc.decAll(newEnv);
+
   return NEXT;
 }
 
@@ -522,6 +534,12 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   case "id": {
     let val = getArgument(instr, state.env, 0);
+    // If is a pointer, we need to bookeep the assignment
+    if(typeof instr.type === "object" && instr.type.hasOwnProperty("ptr")) {
+        let ptr : Pointer = val as Pointer;
+        state.gc.assign(instr.dest, state.env, ptr.loc);
+    }
+
     state.env.set(instr.dest, val);
     return NEXT;
   }
@@ -679,16 +697,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   case "ret": {
     let args = instr.args || [];
     if (args.length == 0) {
-      // Pointers on stack must be decremented for GC
-      state.gc.decAll(state.env);
-
       return {"action": "end", "ret": null};
     } else if (args.length == 1) {
       let val = get(state.env, args[0]);
-      // Pointers on stack must be decremented for GC
-      // except when we return a pointer
-      state.gc.decAllExcept(state.env, args[0]);
-
       return {"action": "end", "ret": val};
     } else {
       throw error(`ret takes 0 or 1 argument(s); got ${args.length}`);
