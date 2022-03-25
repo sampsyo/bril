@@ -127,6 +127,16 @@ class ReferenceCountGarbageCollector {
     });
   }
 
+  // Decrement all pointers in the environment except ident
+  decAllExcept(env: Env, ident : bril.Ident) {
+    env.forEach((v, k) => {
+      if (v.hasOwnProperty("loc") && k !== ident) {
+        let p : Pointer  = v as Pointer;
+        this.dec(p.loc);
+      }
+    });
+  }
+
   dec(obj : Key) {
     let key = obj.base;
     let oldCount = this.counts.get(key);
@@ -434,9 +444,6 @@ function evalCall(instr: bril.Operation, state: State): Action {
   let retVal = evalFunc(func, newState);
   state.icount = newState.icount;
 
-  // Pointers on stack must be decremented for GC
-  state.gc.decAll(newEnv);
-
   // Dynamically check the function's return value and type.
   if (!('dest' in instr)) {  // `instr` is an `EffectOperation`.
      // Expected void function
@@ -672,9 +679,16 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   case "ret": {
     let args = instr.args || [];
     if (args.length == 0) {
+      // Pointers on stack must be decremented for GC
+      state.gc.decAll(state.env);
+
       return {"action": "end", "ret": null};
     } else if (args.length == 1) {
       let val = get(state.env, args[0]);
+      // Pointers on stack must be decremented for GC
+      // except when we return a pointer
+      state.gc.decAllExcept(state.env, args[0]);
+
       return {"action": "end", "ret": val};
     } else {
       throw error(`ret takes 0 or 1 argument(s); got ${args.length}`);
