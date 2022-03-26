@@ -728,8 +728,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
 
   case "free": {
-    // Note: We no longer make a call to heap.free because it will already have been
-    // freed at the earlist point in time.
+    // Note: We no longer make a call to heap.free and it acts as a nop.
+    // Memory will be freed automatically unless it is cyclical garbage 
     // let val = getPtr(instr, state.env, 0);
     // state.heap.free(val.loc);
     return NEXT;
@@ -738,9 +738,6 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   case "store": {
     let target = getPtr(instr, state.env, 0);
     state.heap.write(target.loc, getArgument(instr, state.env, 1, target.type));
-    // NOTE: Bril does not support ptrs to anything except an int. Therefore
-    // we do not have to worry about calling gc.assign() here because the pointer
-    // cannot be a pointer to another heap allocated object.
     return NEXT;
   }
 
