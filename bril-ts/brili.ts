@@ -127,16 +127,6 @@ class ReferenceCountGarbageCollector {
     });
   }
 
-  // Decrement all pointers in the environment except ident
-  decAllExcept(env: Env, ident : bril.Ident) {
-    env.forEach((v, k) => {
-      if (v.hasOwnProperty("loc") && k !== ident) {
-        let p : Pointer  = v as Pointer;
-        this.dec(p.loc);
-      }
-    });
-  }
-
   dec(obj : Key) {
     let key = obj.base;
     let oldCount = this.counts.get(key);
