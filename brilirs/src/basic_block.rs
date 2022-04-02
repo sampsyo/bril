@@ -27,8 +27,11 @@ impl BBProgram {
       func_index: prog
         .functions
         .into_iter()
-        .map(|func| (func.name.clone(), BBFunction::new(func)))
-        .collect(),
+        .map(|func| {
+          let name = func.name.clone();
+          BBFunction::new(func).map(|f| (name, f))
+        })
+        .collect::<Result<FxHashMap<String, BBFunction>, InterpError>>()?,
     };
     if bb.func_index.len() != num_funcs {
       Err(InterpError::DuplicateFunction)
@@ -134,10 +137,10 @@ pub struct BBFunction {
 }
 
 impl BBFunction {
-  fn new(f: Function) -> Self {
+  fn new(f: Function) -> Result<Self, InterpError> {
     let (mut func, label_map) = Self::find_basic_blocks(f);
-    func.build_cfg(label_map);
-    func
+    func.build_cfg(label_map)?;
+    Ok(func)
   }
 
   fn find_basic_blocks(func: bril_rs::Function) -> (Self, FxHashMap<String, usize>) {
@@ -227,7 +230,7 @@ impl BBFunction {
     )
   }
 
-  fn build_cfg(&mut self, label_map: FxHashMap<String, usize>) {
+  fn build_cfg(&mut self, label_map: FxHashMap<String, usize>) -> Result<(), InterpError> {
     let last_idx = self.blocks.len() - 1;
     for (i, block) in self.blocks.iter_mut().enumerate() {
       // If we're before the last block
@@ -241,11 +244,9 @@ impl BBFunction {
         }) = last_instr
         {
           for l in labels {
-            block.exit.push(
-              *label_map
-                .get(&l)
-                .unwrap_or_else(|| panic!("No label {} found.", &l)),
-            );
+            block
+              .exit
+              .push(*label_map.get(&l).ok_or(InterpError::MissingLabel(l))?);
           }
         } else if let Some(bril_rs::Instruction::Effect {
           op: bril_rs::EffectOps::Return,
@@ -258,5 +259,6 @@ impl BBFunction {
         }
       }
     }
+    Ok(())
   }
 }
