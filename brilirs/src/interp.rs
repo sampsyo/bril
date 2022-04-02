@@ -659,12 +659,12 @@ fn parse_args(
 }
 
 /// The entrance point to the interpreter. It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [std::io::Write]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [std::io::stderr]
-// todo we could probably output the profiling thing to a user defined location. If the program can output to a file, you should probably also be allowed to output this debug info to a file as well.
-pub fn execute_main<T: std::io::Write>(
+pub fn execute_main<T: std::io::Write, U: std::io::Write>(
   prog: &BBProgram,
   mut out: T,
   input_args: &[String],
   profiling: bool,
+  mut profiling_out: U,
 ) -> Result<(), PositionalInterpError> {
   let main_func = prog
     .get("main")
@@ -697,7 +697,9 @@ pub fn execute_main<T: std::io::Write>(
   }
 
   if profiling {
-    eprintln!("total_dyn_inst: {instruction_count}");
+    writeln!(profiling_out, "total_dyn_inst: {instruction_count}")
+      .and_then(|_| profiling_out.flush())
+      .map_err(|e| PositionalInterpError::new(InterpError::IoError(Box::new(e))))?;
   }
 
   Ok(())
