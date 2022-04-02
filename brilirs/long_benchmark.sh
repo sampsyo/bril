@@ -4,14 +4,14 @@
 # Feature gate type checking?
 
 files=( "../benchmarks/ackermann.bril" "../benchmarks/eight-queens.bril" \
-        "../benchmarks/mat-mul.bril"
+        "../benchmarks/mat-mul.bril" "../benchmarks/function_call.bril"
 
         )
 jsons=( "../benchmarks/ackermann.json" "../benchmarks/eight-queens.json" \
-        "../benchmarks/mat-mul.json"
+        "../benchmarks/mat-mul.json" "../benchmarks/function_call.json"
 
         )
-args=( "3 6" "8" "50 109658")
+args=( "3 6" "8" "50 109658" "25")
 
 for i in "${!files[@]}"; do
     bril2json < ${files[i]} > ${jsons[i]}

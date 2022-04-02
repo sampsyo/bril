@@ -1,0 +1,22 @@
+# ARGS: 25
+@main(m: int) {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  cond_m: bool = eq m zero;
+  br cond_m .end .m_nonzero;
+.m_nonzero:
+  m:int = sub m one;
+  call @main m;
+  cond_m: bool = eq m zero;
+  br cond_m .end .m_nonzero2;
+.m_nonzero2:
+  m:int = sub m one;
+  call @main m;
+  cond_m: bool = eq m zero;
+  br cond_m .end .m_nonzero3;
+.m_nonzero3:
+  m:int = sub m one;
+  call @main m;
+.end:
+}
