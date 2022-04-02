@@ -1,5 +1,4 @@
 use std::fmt;
-use std::hint::unreachable_unchecked;
 
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
@@ -153,8 +152,7 @@ impl fmt::Display for Value {
       Value::Bool(b) => write!(f, "{b}"),
       Value::Float(v) => write!(f, "{v}"),
       Value::Pointer(p) => write!(f, "{p:?}"),
-      // This is safe because Uninitialized is only used in relation to memory and immediately errors if this value is returned. Otherwise this value can not appear in the code
-      Value::Uninitialized => unsafe { unreachable_unchecked() },
+      Value::Uninitialized => unreachable!(),
     }
   }
 }
@@ -187,8 +185,7 @@ impl From<&Value> for i64 {
     if let Value::Int(i) = value {
       *i
     } else {
-      // This is safe because we type check the program beforehand
-      unsafe { unreachable_unchecked() }
+      unreachable!()
     }
   }
 }
@@ -199,8 +196,7 @@ impl From<&Value> for bool {
     if let Value::Bool(b) = value {
       *b
     } else {
-      // This is safe because we type check the program beforehand
-      unsafe { unreachable_unchecked() }
+      unreachable!()
     }
   }
 }
@@ -211,8 +207,7 @@ impl From<&Value> for f64 {
     if let Value::Float(f) = value {
       *f
     } else {
-      // This is safe because we type check the program beforehand
-      unsafe { unreachable_unchecked() }
+      unreachable!()
     }
   }
 }
@@ -223,8 +218,7 @@ impl<'a> From<&'a Value> for &'a Pointer {
     if let Value::Pointer(p) = value {
       p
     } else {
-      // This is safe because we type check the program beforehand
-      unsafe { unreachable_unchecked() }
+      unreachable!()
     }
   }
 }
@@ -536,8 +530,7 @@ fn execute<'a, T: std::io::Write>(
               bril_rs::Literal::Float(f) => {
                 value_store.set(numified_code.dest.unwrap(), Value::Float(*f))
               }
-              // this is safe because we type check this beforehand
-              bril_rs::Literal::Bool(_) => unsafe { unreachable_unchecked() },
+              bril_rs::Literal::Bool(_) => unreachable!(),
             }
           } else {
             value_store.set(numified_code.dest.unwrap(), Value::from(value));
@@ -651,8 +644,7 @@ fn parse_args(
           };
           Ok(())
         }
-        // this is safe because there is no possible way to pass a pointer as an argument
-        bril_rs::Type::Pointer(..) => unsafe { unreachable_unchecked() },
+        bril_rs::Type::Pointer(..) => unreachable!(),
       })?;
     Ok(env)
   }
