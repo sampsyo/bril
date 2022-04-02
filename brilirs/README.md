@@ -23,7 +23,7 @@ Check out `cargo doc --open` for exposed functions. One possible workflow is tha
 ```rust
 let bbprog = BBProgram::new(program)?;
 check::type_check(&bbprog)?;
-interp::execute_main(&bbprog, std::io::stdout(), &args, false)?;
+interp::execute_main(&bbprog, std::io::stdout(), &args, false, std::io::stderr())?;
 ```
 
 You can also use a `bril_rs::AbstractProgram` called `abstract_program` by converting it into a `bril_rs::Program` using `abstract_program.try_into()?`.

@@ -20,11 +20,12 @@ mod error;
 pub mod interp;
 
 #[doc(hidden)]
-pub fn run_input<T: std::io::Write>(
+pub fn run_input<T: std::io::Write, U: std::io::Write>(
   input: Box<dyn std::io::Read>,
   out: T,
   input_args: Vec<String>,
   profiling: bool,
+  profiling_out: U,
   check: bool,
   text: bool,
 ) -> Result<(), Box<dyn Error>> {
@@ -40,7 +41,7 @@ pub fn run_input<T: std::io::Write>(
   check::type_check(&bbprog)?;
 
   if !check {
-    interp::execute_main(&bbprog, out, &input_args, profiling)?;
+    interp::execute_main(&bbprog, out, &input_args, profiling, profiling_out)?;
   }
 
   Ok(())
