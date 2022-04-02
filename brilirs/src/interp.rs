@@ -12,7 +12,16 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+use std::cmp::max;
+
 struct Environment {
+  // Pointer into env for the start of the current frame
+  current_pointer: usize,
+  // Size of the current frame
+  current_frame_size: usize,
+  // A list of all stack pointers for valid frames on the stack
+  stack_pointers: Vec<(usize, usize)>,
+  // env is used like a stack. Assume it only grows
   env: Vec<Value>,
 }
 
@@ -20,18 +29,57 @@ impl Environment {
   #[inline(always)]
   pub fn new(size: u32) -> Self {
     Self {
-      env: vec![Value::default(); size as usize],
+      current_pointer: 0,
+      current_frame_size: size as usize,
+      stack_pointers: Vec::new(),
+      // Allocate a larger stack size so the interpreter needs to allocate less often
+      env: vec![Value::default(); (max(size, 50)) as usize],
     }
   }
   #[inline(always)]
   pub fn get(&self, ident: &u32) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
-    self.env.get(*ident as usize).unwrap()
+    self
+      .env
+      .get(self.current_pointer + *ident as usize)
+      .unwrap()
   }
+
+  // Used for getting arguments that should be passed to the current frame from the previous one
+  pub fn get_from_last_frame(&self, ident: &u32) -> &Value {
+    let past_pointer = self.stack_pointers.last().unwrap().0;
+    self.env.get(past_pointer + *ident as usize).unwrap()
+  }
+
   #[inline(always)]
   pub fn set(&mut self, ident: u32, val: Value) {
-    self.env[ident as usize] = val;
+    self.env[self.current_pointer + ident as usize] = val;
+  }
+  // Push a new frame onto the stack
+  pub fn push_frame(&mut self, size: u32) {
+    self
+      .stack_pointers
+      .push((self.current_pointer, self.current_frame_size));
+    self.current_pointer += self.current_frame_size;
+    self.current_frame_size = size as usize;
+
+    // Check that the stack is large enough
+    if self.current_pointer + self.current_frame_size > self.env.len() {
+      // We need to allocate more stack
+      self.env.resize(
+        max(
+          self.env.len() * 4,
+          self.current_pointer + self.current_frame_size,
+        ),
+        Value::default(),
+      )
+    }
+  }
+
+  // Remove a frame from the stack
+  pub fn pop_frame(&mut self) {
+    (self.current_pointer, self.current_frame_size) = self.stack_pointers.pop().unwrap();
   }
 }
 
@@ -359,12 +407,13 @@ fn execute_value_op<'a, T: std::io::Write>(
         .get(&funcs[0])
         .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
 
-      let next_env = make_func_args(callee_func, args, value_store);
+      make_func_args(callee_func, args, value_store);
 
-      value_store.set(
-        dest,
-        execute(prog, callee_func, out, next_env, heap, instruction_count)?.unwrap(),
-      )
+      let result = execute(prog, callee_func, out, value_store, heap, instruction_count)?.unwrap();
+
+      value_store.pop_frame();
+
+      value_store.set(dest, result)
     }
     Phi => {
       if last_label.is_none() {
@@ -399,25 +448,19 @@ fn execute_value_op<'a, T: std::io::Write>(
   Ok(())
 }
 
-// Returns a map from function parameter names to values of the call arguments
-// that are bound to those parameters.
-fn make_func_args<'a>(
-  callee_func: &'a BBFunction,
-  args: &[u32],
-  vars: &Environment,
-) -> Environment {
-  // todo: Having to allocate a new environment on each function call probably makes small function calls very heavy weight. This could be interesting to profile and see if old environments can be reused instead of being deallocated and reallocated. Maybe there is another way to sometimes avoid this allocation.
-  let mut next_env = Environment::new(callee_func.num_of_vars);
+// Sets up the Environment for the next function call with the supplied arguments
+// We allow the needless collect because clippy isn't smart enough to see the mutable borrow
+#[allow(clippy::needless_collect)]
+fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[u32], vars: &mut Environment) {
+  vars.push_frame(callee_func.num_of_vars);
 
   args
     .iter()
     .zip(callee_func.args_as_nums.iter())
     .for_each(|(arg_name, expected_arg)| {
-      let arg = vars.get(arg_name);
-      next_env.set(*expected_arg, arg.clone());
-    });
-
-  next_env
+      let arg = vars.get_from_last_frame(arg_name).clone();
+      vars.set(*expected_arg, arg);
+    })
 }
 
 // todo do this with less function arguments
@@ -430,7 +473,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
   funcs: &[String],
   curr_block: &BasicBlock,
   out: &mut T,
-  value_store: &Environment,
+  value_store: &mut Environment,
   heap: &mut Heap,
   next_block_idx: &mut Option<usize>,
   instruction_count: &mut u32,
@@ -471,9 +514,10 @@ fn execute_effect_op<'a, T: std::io::Write>(
         .get(&funcs[0])
         .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
 
-      let next_env = make_func_args(callee_func, args, value_store);
+      make_func_args(callee_func, args, value_store);
 
-      execute(prog, callee_func, out, next_env, heap, instruction_count)?;
+      execute(prog, callee_func, out, value_store, heap, instruction_count)?;
+      value_store.pop_frame();
     }
     Store => {
       let arg0 = get_arg::<&Pointer>(value_store, 0, args);
@@ -493,7 +537,7 @@ fn execute<'a, T: std::io::Write>(
   prog: &'a BBProgram,
   func: &'a BBFunction,
   out: &mut T,
-  mut value_store: Environment,
+  value_store: &mut Environment,
   heap: &mut Heap,
   instruction_count: &mut u32,
 ) -> Result<Option<Value>, PositionalInterpError> {
@@ -560,7 +604,7 @@ fn execute<'a, T: std::io::Write>(
             labels,
             funcs,
             out,
-            &mut value_store,
+            value_store,
             heap,
             last_label,
             instruction_count,
@@ -582,7 +626,7 @@ fn execute<'a, T: std::io::Write>(
             funcs,
             curr_block,
             out,
-            &value_store,
+            value_store,
             heap,
             &mut next_block_idx,
             instruction_count,
@@ -678,7 +722,7 @@ pub fn execute_main<T: std::io::Write>(
   let env = Environment::new(main_func.num_of_vars);
   let mut heap = Heap::default();
 
-  let value_store = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
+  let mut value_store = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
     .map_err(|e| e.add_pos(main_func.pos))?;
 
   let mut instruction_count = 0;
@@ -687,7 +731,7 @@ pub fn execute_main<T: std::io::Write>(
     prog,
     main_func,
     &mut out,
-    value_store,
+    &mut value_store,
     &mut heap,
     &mut instruction_count,
   )?;

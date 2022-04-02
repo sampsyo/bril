@@ -7,7 +7,6 @@
     - replace the naive memory management support with a more optimized version
     - optimize brilirs for function calls
         - replace string lookup with indexing a vec
-        - optimize contexts?
 - Fuzzing with cargo-fuzz or Property testing with proptest
 - Replace benchmarking scripts with something more extensible like brench or a better python/rust script
 - Equality Saturation using the egg crate for bril-rs?
