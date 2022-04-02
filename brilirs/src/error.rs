@@ -12,9 +12,11 @@ pub enum InterpError {
   UsingUninitializedMemory,
   #[error("phi node executed with no last label")]
   NoLastLabel,
+  #[error("Could not find label: {0}")]
+  MissingLabel(String),
   #[error("no main function defined, doing nothing")]
   NoMainFunction,
-  #[error("pi node has unequal numbers of labels and args")]
+  #[error("phi node has unequal numbers of labels and args")]
   UnequalPhiNode,
   #[error("multiple functions of the same name found")]
   DuplicateFunction,
