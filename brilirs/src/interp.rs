@@ -13,6 +13,16 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 use std::cmp::max;
 
+// The Environment is the data structure used to represent the stack of the program.
+// The values of all variables are store here. Each variable is represented as a number so
+// each value can be store at the index of that number.
+// Each function call gets allocated a "frame" which is just the offset that each variable
+// should be index from for the duration of that call.
+//  Call "main" pointer(frame size 3)
+//  |
+//  |        Call "foo" pointer(frame size 2)
+//  |        |
+// [a, b, c, a, b]
 struct Environment {
   // Pointer into env for the start of the current frame
   current_pointer: usize,
@@ -150,11 +160,14 @@ impl Heap {
   }
 }
 
+// A getter function for when you just want the Value enum
 #[inline(always)]
 fn get_value<'a>(vars: &'a Environment, index: usize, args: &[u32]) -> &'a Value {
   vars.get(&args[index])
 }
 
+// A getter function for when you know what constructor of the Value enum you have and
+// you just want the underlying value(like a f64).
 #[inline(always)]
 fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[u32]) -> T
 where
@@ -269,6 +282,19 @@ impl<'a> From<&'a Value> for &'a Pointer {
       unreachable!()
     }
   }
+}
+
+// Sets up the Environment for the next function call with the supplied arguments
+fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[u32], vars: &mut Environment) {
+  vars.push_frame(callee_func.num_of_vars);
+
+  args
+    .iter()
+    .zip(callee_func.args_as_nums.iter())
+    .for_each(|(arg_name, expected_arg)| {
+      let arg = vars.get_from_last_frame(arg_name).clone();
+      vars.set(*expected_arg, arg);
+    })
 }
 
 // todo do this with less function arguments
@@ -409,19 +435,18 @@ fn execute_value_op<'a, T: std::io::Write>(
 
       value_store.set(dest, result)
     }
-    Phi => {
-      if last_label.is_none() {
-        return Err(InterpError::NoLastLabel);
-      } else {
+    Phi => match last_label {
+      None => return Err(InterpError::NoLastLabel),
+      Some(last_label) => {
         let arg = labels
           .iter()
-          .position(|l| l == last_label.unwrap())
-          .ok_or_else(|| InterpError::PhiMissingLabel(last_label.unwrap().to_string()))
-          .map(|i| value_store.get(args.get(i).unwrap()))?
+          .position(|l| l == last_label)
+          .ok_or_else(|| InterpError::PhiMissingLabel(last_label.to_string()))
+          .map(|i| get_value(value_store, i, args))?
           .clone();
         value_store.set(dest, arg);
       }
-    }
+    },
     Alloc => {
       let arg0 = get_arg::<i64>(value_store, 0, args);
       let res = heap.alloc(arg0)?;
@@ -440,21 +465,6 @@ fn execute_value_op<'a, T: std::io::Write>(
     }
   }
   Ok(())
-}
-
-// Sets up the Environment for the next function call with the supplied arguments
-// We allow the needless collect because clippy isn't smart enough to see the mutable borrow
-#[allow(clippy::needless_collect)]
-fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[u32], vars: &mut Environment) {
-  vars.push_frame(callee_func.num_of_vars);
-
-  args
-    .iter()
-    .zip(callee_func.args_as_nums.iter())
-    .for_each(|(arg_name, expected_arg)| {
-      let arg = vars.get_from_last_frame(arg_name).clone();
-      vars.set(*expected_arg, arg);
-    })
 }
 
 // todo do this with less function arguments
@@ -482,13 +492,14 @@ fn execute_effect_op<'a, T: std::io::Write>(
       let exit_idx = if bool_arg0 { 0 } else { 1 };
       *next_block_idx = Some(curr_block.exit[exit_idx]);
     }
-    Return => match &func.return_type {
-      Some(_) => {
-        let arg0 = get_value(value_store, 0, args);
-        return Ok(Some(arg0.clone()));
-      }
-      None => return Ok(None),
-    },
+    Return => {
+      return Ok(
+        func
+          .return_type
+          .as_ref()
+          .map(|_| get_value(value_store, 0, args).clone()),
+      )
+    }
     Print => {
       writeln!(
         out,
@@ -499,8 +510,10 @@ fn execute_effect_op<'a, T: std::io::Write>(
           .collect::<Vec<String>>()
           .join(" ")
       )
+      // We call flush here in case `out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
+      // Otherwise we would expect this flush to be a nop.
+      .and_then(|_| out.flush())
       .map_err(|e| InterpError::IoError(Box::new(e)))?;
-      out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
     }
     Nop => {}
     Call => {
@@ -535,7 +548,6 @@ fn execute<'a, T: std::io::Write>(
   heap: &mut Heap,
   instruction_count: &mut u32,
 ) -> Result<Option<Value>, PositionalInterpError> {
-  // Map from variable name to value.
   let mut last_label;
   let mut current_label = None;
   let mut curr_block_idx = 0;
@@ -550,6 +562,7 @@ fn execute<'a, T: std::io::Write>(
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
+    // This helps to implement fallthrough with basic blocks when there is no control flow instruction at the end of the block
     let mut next_block_idx = if curr_block.exit.len() == 1 {
       Some(curr_block.exit[0])
     } else {
@@ -734,6 +747,8 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
 
   if profiling {
     writeln!(profiling_out, "total_dyn_inst: {instruction_count}")
+      // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
+      // Otherwise we would expect this flush to be a nop.
       .and_then(|_| profiling_out.flush())
       .map_err(|e| PositionalInterpError::new(InterpError::IoError(Box::new(e))))?;
   }
