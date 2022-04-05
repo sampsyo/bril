@@ -304,7 +304,7 @@ fn execute_value_op<'a, T: std::io::Write>(
   dest: u32,
   args: &[u32],
   labels: &[String],
-  funcs: &[String],
+  funcs: &[u32],
   last_label: Option<&String>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::*;
@@ -418,10 +418,7 @@ fn execute_value_op<'a, T: std::io::Write>(
       state.env.set(dest, Value::Bool(arg0 >= arg1));
     }
     Call => {
-      let callee_func = state
-        .prog
-        .get(&funcs[0])
-        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+      let callee_func = state.prog.get(funcs[0]).unwrap();
 
       make_func_args(callee_func, args, &mut state.env);
 
@@ -469,7 +466,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
   func: &BBFunction,
   op: &bril_rs::EffectOps,
   args: &[u32],
-  funcs: &[String],
+  funcs: &[u32],
   curr_block: &BasicBlock,
   next_block_idx: &mut Option<usize>,
 ) -> Result<Option<Value>, InterpError> {
@@ -508,10 +505,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
     }
     Nop => {}
     Call => {
-      let callee_func = state
-        .prog
-        .get(&funcs[0])
-        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+      let callee_func = state.prog.get(funcs[0]).unwrap();
 
       make_func_args(callee_func, args, &mut state.env);
 
@@ -589,7 +583,7 @@ fn execute<'a, T: std::io::Write>(
           op_type: _,
           args: _,
           labels,
-          funcs,
+          funcs: _,
           pos,
         } => {
           execute_value_op(
@@ -598,7 +592,7 @@ fn execute<'a, T: std::io::Write>(
             numified_code.dest.unwrap(),
             &numified_code.args,
             labels,
-            funcs,
+            &numified_code.funcs,
             last_label,
           )
           .map_err(|e| e.add_pos(*pos))?;
@@ -607,7 +601,7 @@ fn execute<'a, T: std::io::Write>(
           op,
           args: _,
           labels: _,
-          funcs,
+          funcs: _,
           pos,
         } => {
           result = execute_effect_op(
@@ -615,7 +609,7 @@ fn execute<'a, T: std::io::Write>(
             func,
             op,
             &numified_code.args,
-            funcs,
+            &numified_code.funcs,
             curr_block,
             &mut next_block_idx,
           )
@@ -719,7 +713,8 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
   mut profiling_out: U,
 ) -> Result<(), PositionalInterpError> {
   let main_func = prog
-    .get("main")
+    .index_of_main
+    .map(|i| prog.get(i).unwrap())
     .ok_or_else(|| PositionalInterpError::new(InterpError::NoMainFunction))?;
 
   if main_func.return_type.is_some() {
