@@ -7,7 +7,7 @@ use crate::error::{InterpError, PositionalInterpError};
 #[derive(Debug)]
 pub struct BBProgram {
   #[doc(hidden)]
-  pub index_of_main: Option<u32>,
+  pub index_of_main: Option<usize>,
   #[doc(hidden)]
   pub func_index: Vec<BBFunction>,
 }
@@ -25,11 +25,11 @@ impl BBProgram {
   pub fn new(prog: Program) -> Result<Self, InterpError> {
     let num_funcs = prog.functions.len();
 
-    let func_map: FxHashMap<String, u32> = prog
+    let func_map: FxHashMap<String, usize> = prog
       .functions
       .iter()
       .enumerate()
-      .map(|(idx, func)| (func.name.clone(), idx as u32))
+      .map(|(idx, func)| (func.name.clone(), idx))
       .collect();
 
     let func_index = prog
@@ -50,8 +50,8 @@ impl BBProgram {
   }
 
   #[doc(hidden)]
-  pub fn get(&self, func_name: u32) -> Option<&BBFunction> {
-    self.func_index.get(func_name as usize)
+  pub fn get(&self, func_name: usize) -> Option<&BBFunction> {
+    self.func_index.get(func_name)
   }
 }
 
@@ -81,18 +81,18 @@ impl BasicBlock {
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct NumifiedInstruction {
-  pub dest: Option<u32>,
-  pub args: Vec<u32>,
-  pub funcs: Vec<u32>,
+  pub dest: Option<usize>,
+  pub args: Vec<usize>,
+  pub funcs: Vec<usize>,
 }
 
 fn get_num_from_map(
   variable_name: &str,
   // The total number of variables so far. Only grows
-  num_of_vars: &mut u32,
+  num_of_vars: &mut usize,
   // A map from variables to numbers
-  num_var_map: &mut FxHashMap<String, u32>,
-) -> u32 {
+  num_var_map: &mut FxHashMap<String, usize>,
+) -> usize {
   match num_var_map.get(variable_name) {
     Some(i) => *i,
     None => {
@@ -108,11 +108,11 @@ impl NumifiedInstruction {
   fn new(
     instr: &Instruction,
     // The total number of variables so far. Only grows
-    num_of_vars: &mut u32,
+    num_of_vars: &mut usize,
     // A map from variables to numbers
-    num_var_map: &mut FxHashMap<String, u32>,
+    num_var_map: &mut FxHashMap<String, usize>,
     // A map from function names to numbers
-    func_map: &FxHashMap<String, u32>,
+    func_map: &FxHashMap<String, usize>,
   ) -> Result<Self, PositionalInterpError> {
     Ok(match instr {
       Instruction::Constant { dest, .. } => Self {
@@ -140,7 +140,7 @@ impl NumifiedInstruction {
               .cloned()
               .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(*pos))
           })
-          .collect::<Result<Vec<u32>, PositionalInterpError>>()?,
+          .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
       },
       Instruction::Effect {
         args, funcs, pos, ..
@@ -158,7 +158,7 @@ impl NumifiedInstruction {
               .cloned()
               .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(*pos))
           })
-          .collect::<Result<Vec<u32>, PositionalInterpError>>()?,
+          .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
       },
     })
   }
@@ -174,13 +174,13 @@ pub struct BBFunction {
   // the following is an optimization by replacing the string representation of variables with a number
   // Variable names are ordered from 0 to num_of_vars.
   // These replacements are found for function args and for code in the BasicBlocks
-  pub num_of_vars: u32,
-  pub args_as_nums: Vec<u32>,
+  pub num_of_vars: usize,
+  pub args_as_nums: Vec<usize>,
   pub pos: Option<Position>,
 }
 
 impl BBFunction {
-  fn new(f: Function, func_map: &FxHashMap<String, u32>) -> Result<Self, InterpError> {
+  fn new(f: Function, func_map: &FxHashMap<String, usize>) -> Result<Self, InterpError> {
     let (mut func, label_map) = Self::find_basic_blocks(f, func_map)?;
     func.build_cfg(label_map)?;
     Ok(func)
@@ -188,7 +188,7 @@ impl BBFunction {
 
   fn find_basic_blocks(
     func: bril_rs::Function,
-    func_map: &FxHashMap<String, u32>,
+    func_map: &FxHashMap<String, usize>,
   ) -> Result<(Self, FxHashMap<String, usize>), PositionalInterpError> {
     let mut blocks = Vec::new();
     let mut label_map = FxHashMap::default();

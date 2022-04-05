@@ -36,42 +36,39 @@ struct Environment {
 
 impl Environment {
   #[inline(always)]
-  pub fn new(size: u32) -> Self {
+  pub fn new(size: usize) -> Self {
     Self {
       current_pointer: 0,
-      current_frame_size: size as usize,
+      current_frame_size: size,
       stack_pointers: Vec::new(),
       // Allocate a larger stack size so the interpreter needs to allocate less often
-      env: vec![Value::default(); (max(size, 50)) as usize],
+      env: vec![Value::default(); max(size, 50)],
     }
   }
   #[inline(always)]
-  pub fn get(&self, ident: &u32) -> &Value {
+  pub fn get(&self, ident: &usize) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
-    self
-      .env
-      .get(self.current_pointer + *ident as usize)
-      .unwrap()
+    self.env.get(self.current_pointer + *ident).unwrap()
   }
 
   // Used for getting arguments that should be passed to the current frame from the previous one
-  pub fn get_from_last_frame(&self, ident: &u32) -> &Value {
+  pub fn get_from_last_frame(&self, ident: &usize) -> &Value {
     let past_pointer = self.stack_pointers.last().unwrap().0;
-    self.env.get(past_pointer + *ident as usize).unwrap()
+    self.env.get(past_pointer + *ident).unwrap()
   }
 
   #[inline(always)]
-  pub fn set(&mut self, ident: u32, val: Value) {
-    self.env[self.current_pointer + ident as usize] = val;
+  pub fn set(&mut self, ident: usize, val: Value) {
+    self.env[self.current_pointer + ident] = val;
   }
   // Push a new frame onto the stack
-  pub fn push_frame(&mut self, size: u32) {
+  pub fn push_frame(&mut self, size: usize) {
     self
       .stack_pointers
       .push((self.current_pointer, self.current_frame_size));
     self.current_pointer += self.current_frame_size;
-    self.current_frame_size = size as usize;
+    self.current_frame_size = size;
 
     // Check that the stack is large enough
     if self.current_pointer + self.current_frame_size > self.env.len() {
@@ -162,14 +159,14 @@ impl Heap {
 
 // A getter function for when you just want the Value enum
 #[inline(always)]
-fn get_value<'a>(vars: &'a Environment, index: usize, args: &[u32]) -> &'a Value {
+fn get_value<'a>(vars: &'a Environment, index: usize, args: &[usize]) -> &'a Value {
   vars.get(&args[index])
 }
 
 // A getter function for when you know what constructor of the Value enum you have and
 // you just want the underlying value(like a f64).
 #[inline(always)]
-fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[u32]) -> T
+fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[usize]) -> T
 where
   T: From<&'a Value>,
 {
@@ -285,7 +282,7 @@ impl<'a> From<&'a Value> for &'a Pointer {
 }
 
 // Sets up the Environment for the next function call with the supplied arguments
-fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[u32], vars: &mut Environment) {
+fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut Environment) {
   vars.push_frame(callee_func.num_of_vars);
 
   args
@@ -301,10 +298,10 @@ fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[u32], vars: &mut Envi
 fn execute_value_op<'a, T: std::io::Write>(
   state: &'a mut State<T>,
   op: &bril_rs::ValueOps,
-  dest: u32,
-  args: &[u32],
+  dest: usize,
+  args: &[usize],
   labels: &[String],
-  funcs: &[u32],
+  funcs: &[usize],
   last_label: Option<&String>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::*;
@@ -465,8 +462,8 @@ fn execute_effect_op<'a, T: std::io::Write>(
   state: &'a mut State<T>,
   func: &BBFunction,
   op: &bril_rs::EffectOps,
-  args: &[u32],
-  funcs: &[u32],
+  args: &[usize],
+  funcs: &[usize],
   curr_block: &BasicBlock,
   next_block_idx: &mut Option<usize>,
 ) -> Result<Option<Value>, InterpError> {
@@ -628,7 +625,7 @@ fn execute<'a, T: std::io::Write>(
 fn parse_args(
   mut env: Environment,
   args: &[bril_rs::Argument],
-  args_as_nums: &[u32],
+  args_as_nums: &[usize],
   inputs: &[String],
 ) -> Result<Environment, InterpError> {
   if args.is_empty() && inputs.is_empty() {

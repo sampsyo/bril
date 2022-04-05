@@ -229,7 +229,7 @@ fn type_check_instruction<'a>(
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
-      let callee_func = prog.func_index.get(num_instr.funcs[0] as usize).unwrap();
+      let callee_func = prog.func_index.get(num_instr.funcs[0]).unwrap();
 
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
@@ -404,7 +404,7 @@ fn type_check_instruction<'a>(
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
-      let callee_func = prog.func_index.get(num_instr.funcs[0] as usize).unwrap();
+      let callee_func = prog.func_index.get(num_instr.funcs[0]).unwrap();
 
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
