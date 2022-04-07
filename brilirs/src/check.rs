@@ -1,5 +1,5 @@
 use crate::{
-  basic_block::{BBFunction, BBProgram},
+  basic_block::{BBFunction, BBProgram, NumifiedInstruction},
   error::PositionalInterpError,
 };
 use bril_rs::{ConstOps, EffectOps, Instruction, Type, ValueOps};
@@ -84,6 +84,7 @@ fn get_ptr_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
 
 fn type_check_instruction<'a>(
   instr: &'a Instruction,
+  num_instr: &NumifiedInstruction,
   func: &BBFunction,
   prog: &BBProgram,
   env: &mut FxHashMap<&'a str, &'a Type>,
@@ -228,10 +229,7 @@ fn type_check_instruction<'a>(
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
-      let callee_func = prog
-        .func_index
-        .get(&funcs[0])
-        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+      let callee_func = prog.func_index.get(num_instr.funcs[0]).unwrap();
 
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
@@ -406,10 +404,7 @@ fn type_check_instruction<'a>(
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
-      let callee_func = prog
-        .func_index
-        .get(&funcs[0])
-        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+      let callee_func = prog.func_index.get(num_instr.funcs[0]).unwrap();
 
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
@@ -482,9 +477,14 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Positi
 
   while let Some(b) = work_list.pop() {
     let block = bbfunc.blocks.get(b).unwrap();
-    block.instrs.iter().try_for_each(|i| {
-      type_check_instruction(i, bbfunc, bbprog, &mut env).map_err(|e| e.add_pos(i.get_pos()))
-    })?;
+    block
+      .instrs
+      .iter()
+      .zip(block.numified_instrs.iter())
+      .try_for_each(|(i, num_i)| {
+        type_check_instruction(i, num_i, bbfunc, bbprog, &mut env)
+          .map_err(|e| e.add_pos(i.get_pos()))
+      })?;
     done_list.push(b);
     block.exit.iter().for_each(|e| {
       if !done_list.contains(e) && !work_list.contains(e) {
@@ -503,5 +503,5 @@ pub fn type_check(bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
   bbprog
     .func_index
     .iter()
-    .try_for_each(|(_, bbfunc)| type_check_func(bbfunc, bbprog))
+    .try_for_each(|bbfunc| type_check_func(bbfunc, bbprog))
 }

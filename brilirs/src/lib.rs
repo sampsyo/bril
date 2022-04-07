@@ -2,7 +2,6 @@
 #![warn(clippy::all, clippy::nursery, clippy::cargo)]
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
-#![allow(clippy::too_many_arguments)]
 
 use std::error::Error;
 

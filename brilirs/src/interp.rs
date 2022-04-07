@@ -13,6 +13,16 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 use std::cmp::max;
 
+// The Environment is the data structure used to represent the stack of the program.
+// The values of all variables are store here. Each variable is represented as a number so
+// each value can be store at the index of that number.
+// Each function call gets allocated a "frame" which is just the offset that each variable
+// should be index from for the duration of that call.
+//  Call "main" pointer(frame size 3)
+//  |
+//  |        Call "foo" pointer(frame size 2)
+//  |        |
+// [a, b, c, a, b]
 struct Environment {
   // Pointer into env for the start of the current frame
   current_pointer: usize,
@@ -26,42 +36,39 @@ struct Environment {
 
 impl Environment {
   #[inline(always)]
-  pub fn new(size: u32) -> Self {
+  pub fn new(size: usize) -> Self {
     Self {
       current_pointer: 0,
-      current_frame_size: size as usize,
+      current_frame_size: size,
       stack_pointers: Vec::new(),
       // Allocate a larger stack size so the interpreter needs to allocate less often
-      env: vec![Value::default(); (max(size, 50)) as usize],
+      env: vec![Value::default(); max(size, 50)],
     }
   }
   #[inline(always)]
-  pub fn get(&self, ident: &u32) -> &Value {
+  pub fn get(&self, ident: &usize) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
-    self
-      .env
-      .get(self.current_pointer + *ident as usize)
-      .unwrap()
+    self.env.get(self.current_pointer + *ident).unwrap()
   }
 
   // Used for getting arguments that should be passed to the current frame from the previous one
-  pub fn get_from_last_frame(&self, ident: &u32) -> &Value {
+  pub fn get_from_last_frame(&self, ident: &usize) -> &Value {
     let past_pointer = self.stack_pointers.last().unwrap().0;
-    self.env.get(past_pointer + *ident as usize).unwrap()
+    self.env.get(past_pointer + *ident).unwrap()
   }
 
   #[inline(always)]
-  pub fn set(&mut self, ident: u32, val: Value) {
-    self.env[self.current_pointer + ident as usize] = val;
+  pub fn set(&mut self, ident: usize, val: Value) {
+    self.env[self.current_pointer + ident] = val;
   }
   // Push a new frame onto the stack
-  pub fn push_frame(&mut self, size: u32) {
+  pub fn push_frame(&mut self, size: usize) {
     self
       .stack_pointers
       .push((self.current_pointer, self.current_frame_size));
     self.current_pointer += self.current_frame_size;
-    self.current_frame_size = size as usize;
+    self.current_frame_size = size;
 
     // Check that the stack is large enough
     if self.current_pointer + self.current_frame_size > self.env.len() {
@@ -150,13 +157,16 @@ impl Heap {
   }
 }
 
+// A getter function for when you just want the Value enum
 #[inline(always)]
-fn get_value<'a>(vars: &'a Environment, index: usize, args: &[u32]) -> &'a Value {
+fn get_value<'a>(vars: &'a Environment, index: usize, args: &[usize]) -> &'a Value {
   vars.get(&args[index])
 }
 
+// A getter function for when you know what constructor of the Value enum you have and
+// you just want the underlying value(like a f64).
 #[inline(always)]
-fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[u32]) -> T
+fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[usize]) -> T
 where
   T: From<&'a Value>,
 {
@@ -271,181 +281,8 @@ impl<'a> From<&'a Value> for &'a Pointer {
   }
 }
 
-// todo do this with less function arguments
-#[inline(always)]
-fn execute_value_op<'a, T: std::io::Write>(
-  prog: &'a BBProgram,
-  op: &bril_rs::ValueOps,
-  dest: u32,
-  args: &[u32],
-  labels: &[String],
-  funcs: &[String],
-  out: &mut T,
-  value_store: &mut Environment,
-  heap: &mut Heap,
-  last_label: Option<&String>,
-  instruction_count: &mut u32,
-) -> Result<(), InterpError> {
-  use bril_rs::ValueOps::*;
-  match *op {
-    Add => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Int(arg0.wrapping_add(arg1)));
-    }
-    Mul => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Int(arg0.wrapping_mul(arg1)));
-    }
-    Sub => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Int(arg0.wrapping_sub(arg1)));
-    }
-    Div => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Int(arg0.wrapping_div(arg1)));
-    }
-    Eq => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 == arg1));
-    }
-    Lt => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 < arg1));
-    }
-    Gt => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 > arg1));
-    }
-    Le => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 <= arg1));
-    }
-    Ge => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 >= arg1));
-    }
-    Not => {
-      let arg0 = get_arg::<bool>(value_store, 0, args);
-      value_store.set(dest, Value::Bool(!arg0));
-    }
-    And => {
-      let arg0 = get_arg::<bool>(value_store, 0, args);
-      let arg1 = get_arg::<bool>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 && arg1));
-    }
-    Or => {
-      let arg0 = get_arg::<bool>(value_store, 0, args);
-      let arg1 = get_arg::<bool>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 || arg1));
-    }
-    Id => {
-      let src = get_value(value_store, 0, args).clone();
-      value_store.set(dest, src);
-    }
-    Fadd => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Float(arg0 + arg1));
-    }
-    Fmul => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Float(arg0 * arg1));
-    }
-    Fsub => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Float(arg0 - arg1));
-    }
-    Fdiv => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Float(arg0 / arg1));
-    }
-    Feq => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 == arg1));
-    }
-    Flt => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 < arg1));
-    }
-    Fgt => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 > arg1));
-    }
-    Fle => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 <= arg1));
-    }
-    Fge => {
-      let arg0 = get_arg::<f64>(value_store, 0, args);
-      let arg1 = get_arg::<f64>(value_store, 1, args);
-      value_store.set(dest, Value::Bool(arg0 >= arg1));
-    }
-    Call => {
-      let callee_func = prog
-        .get(&funcs[0])
-        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
-
-      make_func_args(callee_func, args, value_store);
-
-      let result = execute(prog, callee_func, out, value_store, heap, instruction_count)?.unwrap();
-
-      value_store.pop_frame();
-
-      value_store.set(dest, result)
-    }
-    Phi => {
-      if last_label.is_none() {
-        return Err(InterpError::NoLastLabel);
-      } else {
-        let arg = labels
-          .iter()
-          .position(|l| l == last_label.unwrap())
-          .ok_or_else(|| InterpError::PhiMissingLabel(last_label.unwrap().to_string()))
-          .map(|i| value_store.get(args.get(i).unwrap()))?
-          .clone();
-        value_store.set(dest, arg);
-      }
-    }
-    Alloc => {
-      let arg0 = get_arg::<i64>(value_store, 0, args);
-      let res = heap.alloc(arg0)?;
-      value_store.set(dest, res)
-    }
-    Load => {
-      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
-      let res = heap.read(arg0)?;
-      value_store.set(dest, res.clone())
-    }
-    PtrAdd => {
-      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
-      let arg1 = get_arg::<i64>(value_store, 1, args);
-      let res = Value::Pointer(arg0.add(arg1));
-      value_store.set(dest, res)
-    }
-  }
-  Ok(())
-}
-
 // Sets up the Environment for the next function call with the supplied arguments
-// We allow the needless collect because clippy isn't smart enough to see the mutable borrow
-#[allow(clippy::needless_collect)]
-fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[u32], vars: &mut Environment) {
+fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut Environment) {
   vars.push_frame(callee_func.num_of_vars);
 
   args
@@ -457,20 +294,178 @@ fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[u32], vars: &mut Envi
     })
 }
 
-// todo do this with less function arguments
+#[inline(always)]
+fn execute_value_op<'a, T: std::io::Write>(
+  state: &'a mut State<T>,
+  op: &bril_rs::ValueOps,
+  dest: usize,
+  args: &[usize],
+  labels: &[String],
+  funcs: &[usize],
+  last_label: Option<&String>,
+) -> Result<(), InterpError> {
+  use bril_rs::ValueOps::*;
+  match *op {
+    Add => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Int(arg0.wrapping_add(arg1)));
+    }
+    Mul => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Int(arg0.wrapping_mul(arg1)));
+    }
+    Sub => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Int(arg0.wrapping_sub(arg1)));
+    }
+    Div => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Int(arg0.wrapping_div(arg1)));
+    }
+    Eq => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 == arg1));
+    }
+    Lt => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 < arg1));
+    }
+    Gt => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 > arg1));
+    }
+    Le => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 <= arg1));
+    }
+    Ge => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 >= arg1));
+    }
+    Not => {
+      let arg0 = get_arg::<bool>(&state.env, 0, args);
+      state.env.set(dest, Value::Bool(!arg0));
+    }
+    And => {
+      let arg0 = get_arg::<bool>(&state.env, 0, args);
+      let arg1 = get_arg::<bool>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 && arg1));
+    }
+    Or => {
+      let arg0 = get_arg::<bool>(&state.env, 0, args);
+      let arg1 = get_arg::<bool>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 || arg1));
+    }
+    Id => {
+      let src = get_value(&state.env, 0, args).clone();
+      state.env.set(dest, src);
+    }
+    Fadd => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Float(arg0 + arg1));
+    }
+    Fmul => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Float(arg0 * arg1));
+    }
+    Fsub => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Float(arg0 - arg1));
+    }
+    Fdiv => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Float(arg0 / arg1));
+    }
+    Feq => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 == arg1));
+    }
+    Flt => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 < arg1));
+    }
+    Fgt => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 > arg1));
+    }
+    Fle => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 <= arg1));
+    }
+    Fge => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      state.env.set(dest, Value::Bool(arg0 >= arg1));
+    }
+    Call => {
+      let callee_func = state.prog.get(funcs[0]).unwrap();
+
+      make_func_args(callee_func, args, &mut state.env);
+
+      let result = execute(state, callee_func)?.unwrap();
+
+      state.env.pop_frame();
+
+      state.env.set(dest, result)
+    }
+    Phi => match last_label {
+      None => return Err(InterpError::NoLastLabel),
+      Some(last_label) => {
+        let arg = labels
+          .iter()
+          .position(|l| l == last_label)
+          .ok_or_else(|| InterpError::PhiMissingLabel(last_label.to_string()))
+          .map(|i| get_value(&state.env, i, args))?
+          .clone();
+        state.env.set(dest, arg);
+      }
+    },
+    Alloc => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let res = state.heap.alloc(arg0)?;
+      state.env.set(dest, res)
+    }
+    Load => {
+      let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
+      let res = state.heap.read(arg0)?;
+      state.env.set(dest, res.clone())
+    }
+    PtrAdd => {
+      let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      let res = Value::Pointer(arg0.add(arg1));
+      state.env.set(dest, res)
+    }
+  }
+  Ok(())
+}
+
 #[inline(always)]
 fn execute_effect_op<'a, T: std::io::Write>(
-  prog: &'a BBProgram,
+  state: &'a mut State<T>,
   func: &BBFunction,
   op: &bril_rs::EffectOps,
-  args: &[u32],
-  funcs: &[String],
+  args: &[usize],
+  funcs: &[usize],
   curr_block: &BasicBlock,
-  out: &mut T,
-  value_store: &mut Environment,
-  heap: &mut Heap,
   next_block_idx: &mut Option<usize>,
-  instruction_count: &mut u32,
 ) -> Result<Option<Value>, InterpError> {
   use bril_rs::EffectOps::*;
   match op {
@@ -478,49 +473,50 @@ fn execute_effect_op<'a, T: std::io::Write>(
       *next_block_idx = Some(curr_block.exit[0]);
     }
     Branch => {
-      let bool_arg0 = get_arg::<bool>(value_store, 0, args);
+      let bool_arg0 = get_arg::<bool>(&state.env, 0, args);
       let exit_idx = if bool_arg0 { 0 } else { 1 };
       *next_block_idx = Some(curr_block.exit[exit_idx]);
     }
-    Return => match &func.return_type {
-      Some(_) => {
-        let arg0 = get_value(value_store, 0, args);
-        return Ok(Some(arg0.clone()));
-      }
-      None => return Ok(None),
-    },
+    Return => {
+      return Ok(
+        func
+          .return_type
+          .as_ref()
+          .map(|_| get_value(&state.env, 0, args).clone()),
+      )
+    }
     Print => {
       writeln!(
-        out,
+        state.out,
         "{}",
         args
           .iter()
-          .map(|a| value_store.get(a).to_string())
+          .map(|a| state.env.get(a).to_string())
           .collect::<Vec<String>>()
           .join(" ")
       )
+      // We call flush here in case `out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
+      // Otherwise we would expect this flush to be a nop.
+      .and_then(|_| state.out.flush())
       .map_err(|e| InterpError::IoError(Box::new(e)))?;
-      out.flush().map_err(|e| InterpError::IoError(Box::new(e)))?;
     }
     Nop => {}
     Call => {
-      let callee_func = prog
-        .get(&funcs[0])
-        .ok_or_else(|| InterpError::FuncNotFound(funcs[0].clone()))?;
+      let callee_func = state.prog.get(funcs[0]).unwrap();
 
-      make_func_args(callee_func, args, value_store);
+      make_func_args(callee_func, args, &mut state.env);
 
-      execute(prog, callee_func, out, value_store, heap, instruction_count)?;
-      value_store.pop_frame();
+      execute(state, callee_func)?;
+      state.env.pop_frame();
     }
     Store => {
-      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
-      let arg1 = get_value(value_store, 1, args);
-      heap.write(arg0, arg1.clone())?
+      let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
+      let arg1 = get_value(&state.env, 1, args);
+      state.heap.write(arg0, arg1.clone())?
     }
     Free => {
-      let arg0 = get_arg::<&Pointer>(value_store, 0, args);
-      heap.free(arg0)?
+      let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
+      state.heap.free(arg0)?
     }
     Speculate | Commit | Guard => unimplemented!(),
   }
@@ -528,14 +524,9 @@ fn execute_effect_op<'a, T: std::io::Write>(
 }
 
 fn execute<'a, T: std::io::Write>(
-  prog: &'a BBProgram,
+  state: &mut State<'a, T>,
   func: &'a BBFunction,
-  out: &mut T,
-  value_store: &mut Environment,
-  heap: &mut Heap,
-  instruction_count: &mut u32,
 ) -> Result<Option<Value>, PositionalInterpError> {
-  // Map from variable name to value.
   let mut last_label;
   let mut current_label = None;
   let mut curr_block_idx = 0;
@@ -546,10 +537,11 @@ fn execute<'a, T: std::io::Write>(
     let curr_instrs = &curr_block.instrs;
     let curr_numified_instrs = &curr_block.numified_instrs;
     // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
-    *instruction_count += curr_instrs.len() as u32;
+    state.instruction_count += curr_instrs.len() as u32;
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
+    // This helps to implement fallthrough with basic blocks when there is no control flow instruction at the end of the block
     let mut next_block_idx = if curr_block.exit.len() == 1 {
       Some(curr_block.exit[0])
     } else {
@@ -568,16 +560,18 @@ fn execute<'a, T: std::io::Write>(
           // Integer literals can be promoted to Floating point
           if const_type == &bril_rs::Type::Float {
             match value {
-              bril_rs::Literal::Int(i) => {
-                value_store.set(numified_code.dest.unwrap(), Value::Float(*i as f64))
-              }
+              bril_rs::Literal::Int(i) => state
+                .env
+                .set(numified_code.dest.unwrap(), Value::Float(*i as f64)),
               bril_rs::Literal::Float(f) => {
-                value_store.set(numified_code.dest.unwrap(), Value::Float(*f))
+                state.env.set(numified_code.dest.unwrap(), Value::Float(*f))
               }
               bril_rs::Literal::Bool(_) => unreachable!(),
             }
           } else {
-            value_store.set(numified_code.dest.unwrap(), Value::from(value));
+            state
+              .env
+              .set(numified_code.dest.unwrap(), Value::from(value));
           };
         }
         Instruction::Value {
@@ -586,21 +580,17 @@ fn execute<'a, T: std::io::Write>(
           op_type: _,
           args: _,
           labels,
-          funcs,
+          funcs: _,
           pos,
         } => {
           execute_value_op(
-            prog,
+            state,
             op,
             numified_code.dest.unwrap(),
             &numified_code.args,
             labels,
-            funcs,
-            out,
-            value_store,
-            heap,
+            &numified_code.funcs,
             last_label,
-            instruction_count,
           )
           .map_err(|e| e.add_pos(*pos))?;
         }
@@ -608,21 +598,17 @@ fn execute<'a, T: std::io::Write>(
           op,
           args: _,
           labels: _,
-          funcs,
+          funcs: _,
           pos,
         } => {
           result = execute_effect_op(
-            prog,
+            state,
             func,
             op,
             &numified_code.args,
-            funcs,
+            &numified_code.funcs,
             curr_block,
-            out,
-            value_store,
-            heap,
             &mut next_block_idx,
-            instruction_count,
           )
           .map_err(|e| e.add_pos(*pos))?;
         }
@@ -639,7 +625,7 @@ fn execute<'a, T: std::io::Write>(
 fn parse_args(
   mut env: Environment,
   args: &[bril_rs::Argument],
-  args_as_nums: &[u32],
+  args_as_nums: &[usize],
   inputs: &[String],
 ) -> Result<Environment, InterpError> {
   if args.is_empty() && inputs.is_empty() {
@@ -694,16 +680,38 @@ fn parse_args(
   }
 }
 
+// State captures the parts of the interpreter that are used across function boundaries
+struct State<'a, T: std::io::Write> {
+  prog: &'a BBProgram,
+  env: Environment,
+  heap: Heap,
+  out: T,
+  instruction_count: u32,
+}
+
+impl<'a, T: std::io::Write> State<'a, T> {
+  fn new(prog: &'a BBProgram, env: Environment, heap: Heap, out: T) -> Self {
+    Self {
+      prog,
+      env,
+      heap,
+      out,
+      instruction_count: 0,
+    }
+  }
+}
+
 /// The entrance point to the interpreter. It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [std::io::Write]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [std::io::stderr]
 pub fn execute_main<T: std::io::Write, U: std::io::Write>(
   prog: &BBProgram,
-  mut out: T,
+  out: T,
   input_args: &[String],
   profiling: bool,
   mut profiling_out: U,
 ) -> Result<(), PositionalInterpError> {
   let main_func = prog
-    .get("main")
+    .index_of_main
+    .map(|i| prog.get(i).unwrap())
     .ok_or_else(|| PositionalInterpError::new(InterpError::NoMainFunction))?;
 
   if main_func.return_type.is_some() {
@@ -711,29 +719,24 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
       .map_err(|e| e.add_pos(main_func.pos));
   }
 
-  let env = Environment::new(main_func.num_of_vars);
-  let mut heap = Heap::default();
+  let mut env = Environment::new(main_func.num_of_vars);
+  let heap = Heap::default();
 
-  let mut value_store = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
+  env = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
     .map_err(|e| e.add_pos(main_func.pos))?;
 
-  let mut instruction_count = 0;
+  let mut state = State::new(prog, env, heap, out);
 
-  execute(
-    prog,
-    main_func,
-    &mut out,
-    &mut value_store,
-    &mut heap,
-    &mut instruction_count,
-  )?;
+  execute(&mut state, main_func)?;
 
-  if !heap.is_empty() {
+  if !state.heap.is_empty() {
     return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos));
   }
 
   if profiling {
-    writeln!(profiling_out, "total_dyn_inst: {instruction_count}")
+    writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
+      // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
+      // Otherwise we would expect this flush to be a nop.
       .and_then(|_| profiling_out.flush())
       .map_err(|e| PositionalInterpError::new(InterpError::IoError(Box::new(e))))?;
   }
