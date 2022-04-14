@@ -32,7 +32,11 @@ These are the operations that manipulate memory allocations:
           "type": {"ptr": "int"}
       }
 
-* `free`: Delete an allocation. One argument: a pointer produced by `alloc`. No return value. It is an error to access or free a region that has already been freed.
+* `free`: Delete an allocation. One argument: a pointer produced by `alloc`. No return value.
 * `store`: Write into a memory region. Two arguments: a pointer and a value. The pointer type must agree with the value type (e.g., if the second argument is an `int`, the first argument must be a `ptr<int>`). No return value.
 * `load`: Read from memory. One argument: a pointer. The return type is the pointed-to type for that pointer.
 * `ptradd`: Adjust the offset for a pointer, producing a new pointer to a different location in the same memory region. Two arguments: a pointer and an offset (an integer, which may be negative). The return type is the same as the original pointer type.
+
+It is an error to access or free a region that has already been freed.
+It is also an error to access (`load` or `store`) a pointer that is out of bounds, i.e., outside the range of valid indices for a given allocation.
+(Doing a `ptradd` to produce an out-of-bounds pointer is not an error; subsequently accessing that pointer is.)
