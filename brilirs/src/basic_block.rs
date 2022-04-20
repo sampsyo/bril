@@ -279,6 +279,9 @@ impl BBFunction {
   }
 
   fn build_cfg(&mut self, label_map: FxHashMap<String, usize>) -> Result<(), InterpError> {
+    if self.blocks.is_empty() {
+      return Ok(());
+    }
     let last_idx = self.blocks.len() - 1;
     for (i, block) in self.blocks.iter_mut().enumerate() {
       // If we're before the last block
