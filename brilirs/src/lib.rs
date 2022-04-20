@@ -3,10 +3,9 @@
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 
-use std::error::Error;
-
 use basic_block::BBProgram;
 use bril_rs::Program;
+use error::PositionalInterpError;
 
 /// The internal representation of brilirs, provided a ```TryFrom<Program>``` conversion
 pub mod basic_block;
@@ -14,20 +13,21 @@ pub mod basic_block;
 pub mod check;
 #[doc(hidden)]
 pub mod cli;
-mod error;
+#[doc(hidden)]
+pub mod error;
 /// Provides ```interp::execute_main``` to execute [Program] that have been converted into [BBProgram]
 pub mod interp;
 
 #[doc(hidden)]
 pub fn run_input<T: std::io::Write, U: std::io::Write>(
-  input: Box<dyn std::io::Read>,
+  input: impl std::io::Read,
   out: T,
   input_args: Vec<String>,
   profiling: bool,
   profiling_out: U,
   check: bool,
   text: bool,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), PositionalInterpError> {
   // It's a little confusing because of the naming conventions.
   //      - bril_rs takes file.json as input
   //      - bril2json takes file.bril as input

@@ -712,7 +712,7 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
   let main_func = prog
     .index_of_main
     .map(|i| prog.get(i).unwrap())
-    .ok_or_else(|| PositionalInterpError::new(InterpError::NoMainFunction))?;
+    .ok_or(InterpError::NoMainFunction)?;
 
   if main_func.return_type.is_some() {
     return Err(InterpError::NonEmptyRetForFunc(main_func.name.clone()))
@@ -738,7 +738,7 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
       // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
       // Otherwise we would expect this flush to be a nop.
       .and_then(|_| profiling_out.flush())
-      .map_err(|e| PositionalInterpError::new(InterpError::IoError(Box::new(e))))?;
+      .map_err(|e| InterpError::IoError(Box::new(e)))?;
   }
 
   Ok(())
