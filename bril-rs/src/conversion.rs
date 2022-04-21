@@ -43,11 +43,11 @@ pub enum ConversionError {
 impl ConversionError {
     #[doc(hidden)]
     #[must_use]
-    pub fn add_pos(self, pos_var: Option<Position>) -> PositionalConversionError {
+    pub const fn add_pos(self, pos_var: Option<Position>) -> PositionalConversionError {
         match self {
             //Self::PositionalConversionErrorConversion(e) => e,
             _ => PositionalConversionError {
-                e: Box::new(self),
+                e: self,
                 pos: pos_var,
             },
         }
@@ -57,18 +57,17 @@ impl ConversionError {
 /// Wraps [`ConversionError`] to optionally provide source code positions if they are available.
 #[derive(Error, Debug)]
 pub struct PositionalConversionError {
-    e: Box<ConversionError>,
-    pos: Option<Position>,
+    #[doc(hidden)]
+    pub e: ConversionError,
+    #[doc(hidden)]
+    pub pos: Option<Position>,
 }
 
 impl PositionalConversionError {
     #[doc(hidden)]
     #[must_use]
-    pub fn new(e: ConversionError) -> Self {
-        Self {
-            e: Box::new(e),
-            pos: None,
-        }
+    pub const fn new(e: ConversionError) -> Self {
+        Self { e, pos: None }
     }
 }
 

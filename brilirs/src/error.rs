@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use bril_rs::Position;
+use bril_rs::{conversion::PositionalConversionError, Position};
+use std::error::Error;
 use thiserror::Error;
 
 // Having the #[error(...)] for all variants derives the Display trait as well
@@ -68,17 +69,8 @@ impl InterpError {
 
 #[derive(Error, Debug)]
 pub struct PositionalInterpError {
-  e: Box<InterpError>,
-  pos: Option<Position>,
-}
-
-impl PositionalInterpError {
-  pub fn new(e: InterpError) -> Self {
-    Self {
-      e: Box::new(e),
-      pos: None,
-    }
-  }
+  pub e: Box<dyn Error>,
+  pub pos: Option<Position>,
 }
 
 impl Display for PositionalInterpError {
@@ -88,6 +80,27 @@ impl Display for PositionalInterpError {
         write!(f, "Line {}, Column {}: {e}", pos.row, pos.col)
       }
       PositionalInterpError { e, pos: None } => write!(f, "{e}"),
+    }
+  }
+}
+
+impl From<InterpError> for PositionalInterpError {
+  fn from(e: InterpError) -> Self {
+    match e {
+      InterpError::PositionalInterpErrorConversion(positional_e) => positional_e,
+      _ => Self {
+        e: Box::new(e),
+        pos: None,
+      },
+    }
+  }
+}
+
+impl From<PositionalConversionError> for PositionalInterpError {
+  fn from(PositionalConversionError { e, pos }: PositionalConversionError) -> Self {
+    Self {
+      e: Box::new(e),
+      pos,
     }
   }
 }
