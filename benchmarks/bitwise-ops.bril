@@ -72,7 +72,7 @@
 
   sel: int = sub c one;
 
-  ans: int = const zero; 
+  ans: int = id zero; 
 
   less: bool = lt sel zero;
   equal: bool = eq sel zero;
