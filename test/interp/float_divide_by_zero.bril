@@ -1,0 +1,11 @@
+@main {
+  v0: float = const -1.0;
+  v1: float = const 1.0;
+  zero: float = const 0.0;
+  res: float = fdiv v0 zero;
+  print res;
+  res: float = fdiv v1 zero;
+  print res;
+  res: float = fdiv zero zero;
+  print res;
+}

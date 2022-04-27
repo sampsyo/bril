@@ -42,7 +42,7 @@ impl BBProgram {
       index_of_main: func_map.get(&"main".to_string()).cloned(),
       func_index,
     };
-    if bb.func_index.len() != num_funcs {
+    if func_map.len() != num_funcs {
       Err(InterpError::DuplicateFunction)
     } else {
       Ok(bb)

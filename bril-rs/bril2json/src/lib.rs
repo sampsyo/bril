@@ -33,11 +33,11 @@ impl Lines {
     fn get_position(&self, index: usize) -> Option<Position> {
         if self.use_pos {
             Some(self.new_lines.iter().enumerate().fold(
-                Position { col: 1, row: 0 },
+                Position { col: 1, row: 1 },
                 |current, (line_num, idx)| {
                     if *idx < index {
                         Position {
-                            row: (line_num + 2) as u64,
+                            row: (line_num + 1) as u64,
                             col: (index - idx) as u64,
                         }
                     } else {
