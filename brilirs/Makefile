@@ -1,6 +1,8 @@
 TESTS :=  ../test/interp/*.bril \
 	../test/mem/*.bril \
-	../test/fail/*.bril
+	../test/fail/*.bril \
+	../test/interp-error/*.bril \
+	../test/check/*.bril
 
 BENCHMARKS := ../benchmarks/*.bril
 
