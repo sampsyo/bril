@@ -24,6 +24,7 @@ The current benchmarks are:
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
+* `function_call`: For benchmarking the overhead of simple function calls.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `loopfact`: Compute *n!* imperatively using a loop.
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
