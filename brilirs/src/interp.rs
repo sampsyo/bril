@@ -208,6 +208,8 @@ impl fmt::Display for Value {
     match self {
       Value::Int(i) => write!(f, "{i}"),
       Value::Bool(b) => write!(f, "{b}"),
+      Value::Float(v) if v.is_infinite() && v.is_sign_positive() => write!(f, "Infinity"),
+      Value::Float(v) if v.is_infinite() && v.is_sign_negative() => write!(f, "-Infinity"),
       Value::Float(v) => write!(f, "{v}"),
       Value::Pointer(p) => write!(f, "{p:?}"),
       Value::Uninitialized => unreachable!(),
