@@ -7,6 +7,8 @@ use thiserror::Error;
 // Having the #[error(...)] for all variants derives the Display trait as well
 #[derive(Error, Debug)]
 pub enum InterpError {
+  #[error("Attempt to divide by 0")]
+  DivisionByZero,
   #[error("Some memory locations have not been freed by the end of execution")]
   MemLeak,
   #[error("Trying to load from uninitialized memory")]

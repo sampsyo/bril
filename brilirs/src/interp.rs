@@ -324,6 +324,9 @@ fn execute_value_op<'a, T: std::io::Write>(
     Div => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
       let arg1 = get_arg::<i64>(&state.env, 1, args);
+      if arg1 == 0 {
+        return Err(InterpError::DivisionByZero);
+      }
       state.env.set(dest, Value::Int(arg0.wrapping_div(arg1)));
     }
     Eq => {
