@@ -24,6 +24,7 @@ They all take two arguments, which must be names of variables of type `int`, and
 * `div`: x ÷ y.
 
 In each case, overflow follows two's complement rules.
+It is an error to `div` by zero.
 
 Comparison
 ----------
