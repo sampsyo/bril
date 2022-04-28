@@ -462,7 +462,12 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
 
   case "div": {
-    let val = getInt(instr, state.env, 0) / getInt(instr, state.env, 1);
+    let lhs = getInt(instr, state.env, 0);
+    let rhs = getInt(instr, state.env, 1);
+    if (rhs === BigInt(0)) {
+      throw error(`division by zero`);
+    }
+    let val = lhs / rhs;
     val = BigInt.asIntN(64, val);
     state.env.set(instr.dest, val);
     return NEXT;
