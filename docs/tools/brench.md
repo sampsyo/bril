@@ -76,3 +76,8 @@ The latter is the value extracted from the run's standard output and standard er
 * `incorrect`: The output did not match the "golden" output (from the first run).
 * `timeout`: Execution took too long.
 * `missing`: The `extract` regex did not match in the final pipeline stage's standard output or standard error.
+
+A note on matching: floating point numbers are compared to be within an ε
+value. This is primarily motivated by different interpreters printing them
+differently, but it does mean that some unsound floating point algebraic
+simplifications may slip through
