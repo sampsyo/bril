@@ -10,6 +10,7 @@ import sys
 import os
 from concurrent import futures
 import glob
+import functools
 
 __version__ = '1.0.0'
 
@@ -45,6 +46,16 @@ def run_pipe(cmds, input, timeout):
         for proc in procs:
             proc.kill()
 
+
+
+def compare_output(o1, o2):
+    def my_compare(x, y):
+        try:
+            return abs(float(x)-float(y)) < .0000000001
+        except ValueError:
+            return x == y
+    
+    return functools.reduce(lambda x,y : x and y, map(lambda x, y : my_compare, o1.split(), o2.split()))
 
 def run_bench(pipeline, fn, timeout):
     """Run a single benchmark pipeline.
@@ -117,7 +128,9 @@ def brench(config_path, files, jobs):
                 # Check correctness.
                 if first_out is None:
                     first_out = stdout
-                elif stdout != first_out and not status:
+                elif not compare_output(stdout, first_out) and not status:
+                    print(first_out)
+                    print(stdout)
                     status = 'incorrect'
 
                 # Extract the figure of merit.
