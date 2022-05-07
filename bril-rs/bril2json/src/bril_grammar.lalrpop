@@ -20,15 +20,16 @@
 #![allow(clippy::must_use_candidate)]
 
 use std::str::FromStr;
+use std::path::PathBuf;
 use crate::Lines;
-use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal};
+use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal, Import, ImportedName};
 
 grammar(lines : &Lines);
 
 match {
     r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
     r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // func
-    "const", "true", "false",
+    "const", "true", "false", "from", "import", "as"
 } else {
     r"\s*" => { }, /// Whitespace
     r"#[^\n\r]*[\n\r]*" => { }, /// Comments
@@ -36,11 +37,38 @@ match {
     r"(\+|-)?[0-9]+", // int
     r"(\+|-)?[0-9]*\.[0-9]+", // float
     r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
+} else {
+    r"([A-Za-z]|_|\.|[0-9]|\\|/|-)*", // path
 }
 
 pub AbstractProgram : AbstractProgram = {
-    <f :(<AbstractFunction>)*> => AbstractProgram {
+    <i: (<Imports>)*> <f :(<AbstractFunction>)*> => AbstractProgram {
+        imports: i,
         functions : f,
+    }
+}
+
+Imports : Import = {
+    "from" <p: Path> "import" <n:(<ImportedName> ","?)*> ";" => {
+        Import {
+            path: p,
+            names: n,
+        }
+    }
+}
+
+ImportedName : ImportedName = {
+    <n:Func> <a:Alias?> => {
+        ImportedName {
+            name: n,
+            alias: a,
+        }
+    }
+}
+
+Alias : String = {
+    "as" <a:Func> => {
+        a
     }
 }
 
@@ -151,6 +179,11 @@ pub Func : String = {
     <i:r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix("@").unwrap().to_owned(),
 }
 
+Path: PathBuf = {
+    <p:r"([A-Za-z]|_|\.|[0-9]|\\|/|-)*"> => {
+        PathBuf::from(p)
+    }
+}
 
 Label: String = {
     <i:r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix(".").unwrap().to_owned(),

@@ -1,0 +1,18 @@
+[package]
+name = "loadbril"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap         = { version = "3.0", features = ["derive"] }
+
+[dependencies.bril2json]
+version      = "0.1.0"
+path         = "../bril2json"
+
+[dependencies.bril-rs]
+version = "0.1.0"
+path = ".."
+features = ["ssa", "memory", "float", "speculate", "position", "import"]

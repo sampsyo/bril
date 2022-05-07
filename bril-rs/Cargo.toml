@@ -24,6 +24,7 @@ memory = []
 ssa = []
 speculate = []
 position = []
+import = []
 
 [[example]]
 name = "bril2txt"

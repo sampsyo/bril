@@ -89,8 +89,16 @@ impl Display for PositionalConversionError {
 
 impl TryFrom<AbstractProgram> for Program {
     type Error = PositionalConversionError;
-    fn try_from(AbstractProgram { functions }: AbstractProgram) -> Result<Self, Self::Error> {
+    fn try_from(
+        AbstractProgram {
+            #[cfg(feature = "import")]
+            imports,
+            functions,
+        }: AbstractProgram,
+    ) -> Result<Self, Self::Error> {
         Ok(Self {
+            #[cfg(feature = "import")]
+            imports,
             functions: functions
                 .into_iter()
                 .map(std::convert::TryInto::try_into)

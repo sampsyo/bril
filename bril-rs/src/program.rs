@@ -7,12 +7,65 @@ use serde::{Deserialize, Serialize};
 pub struct Program {
     /// A list of functions declared in the program
     pub functions: Vec<Function>,
+    #[cfg(feature = "import")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// A list of imports for this program
+    pub imports: Vec<Import>,
 }
 
 impl Display for Program {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        #[cfg(feature = "import")]
+        for i in &self.imports {
+            writeln!(f, "{i}")?;
+        }
         for func in &self.functions {
             writeln!(f, "{func}")?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "import")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Import {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub names: Vec<ImportedName>,
+    pub path: std::path::PathBuf,
+}
+
+#[cfg(feature = "import")]
+impl Display for Import {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "from {}", self.path.display())?;
+        if !self.names.is_empty() {
+            write!(f, " import ")?;
+            for (i, name) in self.names.iter().enumerate() {
+                if i != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{name}")?;
+            }
+        }
+        write!(f, ";")?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "import")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ImportedName {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
+    pub name: String,
+}
+
+#[cfg(feature = "import")]
+impl Display for ImportedName {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+        if let Some(a) = self.alias.as_ref() {
+            write!(f, " as {}", a)?;
         }
         Ok(())
     }
