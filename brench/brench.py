@@ -46,12 +46,12 @@ def run_pipe(cmds, input, timeout):
         for proc in procs:
             proc.kill()
 
-ε = .0000000001
+ε = 0.0
 
 def compare_output(o1, o2):
     def my_compare(x, y):
         try:
-            return abs(float(x)-float(y)) < ε
+            return abs(float(x)-float(y)) <= ε
         except ValueError:
             return x == y
     return all(my_compare(x, y) for x, y in zip(o1.split(), o2.split()))
@@ -101,6 +101,9 @@ def brench(config_path, files, jobs):
         files = glob.glob(config['benchmarks'])
 
     timeout = config.get('timeout', 5)
+
+    global ε
+    ε = config.get('epsilon', 0)
 
     with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.

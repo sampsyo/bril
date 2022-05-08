@@ -77,7 +77,12 @@ The latter is the value extracted from the run's standard output and standard er
 * `timeout`: Execution took too long.
 * `missing`: The `extract` regex did not match in the final pipeline stage's standard output or standard error.
 
-A note on matching: floating point numbers are compared to be within an ε
-value. This is primarily motivated by different interpreters printing them
-differently, but it does mean that some unsound floating point algebraic
-simplifications may slip through
+To check that a run's output is "correct," Brench compares its standard output
+to that of the first run (`baseline` in the above example, but it's whichever run
+configuration comes first). The comparison is mostly an exact string match, but
+Brench also supports an `epsilon` option which can be set for numerical values,
+in which case it will check for absolute difference being less than ε. This is
+primarily to deal with inconsistencies in printing floats, but can be used to
+test for "approximate correctness" with floating point optimizations. Be careful
+that setting the ε value might cause Brench to miss some unsound transformations
+that only slightly affect floating-point accuracy.
