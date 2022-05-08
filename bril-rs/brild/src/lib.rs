@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use bril2json::parse_abstract_program_from_read;
 use bril_rs::{
     load_abstract_program_from_read, AbstractCode, AbstractFunction, AbstractInstruction,
-    AbstractProgram, ImportedName,
+    AbstractProgram, ImportedFunction,
 };
 
 fn mangle_name(path: &Path, func_name: &String) -> String {
@@ -150,7 +150,7 @@ pub fn locate_imports(
             next_path = canonicalize(next_path)?;
             locate_imports(path_map, &next_path, false)?;
 
-            i.names.iter().for_each(|ImportedName { name, alias }| {
+            i.functions.iter().for_each(|ImportedFunction { name, alias }| {
                 if name_resolution_map
                     .insert(
                         alias.as_ref().unwrap_or(name).clone(),

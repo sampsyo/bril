@@ -22,7 +22,7 @@
 use std::str::FromStr;
 use std::path::PathBuf;
 use crate::Lines;
-use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal, Import, ImportedName};
+use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal, Import, ImportedFunction};
 
 grammar(lines : &Lines);
 
@@ -49,17 +49,17 @@ pub AbstractProgram : AbstractProgram = {
 }
 
 Imports : Import = {
-    "from" <p: Path> "import" <n:(<ImportedName> ","?)*> ";" => {
+    "from" <p: Path> "import" <n:(<ImportedFunction> ","?)*> ";" => {
         Import {
             path: p,
-            names: n,
+            functions: n,
         }
     }
 }
 
-ImportedName : ImportedName = {
+ImportedFunction : ImportedFunction = {
     <n:Func> <a:Alias?> => {
-        ImportedName {
+        ImportedFunction {
             name: n,
             alias: a,
         }

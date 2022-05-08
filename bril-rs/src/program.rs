@@ -30,7 +30,7 @@ impl Display for Program {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Import {
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub names: Vec<ImportedName>,
+    pub functions: Vec<ImportedFunction>,
     pub path: std::path::PathBuf,
 }
 
@@ -38,9 +38,9 @@ pub struct Import {
 impl Display for Import {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "from {}", self.path.display())?;
-        if !self.names.is_empty() {
+        if !self.functions.is_empty() {
             write!(f, " import ")?;
-            for (i, name) in self.names.iter().enumerate() {
+            for (i, name) in self.functions.iter().enumerate() {
                 if i != 0 {
                     write!(f, ", ")?;
                 }
@@ -54,14 +54,14 @@ impl Display for Import {
 
 #[cfg(feature = "import")]
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ImportedName {
+pub struct ImportedFunction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
     pub name: String,
 }
 
 #[cfg(feature = "import")]
-impl Display for ImportedName {
+impl Display for ImportedFunction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)?;
         if let Some(a) = self.alias.as_ref() {

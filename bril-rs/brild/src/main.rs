@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fs::canonicalize;
 
 use bril_rs::{output_abstract_program, AbstractProgram};
-use loadbril::{cli::Cli, locate_imports};
+use brild::{cli::Cli, locate_imports};
 
 fn main() -> std::io::Result<()> {
     let mut map = HashMap::new();
