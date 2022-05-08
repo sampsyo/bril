@@ -1,4 +1,4 @@
-from ../../benchmarks/bitwise-ops.bril import @AND, @OR as @LIB_OR, @loop_subroutine;
+from "../../benchmarks/bitwise-ops.bril" import @AND, @OR as @LIB_OR, @loop_subroutine;
 
 # Does OR and throws out the result
 @OR(a: int, b: int): int{

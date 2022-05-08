@@ -38,7 +38,7 @@ match {
     r"(\+|-)?[0-9]*\.[0-9]+", // float
     r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
 } else {
-    r"([A-Za-z]|_|\.|[0-9]|\\|/|-)*", // path
+    r#""[^"]*""#, // string literal for path
 }
 
 pub AbstractProgram : AbstractProgram = {
@@ -180,8 +180,8 @@ pub Func : String = {
 }
 
 Path: PathBuf = {
-    <p:r"([A-Za-z]|_|\.|[0-9]|\\|/|-)*"> => {
-        PathBuf::from(p)
+    <p:r#""[^"]*""#> => {
+        PathBuf::from(p.trim_matches('\"'))
     }
 }
 
