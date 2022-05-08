@@ -54,7 +54,7 @@ def compare_output(o1, o2):
             return abs(float(x)-float(y)) < ε
         except ValueError:
             return x == y
-    return functools.reduce(lambda x,y : x and y, map(lambda x, y : my_compare, o1.split(), o2.split()))
+    return all(my_compare(x, y) for x, y in zip(o1.split(), o2.split()))
 
 def run_bench(pipeline, fn, timeout):
     """Run a single benchmark pipeline.
