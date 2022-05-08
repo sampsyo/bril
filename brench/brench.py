@@ -46,6 +46,15 @@ def run_pipe(cmds, input, timeout):
             proc.kill()
 
 
+def compare_output(o1, o2, ε=0.0):
+    def my_compare(x, y):
+        try:
+            return abs(float(x) - float(y)) <= ε
+        except ValueError:
+            return x == y
+    return all(my_compare(x, y) for x, y in zip(o1.split(), o2.split()))
+
+
 def run_bench(pipeline, fn, timeout):
     """Run a single benchmark pipeline.
     """
@@ -91,6 +100,7 @@ def brench(config_path, files, jobs):
         files = glob.glob(config['benchmarks'])
 
     timeout = config.get('timeout', 5)
+    ε = config.get('epsilon', 0.0)
 
     with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.
@@ -117,7 +127,7 @@ def brench(config_path, files, jobs):
                 # Check correctness.
                 if first_out is None:
                     first_out = stdout
-                elif stdout != first_out and not status:
+                elif not compare_output(stdout, first_out, ε) and not status:
                     status = 'incorrect'
 
                 # Extract the figure of merit.
