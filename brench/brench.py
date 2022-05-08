@@ -10,11 +10,11 @@ import sys
 import os
 from concurrent import futures
 import glob
-import functools
 
 __version__ = '1.0.0'
 
 ARGS_RE = r'ARGS: (.*)'
+ε = 0.0
 
 
 def run_pipe(cmds, input, timeout):
@@ -46,15 +46,15 @@ def run_pipe(cmds, input, timeout):
         for proc in procs:
             proc.kill()
 
-ε = 0.0
 
 def compare_output(o1, o2):
     def my_compare(x, y):
         try:
-            return abs(float(x)-float(y)) <= ε
+            return abs(float(x) - float(y)) <= ε
         except ValueError:
             return x == y
     return all(my_compare(x, y) for x, y in zip(o1.split(), o2.split()))
+
 
 def run_bench(pipeline, fn, timeout):
     """Run a single benchmark pipeline.
