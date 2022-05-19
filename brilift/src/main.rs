@@ -2,23 +2,27 @@ use bril_rs as bril;
 use cranelift::frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift::codegen::{ir, isa};
 
-fn compile_type(typ: bril::Type) -> ir::Type {
+fn tr_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I32,
         bril::Type::Bool => ir::types::B1,
     }
 }
 
+fn tr_sig(func: &bril::Function) -> ir::Signature {
+    let mut sig = ir::Signature::new(isa::CallConv::SystemV);
+    if let Some(ret) = &func.return_type {
+        sig.returns.push(ir::AbiParam::new(tr_type(ret)));
+    }
+    for arg in &func.args {
+        sig.params.push(ir::AbiParam::new(tr_type(&arg.arg_type)));
+    }
+    sig
+}
+
 fn compile_func(func: bril::Function) {
     // Build function signature.
-    let mut sig = ir::Signature::new(isa::CallConv::SystemV);
-    if let Some(ret) = func.return_type {
-        sig.returns.push(ir::AbiParam::new(compile_type(ret)));
-    }
-    for arg in func.args {
-        sig.params.push(ir::AbiParam::new(compile_type(arg.arg_type)));
-    }
-    
+    let sig = tr_sig(&func);
     dbg!(sig);
 
     for inst in func.instrs {
