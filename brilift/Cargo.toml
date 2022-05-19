@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 bril-rs = {path = "../bril-rs"}
+cranelift = "0.83.0"
