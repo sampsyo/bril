@@ -81,13 +81,14 @@ fn compile_func(func: bril::Function) {
                             };
                             builder.def_var(*var, val);
                         },
-                        _ => todo!(),
+                        _ => (),  // TODO
                     }
                 },
-                _ => todo!(),
+                _ => (),  // TODO
             }
         }
 
+        builder.ins().return_(&[]);  // TODO
         builder.seal_block(block);
         
         builder.finalize();
