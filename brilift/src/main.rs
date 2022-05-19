@@ -1,13 +1,14 @@
 use bril_rs as bril;
 use cranelift::frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift::codegen::{ir, isa, settings};
+use cranelift::codegen::ir::InstBuilder;
 use cranelift::codegen::entity::EntityRef;
 use cranelift::codegen::verifier::verify_function;
 use std::collections::HashMap;
 
 fn tr_type(typ: &bril::Type) -> ir::Type {
     match typ {
-        bril::Type::Int => ir::types::I32,
+        bril::Type::Int => ir::types::I64,
         bril::Type::Bool => ir::types::B1,
     }
 }
@@ -62,7 +63,30 @@ fn compile_func(func: bril::Function) {
             builder.declare_var(var, tr_type(typ));
         }
 
+        // TODO just one block for now...
         let block = builder.create_block();
+        builder.switch_to_block(block);
+
+        // Insert instructions.
+        for inst in func.instrs {
+            match inst {
+                bril::Code::Instruction(op) => {
+                    match op {
+                        bril::Instruction::Constant { dest, op, const_type: typ, value } => {
+                            let var = vars.get(&dest).unwrap();
+                            let val = match value {
+                                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, i),
+                                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, b),
+                            };
+                        },
+                        _ => todo!(),
+                    }
+                },
+                _ => todo!(),
+            }
+        }
+
+        builder.seal_block(block);
         
         builder.finalize();
     }
