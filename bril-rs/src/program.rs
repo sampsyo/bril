@@ -26,11 +26,14 @@ impl Display for Program {
     }
 }
 
+/// <https://capra.cs.cornell.edu/bril/lang/import.html#syntax>
 #[cfg(feature = "import")]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Import {
+    /// A list of functions to be imported
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub functions: Vec<ImportedFunction>,
+    /// The relative path of the file from some lib directory specified by the user
     pub path: std::path::PathBuf,
 }
 
@@ -52,11 +55,14 @@ impl Display for Import {
     }
 }
 
+/// <https://capra.cs.cornell.edu/bril/lang/import.html#syntax>
 #[cfg(feature = "import")]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ImportedFunction {
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// A function can be optionally aliased with a different name for use in the rest of the program
     pub alias: Option<String>,
+    /// The name of the function being imported
     pub name: String,
 }
 

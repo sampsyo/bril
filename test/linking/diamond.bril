@@ -1,0 +1,9 @@
+# ARGS: ../linking ../../benchmarks/
+from "link_ops.bril" import @main as @inner_main;
+from "nested.bril" import @main as @nested_main;
+
+
+@main(){
+    call @nested_main;
+    call @inner_main;
+}

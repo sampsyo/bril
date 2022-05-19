@@ -18,11 +18,12 @@ use serde::ser::{SerializeMap, Serializer};
 /// Equivalent to a file of bril code
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AbstractProgram {
+    /// A list of functions declared in the program
+    pub functions: Vec<AbstractFunction>,
+    /// A list of imports for this program
     #[cfg(feature = "import")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub imports: Vec<Import>,
-    /// A list of functions declared in the program
-    pub functions: Vec<AbstractFunction>,
 }
 
 impl Display for AbstractProgram {

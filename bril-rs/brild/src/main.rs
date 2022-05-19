@@ -2,15 +2,23 @@ use clap::Parser;
 
 use std::collections::HashMap;
 use std::fs::canonicalize;
+use std::path::PathBuf;
 
-use bril_rs::{output_abstract_program, AbstractProgram};
-use brild::{cli::Cli, locate_imports};
+use bril_rs::{load_abstract_program, output_abstract_program, AbstractProgram};
+use brild::{cli::Cli, do_import, handle_program};
 
 fn main() -> std::io::Result<()> {
     let mut map = HashMap::new();
     let args = Cli::parse();
 
-    locate_imports(&mut map, &canonicalize(&args.path)?, true)?;
+    if let Some(p) = args.file {
+        let path = PathBuf::from(p);
+        do_import(&mut map, &canonicalize(path)?, &args.libs, true)?;
+    } else {
+        let program = load_abstract_program();
+        // Note, since there is no path here, if you have a different file also importing this file it will import the same code twice with different names.
+        handle_program(&mut map, program, &PathBuf::new(), &args.libs, true)?;
+    }
 
     let result = map.into_iter().fold(
         AbstractProgram {
