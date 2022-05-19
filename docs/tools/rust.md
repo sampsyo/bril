@@ -22,13 +22,13 @@ There are two helper functions: `load_program` will read a valid Bril program fr
 Tools
 ---
 
-This library supports fully compatible Rust implementations of `bril2txt` and `bril2json`.
+This library supports fully compatible Rust implementations of `bril2txt` and `bril2json`. This library also implements the [import][] extension with a static linker called `brild`.
 
 For ease of use, these tools can be installed and added to your path by running the following in `bril-rs/`:
 
     $ make install
 
-Make sure that `~/.cargo/bin` is on your path.
+Make sure that `~/.cargo/bin` is on your path. Each of these tools supports the `--help` flag which specifies some helpful flags.
 
 Development
 -----------
@@ -50,3 +50,4 @@ make features
 [float]: ../lang/float.md
 [spec]: ../lang/spec.md
 [pos]: ../lang/syntax.md
+[import]: ../lang/import.md

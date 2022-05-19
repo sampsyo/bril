@@ -6,6 +6,9 @@ use crate::{program::Literal, ConstOps};
 #[cfg(feature = "position")]
 use crate::program::Position;
 
+#[cfg(feature = "import")]
+use crate::program::Import;
+
 use serde::{Deserialize, Serialize};
 
 use serde::de::{self, Error, MapAccess, Visitor};
@@ -17,6 +20,10 @@ use serde::ser::{SerializeMap, Serializer};
 pub struct AbstractProgram {
     /// A list of functions declared in the program
     pub functions: Vec<AbstractFunction>,
+    /// A list of imports for this program
+    #[cfg(feature = "import")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub imports: Vec<Import>,
 }
 
 impl Display for AbstractProgram {

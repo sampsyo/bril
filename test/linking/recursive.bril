@@ -1,0 +1,20 @@
+# ARGS: ../linking
+from "recursive.bril" import @test as @recursive_test;
+
+@test(a:int){
+    zero : int = const 0;
+    cond : bool = eq a zero;
+    br cond .end .recurse;
+.end:
+    print zero;
+    ret;
+.recurse:
+    one : int = const 1;
+    new_a : int = sub a one;
+    call @recursive_test new_a;
+}
+
+@main(){
+    one : int = const 1;
+    call @test one;
+}

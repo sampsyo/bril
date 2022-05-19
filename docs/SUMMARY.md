@@ -10,6 +10,7 @@
     - [Memory](lang/memory.md)
     - [Floating Point](lang/float.md)
     - [Speculative Execution](lang/spec.md)
+    - [Import](lang/import.md)
 - [Tools](tools/README.md)
     - [Interpreter](tools/interp.md)
     - [Text Representation](tools/text.md)

@@ -56,6 +56,7 @@ fn main() {
       },
     ) = (source_file, &e)
     {
+      // TODO delegate this to a crate that uses spans?
       let mut lines = f.split('\n');
       eprintln!("error: {e}");
       eprintln!("{}", lines.nth((pos.row - 1) as usize).unwrap());

@@ -7,12 +7,71 @@ use serde::{Deserialize, Serialize};
 pub struct Program {
     /// A list of functions declared in the program
     pub functions: Vec<Function>,
+    #[cfg(feature = "import")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// A list of imports for this program
+    pub imports: Vec<Import>,
 }
 
 impl Display for Program {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        #[cfg(feature = "import")]
+        for i in &self.imports {
+            writeln!(f, "{i}")?;
+        }
         for func in &self.functions {
             writeln!(f, "{func}")?;
+        }
+        Ok(())
+    }
+}
+
+/// <https://capra.cs.cornell.edu/bril/lang/import.html#syntax>
+#[cfg(feature = "import")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Import {
+    /// A list of functions to be imported
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub functions: Vec<ImportedFunction>,
+    /// The relative path of the file from some lib directory specified by the user
+    pub path: std::path::PathBuf,
+}
+
+#[cfg(feature = "import")]
+impl Display for Import {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "from {}", self.path.display())?;
+        if !self.functions.is_empty() {
+            write!(f, " import ")?;
+            for (i, name) in self.functions.iter().enumerate() {
+                if i != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{name}")?;
+            }
+        }
+        write!(f, ";")?;
+        Ok(())
+    }
+}
+
+/// <https://capra.cs.cornell.edu/bril/lang/import.html#syntax>
+#[cfg(feature = "import")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ImportedFunction {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// A function can be optionally aliased with a different name for use in the rest of the program
+    pub alias: Option<String>,
+    /// The name of the function being imported
+    pub name: String,
+}
+
+#[cfg(feature = "import")]
+impl Display for ImportedFunction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+        if let Some(a) = self.alias.as_ref() {
+            write!(f, " as {}", a)?;
         }
         Ok(())
     }
