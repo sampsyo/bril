@@ -44,12 +44,9 @@ impl ConversionError {
     #[doc(hidden)]
     #[must_use]
     pub const fn add_pos(self, pos_var: Option<Position>) -> PositionalConversionError {
-        match self {
-            //Self::PositionalConversionErrorConversion(e) => e,
-            _ => PositionalConversionError {
-                e: self,
-                pos: pos_var,
-            },
+        PositionalConversionError {
+            e: self,
+            pos: pos_var,
         }
     }
 }

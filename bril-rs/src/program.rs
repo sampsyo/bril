@@ -318,7 +318,7 @@ pub enum ConstOps {
 impl Display for ConstOps {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            ConstOps::Const => write!(f, "const"),
+            Self::Const => write!(f, "const"),
         }
     }
 }
@@ -362,22 +362,22 @@ pub enum EffectOps {
 impl Display for EffectOps {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            EffectOps::Jump => write!(f, "jmp"),
-            EffectOps::Branch => write!(f, "br"),
-            EffectOps::Call => write!(f, "call"),
-            EffectOps::Return => write!(f, "ret"),
-            EffectOps::Print => write!(f, "print"),
-            EffectOps::Nop => write!(f, "nop"),
+            Self::Jump => write!(f, "jmp"),
+            Self::Branch => write!(f, "br"),
+            Self::Call => write!(f, "call"),
+            Self::Return => write!(f, "ret"),
+            Self::Print => write!(f, "print"),
+            Self::Nop => write!(f, "nop"),
             #[cfg(feature = "memory")]
-            EffectOps::Store => write!(f, "store"),
+            Self::Store => write!(f, "store"),
             #[cfg(feature = "memory")]
-            EffectOps::Free => write!(f, "free"),
+            Self::Free => write!(f, "free"),
             #[cfg(feature = "speculate")]
-            EffectOps::Speculate => write!(f, "speculate"),
+            Self::Speculate => write!(f, "speculate"),
             #[cfg(feature = "speculate")]
-            EffectOps::Commit => write!(f, "commit"),
+            Self::Commit => write!(f, "commit"),
             #[cfg(feature = "speculate")]
-            EffectOps::Guard => write!(f, "guard"),
+            Self::Guard => write!(f, "guard"),
         }
     }
 }
@@ -458,46 +458,46 @@ pub enum ValueOps {
 impl Display for ValueOps {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            ValueOps::Add => write!(f, "add"),
-            ValueOps::Sub => write!(f, "sub"),
-            ValueOps::Mul => write!(f, "mul"),
-            ValueOps::Div => write!(f, "div"),
-            ValueOps::Eq => write!(f, "eq"),
-            ValueOps::Lt => write!(f, "lt"),
-            ValueOps::Gt => write!(f, "gt"),
-            ValueOps::Le => write!(f, "le"),
-            ValueOps::Ge => write!(f, "ge"),
-            ValueOps::Not => write!(f, "not"),
-            ValueOps::And => write!(f, "and"),
-            ValueOps::Or => write!(f, "or"),
-            ValueOps::Call => write!(f, "call"),
-            ValueOps::Id => write!(f, "id"),
+            Self::Add => write!(f, "add"),
+            Self::Sub => write!(f, "sub"),
+            Self::Mul => write!(f, "mul"),
+            Self::Div => write!(f, "div"),
+            Self::Eq => write!(f, "eq"),
+            Self::Lt => write!(f, "lt"),
+            Self::Gt => write!(f, "gt"),
+            Self::Le => write!(f, "le"),
+            Self::Ge => write!(f, "ge"),
+            Self::Not => write!(f, "not"),
+            Self::And => write!(f, "and"),
+            Self::Or => write!(f, "or"),
+            Self::Call => write!(f, "call"),
+            Self::Id => write!(f, "id"),
             #[cfg(feature = "ssa")]
-            ValueOps::Phi => write!(f, "phi"),
+            Self::Phi => write!(f, "phi"),
             #[cfg(feature = "float")]
-            ValueOps::Fadd => write!(f, "fadd"),
+            Self::Fadd => write!(f, "fadd"),
             #[cfg(feature = "float")]
-            ValueOps::Fsub => write!(f, "fsub"),
+            Self::Fsub => write!(f, "fsub"),
             #[cfg(feature = "float")]
-            ValueOps::Fmul => write!(f, "fmul"),
+            Self::Fmul => write!(f, "fmul"),
             #[cfg(feature = "float")]
-            ValueOps::Fdiv => write!(f, "fdiv"),
+            Self::Fdiv => write!(f, "fdiv"),
             #[cfg(feature = "float")]
-            ValueOps::Feq => write!(f, "feq"),
+            Self::Feq => write!(f, "feq"),
             #[cfg(feature = "float")]
-            ValueOps::Flt => write!(f, "flt"),
+            Self::Flt => write!(f, "flt"),
             #[cfg(feature = "float")]
-            ValueOps::Fgt => write!(f, "fgt"),
+            Self::Fgt => write!(f, "fgt"),
             #[cfg(feature = "float")]
-            ValueOps::Fle => write!(f, "fle"),
+            Self::Fle => write!(f, "fle"),
             #[cfg(feature = "float")]
-            ValueOps::Fge => write!(f, "fge"),
+            Self::Fge => write!(f, "fge"),
             #[cfg(feature = "memory")]
-            ValueOps::Alloc => write!(f, "alloc"),
+            Self::Alloc => write!(f, "alloc"),
             #[cfg(feature = "memory")]
-            ValueOps::Load => write!(f, "load"),
+            Self::Load => write!(f, "load"),
             #[cfg(feature = "memory")]
-            ValueOps::PtrAdd => write!(f, "ptradd"),
+            Self::PtrAdd => write!(f, "ptradd"),
         }
     }
 }
@@ -522,12 +522,12 @@ pub enum Type {
 impl Display for Type {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Type::Int => write!(f, "int"),
-            Type::Bool => write!(f, "bool"),
+            Self::Int => write!(f, "int"),
+            Self::Bool => write!(f, "bool"),
             #[cfg(feature = "float")]
-            Type::Float => write!(f, "float"),
+            Self::Float => write!(f, "float"),
             #[cfg(feature = "memory")]
-            Type::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
+            Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
         }
     }
 }
