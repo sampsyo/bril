@@ -73,12 +73,13 @@ fn compile_func(func: bril::Function) {
             match inst {
                 bril::Code::Instruction(op) => {
                     match op {
-                        bril::Instruction::Constant { dest, op, const_type: typ, value } => {
+                        bril::Instruction::Constant { dest, op: _, const_type: _, value } => {
                             let var = vars.get(&dest).unwrap();
                             let val = match value {
                                 bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
                                 bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
                             };
+                            builder.def_var(*var, val);
                         },
                         _ => todo!(),
                     }
