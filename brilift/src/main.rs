@@ -57,10 +57,11 @@ fn compile_func(func: bril::Function) {
         let mut builder = FunctionBuilder::new(&mut cl_func, &mut fn_builder_ctx);
         
         // Declare all variables.
-        let vars = HashMap::<String, Variable>::new();
+        let mut vars = HashMap::<&String, Variable>::new();
         for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
             let var = Variable::new(i);
             builder.declare_var(var, tr_type(typ));
+            vars.insert(name, var);
         }
 
         // TODO just one block for now...
@@ -68,15 +69,15 @@ fn compile_func(func: bril::Function) {
         builder.switch_to_block(block);
 
         // Insert instructions.
-        for inst in func.instrs {
+        for inst in &func.instrs {
             match inst {
                 bril::Code::Instruction(op) => {
                     match op {
                         bril::Instruction::Constant { dest, op, const_type: typ, value } => {
                             let var = vars.get(&dest).unwrap();
                             let val = match value {
-                                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, i),
-                                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, b),
+                                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
+                                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
                             };
                         },
                         _ => todo!(),
