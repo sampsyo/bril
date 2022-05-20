@@ -43,7 +43,7 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
     }).collect()
 }
 
-fn compile_func(func: bril::Function) {
+fn compile_func(func: bril::Function) -> ir::Function {
     // Build function signature.
     let sig = tr_sig(&func);
 
@@ -94,7 +94,7 @@ fn compile_func(func: bril::Function) {
                             };
                             builder.def_var(*var, val);
                         },
-                        bril::Instruction::Effect { args, funcs, labels, op } => {
+                        bril::Instruction::Effect { args, funcs: _, labels: _, op } => {
                             match op {
                                 bril::EffectOps::Print => {
                                     // TODO Target should depend on the type.
@@ -119,22 +119,22 @@ fn compile_func(func: bril::Function) {
         builder.finalize();
     }
     
-    // Verify and print.
-    let flags = settings::Flags::new(settings::builder());
-    let res = verify_function(&cl_func, &flags);
-    println!("{}", cl_func.display());
-    if let Err(errors) = res {
-        panic!("{}", errors);
-    }
+    cl_func
 }
 
 fn main() {
     // Load the Bril program from stdin.
     let prog = bril::load_program();
     
-    // Cranelift builder context.
-
     for func in prog.functions {
-        compile_func(func);
+        let func = compile_func(func);
+
+        // Verify and print.
+        let flags = settings::Flags::new(settings::builder());
+        let res = verify_function(&func, &flags);
+        println!("{}", func.display());
+        if let Err(errors) = res {
+            panic!("{}", errors);
+        }
     }
 }
