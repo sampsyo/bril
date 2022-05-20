@@ -4,6 +4,9 @@ use cranelift::codegen::{ir, isa, settings};
 use cranelift::codegen::ir::InstBuilder;
 use cranelift::codegen::entity::EntityRef;
 use cranelift::codegen::verifier::verify_function;
+use cranelift_object::{ObjectModule, ObjectBuilder};
+use cranelift_module::{default_libcall_names, Module};
+use cranelift_native;
 use std::collections::HashMap;
 
 fn tr_type(typ: &bril::Type) -> ir::Type {
@@ -126,6 +129,16 @@ fn main() {
     // Load the Bril program from stdin.
     let prog = bril::load_program();
     
+    // Make an object module.
+    // TODO Optionally try out the JIT someday!
+    let flag_builder = settings::builder();
+    let isa_builder = cranelift_native::builder().unwrap();
+    let isa = isa_builder
+        .finish(settings::Flags::new(flag_builder))
+        .unwrap();
+    let mut module =
+        ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
+    
     for func in prog.functions {
         let func = compile_func(func);
 
@@ -136,5 +149,10 @@ fn main() {
         if let Err(errors) = res {
             panic!("{}", errors);
         }
+
+        // Add to the module.
+        let func_id = module
+            .declare_function("bar", cranelift_module::Linkage::Export, &func.signature)
+            .unwrap();
     }
 }
