@@ -39,8 +39,8 @@ impl Lines {
                     .map(|(i, j)| (i + 1, j))
                     .fold(
                         Position {
-                            col: 1,
-                            row: index as u64,
+                            col: index as u64,
+                            row: 1,
                         },
                         |current, (line_num, idx)| {
                             if *idx < index {

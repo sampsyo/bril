@@ -6,6 +6,10 @@ TESTS :=  ../test/interp/*.bril \
 
 BENCHMARKS := ../benchmarks/*.bril
 
+.PHONY: install
+install:
+	cargo install --path .
+
 .PHONY: test
 test:
 	turnt -c turnt_brilirs.toml $(TESTS)

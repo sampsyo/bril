@@ -206,13 +206,13 @@ impl Pointer {
 impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      Value::Int(i) => write!(f, "{i}"),
-      Value::Bool(b) => write!(f, "{b}"),
-      Value::Float(v) if v.is_infinite() && v.is_sign_positive() => write!(f, "Infinity"),
-      Value::Float(v) if v.is_infinite() && v.is_sign_negative() => write!(f, "-Infinity"),
-      Value::Float(v) => write!(f, "{v}"),
-      Value::Pointer(p) => write!(f, "{p:?}"),
-      Value::Uninitialized => unreachable!(),
+      Self::Int(i) => write!(f, "{i}"),
+      Self::Bool(b) => write!(f, "{b}"),
+      Self::Float(v) if v.is_infinite() && v.is_sign_positive() => write!(f, "Infinity"),
+      Self::Float(v) if v.is_infinite() && v.is_sign_negative() => write!(f, "-Infinity"),
+      Self::Float(v) => write!(f, "{v}"),
+      Self::Pointer(p) => write!(f, "{p:?}"),
+      Self::Uninitialized => unreachable!(),
     }
   }
 }
@@ -695,7 +695,7 @@ struct State<'a, T: std::io::Write> {
 }
 
 impl<'a, T: std::io::Write> State<'a, T> {
-  fn new(prog: &'a BBProgram, env: Environment, heap: Heap, out: T) -> Self {
+  const fn new(prog: &'a BBProgram, env: Environment, heap: Heap, out: T) -> Self {
     Self {
       prog,
       env,
