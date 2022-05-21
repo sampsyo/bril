@@ -168,6 +168,14 @@ impl<M: Module> Translator<M> {
             builder.finalize();
         }
 
+        // Verify and print.
+        let flags = settings::Flags::new(settings::builder());
+        let res = verify_function(&cl_func, &flags);
+        println!("{}", cl_func.display());
+        if let Err(errors) = res {
+            panic!("{}", errors);
+        }
+
         // Add to the module.
         // TODO Move to a separate function?
         let func_id = self.module
@@ -188,14 +196,6 @@ fn main() {
     let mut trans = Translator::<ObjectModule>::new();
     
     for bril_func in prog.functions {
-        let func = trans.compile_func(bril_func);
-
-        // Verify and print.
-        let flags = settings::Flags::new(settings::builder());
-        let res = verify_function(&func, &flags);
-        println!("{}", func.display());
-        if let Err(errors) = res {
-            panic!("{}", errors);
-        }
+        trans.compile_func(bril_func);
     }
 }
