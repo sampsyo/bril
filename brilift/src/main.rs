@@ -56,10 +56,20 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
 }
 
 struct Translator<M: Module> {
-    rt_sigs: RTSigs,
     rt_funcs: RTIds,
     module: M,
     context: cranelift::codegen::Context,
+}
+
+// TODO Should this be a constant or something?
+fn get_rt_sigs() -> RTSigs {
+    RTSigs {
+        print_int: ir::Signature {
+            params: vec![ir::AbiParam::new(ir::types::I64)],
+            returns: vec![],
+            call_conv: isa::CallConv::SystemV,
+        }
+    }
 }
 
 impl Translator<ObjectModule> {
@@ -71,18 +81,13 @@ impl Translator<ObjectModule> {
         let isa = isa_builder
             .finish(settings::Flags::new(flag_builder))
             .unwrap();
+        dbg!(isa.name());
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
 
         // Set up the runtime library.
         // TODO Maybe these should be hash tables or something?
-        let rt_sigs = RTSigs {
-            print_int: ir::Signature {
-                params: vec![ir::AbiParam::new(ir::types::I64)],
-                returns: vec![],
-                call_conv: isa::CallConv::SystemV,
-            }
-        };
+        let rt_sigs = get_rt_sigs();
         let rt_funcs = RTIds {
             print_int: {
                 module
@@ -94,7 +99,6 @@ impl Translator<ObjectModule> {
         let context = cranelift::codegen::Context::new();
         
         Self {
-            rt_sigs,
             rt_funcs,
             module,
             context,
@@ -201,6 +205,7 @@ fn main() {
     }
 
     let prod = trans.module.finish();
+    dbg!(&prod.object);
     let objdata = prod.emit().expect("emission failed");
     fs::write("bril.o", objdata).expect("failed to write .o file");
 }
