@@ -9,6 +9,14 @@ use cranelift_module::{default_libcall_names, Module};
 use cranelift_native;
 use std::collections::HashMap;
 
+struct RTSigs {
+    print_int: ir::Signature
+}
+
+struct RTIds {
+    print_int: cranelift_module::FuncId
+}
+
 fn tr_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
@@ -46,101 +54,128 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
     }).collect()
 }
 
-fn compile_func(func: bril::Function) -> ir::Function {
-    // Build function signature.
-    let sig = tr_sig(&func);
+struct Translator<M: Module> {
+    rt_sigs: RTSigs,
+    rt_funcs: RTIds,
+    module: M,
+}
 
-    // Create the function.
-    // TODO Do something about the name.
-    let mut fn_builder_ctx = FunctionBuilderContext::new();
-    let mut cl_func = ir::Function::with_name_signature(ir::ExternalName::user(0, 0), sig);
-    
-    // Build the function body.
-    {
-        let mut builder = FunctionBuilder::new(&mut cl_func, &mut fn_builder_ctx);
+impl Translator<ObjectModule> {
+    fn new() -> Self {
+        // Make an object module.
+        // TODO Optionally try out the JIT someday!
+        let flag_builder = settings::builder();
+        let isa_builder = cranelift_native::builder().unwrap();
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .unwrap();
+        let mut module =
+            ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
 
-        // Declare runtime functions.
-        // TODO Map to extern symbol.
-        let print_int = {
-            let mut sig = ir::Signature::new(isa::CallConv::SystemV);
-            sig.params.push(ir::AbiParam::new(ir::types::I64));
-            let sigref = builder.import_signature(sig);
-            builder.import_function(ir::ExtFuncData {
-                name: ir::ExternalName::user(1, 0),
-                signature: sigref,
-                colocated: false,
-            })
-        };
-
-        // Declare all variables.
-        let mut vars = HashMap::<&String, Variable>::new();
-        for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
-            let var = Variable::new(i);
-            builder.declare_var(var, tr_type(typ));
-            vars.insert(name, var);
-        }
-
-        // TODO just one block for now...
-        let block = builder.create_block();
-        builder.switch_to_block(block);
-
-        // Insert instructions.
-        for code in &func.instrs {
-            match code {
-                bril::Code::Instruction(inst) => {
-                    match inst {
-                        bril::Instruction::Constant { dest, op: _, const_type: _, value } => {
-                            let var = vars.get(&dest).unwrap();
-                            let val = match value {
-                                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
-                                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
-                            };
-                            builder.def_var(*var, val);
-                        },
-                        bril::Instruction::Effect { args, funcs: _, labels: _, op } => {
-                            match op {
-                                bril::EffectOps::Print => {
-                                    // TODO Target should depend on the type.
-                                    // TODO Deal with multiple args somehow.
-                                    let var = vars.get(&args[0]).unwrap();
-                                    let arg = builder.use_var(*var);
-                                    builder.ins().call(print_int, &[arg]);
-                                },
-                                _ => todo!(),
-                            }
-                        },
-                        _ => (),  // TODO
-                    }
-                },
-                _ => (),  // TODO
+        // Set up the runtime library.
+        // TODO Maybe these should be hash tables or something?
+        let rt_sigs = RTSigs {
+            print_int: {
+                let mut sig = ir::Signature::new(isa::CallConv::SystemV);
+                sig.params.push(ir::AbiParam::new(ir::types::I64));
+                sig
             }
-        }
-
-        builder.ins().return_(&[]);  // TODO
-        builder.seal_block(block);
+        };
+        let rt_funcs = RTIds {
+            print_int: {
+                module
+                    .declare_function("print_int", cranelift_module::Linkage::Import, &rt_sigs.print_int)
+                    .unwrap()
+            }
+        };
         
-        builder.finalize();
+        Self {
+            rt_sigs,
+            rt_funcs,
+            module,
+        }
     }
-    
-    cl_func
+}
+
+impl<M: Module> Translator<M> {
+    fn compile_func(&self, func: bril::Function) -> ir::Function {
+        // Build function signature.
+        let sig = tr_sig(&func);
+
+        // Create the function.
+        // TODO Do something about the name.
+        let mut fn_builder_ctx = FunctionBuilderContext::new();
+        let mut cl_func = ir::Function::with_name_signature(ir::ExternalName::user(0, 0), sig);
+        
+        // Build the function body.
+        {
+            let mut builder = FunctionBuilder::new(&mut cl_func, &mut fn_builder_ctx);
+
+            // Declare runtime functions.
+            let print_int = self.module.declare_func_in_func(self.rt_funcs.print_int, builder.func);
+
+            // Declare all variables.
+            let mut vars = HashMap::<&String, Variable>::new();
+            for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
+                let var = Variable::new(i);
+                builder.declare_var(var, tr_type(typ));
+                vars.insert(name, var);
+            }
+
+            // TODO just one block for now...
+            let block = builder.create_block();
+            builder.switch_to_block(block);
+
+            // Insert instructions.
+            for code in &func.instrs {
+                match code {
+                    bril::Code::Instruction(inst) => {
+                        match inst {
+                            bril::Instruction::Constant { dest, op: _, const_type: _, value } => {
+                                let var = vars.get(&dest).unwrap();
+                                let val = match value {
+                                    bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
+                                    bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
+                                };
+                                builder.def_var(*var, val);
+                            },
+                            bril::Instruction::Effect { args, funcs: _, labels: _, op } => {
+                                match op {
+                                    bril::EffectOps::Print => {
+                                        // TODO Target should depend on the type.
+                                        // TODO Deal with multiple args somehow.
+                                        let var = vars.get(&args[0]).unwrap();
+                                        let arg = builder.use_var(*var);
+                                        builder.ins().call(print_int, &[arg]);
+                                    },
+                                    _ => todo!(),
+                                }
+                            },
+                            _ => (),  // TODO
+                        }
+                    },
+                    _ => (),  // TODO
+                }
+            }
+
+            builder.ins().return_(&[]);  // TODO
+            builder.seal_block(block);
+            
+            builder.finalize();
+        }
+        
+        cl_func
+    }
 }
 
 fn main() {
     // Load the Bril program from stdin.
     let prog = bril::load_program();
     
-    // Make an object module.
-    // TODO Optionally try out the JIT someday!
-    let flag_builder = settings::builder();
-    let isa_builder = cranelift_native::builder().unwrap();
-    let isa = isa_builder
-        .finish(settings::Flags::new(flag_builder))
-        .unwrap();
-    let mut module =
-        ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
+    let mut trans = Translator::<ObjectModule>::new();
     
     for func in prog.functions {
-        let func = compile_func(func);
+        let func = trans.compile_func(func);
 
         // Verify and print.
         let flags = settings::Flags::new(settings::builder());
@@ -151,7 +186,7 @@ fn main() {
         }
 
         // Add to the module.
-        let func_id = module
+        trans.module
             .declare_function("bar", cranelift_module::Linkage::Export, &func.signature)
             .unwrap();
     }
