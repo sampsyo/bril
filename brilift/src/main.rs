@@ -8,6 +8,7 @@ use cranelift_object::{ObjectModule, ObjectBuilder};
 use cranelift_module::{default_libcall_names, Module};
 use cranelift_native;
 use std::collections::HashMap;
+use std::fs;
 
 struct RTSigs {
     print_int: ir::Signature
@@ -199,5 +200,7 @@ fn main() {
         trans.compile_func(bril_func);
     }
 
-    trans.module.finish();
+    let prod = trans.module.finish();
+    let objdata = prod.emit().expect("emission failed");
+    fs::write("bril.o", objdata).expect("failed to write .o file");
 }
