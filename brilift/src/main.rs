@@ -56,10 +56,12 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
     }).collect()
 }
 
+// TODO Should really be a trait with two different structs that implement it?
 struct Translator<M: Module> {
     rt_funcs: RTIds,
     module: M,
     context: cranelift::codegen::Context,
+    funcs: HashMap<String, cranelift_module::FuncId>,
 }
 
 // TODO Should this be a constant or something?
@@ -101,6 +103,7 @@ impl Translator<ObjectModule> {
             rt_funcs: declare_rt(&mut module),
             module,
             context: cranelift::codegen::Context::new(),
+            funcs: HashMap::new(),
         }
     }
     
@@ -122,12 +125,22 @@ impl Translator<JITModule> {
             rt_funcs: declare_rt(&mut module),
             context: module.make_context(),
             module,
+            funcs: HashMap::new(),
         }
+    }
+    
+    fn compile(mut self) -> *const u8 {
+        self.module.clear_context(&mut self.context);
+        self.module.finalize_definitions();
+
+        // TODO Compile all functions.
+        let id = self.funcs.get("main").unwrap();
+        self.module.get_finalized_function(*id)
     }
 }
 
 impl<M: Module> Translator<M> {
-    fn compile_func(&mut self, func: bril::Function) {
+    fn compile_func(&mut self, func: bril::Function) -> cranelift_module::FuncId {
         // Build function signature.
         let sig = tr_sig(&func);
 
@@ -137,7 +150,6 @@ impl<M: Module> Translator<M> {
             .unwrap();
 
         // Create the function.
-        // TODO Do something about the name.
         self.context.func = ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         
@@ -211,11 +223,15 @@ impl<M: Module> Translator<M> {
         self.module
             .define_function(func_id, &mut self.context)
             .unwrap();
+        
+        func_id
     }
 
     fn compile_prog(&mut self, prog: bril::Program) {
-        for bril_func in prog.functions {
-            self.compile_func(bril_func);
+        for func in prog.functions {
+            let name = func.name.to_owned();
+            let id = self.compile_func(func);
+            self.funcs.insert(name, id);
         }
     }
 }
