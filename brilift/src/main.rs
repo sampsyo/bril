@@ -58,6 +58,7 @@ struct Translator<M: Module> {
     rt_sigs: RTSigs,
     rt_funcs: RTIds,
     module: M,
+    context: cranelift::codegen::Context,
 }
 
 impl Translator<ObjectModule> {
@@ -88,17 +89,20 @@ impl Translator<ObjectModule> {
                     .unwrap()
             }
         };
+
+        let context = cranelift::codegen::Context::new();
         
         Self {
             rt_sigs,
             rt_funcs,
             module,
+            context,
         }
     }
 }
 
 impl<M: Module> Translator<M> {
-    fn compile_func(&self, func: bril::Function) -> ir::Function {
+    fn compile_func(&mut self, func: bril::Function) -> ir::Function {
         // Build function signature.
         let sig = tr_sig(&func);
 
@@ -163,6 +167,15 @@ impl<M: Module> Translator<M> {
             
             builder.finalize();
         }
+
+        // Add to the module.
+        // TODO Move to a separate function?
+        let func_id = self.module
+            .declare_function(&func.name, cranelift_module::Linkage::Export, &cl_func.signature)
+            .unwrap();
+        self.module
+            .define_function(func_id, &mut self.context)
+            .unwrap();
         
         cl_func
     }
@@ -174,8 +187,8 @@ fn main() {
     
     let mut trans = Translator::<ObjectModule>::new();
     
-    for func in prog.functions {
-        let func = trans.compile_func(func);
+    for bril_func in prog.functions {
+        let func = trans.compile_func(bril_func);
 
         // Verify and print.
         let flags = settings::Flags::new(settings::builder());
@@ -184,10 +197,5 @@ fn main() {
         if let Err(errors) = res {
             panic!("{}", errors);
         }
-
-        // Add to the module.
-        trans.module
-            .declare_function("bar", cranelift_module::Linkage::Export, &func.signature)
-            .unwrap();
     }
 }
