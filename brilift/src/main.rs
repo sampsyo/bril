@@ -5,6 +5,7 @@ use cranelift::codegen::ir::InstBuilder;
 use cranelift::codegen::entity::EntityRef;
 use cranelift::codegen::verifier::verify_function;
 use cranelift_object::{ObjectModule, ObjectBuilder};
+use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, Module};
 use cranelift_native;
 use std::collections::HashMap;
@@ -72,10 +73,21 @@ fn get_rt_sigs() -> RTSigs {
     }
 }
 
+fn declare_rt<M: Module>(module: &mut M) -> RTIds {
+    // TODO Maybe these should be hash tables or something?
+    let rt_sigs = get_rt_sigs();
+    RTIds {
+        print_int: {
+            module
+                .declare_function("print_int", cranelift_module::Linkage::Import, &rt_sigs.print_int)
+                .unwrap()
+        }
+    }
+}
+
 impl Translator<ObjectModule> {
     fn new() -> Self {
         // Make an object module.
-        // TODO Optionally try out the JIT someday!
         let flag_builder = settings::builder();
         let isa_builder = cranelift_native::builder().unwrap();
         let isa = isa_builder
@@ -84,24 +96,32 @@ impl Translator<ObjectModule> {
         dbg!(isa.name());
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
-
-        // Set up the runtime library.
-        // TODO Maybe these should be hash tables or something?
-        let rt_sigs = get_rt_sigs();
-        let rt_funcs = RTIds {
-            print_int: {
-                module
-                    .declare_function("print_int", cranelift_module::Linkage::Import, &rt_sigs.print_int)
-                    .unwrap()
-            }
-        };
-
-        let context = cranelift::codegen::Context::new();
         
         Self {
-            rt_funcs,
+            rt_funcs: declare_rt(&mut module),
             module,
-            context,
+            context: cranelift::codegen::Context::new(),
+        }
+    }
+    
+    fn emit(self) {
+        let prod = self.module.finish();
+        dbg!(&prod.object);
+        let objdata = prod.emit().expect("emission failed");
+        fs::write("bril.o", objdata).expect("failed to write .o file");
+    }
+}
+
+impl Translator<JITModule> {
+    fn new() -> Self {
+        // Cranelift JIT scaffolding.
+        let builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
+        let mut module = JITModule::new(builder);
+
+        Self {
+            rt_funcs: declare_rt(&mut module),
+            context: module.make_context(),
+            module,
         }
     }
 }
@@ -204,8 +224,5 @@ fn main() {
         trans.compile_func(bril_func);
     }
 
-    let prod = trans.module.finish();
-    dbg!(&prod.object);
-    let objdata = prod.emit().expect("emission failed");
-    fs::write("bril.o", objdata).expect("failed to write .o file");
+    trans.emit();
 }
