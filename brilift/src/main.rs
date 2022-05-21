@@ -76,10 +76,10 @@ impl Translator<ObjectModule> {
         // Set up the runtime library.
         // TODO Maybe these should be hash tables or something?
         let rt_sigs = RTSigs {
-            print_int: {
-                let mut sig = ir::Signature::new(isa::CallConv::SystemV);
-                sig.params.push(ir::AbiParam::new(ir::types::I64));
-                sig
+            print_int: ir::Signature {
+                params: vec![ir::AbiParam::new(ir::types::I64)],
+                returns: vec![],
+                call_conv: isa::CallConv::SystemV,
             }
         };
         let rt_funcs = RTIds {
