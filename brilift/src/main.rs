@@ -102,18 +102,23 @@ impl Translator<ObjectModule> {
 }
 
 impl<M: Module> Translator<M> {
-    fn compile_func(&mut self, func: bril::Function) -> ir::Function {
+    fn compile_func(&mut self, func: bril::Function) {
         // Build function signature.
         let sig = tr_sig(&func);
 
+        // TODO Probably move to a separate function.
+        let func_id = self.module
+            .declare_function(&func.name, cranelift_module::Linkage::Export, &sig)
+            .unwrap();
+
         // Create the function.
         // TODO Do something about the name.
+        self.context.func = ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
         let mut fn_builder_ctx = FunctionBuilderContext::new();
-        let mut cl_func = ir::Function::with_name_signature(ir::ExternalName::user(0, 0), sig);
         
         // Build the function body.
         {
-            let mut builder = FunctionBuilder::new(&mut cl_func, &mut fn_builder_ctx);
+            let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
             // Declare runtime functions.
             let print_int = self.module.declare_func_in_func(self.rt_funcs.print_int, builder.func);
@@ -170,22 +175,17 @@ impl<M: Module> Translator<M> {
 
         // Verify and print.
         let flags = settings::Flags::new(settings::builder());
-        let res = verify_function(&cl_func, &flags);
-        println!("{}", cl_func.display());
+        let res = verify_function(&self.context.func, &flags);
+        println!("{}", self.context.func.display());
         if let Err(errors) = res {
             panic!("{}", errors);
         }
 
         // Add to the module.
         // TODO Move to a separate function?
-        let func_id = self.module
-            .declare_function(&func.name, cranelift_module::Linkage::Export, &cl_func.signature)
-            .unwrap();
         self.module
             .define_function(func_id, &mut self.context)
             .unwrap();
-        
-        cl_func
     }
 }
 
@@ -198,4 +198,6 @@ fn main() {
     for bril_func in prog.functions {
         trans.compile_func(bril_func);
     }
+
+    trans.module.finish();
 }
