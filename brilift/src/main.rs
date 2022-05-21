@@ -10,6 +10,7 @@ use cranelift_module::{default_libcall_names, Module};
 use cranelift_native;
 use std::collections::HashMap;
 use std::fs;
+use argh::FromArgs;
 
 struct RTSigs {
     print_int: ir::Signature
@@ -236,11 +237,26 @@ impl<M: Module> Translator<M> {
     }
 }
 
+#[derive(FromArgs)]
+#[argh(description = "Bril compiler")]
+struct Args {
+    #[argh(switch, short = 'j', description = "JIT and run")]
+    jit: bool,
+}
+
 fn main() {
+    let args: Args = argh::from_env();
+
     // Load the Bril program from stdin.
     let prog = bril::load_program();
     
-    let mut trans = Translator::<ObjectModule>::new();
-    trans.compile_prog(prog);
-    trans.emit();
+    if args.jit {
+        let mut trans = Translator::<JITModule>::new();
+        trans.compile_prog(prog);
+        trans.compile();
+    } else {
+        let mut trans = Translator::<ObjectModule>::new();
+        trans.compile_prog(prog);
+        trans.emit();
+    }
 }
