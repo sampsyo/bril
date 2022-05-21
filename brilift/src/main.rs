@@ -212,6 +212,12 @@ impl<M: Module> Translator<M> {
             .define_function(func_id, &mut self.context)
             .unwrap();
     }
+
+    fn compile_prog(&mut self, prog: bril::Program) {
+        for bril_func in prog.functions {
+            self.compile_func(bril_func);
+        }
+    }
 }
 
 fn main() {
@@ -219,10 +225,6 @@ fn main() {
     let prog = bril::load_program();
     
     let mut trans = Translator::<ObjectModule>::new();
-    
-    for bril_func in prog.functions {
-        trans.compile_func(bril_func);
-    }
-
+    trans.compile_prog(prog);
     trans.emit();
 }
