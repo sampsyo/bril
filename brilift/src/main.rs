@@ -161,7 +161,12 @@ impl Translator<JITModule> {
     }
 }
 
-fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, vars: &HashMap<String, Variable>, rt_refs: &RTRefs) {
+fn compile_inst(
+    inst: &bril::Instruction,
+    builder: &mut FunctionBuilder,
+    vars: &HashMap<String, Variable>,
+    rt_refs: &RTRefs,
+) {
     match inst {
         bril::Instruction::Constant {
             dest,
@@ -171,12 +176,8 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, vars: &
         } => {
             let var = vars.get(dest).unwrap();
             let val = match value {
-                bril::Literal::Int(i) => {
-                    builder.ins().iconst(ir::types::I64, *i)
-                }
-                bril::Literal::Bool(b) => {
-                    builder.ins().bconst(ir::types::B1, *b)
-                }
+                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
+                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
             };
             builder.def_var(*var, val);
         }
@@ -217,7 +218,6 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, vars: &
     }
 }
 
-
 impl<M: Module> Translator<M> {
     fn compile_func(&mut self, func: bril::Function) -> cranelift_module::FuncId {
         // Build function signature.
@@ -240,7 +240,9 @@ impl<M: Module> Translator<M> {
 
             // Declare runtime functions.
             let rt_refs = RTRefs {
-                print_int: self.module.declare_func_in_func(self.rt_funcs.print_int, builder.func),
+                print_int: self
+                    .module
+                    .declare_func_in_func(self.rt_funcs.print_int, builder.func),
             };
 
             // Declare all variables.
@@ -258,7 +260,9 @@ impl<M: Module> Translator<M> {
             // Insert instructions.
             for code in &func.instrs {
                 match code {
-                    bril::Code::Instruction(inst) => compile_inst(inst, &mut builder, &vars, &rt_refs),
+                    bril::Code::Instruction(inst) => {
+                        compile_inst(inst, &mut builder, &vars, &rt_refs)
+                    }
                     _ => todo!(),
                 }
             }
