@@ -5,9 +5,6 @@ RUST_TARGET := x86_64-apple-darwin
 build:
 	cargo build
 
-# rt.o: rt.c
-# 	cc -target $(TARGET) -c -o $@ $^
-
 rt.o: rt.rs
 	rustc -C panic=abort --crate-type=staticlib --emit=obj \
 		--target=$(RUST_TARGET) $^
