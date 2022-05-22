@@ -299,11 +299,16 @@ impl<M: Module> Translator<M> {
                         }
                     }
                     bril::Code::Label { label } => {
-                        // TODO Check whether we need a terminator for the last block!
+                        let new_block = *blocks.get(label).unwrap();
+
+                        // If the previous block was missing a terminator (fall-through), insert a
+                        // jump to the new block.
+                        if !terminated {
+                            builder.ins().jump(new_block, &[]);
+                        }
                         terminated = false;
 
-                        let block = *blocks.get(label).unwrap();
-                        builder.switch_to_block(block);
+                        builder.switch_to_block(new_block);
                     }
                 }
             }
