@@ -64,7 +64,8 @@ version = "0.1.0"
 dependencies = [
  "argh",
  "bril-rs",
- "cranelift",
+ "cranelift-codegen",
+ "cranelift-frontend",
  "cranelift-jit",
  "cranelift-module",
  "cranelift-native",
@@ -76,16 +77,6 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
-name = "cranelift"
-version = "0.83.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1b41f74ffa9c9617b66f7415e216681d048888b0115e4bb64f414f2d240499d"
-dependencies = [
- "cranelift-codegen",
- "cranelift-frontend",
-]
 
 [[package]]
 name = "cranelift-bforest"
@@ -106,6 +97,7 @@ dependencies = [
  "cranelift-codegen-meta",
  "cranelift-codegen-shared",
  "cranelift-entity",
+ "gimli",
  "log",
  "regalloc",
  "smallvec",
@@ -205,6 +197,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b540bd8bc810d3885c6ea91e2018302f68baba2129ab3e88f32389ee9370880d"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "gimli"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
+dependencies = [
+ "indexmap",
 ]
 
 [[package]]

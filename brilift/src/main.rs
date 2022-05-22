@@ -1,9 +1,9 @@
 use bril_rs as bril;
-use cranelift::frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
-use cranelift::codegen::{ir, isa, settings};
-use cranelift::codegen::ir::InstBuilder;
-use cranelift::codegen::entity::EntityRef;
-use cranelift::codegen::verifier::verify_function;
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
+use cranelift_codegen::{ir, isa, settings};
+use cranelift_codegen::ir::InstBuilder;
+use cranelift_codegen::entity::EntityRef;
+use cranelift_codegen::verifier::verify_function;
 use cranelift_object::{ObjectModule, ObjectBuilder};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, Module};
@@ -61,7 +61,7 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
 struct Translator<M: Module> {
     rt_funcs: RTIds,
     module: M,
-    context: cranelift::codegen::Context,
+    context: cranelift_codegen::Context,
     funcs: HashMap<String, cranelift_module::FuncId>,
 }
 
@@ -89,21 +89,28 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
 }
 
 impl Translator<ObjectModule> {
-    fn new() -> Self {
+    fn new(target: Option<String>) -> Self {
         // Make an object module.
         let flag_builder = settings::builder();
-        let isa_builder = cranelift_native::builder().unwrap();
-        let isa = isa_builder
-            .finish(settings::Flags::new(flag_builder))
-            .unwrap();
-        dbg!(isa.name());
+        let isa = if let Some(targ) = target {
+            let isa_builder = cranelift_codegen::isa::lookup_by_name(&targ)
+                .expect("invalid target");
+            isa_builder
+                .finish(settings::Flags::new(flag_builder))
+                .unwrap()
+        } else {
+            let isa_builder = cranelift_native::builder().unwrap();
+            isa_builder
+                .finish(settings::Flags::new(flag_builder))
+                .unwrap()
+        };
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
         
         Self {
             rt_funcs: declare_rt(&mut module),
             module,
-            context: cranelift::codegen::Context::new(),
+            context: cranelift_codegen::Context::new(),
             funcs: HashMap::new(),
         }
     }
@@ -242,6 +249,9 @@ impl<M: Module> Translator<M> {
 struct Args {
     #[argh(switch, short = 'j', description = "JIT and run")]
     jit: bool,
+    
+    #[argh(option, short = 't', description = "target ISA")]
+    target: Option<String>,
 }
 
 fn main() {
@@ -249,13 +259,13 @@ fn main() {
 
     // Load the Bril program from stdin.
     let prog = bril::load_program();
-    
+
     if args.jit {
         let mut trans = Translator::<JITModule>::new();
         trans.compile_prog(prog);
         trans.compile();
     } else {
-        let mut trans = Translator::<ObjectModule>::new();
+        let mut trans = Translator::<ObjectModule>::new(args.target);
         trans.compile_prog(prog);
         trans.emit();
     }
