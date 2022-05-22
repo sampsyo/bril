@@ -205,7 +205,18 @@ impl<M: Module> Translator<M> {
                                     _ => todo!(),
                                 }
                             },
-                            _ => todo!(),
+                            bril::Instruction::Value { args, dest, funcs: _, labels: _, op, op_type: _ } => {
+                                match op {
+                                    bril::ValueOps::Add => {
+                                        let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                                        let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                                        let res = builder.ins().iadd(lhs, rhs);
+                                        let dest_var = vars.get(dest).unwrap();
+                                        builder.def_var(*dest_var, res);
+                                    },
+                                    _ => todo!(),
+                                }
+                            },
                         }
                     },
                     _ => todo!(),
