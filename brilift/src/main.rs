@@ -161,6 +161,19 @@ impl Translator<JITModule> {
     }
 }
 
+fn is_term(inst: &bril::Instruction) -> bool {
+    if let bril::Instruction::Effect { args: _, funcs: _, labels: _, op } = inst {
+        match op {
+            bril::EffectOps::Branch => true,
+            bril::EffectOps::Jump => true,
+            bril::EffectOps::Return => true,
+            _ => false,
+        }
+    } else {
+        false
+    }
+}
+
 fn compile_inst(
     inst: &bril::Instruction,
     builder: &mut FunctionBuilder,
@@ -266,18 +279,29 @@ impl<M: Module> Translator<M> {
                 }
             }
 
-            // Create the entry block. It has no label.
-            let entry_block = builder.create_block();
-            builder.switch_to_block(entry_block);
-
             // Insert instructions.
+            let mut terminated = true;
             for code in &func.instrs {
                 match code {
                     bril::Code::Instruction(inst) => {
-                        compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks)
+                        // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
+                        if terminated {
+                            let block = builder.create_block();
+                            builder.switch_to_block(block);
+                            terminated = false;
+                        }
+
+                        // Compile one instruction.
+                        compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks);
+
+                        if is_term(inst) {
+                            terminated = true;
+                        }
                     }
                     bril::Code::Label { label } => {
                         // TODO Check whether we need a terminator for the last block!
+                        terminated = false;
+
                         let block = *blocks.get(label).unwrap();
                         builder.switch_to_block(block);
                     }
