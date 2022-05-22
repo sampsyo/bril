@@ -212,6 +212,13 @@ fn compile_inst(
                     let block = *blocks.get(&labels[0]).unwrap();
                     builder.ins().jump(block, &[]);
                 }
+                bril::EffectOps::Branch => {
+                    let arg = builder.use_var(*vars.get(&args[0]).unwrap());
+                    let true_block = *blocks.get(&labels[0]).unwrap();
+                    let false_block = *blocks.get(&labels[1]).unwrap();
+                    builder.ins().brnz(arg, true_block, &[]);
+                    builder.ins().jump(false_block, &[]);
+                }
                 _ => todo!()
             }
         }
