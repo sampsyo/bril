@@ -166,6 +166,7 @@ fn compile_inst(
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
     rt_refs: &RTRefs,
+    blocks: &HashMap<String, ir::Block>
 ) {
     match inst {
         bril::Instruction::Constant {
@@ -184,18 +185,21 @@ fn compile_inst(
         bril::Instruction::Effect {
             args,
             funcs: _,
-            labels: _,
+            labels,
             op,
         } => {
             match op {
                 bril::EffectOps::Print => {
                     // TODO Target should depend on the type.
                     // TODO Deal with multiple args somehow.
-                    let var = vars.get(&args[0]).unwrap();
-                    let arg = builder.use_var(*var);
+                    let arg = builder.use_var(*vars.get(&args[0]).unwrap());
                     builder.ins().call(rt_refs.print_int, &[arg]);
                 }
-                _ => todo!(),
+                bril::EffectOps::Jump => {
+                    let block = *blocks.get(&labels[0]).unwrap();
+                    builder.ins().jump(block, &[]);
+                }
+                _ => todo!()
             }
         }
         bril::Instruction::Value {
@@ -253,23 +257,36 @@ impl<M: Module> Translator<M> {
                 vars.insert(name.to_string(), var);
             }
 
-            // TODO just one block for now...
-            let block = builder.create_block();
-            builder.switch_to_block(block);
+            // Create blocks for every label.
+            let mut blocks = HashMap::<String, ir::Block>::new();
+            for code in &func.instrs {
+                if let bril::Code::Label { label } = code {
+                    let block = builder.create_block();
+                    blocks.insert(label.to_string(), block);
+                }
+            }
+
+            // Create the entry block. It has no label.
+            let entry_block = builder.create_block();
+            builder.switch_to_block(entry_block);
 
             // Insert instructions.
             for code in &func.instrs {
                 match code {
                     bril::Code::Instruction(inst) => {
-                        compile_inst(inst, &mut builder, &vars, &rt_refs)
+                        compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks)
                     }
-                    _ => todo!(),
+                    bril::Code::Label { label } => {
+                        // TODO Check whether we need a terminator for the last block!
+                        let block = *blocks.get(label).unwrap();
+                        builder.switch_to_block(block);
+                    }
                 }
             }
 
             builder.ins().return_(&[]); // TODO
-            builder.seal_block(block);
 
+            builder.seal_all_blocks();
             builder.finalize();
         }
 
