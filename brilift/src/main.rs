@@ -205,10 +205,10 @@ impl<M: Module> Translator<M> {
                                     _ => todo!(),
                                 }
                             },
-                            _ => (),  // TODO
+                            _ => todo!(),
                         }
                     },
-                    _ => (),  // TODO
+                    _ => todo!(),
                 }
             }
 
