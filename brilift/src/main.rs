@@ -19,6 +19,10 @@ struct RTIds {
     print_int: cranelift_module::FuncId,
 }
 
+struct RTRefs {
+    print_int: ir::FuncRef,
+}
+
 fn tr_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
@@ -157,6 +161,63 @@ impl Translator<JITModule> {
     }
 }
 
+fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, vars: &HashMap<String, Variable>, rt_refs: &RTRefs) {
+    match inst {
+        bril::Instruction::Constant {
+            dest,
+            op: _,
+            const_type: _,
+            value,
+        } => {
+            let var = vars.get(dest).unwrap();
+            let val = match value {
+                bril::Literal::Int(i) => {
+                    builder.ins().iconst(ir::types::I64, *i)
+                }
+                bril::Literal::Bool(b) => {
+                    builder.ins().bconst(ir::types::B1, *b)
+                }
+            };
+            builder.def_var(*var, val);
+        }
+        bril::Instruction::Effect {
+            args,
+            funcs: _,
+            labels: _,
+            op,
+        } => {
+            match op {
+                bril::EffectOps::Print => {
+                    // TODO Target should depend on the type.
+                    // TODO Deal with multiple args somehow.
+                    let var = vars.get(&args[0]).unwrap();
+                    let arg = builder.use_var(*var);
+                    builder.ins().call(rt_refs.print_int, &[arg]);
+                }
+                _ => todo!(),
+            }
+        }
+        bril::Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op,
+            op_type: _,
+        } => match op {
+            bril::ValueOps::Add => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().iadd(lhs, rhs);
+                let dest_var = vars.get(dest).unwrap();
+                builder.def_var(*dest_var, res);
+            }
+            _ => todo!(),
+        },
+    }
+}
+
+
 impl<M: Module> Translator<M> {
     fn compile_func(&mut self, func: bril::Function) -> cranelift_module::FuncId {
         // Build function signature.
@@ -178,16 +239,16 @@ impl<M: Module> Translator<M> {
             let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
             // Declare runtime functions.
-            let print_int = self
-                .module
-                .declare_func_in_func(self.rt_funcs.print_int, builder.func);
+            let rt_refs = RTRefs {
+                print_int: self.module.declare_func_in_func(self.rt_funcs.print_int, builder.func),
+            };
 
             // Declare all variables.
-            let mut vars = HashMap::<&String, Variable>::new();
+            let mut vars = HashMap::<String, Variable>::new();
             for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
                 let var = Variable::new(i);
                 builder.declare_var(var, tr_type(typ));
-                vars.insert(name, var);
+                vars.insert(name.to_string(), var);
             }
 
             // TODO just one block for now...
@@ -197,61 +258,7 @@ impl<M: Module> Translator<M> {
             // Insert instructions.
             for code in &func.instrs {
                 match code {
-                    bril::Code::Instruction(inst) => {
-                        match inst {
-                            bril::Instruction::Constant {
-                                dest,
-                                op: _,
-                                const_type: _,
-                                value,
-                            } => {
-                                let var = vars.get(&dest).unwrap();
-                                let val = match value {
-                                    bril::Literal::Int(i) => {
-                                        builder.ins().iconst(ir::types::I64, *i)
-                                    }
-                                    bril::Literal::Bool(b) => {
-                                        builder.ins().bconst(ir::types::B1, *b)
-                                    }
-                                };
-                                builder.def_var(*var, val);
-                            }
-                            bril::Instruction::Effect {
-                                args,
-                                funcs: _,
-                                labels: _,
-                                op,
-                            } => {
-                                match op {
-                                    bril::EffectOps::Print => {
-                                        // TODO Target should depend on the type.
-                                        // TODO Deal with multiple args somehow.
-                                        let var = vars.get(&args[0]).unwrap();
-                                        let arg = builder.use_var(*var);
-                                        builder.ins().call(print_int, &[arg]);
-                                    }
-                                    _ => todo!(),
-                                }
-                            }
-                            bril::Instruction::Value {
-                                args,
-                                dest,
-                                funcs: _,
-                                labels: _,
-                                op,
-                                op_type: _,
-                            } => match op {
-                                bril::ValueOps::Add => {
-                                    let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                                    let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                                    let res = builder.ins().iadd(lhs, rhs);
-                                    let dest_var = vars.get(dest).unwrap();
-                                    builder.def_var(*dest_var, res);
-                                }
-                                _ => todo!(),
-                            },
-                        }
-                    }
+                    bril::Code::Instruction(inst) => compile_inst(inst, &mut builder, &vars, &rt_refs),
                     _ => todo!(),
                 }
             }
