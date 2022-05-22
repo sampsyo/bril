@@ -1,23 +1,22 @@
+use argh::FromArgs;
 use bril_rs as bril;
-use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
-use cranelift_codegen::{ir, isa, settings};
-use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::entity::EntityRef;
+use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::verifier::verify_function;
-use cranelift_object::{ObjectModule, ObjectBuilder};
+use cranelift_codegen::{ir, isa, settings};
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, Module};
-use cranelift_native;
+use cranelift_object::{ObjectBuilder, ObjectModule};
 use std::collections::HashMap;
 use std::fs;
-use argh::FromArgs;
 
 struct RTSigs {
-    print_int: ir::Signature
+    print_int: ir::Signature,
 }
 
 struct RTIds {
-    print_int: cranelift_module::FuncId
+    print_int: cranelift_module::FuncId,
 }
 
 fn tr_type(typ: &bril::Type) -> ir::Type {
@@ -39,22 +38,29 @@ fn tr_sig(func: &bril::Function) -> ir::Signature {
 }
 
 fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
-    func.instrs.iter().filter_map(|inst| {
-        match inst {
-            bril::Code::Instruction(op) => {
-                match op {
-                    bril::Instruction::Constant { dest, op: _, const_type: typ, value: _ } => {
-                        Some((dest, typ))
-                    },
-                    bril::Instruction::Value { args: _, dest, funcs: _, labels: _, op: _, op_type: typ } => {
-                        Some((dest, typ))
-                    },
-                    _ => None
-                }
+    func.instrs
+        .iter()
+        .filter_map(|inst| match inst {
+            bril::Code::Instruction(op) => match op {
+                bril::Instruction::Constant {
+                    dest,
+                    op: _,
+                    const_type: typ,
+                    value: _,
+                } => Some((dest, typ)),
+                bril::Instruction::Value {
+                    args: _,
+                    dest,
+                    funcs: _,
+                    labels: _,
+                    op: _,
+                    op_type: typ,
+                } => Some((dest, typ)),
+                _ => None,
             },
-            _ => None
-        }
-    }).collect()
+            _ => None,
+        })
+        .collect()
 }
 
 // TODO Should really be a trait with two different structs that implement it?
@@ -72,7 +78,7 @@ fn get_rt_sigs() -> RTSigs {
             params: vec![ir::AbiParam::new(ir::types::I64)],
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
-        }
+        },
     }
 }
 
@@ -82,9 +88,13 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
     RTIds {
         print_int: {
             module
-                .declare_function("print_int", cranelift_module::Linkage::Import, &rt_sigs.print_int)
+                .declare_function(
+                    "print_int",
+                    cranelift_module::Linkage::Import,
+                    &rt_sigs.print_int,
+                )
                 .unwrap()
-        }
+        },
     }
 }
 
@@ -93,8 +103,8 @@ impl Translator<ObjectModule> {
         // Make an object module.
         let flag_builder = settings::builder();
         let isa = if let Some(targ) = target {
-            let isa_builder = cranelift_codegen::isa::lookup_by_name(&targ)
-                .expect("invalid target");
+            let isa_builder =
+                cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target");
             isa_builder
                 .finish(settings::Flags::new(flag_builder))
                 .unwrap()
@@ -106,7 +116,7 @@ impl Translator<ObjectModule> {
         };
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
-        
+
         Self {
             rt_funcs: declare_rt(&mut module),
             module,
@@ -114,7 +124,7 @@ impl Translator<ObjectModule> {
             funcs: HashMap::new(),
         }
     }
-    
+
     fn emit(self, output: &str) {
         let prod = self.module.finish();
         dbg!(&prod.object);
@@ -136,7 +146,7 @@ impl Translator<JITModule> {
             funcs: HashMap::new(),
         }
     }
-    
+
     fn compile(mut self) -> *const u8 {
         self.module.clear_context(&mut self.context);
         self.module.finalize_definitions();
@@ -153,20 +163,24 @@ impl<M: Module> Translator<M> {
         let sig = tr_sig(&func);
 
         // TODO Probably move to a separate function.
-        let func_id = self.module
+        let func_id = self
+            .module
             .declare_function(&func.name, cranelift_module::Linkage::Export, &sig)
             .unwrap();
 
         // Create the function.
-        self.context.func = ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
+        self.context.func =
+            ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
         let mut fn_builder_ctx = FunctionBuilderContext::new();
-        
+
         // Build the function body.
         {
             let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
             // Declare runtime functions.
-            let print_int = self.module.declare_func_in_func(self.rt_funcs.print_int, builder.func);
+            let print_int = self
+                .module
+                .declare_func_in_func(self.rt_funcs.print_int, builder.func);
 
             // Declare all variables.
             let mut vars = HashMap::<&String, Variable>::new();
@@ -185,15 +199,29 @@ impl<M: Module> Translator<M> {
                 match code {
                     bril::Code::Instruction(inst) => {
                         match inst {
-                            bril::Instruction::Constant { dest, op: _, const_type: _, value } => {
+                            bril::Instruction::Constant {
+                                dest,
+                                op: _,
+                                const_type: _,
+                                value,
+                            } => {
                                 let var = vars.get(&dest).unwrap();
                                 let val = match value {
-                                    bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
-                                    bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
+                                    bril::Literal::Int(i) => {
+                                        builder.ins().iconst(ir::types::I64, *i)
+                                    }
+                                    bril::Literal::Bool(b) => {
+                                        builder.ins().bconst(ir::types::B1, *b)
+                                    }
                                 };
                                 builder.def_var(*var, val);
-                            },
-                            bril::Instruction::Effect { args, funcs: _, labels: _, op } => {
+                            }
+                            bril::Instruction::Effect {
+                                args,
+                                funcs: _,
+                                labels: _,
+                                op,
+                            } => {
                                 match op {
                                     bril::EffectOps::Print => {
                                         // TODO Target should depend on the type.
@@ -201,31 +229,36 @@ impl<M: Module> Translator<M> {
                                         let var = vars.get(&args[0]).unwrap();
                                         let arg = builder.use_var(*var);
                                         builder.ins().call(print_int, &[arg]);
-                                    },
+                                    }
                                     _ => todo!(),
                                 }
-                            },
-                            bril::Instruction::Value { args, dest, funcs: _, labels: _, op, op_type: _ } => {
-                                match op {
-                                    bril::ValueOps::Add => {
-                                        let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                                        let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                                        let res = builder.ins().iadd(lhs, rhs);
-                                        let dest_var = vars.get(dest).unwrap();
-                                        builder.def_var(*dest_var, res);
-                                    },
-                                    _ => todo!(),
+                            }
+                            bril::Instruction::Value {
+                                args,
+                                dest,
+                                funcs: _,
+                                labels: _,
+                                op,
+                                op_type: _,
+                            } => match op {
+                                bril::ValueOps::Add => {
+                                    let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                                    let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                                    let res = builder.ins().iadd(lhs, rhs);
+                                    let dest_var = vars.get(dest).unwrap();
+                                    builder.def_var(*dest_var, res);
                                 }
+                                _ => todo!(),
                             },
                         }
-                    },
+                    }
                     _ => todo!(),
                 }
             }
 
-            builder.ins().return_(&[]);  // TODO
+            builder.ins().return_(&[]); // TODO
             builder.seal_block(block);
-            
+
             builder.finalize();
         }
 
@@ -242,7 +275,7 @@ impl<M: Module> Translator<M> {
         self.module
             .define_function(func_id, &mut self.context)
             .unwrap();
-        
+
         func_id
     }
 
@@ -260,12 +293,16 @@ impl<M: Module> Translator<M> {
 struct Args {
     #[argh(switch, short = 'j', description = "JIT and run")]
     jit: bool,
-    
+
     #[argh(option, short = 't', description = "target triple")]
     target: Option<String>,
 
-    #[argh(option, short = 'o', description = "output file",
-        default = "String::from(\"bril.o\")")]
+    #[argh(
+        option,
+        short = 'o',
+        description = "output file",
+        default = "String::from(\"bril.o\")"
+    )]
     output: String,
 }
 
