@@ -115,11 +115,11 @@ impl Translator<ObjectModule> {
         }
     }
     
-    fn emit(self) {
+    fn emit(self, output: &str) {
         let prod = self.module.finish();
         dbg!(&prod.object);
         let objdata = prod.emit().expect("emission failed");
-        fs::write("bril.o", objdata).expect("failed to write .o file");
+        fs::write(output, objdata).expect("failed to write .o file");
     }
 }
 
@@ -250,8 +250,12 @@ struct Args {
     #[argh(switch, short = 'j', description = "JIT and run")]
     jit: bool,
     
-    #[argh(option, short = 't', description = "target ISA")]
+    #[argh(option, short = 't', description = "target triple")]
     target: Option<String>,
+
+    #[argh(option, short = 'o', description = "output file",
+        default = "String::from(\"bril.o\")")]
+    output: String,
 }
 
 fn main() {
@@ -267,6 +271,6 @@ fn main() {
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target);
         trans.compile_prog(prog);
-        trans.emit();
+        trans.emit(&args.output);
     }
 }

@@ -10,8 +10,7 @@ rt.o: rt.rs
 		--target=$(RUST_TARGET) $^
 
 %.o: %.bril
-	bril2json < $^ | ./target/debug/brilift -t $(TARGET)
-	mv bril.o $@
+	bril2json < $^ | ./target/debug/brilift -t $(TARGET) -o $@
 
 %: %.o rt.o
 	cc -target $(TARGET) -o $@ $^
