@@ -269,7 +269,7 @@ fn compile_inst(
                         builder.ins().return_(&[]);
                     }
                 }
-                _ => todo!(),
+                bril::EffectOps::Nop => {}
             }
         }
         bril::Instruction::Value {
