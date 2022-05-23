@@ -307,7 +307,10 @@ fn compile_inst(
                 let res = builder.inst_results(inst)[0];
                 builder.def_var(*vars.get(dest).unwrap(), res);
             }
-            _ => todo!(),
+            bril::ValueOps::Id => {
+                let arg = builder.use_var(*vars.get(&args[0]).unwrap());
+                builder.def_var(*vars.get(dest).unwrap(), arg);
+            }
         },
     }
 }
