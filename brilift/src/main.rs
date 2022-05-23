@@ -1,8 +1,8 @@
 use argh::FromArgs;
 use bril_rs as bril;
 use cranelift_codegen::entity::EntityRef;
-use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::ir::condcodes::IntCC;
+use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::verifier::verify_function;
 use cranelift_codegen::{ir, isa, settings};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
@@ -163,7 +163,13 @@ impl Translator<JITModule> {
 }
 
 fn is_term(inst: &bril::Instruction) -> bool {
-    if let bril::Instruction::Effect { args: _, funcs: _, labels: _, op } = inst {
+    if let bril::Instruction::Effect {
+        args: _,
+        funcs: _,
+        labels: _,
+        op,
+    } = inst
+    {
         match op {
             bril::EffectOps::Branch => true,
             bril::EffectOps::Jump => true,
@@ -175,12 +181,25 @@ fn is_term(inst: &bril::Instruction) -> bool {
     }
 }
 
+fn gen_icmp(
+    builder: &mut FunctionBuilder,
+    vars: &HashMap<String, Variable>,
+    args: &Vec<String>,
+    dest: &String,
+    cc: IntCC,
+) {
+    let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+    let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+    let res = builder.ins().icmp(cc, lhs, rhs);
+    builder.def_var(*vars.get(dest).unwrap(), res);
+}
+
 fn compile_inst(
     inst: &bril::Instruction,
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
     rt_refs: &RTRefs,
-    blocks: &HashMap<String, ir::Block>
+    blocks: &HashMap<String, ir::Block>,
 ) {
     match inst {
         bril::Instruction::Constant {
@@ -220,7 +239,7 @@ fn compile_inst(
                     builder.ins().brnz(arg, true_block, &[]);
                     builder.ins().jump(false_block, &[]);
                 }
-                _ => todo!()
+                _ => todo!(),
             }
         }
         bril::Instruction::Value {
@@ -255,36 +274,11 @@ fn compile_inst(
                 let res = builder.ins().sdiv(lhs, rhs);
                 builder.def_var(*vars.get(dest).unwrap(), res);
             }
-            bril::ValueOps::Lt => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().icmp(IntCC::SignedLessThan, lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Le => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().icmp(IntCC::SignedLessThanOrEqual, lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Eq => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().icmp(IntCC::Equal, lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Ge => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Gt => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().icmp(IntCC::SignedGreaterThan, lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
+            bril::ValueOps::Lt => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThan),
+            bril::ValueOps::Le => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThanOrEqual),
+            bril::ValueOps::Eq => gen_icmp(builder, vars, args, dest, IntCC::Equal),
+            bril::ValueOps::Ge => gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThanOrEqual),
+            bril::ValueOps::Gt => gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThan),
             bril::ValueOps::And => {
                 let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
                 let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
