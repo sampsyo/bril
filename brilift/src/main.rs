@@ -170,7 +170,10 @@ fn is_term(inst: &bril::Instruction) -> bool {
         op,
     } = inst
     {
-        matches!(op, bril::EffectOps::Branch | bril::EffectOps::Jump | bril::EffectOps::Return)
+        matches!(
+            op,
+            bril::EffectOps::Branch | bril::EffectOps::Jump | bril::EffectOps::Return
+        )
     } else {
         false
     }
@@ -253,13 +256,14 @@ fn compile_inst(
                 }
                 bril::EffectOps::Call => {
                     let func_ref = *func_refs.get(&funcs[0]).unwrap();
-                    let arg_vals: Vec<ir::Value> = args.iter().map(|arg|
-                        builder.use_var(*vars.get(arg).unwrap())
-                    ).collect();
+                    let arg_vals: Vec<ir::Value> = args
+                        .iter()
+                        .map(|arg| builder.use_var(*vars.get(arg).unwrap()))
+                        .collect();
                     builder.ins().call(func_ref, &arg_vals);
                 }
                 bril::EffectOps::Return => {
-                    if !args.is_empty()  {
+                    if !args.is_empty() {
                         let arg = builder.use_var(*vars.get(&args[0]).unwrap());
                         builder.ins().return_(&[arg]);
                     } else {
@@ -284,7 +288,9 @@ fn compile_inst(
             bril::ValueOps::Lt => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThan),
             bril::ValueOps::Le => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThanOrEqual),
             bril::ValueOps::Eq => gen_icmp(builder, vars, args, dest, IntCC::Equal),
-            bril::ValueOps::Ge => gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThanOrEqual),
+            bril::ValueOps::Ge => {
+                gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThanOrEqual)
+            }
             bril::ValueOps::Gt => gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThan),
             bril::ValueOps::And => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Band),
             bril::ValueOps::Or => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Bor),
@@ -295,9 +301,10 @@ fn compile_inst(
             }
             bril::ValueOps::Call => {
                 let func_ref = *func_refs.get(&funcs[0]).unwrap();
-                let arg_vals: Vec<ir::Value> = args.iter().map(|arg|
-                    builder.use_var(*vars.get(arg).unwrap())
-                ).collect();
+                let arg_vals: Vec<ir::Value> = args
+                    .iter()
+                    .map(|arg| builder.use_var(*vars.get(arg).unwrap()))
+                    .collect();
                 let inst = builder.ins().call(func_ref, &arg_vals);
                 let res = builder.inst_results(inst)[0];
                 builder.def_var(*vars.get(dest).unwrap(), res);
@@ -313,8 +320,7 @@ fn compile_inst(
 impl<M: Module> Translator<M> {
     fn declare_func(&mut self, func: &bril::Function) -> cranelift_module::FuncId {
         let sig = tr_sig(func);
-        self
-            .module
+        self.module
             .declare_function(&func.name, cranelift_module::Linkage::Export, &sig)
             .unwrap()
     }
@@ -332,7 +338,8 @@ impl<M: Module> Translator<M> {
         }
 
         // Verify the function (in debug mode).
-        #[cfg(debug_assertions)] {
+        #[cfg(debug_assertions)]
+        {
             let flags = settings::Flags::new(settings::builder());
             let res = cranelift_codegen::verifier::verify_function(&self.context.func, &flags);
             if let Err(errors) = res {
@@ -376,9 +383,16 @@ impl<M: Module> Translator<M> {
 
         // "Import" all the functions we may need to call.
         // TODO We could do this only for the functions we actually use...
-        let func_refs: HashMap<String, ir::FuncRef> = self.funcs.iter().map(|(name, id)| {
-            (name.to_owned(), self.module.declare_func_in_func(*id, builder.func))
-        }).collect();
+        let func_refs: HashMap<String, ir::FuncRef> = self
+            .funcs
+            .iter()
+            .map(|(name, id)| {
+                (
+                    name.to_owned(),
+                    self.module.declare_func_in_func(*id, builder.func),
+                )
+            })
+            .collect();
 
         // Define variables for function arguments in the entry block.
         let entry_block = builder.create_block();
