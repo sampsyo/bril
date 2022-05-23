@@ -75,6 +75,7 @@ struct Translator<M: Module> {
     module: M,
     context: cranelift_codegen::Context,
     funcs: HashMap<String, cranelift_module::FuncId>,
+    pointer_type: ir::Type,
 }
 
 // TODO Should this be a constant or something?
@@ -120,6 +121,7 @@ impl Translator<ObjectModule> {
                 .finish(settings::Flags::new(flag_builder))
                 .unwrap()
         };
+        let pointer_type = isa.pointer_type();
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
 
@@ -128,6 +130,7 @@ impl Translator<ObjectModule> {
             module,
             context: cranelift_codegen::Context::new(),
             funcs: HashMap::new(),
+            pointer_type,
         }
     }
 
@@ -143,12 +146,14 @@ impl Translator<JITModule> {
         // Cranelift JIT scaffolding.
         let builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
         let mut module = JITModule::new(builder);
+        let pointer_type = module.isa().pointer_type();
 
         Self {
             rt_funcs: declare_rt(&mut module),
             context: module.make_context(),
             module,
             funcs: HashMap::new(),
+            pointer_type,
         }
     }
 
