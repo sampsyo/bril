@@ -7,7 +7,7 @@ build:
 
 rt.o: rt.rs
 	rustc -C panic=abort --crate-type=staticlib --emit=obj \
-		--target=$(RUST_TARGET) $^
+		--edition=2021 --target=$(RUST_TARGET) $^
 
 %.o: %.bril
 	bril2json < $^ | ./target/debug/brilift -t $(TARGET) -o $@
