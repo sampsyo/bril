@@ -288,90 +288,23 @@ fn compile_inst(
 }
 
 impl<M: Module> Translator<M> {
-    fn compile_func(&mut self, func: bril::Function) -> cranelift_module::FuncId {
-        // Build function signature.
-        let sig = tr_sig(&func);
-
-        // TODO Probably move to a separate function.
-        let func_id = self
+    fn declare_func(&mut self, func: &bril::Function) -> cranelift_module::FuncId {
+        let sig = tr_sig(func);
+        self
             .module
             .declare_function(&func.name, cranelift_module::Linkage::Export, &sig)
-            .unwrap();
+            .unwrap()
+    }
 
-        // Create the function.
+    fn enter_func(&mut self, func: &bril::Function, func_id: cranelift_module::FuncId) {
+        let sig = tr_sig(func);
         self.context.func =
             ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
-        let mut fn_builder_ctx = FunctionBuilderContext::new();
+    }
 
-        // Build the function body.
-        {
-            let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
-
-            // Declare runtime functions.
-            let rt_refs = RTRefs {
-                print_int: self
-                    .module
-                    .declare_func_in_func(self.rt_funcs.print_int, builder.func),
-            };
-
-            // Declare all variables.
-            let mut vars = HashMap::<String, Variable>::new();
-            for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
-                let var = Variable::new(i);
-                builder.declare_var(var, tr_type(typ));
-                vars.insert(name.to_string(), var);
-            }
-
-            // Create blocks for every label.
-            let mut blocks = HashMap::<String, ir::Block>::new();
-            for code in &func.instrs {
-                if let bril::Code::Label { label } = code {
-                    let block = builder.create_block();
-                    blocks.insert(label.to_string(), block);
-                }
-            }
-
-            // Insert instructions.
-            let mut terminated = true;
-            for code in &func.instrs {
-                match code {
-                    bril::Code::Instruction(inst) => {
-                        // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
-                        if terminated {
-                            let block = builder.create_block();
-                            builder.switch_to_block(block);
-                            terminated = false;
-                        }
-
-                        // Compile one instruction.
-                        compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks);
-
-                        if is_term(inst) {
-                            terminated = true;
-                        }
-                    }
-                    bril::Code::Label { label } => {
-                        let new_block = *blocks.get(label).unwrap();
-
-                        // If the previous block was missing a terminator (fall-through), insert a
-                        // jump to the new block.
-                        if !terminated {
-                            builder.ins().jump(new_block, &[]);
-                        }
-                        terminated = false;
-
-                        builder.switch_to_block(new_block);
-                    }
-                }
-            }
-
-            builder.ins().return_(&[]); // TODO
-
-            builder.seal_all_blocks();
-            builder.finalize();
-        }
-
+    fn finish_func(&mut self, func_id: cranelift_module::FuncId) {
         // Verify and print.
+        // TODO Make both optional...
         let flags = settings::Flags::new(settings::builder());
         let res = verify_function(&self.context.func, &flags);
         println!("{}", self.context.func.display());
@@ -380,19 +313,89 @@ impl<M: Module> Translator<M> {
         }
 
         // Add to the module.
-        // TODO Move to a separate function?
         self.module
             .define_function(func_id, &mut self.context)
             .unwrap();
+    }
 
-        func_id
+    fn emit_func(&mut self, func: bril::Function) {
+        let mut fn_builder_ctx = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
+
+        // Declare runtime functions.
+        let rt_refs = RTRefs {
+            print_int: self
+                .module
+                .declare_func_in_func(self.rt_funcs.print_int, builder.func),
+        };
+
+        // Declare all variables.
+        let mut vars = HashMap::<String, Variable>::new();
+        for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
+            let var = Variable::new(i);
+            builder.declare_var(var, tr_type(typ));
+            vars.insert(name.to_string(), var);
+        }
+
+        // Create blocks for every label.
+        let mut blocks = HashMap::<String, ir::Block>::new();
+        for code in &func.instrs {
+            if let bril::Code::Label { label } = code {
+                let block = builder.create_block();
+                blocks.insert(label.to_string(), block);
+            }
+        }
+
+        // Insert instructions.
+        let mut terminated = true;
+        for code in &func.instrs {
+            match code {
+                bril::Code::Instruction(inst) => {
+                    // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
+                    if terminated {
+                        let block = builder.create_block();
+                        builder.switch_to_block(block);
+                        terminated = false;
+                    }
+
+                    // Compile one instruction.
+                    compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks);
+
+                    if is_term(inst) {
+                        terminated = true;
+                    }
+                }
+                bril::Code::Label { label } => {
+                    let new_block = *blocks.get(label).unwrap();
+
+                    // If the previous block was missing a terminator (fall-through), insert a
+                    // jump to the new block.
+                    if !terminated {
+                        builder.ins().jump(new_block, &[]);
+                    }
+                    terminated = false;
+
+                    builder.switch_to_block(new_block);
+                }
+            }
+        }
+
+        builder.ins().return_(&[]); // TODO
+
+        builder.seal_all_blocks();
+        builder.finalize();
     }
 
     fn compile_prog(&mut self, prog: bril::Program) {
         for func in prog.functions {
-            let name = func.name.to_owned();
-            let id = self.compile_func(func);
-            self.funcs.insert(name, id);
+            // Declare the function.
+            let id = self.declare_func(&func);
+            self.funcs.insert(func.name.to_owned(), id);
+
+            // Define the function.
+            self.enter_func(&func, id);
+            self.emit_func(func);
+            self.finish_func(id);
         }
     }
 }
