@@ -41,6 +41,7 @@ fn tr_sig(func: &bril::Function) -> ir::Signature {
     sig
 }
 
+/// Get all the variables defined in a function (and their types), including the arguments.
 fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
     func.instrs
         .iter()
@@ -64,6 +65,7 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
             },
             _ => None,
         })
+        .chain(func.args.iter().map(|arg| (&arg.name, &arg.arg_type)))
         .collect()
 }
 
@@ -357,7 +359,7 @@ impl<M: Module> Translator<M> {
                 .declare_func_in_func(self.rt_funcs.print_int, builder.func),
         };
 
-        // Declare all variables.
+        // Declare all variables (including for function parameters).
         let mut vars = HashMap::<String, Variable>::new();
         for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
             let var = Variable::new(i);
@@ -380,8 +382,17 @@ impl<M: Module> Translator<M> {
             (name.to_owned(), self.module.declare_func_in_func(*id, builder.func))
         }).collect();
 
+        // Define variables for function arguments in the entry block.
+        let entry_block = builder.create_block();
+        builder.switch_to_block(entry_block);
+        builder.append_block_params_for_function_params(entry_block);
+        for (i, arg) in func.args.iter().enumerate() {
+            let param = builder.block_params(entry_block)[i];
+            builder.def_var(vars[&arg.name], param);
+        }
+
         // Insert instructions.
-        let mut terminated = true;
+        let mut terminated = false; // Entry block is open.
         for code in &func.instrs {
             match code {
                 bril::Code::Instruction(inst) => {
