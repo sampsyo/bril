@@ -275,7 +275,7 @@ fn compile_inst(
         bril::Instruction::Value {
             args,
             dest,
-            funcs: _,
+            funcs,
             labels: _,
             op,
             op_type,
@@ -294,6 +294,15 @@ fn compile_inst(
             bril::ValueOps::Not => {
                 let arg = builder.use_var(*vars.get(&args[0]).unwrap());
                 let res = builder.ins().bnot(arg);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Call => {
+                let func_ref = *func_refs.get(&funcs[0]).unwrap();
+                let arg_vals: Vec<ir::Value> = args.iter().map(|arg|
+                    builder.use_var(*vars.get(arg).unwrap())
+                ).collect();
+                let inst = builder.ins().call(func_ref, &arg_vals);
+                let res = builder.inst_results(inst)[0];
                 builder.def_var(*vars.get(dest).unwrap(), res);
             }
             _ => todo!(),
