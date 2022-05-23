@@ -275,18 +275,8 @@ fn compile_inst(
             bril::ValueOps::Eq => gen_icmp(builder, vars, args, dest, IntCC::Equal),
             bril::ValueOps::Ge => gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThanOrEqual),
             bril::ValueOps::Gt => gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThan),
-            bril::ValueOps::And => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().band(lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Or => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().bor(lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
+            bril::ValueOps::And => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Band),
+            bril::ValueOps::Or => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Bor),
             bril::ValueOps::Not => {
                 let arg = builder.use_var(*vars.get(&args[0]).unwrap());
                 let res = builder.ins().bnot(arg);
