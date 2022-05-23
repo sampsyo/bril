@@ -324,9 +324,13 @@ fn compile_inst(
 
 impl<M: Module> Translator<M> {
     fn declare_func(&mut self, func: &bril::Function) -> cranelift_module::FuncId {
+        // The Bril `main` function gets a different internal name, and we call it from a new
+        // proper main function that gets argv/argc.
+        let name = if func.name == "main" { "__bril_main" } else { &func.name };
+
         let sig = tr_sig(func);
         self.module
-            .declare_function(&func.name, cranelift_module::Linkage::Export, &sig)
+            .declare_function(name, cranelift_module::Linkage::Local, &sig)
             .unwrap()
     }
 
@@ -451,6 +455,43 @@ impl<M: Module> Translator<M> {
         builder.finalize();
     }
 
+    /// Generate a proper `main` function that calls the Bril `main` function.
+    fn add_main(&mut self) {
+        // Declare `main` with argc/argv parameters.
+        let sig = ir::Signature {
+            params: vec![ir::AbiParam::new(self.pointer_type), ir::AbiParam::new(self.pointer_type)],
+            returns: vec![],
+            call_conv: isa::CallConv::SystemV,
+        };
+        let main_id = self.module
+            .declare_function("main", cranelift_module::Linkage::Export, &sig)
+            .unwrap();
+
+        self.context.func =
+            ir::Function::with_name_signature(ir::ExternalName::user(0, main_id.as_u32()), sig);
+
+        let mut fn_builder_ctx = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
+
+        let block = builder.create_block();
+        builder.switch_to_block(block);
+        builder.seal_block(block);
+        builder.append_block_params_for_function_params(block);
+
+        // Call the "real" main function.
+        let real_main_id = *self.funcs.get("main").unwrap();
+        let real_main_ref = self.module.declare_func_in_func(real_main_id, builder.func);
+        builder.ins().call(real_main_ref, &[]);
+
+        builder.ins().return_(&[]);
+        builder.finalize();
+
+        // Add to the module.
+        self.module
+            .define_function(main_id, &mut self.context)
+            .unwrap();
+    }
+
     fn compile_prog(&mut self, prog: bril::Program, dump: bool) {
         // Declare all functions.
         for func in &prog.functions {
@@ -502,6 +543,7 @@ fn main() {
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target);
         trans.compile_prog(prog, args.dump_ir);
+        trans.add_main();
         trans.emit(&args.output);
     }
 }
