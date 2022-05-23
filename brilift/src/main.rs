@@ -194,6 +194,22 @@ fn gen_icmp(
     builder.def_var(*vars.get(dest).unwrap(), res);
 }
 
+fn gen_binary(
+    builder: &mut FunctionBuilder,
+    vars: &HashMap<String, Variable>,
+    args: &Vec<String>,
+    dest: &String,
+    dest_type: &bril::Type,
+    op: ir::Opcode,
+) {
+    let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+    let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+    let typ = tr_type(dest_type);
+    let (inst, dfg) = builder.ins().Binary(op, typ, lhs, rhs);
+    let res = dfg.first_result(inst);
+    builder.def_var(*vars.get(dest).unwrap(), res);
+}
+
 fn compile_inst(
     inst: &bril::Instruction,
     builder: &mut FunctionBuilder,
@@ -248,32 +264,12 @@ fn compile_inst(
             funcs: _,
             labels: _,
             op,
-            op_type: _,
+            op_type,
         } => match op {
-            bril::ValueOps::Add => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().iadd(lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Sub => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().isub(lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Mul => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().imul(lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
-            bril::ValueOps::Div => {
-                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
-                let res = builder.ins().sdiv(lhs, rhs);
-                builder.def_var(*vars.get(dest).unwrap(), res);
-            }
+            bril::ValueOps::Add => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Iadd),
+            bril::ValueOps::Sub => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Isub),
+            bril::ValueOps::Mul => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Imul),
+            bril::ValueOps::Div => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Sdiv),
             bril::ValueOps::Lt => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThan),
             bril::ValueOps::Le => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThanOrEqual),
             bril::ValueOps::Eq => gen_icmp(builder, vars, args, dest, IntCC::Equal),
