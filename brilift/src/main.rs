@@ -346,16 +346,6 @@ impl<M: Module> Translator<M> {
             println!("{}", self.context.func.display());
         }
 
-        // Verify the function (in debug mode).
-        #[cfg(debug_assertions)]
-        {
-            let flags = settings::Flags::new(settings::builder());
-            let res = cranelift_codegen::verifier::verify_function(&self.context.func, &flags);
-            if let Err(errors) = res {
-                panic!("{}", errors);
-            }
-        }
-
         // Add to the module.
         self.module
             .define_function(func_id, &mut self.context)
@@ -456,7 +446,7 @@ impl<M: Module> Translator<M> {
     }
 
     /// Generate a proper `main` function that calls the Bril `main` function.
-    fn add_main(&mut self) {
+    fn add_main(&mut self, dump: bool) {
         // Declare `main` with argc/argv parameters.
         let sig = ir::Signature {
             params: vec![ir::AbiParam::new(self.pointer_type), ir::AbiParam::new(self.pointer_type)],
@@ -469,6 +459,23 @@ impl<M: Module> Translator<M> {
 
         self.context.func =
             ir::Function::with_name_signature(ir::ExternalName::user(0, main_id.as_u32()), sig);
+
+        // Declare `main`-specific runtime functions.
+        // TODO Reduce duplication.
+        let parse_int_sig = ir::Signature {
+            params: vec![ir::AbiParam::new(self.pointer_type), ir::AbiParam::new(ir::types::I64)],
+            returns: vec![ir::AbiParam::new(ir::types::I64)],
+            call_conv: isa::CallConv::SystemV,
+        };
+        let parse_int_id =
+            self.module
+                .declare_function(
+                    "parse_int",
+                    cranelift_module::Linkage::Import,
+                    &parse_int_sig,
+                )
+                .unwrap();
+        let parse_int_ref = self.module.declare_func_in_func(parse_int_id, &mut self.context.func);
 
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
@@ -487,6 +494,9 @@ impl<M: Module> Translator<M> {
         builder.finalize();
 
         // Add to the module.
+        if dump {
+            println!("{}", self.context.func.display());
+        }
         self.module
             .define_function(main_id, &mut self.context)
             .unwrap();
@@ -543,7 +553,7 @@ fn main() {
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target);
         trans.compile_prog(prog, args.dump_ir);
-        trans.add_main();
+        trans.add_main(args.dump_ir);
         trans.emit(&args.output);
     }
 }
