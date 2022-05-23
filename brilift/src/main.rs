@@ -2,6 +2,7 @@ use argh::FromArgs;
 use bril_rs as bril;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::InstBuilder;
+use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::verifier::verify_function;
 use cranelift_codegen::{ir, isa, settings};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
@@ -234,8 +235,72 @@ fn compile_inst(
                 let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
                 let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
                 let res = builder.ins().iadd(lhs, rhs);
-                let dest_var = vars.get(dest).unwrap();
-                builder.def_var(*dest_var, res);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Sub => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().isub(lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Mul => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().imul(lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Div => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().sdiv(lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Lt => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().icmp(IntCC::SignedLessThan, lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Le => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().icmp(IntCC::SignedLessThanOrEqual, lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Eq => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().icmp(IntCC::Equal, lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Ge => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Gt => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().icmp(IntCC::SignedGreaterThan, lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::And => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().band(lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Or => {
+                let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
+                let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+                let res = builder.ins().bor(lhs, rhs);
+                builder.def_var(*vars.get(dest).unwrap(), res);
+            }
+            bril::ValueOps::Not => {
+                let arg = builder.use_var(*vars.get(&args[0]).unwrap());
+                let res = builder.ins().bnot(arg);
+                builder.def_var(*vars.get(dest).unwrap(), res);
             }
             _ => todo!(),
         },
