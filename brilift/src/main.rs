@@ -446,7 +446,7 @@ impl<M: Module> Translator<M> {
     }
 
     /// Generate a proper `main` function that calls the Bril `main` function.
-    fn add_main(&mut self, dump: bool) {
+    fn add_main(&mut self, args: &[bril::Argument], dump: bool) {
         // Declare `main` with argc/argv parameters.
         let sig = ir::Signature {
             params: vec![ir::AbiParam::new(self.pointer_type), ir::AbiParam::new(self.pointer_type)],
@@ -485,10 +485,22 @@ impl<M: Module> Translator<M> {
         builder.seal_block(block);
         builder.append_block_params_for_function_params(block);
 
+        // Parse each argument.
+        let argv_arg = builder.block_params(block)[0];
+        let arg_vals: Vec<ir::Value> = args.iter().enumerate().map(|(i, arg)| {
+            let parse_ref = match arg.arg_type {
+                bril::Type::Int => parse_int_ref,
+                bril::Type::Bool => todo!(),
+            };
+            let idx_arg = builder.ins().iconst(ir::types::I64, i as i64);
+            let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
+            builder.inst_results(inst)[0]
+        }).collect();
+
         // Call the "real" main function.
         let real_main_id = *self.funcs.get("main").unwrap();
         let real_main_ref = self.module.declare_func_in_func(real_main_id, builder.func);
-        builder.ins().call(real_main_ref, &[]);
+        builder.ins().call(real_main_ref, &arg_vals);
 
         builder.ins().return_(&[]);
         builder.finalize();
@@ -502,7 +514,7 @@ impl<M: Module> Translator<M> {
             .unwrap();
     }
 
-    fn compile_prog(&mut self, prog: bril::Program, dump: bool) {
+    fn compile_prog(&mut self, prog: bril::Program, dump: bool, wrap_main: bool) {
         // Declare all functions.
         for func in &prog.functions {
             let id = self.declare_func(func);
@@ -511,6 +523,12 @@ impl<M: Module> Translator<M> {
 
         // Define all functions.
         for func in prog.functions {
+            // If it's main, (maybe) wrap it in an entry function.
+            if wrap_main && func.name == "main" {
+                self.add_main(&func.args, dump);
+            }
+
+            // Compile every function.
             let id = *self.funcs.get(&func.name).unwrap();
             self.enter_func(&func, id);
             self.emit_func(func);
@@ -548,12 +566,11 @@ fn main() {
 
     if args.jit {
         let mut trans = Translator::<JITModule>::new();
-        trans.compile_prog(prog, args.dump_ir);
+        trans.compile_prog(prog, args.dump_ir, false);
         trans.compile();
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target);
-        trans.compile_prog(prog, args.dump_ir);
-        trans.add_main(args.dump_ir);
+        trans.compile_prog(prog, args.dump_ir, true);
         trans.emit(&args.output);
     }
 }
