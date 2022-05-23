@@ -390,12 +390,15 @@ impl<M: Module> Translator<M> {
     }
 
     fn compile_prog(&mut self, prog: bril::Program, dump: bool) {
-        for func in prog.functions {
-            // Declare the function.
+        // Declare all functions.
+        for func in &prog.functions {
             let id = self.declare_func(&func);
             self.funcs.insert(func.name.to_owned(), id);
+        }
 
-            // Define the function.
+        // Define all functions.
+        for func in prog.functions {
+            let id = *self.funcs.get(&func.name).unwrap();
             self.enter_func(&func, id);
             self.emit_func(func);
             self.finish_func(id, dump);
