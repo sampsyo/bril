@@ -170,12 +170,7 @@ fn is_term(inst: &bril::Instruction) -> bool {
         op,
     } = inst
     {
-        match op {
-            bril::EffectOps::Branch => true,
-            bril::EffectOps::Jump => true,
-            bril::EffectOps::Return => true,
-            _ => false,
-        }
+        matches!(op, bril::EffectOps::Branch | bril::EffectOps::Jump | bril::EffectOps::Return)
     } else {
         false
     }
@@ -184,7 +179,7 @@ fn is_term(inst: &bril::Instruction) -> bool {
 fn gen_icmp(
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
-    args: &Vec<String>,
+    args: &[String],
     dest: &String,
     cc: IntCC,
 ) {
@@ -197,7 +192,7 @@ fn gen_icmp(
 fn gen_binary(
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
-    args: &Vec<String>,
+    args: &[String],
     dest: &String,
     dest_type: &bril::Type,
     op: ir::Opcode,
@@ -264,7 +259,7 @@ fn compile_inst(
                     builder.ins().call(func_ref, &arg_vals);
                 }
                 bril::EffectOps::Return => {
-                    if args.len() > 0 {
+                    if !args.is_empty()  {
                         let arg = builder.use_var(*vars.get(&args[0]).unwrap());
                         builder.ins().return_(&[arg]);
                     } else {
@@ -440,7 +435,7 @@ impl<M: Module> Translator<M> {
     fn compile_prog(&mut self, prog: bril::Program, dump: bool) {
         // Declare all functions.
         for func in &prog.functions {
-            let id = self.declare_func(&func);
+            let id = self.declare_func(func);
             self.funcs.insert(func.name.to_owned(), id);
         }
 
