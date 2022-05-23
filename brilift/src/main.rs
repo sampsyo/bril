@@ -3,7 +3,6 @@ use bril_rs as bril;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::InstBuilder;
-use cranelift_codegen::verifier::verify_function;
 use cranelift_codegen::{ir, isa, settings};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_jit::{JITBuilder, JITModule};
@@ -132,7 +131,6 @@ impl Translator<ObjectModule> {
 
     fn emit(self, output: &str) {
         let prod = self.module.finish();
-        dbg!(&prod.object);
         let objdata = prod.emit().expect("emission failed");
         fs::write(output, objdata).expect("failed to write .o file");
     }
@@ -302,14 +300,19 @@ impl<M: Module> Translator<M> {
             ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
     }
 
-    fn finish_func(&mut self, func_id: cranelift_module::FuncId) {
-        // Verify and print.
-        // TODO Make both optional...
-        let flags = settings::Flags::new(settings::builder());
-        let res = verify_function(&self.context.func, &flags);
-        println!("{}", self.context.func.display());
-        if let Err(errors) = res {
-            panic!("{}", errors);
+    fn finish_func(&mut self, func_id: cranelift_module::FuncId, dump: bool) {
+        // Print the IR, if requested.
+        if dump {
+            println!("{}", self.context.func.display());
+        }
+
+        // Verify the function (in debug mode).
+        #[cfg(debug_assertions)] {
+            let flags = settings::Flags::new(settings::builder());
+            let res = cranelift_codegen::verifier::verify_function(&self.context.func, &flags);
+            if let Err(errors) = res {
+                panic!("{}", errors);
+            }
         }
 
         // Add to the module.
@@ -386,7 +389,7 @@ impl<M: Module> Translator<M> {
         builder.finalize();
     }
 
-    fn compile_prog(&mut self, prog: bril::Program) {
+    fn compile_prog(&mut self, prog: bril::Program, dump: bool) {
         for func in prog.functions {
             // Declare the function.
             let id = self.declare_func(&func);
@@ -395,7 +398,7 @@ impl<M: Module> Translator<M> {
             // Define the function.
             self.enter_func(&func, id);
             self.emit_func(func);
-            self.finish_func(id);
+            self.finish_func(id, dump);
         }
     }
 }
@@ -416,6 +419,9 @@ struct Args {
         default = "String::from(\"bril.o\")"
     )]
     output: String,
+
+    #[argh(switch, short = 'd', description = "dump CLIF IR")]
+    dump_ir: bool,
 }
 
 fn main() {
@@ -426,11 +432,11 @@ fn main() {
 
     if args.jit {
         let mut trans = Translator::<JITModule>::new();
-        trans.compile_prog(prog);
+        trans.compile_prog(prog, args.dump_ir);
         trans.compile();
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target);
-        trans.compile_prog(prog);
+        trans.compile_prog(prog, args.dump_ir);
         trans.emit(&args.output);
     }
 }
