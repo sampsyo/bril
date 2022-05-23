@@ -214,6 +214,7 @@ fn compile_inst(
     vars: &HashMap<String, Variable>,
     rt_refs: &RTRefs,
     blocks: &HashMap<String, ir::Block>,
+    func_refs: &HashMap<String, ir::FuncRef>,
 ) {
     match inst {
         bril::Instruction::Constant {
@@ -231,7 +232,7 @@ fn compile_inst(
         }
         bril::Instruction::Effect {
             args,
-            funcs: _,
+            funcs,
             labels,
             op,
         } => {
@@ -252,6 +253,21 @@ fn compile_inst(
                     let false_block = *blocks.get(&labels[1]).unwrap();
                     builder.ins().brnz(arg, true_block, &[]);
                     builder.ins().jump(false_block, &[]);
+                }
+                bril::EffectOps::Call => {
+                    let func_ref = *func_refs.get(&funcs[0]).unwrap();
+                    let arg_vals: Vec<ir::Value> = args.iter().map(|arg|
+                        builder.use_var(*vars.get(arg).unwrap())
+                    ).collect();
+                    builder.ins().call(func_ref, &arg_vals);
+                }
+                bril::EffectOps::Return => {
+                    if args.len() > 0 {
+                        let arg = builder.use_var(*vars.get(&args[0]).unwrap());
+                        builder.ins().return_(&[arg]);
+                    } else {
+                        builder.ins().return_(&[]);
+                    }
                 }
                 _ => todo!(),
             }
@@ -349,6 +365,12 @@ impl<M: Module> Translator<M> {
             }
         }
 
+        // "Import" all the functions we may need to call.
+        // TODO We could do this only for the functions we actually use...
+        let func_refs: HashMap<String, ir::FuncRef> = self.funcs.iter().map(|(name, id)| {
+            (name.to_owned(), self.module.declare_func_in_func(*id, builder.func))
+        }).collect();
+
         // Insert instructions.
         let mut terminated = true;
         for code in &func.instrs {
@@ -362,7 +384,7 @@ impl<M: Module> Translator<M> {
                     }
 
                     // Compile one instruction.
-                    compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks);
+                    compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks, &func_refs);
 
                     if is_term(inst) {
                         terminated = true;
@@ -383,7 +405,10 @@ impl<M: Module> Translator<M> {
             }
         }
 
-        builder.ins().return_(&[]); // TODO
+        // Implicit return in the last block.
+        if !terminated {
+            builder.ins().return_(&[]);
+        }
 
         builder.seal_all_blocks();
         builder.finalize();
