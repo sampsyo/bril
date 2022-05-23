@@ -16,7 +16,7 @@ pub extern "C" fn print_int(i: i64) {
 pub extern "C" fn parse_int(argv: *const *const u8, argi: i64) -> i64 {
     unsafe {
         let mut res: i64 = 0;
-        sscanf(*argv.offset(argi.try_into().unwrap()), "%ld\0".as_ptr() as *const _, &mut res as *mut i64);
+        sscanf(*argv.offset(argi as isize), "%ld\0".as_ptr() as *const _, &mut res as *mut i64);
         res
     }
 }
