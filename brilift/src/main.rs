@@ -21,6 +21,42 @@ enum RTFunc {
     PrintEnd,
 }
 
+impl RTFunc {
+    fn sig(&self) -> ir::Signature {
+        match self {
+            RTFunc::PrintInt => ir::Signature {
+                params: vec![ir::AbiParam::new(ir::types::I64)],
+                returns: vec![],
+                call_conv: isa::CallConv::SystemV,
+            },
+            RTFunc::PrintBool => ir::Signature {
+                params: vec![ir::AbiParam::new(ir::types::B1)],
+                returns: vec![],
+                call_conv: isa::CallConv::SystemV,
+            },
+            RTFunc::PrintSep => ir::Signature {
+                params: vec![],
+                returns: vec![],
+                call_conv: isa::CallConv::SystemV,
+            },
+            RTFunc::PrintEnd => ir::Signature {
+                params: vec![],
+                returns: vec![],
+                call_conv: isa::CallConv::SystemV,
+            },
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        match self {
+            RTFunc::PrintInt => "print_int",
+            RTFunc::PrintBool => "print_bool",
+            RTFunc::PrintSep => "print_sep",
+            RTFunc::PrintEnd => "print_end",
+        }
+    }
+}
+
 fn translate_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
@@ -76,54 +112,17 @@ struct Translator<M: Module> {
     pointer_type: ir::Type,
 }
 
-// TODO Should this be a constant or something?
-fn get_rt_sigs() -> EnumMap<RTFunc, ir::Signature> {
-    enum_map! {
-        RTFunc::PrintInt => ir::Signature {
-            params: vec![ir::AbiParam::new(ir::types::I64)],
-            returns: vec![],
-            call_conv: isa::CallConv::SystemV,
-        },
-        RTFunc::PrintBool => ir::Signature {
-            params: vec![ir::AbiParam::new(ir::types::B1)],
-            returns: vec![],
-            call_conv: isa::CallConv::SystemV,
-        },
-        RTFunc::PrintSep => ir::Signature {
-            params: vec![],
-            returns: vec![],
-            call_conv: isa::CallConv::SystemV,
-        },
-        RTFunc::PrintEnd => ir::Signature {
-            params: vec![],
-            returns: vec![],
-            call_conv: isa::CallConv::SystemV,
-        },
-    }
-}
-
-// TODO This too?
-fn get_rt_names() -> EnumMap<RTFunc, &'static str> {
-    enum_map! {
-        RTFunc::PrintInt => "print_int",
-        RTFunc::PrintBool => "print_bool",
-        RTFunc::PrintSep => "print_sep",
-        RTFunc::PrintEnd => "print_end",
-    }
-}
-
 fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
-    let rt_sigs = get_rt_sigs();
-    let rt_names = get_rt_names();
-    rt_sigs.map(|rtfunc, sig| {
-        module
-            .declare_function(
-                rt_names[rtfunc],
-                cranelift_module::Linkage::Import,
-                &sig,
-            )
-            .unwrap()
-    })
+    enum_map! {
+        rtfunc =>
+            module
+                .declare_function(
+                    rtfunc.name(),
+                    cranelift_module::Linkage::Import,
+                    &rtfunc.sig(),
+                )
+                .unwrap()
+    }
 }
 
 fn get_isa(
