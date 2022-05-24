@@ -289,11 +289,7 @@ struct CompileEnv {
 }
 
 /// Compile one Bril instruction into CLIF.
-fn compile_inst(
-    inst: &bril::Instruction,
-    builder: &mut FunctionBuilder,
-    env: &CompileEnv,
-) {
+fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &CompileEnv) {
     match inst {
         bril::Instruction::Constant {
             dest,
@@ -348,8 +344,10 @@ fn compile_inst(
                 }
                 bril::EffectOps::Call => {
                     let func_ref = env.func_refs[&funcs[0]];
-                    let arg_vals: Vec<ir::Value> =
-                        args.iter().map(|arg| builder.use_var(env.vars[arg])).collect();
+                    let arg_vals: Vec<ir::Value> = args
+                        .iter()
+                        .map(|arg| builder.use_var(env.vars[arg]))
+                        .collect();
                     builder.ins().call(func_ref, &arg_vals);
                 }
                 bril::EffectOps::Return => {
@@ -371,19 +369,39 @@ fn compile_inst(
             op,
             op_type,
         } => match op {
-            bril::ValueOps::Add => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Iadd),
-            bril::ValueOps::Sub => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Isub),
-            bril::ValueOps::Mul => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Imul),
-            bril::ValueOps::Div => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Sdiv),
-            bril::ValueOps::Lt => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThan),
-            bril::ValueOps::Le => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThanOrEqual),
-            bril::ValueOps::Eq => gen_icmp(builder, &env.vars, args, dest, IntCC::Equal),
-            bril::ValueOps::Ge => {
-                gen_icmp(builder, &env.vars, args, dest, IntCC::SignedGreaterThanOrEqual)
+            bril::ValueOps::Add => {
+                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Iadd)
             }
-            bril::ValueOps::Gt => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedGreaterThan),
-            bril::ValueOps::And => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Band),
-            bril::ValueOps::Or => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Bor),
+            bril::ValueOps::Sub => {
+                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Isub)
+            }
+            bril::ValueOps::Mul => {
+                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Imul)
+            }
+            bril::ValueOps::Div => {
+                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Sdiv)
+            }
+            bril::ValueOps::Lt => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThan),
+            bril::ValueOps::Le => {
+                gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThanOrEqual)
+            }
+            bril::ValueOps::Eq => gen_icmp(builder, &env.vars, args, dest, IntCC::Equal),
+            bril::ValueOps::Ge => gen_icmp(
+                builder,
+                &env.vars,
+                args,
+                dest,
+                IntCC::SignedGreaterThanOrEqual,
+            ),
+            bril::ValueOps::Gt => {
+                gen_icmp(builder, &env.vars, args, dest, IntCC::SignedGreaterThan)
+            }
+            bril::ValueOps::And => {
+                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Band)
+            }
+            bril::ValueOps::Or => {
+                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Bor)
+            }
             bril::ValueOps::Not => {
                 let arg = builder.use_var(env.vars[&args[0]]);
                 let res = builder.ins().bnot(arg);
@@ -391,8 +409,10 @@ fn compile_inst(
             }
             bril::ValueOps::Call => {
                 let func_ref = env.func_refs[&funcs[0]];
-                let arg_vals: Vec<ir::Value> =
-                    args.iter().map(|arg| builder.use_var(env.vars[arg])).collect();
+                let arg_vals: Vec<ir::Value> = args
+                    .iter()
+                    .map(|arg| builder.use_var(env.vars[arg]))
+                    .collect();
                 let inst = builder.ins().call(func_ref, &arg_vals);
                 let res = builder.inst_results(inst)[0];
                 builder.def_var(env.vars[dest], res);
@@ -402,6 +422,46 @@ fn compile_inst(
                 builder.def_var(env.vars[dest], arg);
             }
         },
+    }
+}
+
+fn compile_body(insts: &[bril::Code], builder: &mut FunctionBuilder, env: &CompileEnv) {
+    let mut terminated = false; // Entry block is open.
+    for code in insts {
+        match code {
+            bril::Code::Instruction(inst) => {
+                // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
+                if terminated {
+                    let block = builder.create_block();
+                    builder.switch_to_block(block);
+                    terminated = false;
+                }
+
+                // Compile one instruction.
+                compile_inst(inst, builder, &env);
+
+                if is_term(inst) {
+                    terminated = true;
+                }
+            }
+            bril::Code::Label { label } => {
+                let new_block = env.blocks[label];
+
+                // If the previous block was missing a terminator (fall-through), insert a
+                // jump to the new block.
+                if !terminated {
+                    builder.ins().jump(new_block, &[]);
+                }
+                terminated = false;
+
+                builder.switch_to_block(new_block);
+            }
+        }
+    }
+
+    // Implicit return in the last block.
+    if !terminated {
+        builder.ins().return_(&[]);
     }
 }
 
@@ -481,8 +541,17 @@ impl<M: Module> Translator<M> {
             .collect();
 
         // Cloning this map is not so great, but I am pretty bad at Rust!
-        let var_types = var_types.into_iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-        let env = CompileEnv { vars, var_types, rt_refs, blocks, func_refs };
+        let var_types = var_types
+            .into_iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        let env = CompileEnv {
+            vars,
+            var_types,
+            rt_refs,
+            blocks,
+            func_refs,
+        };
 
         // Define variables for function arguments in the entry block.
         let entry_block = builder.create_block();
@@ -494,43 +563,7 @@ impl<M: Module> Translator<M> {
         }
 
         // Insert instructions.
-        let mut terminated = false; // Entry block is open.
-        for code in &func.instrs {
-            match code {
-                bril::Code::Instruction(inst) => {
-                    // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
-                    if terminated {
-                        let block = builder.create_block();
-                        builder.switch_to_block(block);
-                        terminated = false;
-                    }
-
-                    // Compile one instruction.
-                    compile_inst(inst, &mut builder, &env);
-
-                    if is_term(inst) {
-                        terminated = true;
-                    }
-                }
-                bril::Code::Label { label } => {
-                    let new_block = env.blocks[label];
-
-                    // If the previous block was missing a terminator (fall-through), insert a
-                    // jump to the new block.
-                    if !terminated {
-                        builder.ins().jump(new_block, &[]);
-                    }
-                    terminated = false;
-
-                    builder.switch_to_block(new_block);
-                }
-            }
-        }
-
-        // Implicit return in the last block.
-        if !terminated {
-            builder.ins().return_(&[]);
-        }
+        compile_body(&func.instrs, &mut builder, &env);
 
         builder.seal_all_blocks();
         builder.finalize();
