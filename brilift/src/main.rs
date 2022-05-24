@@ -4,6 +4,7 @@ use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::{ir, isa, settings};
+use cranelift_codegen::settings::Configurable;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, Module};
@@ -105,8 +106,11 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
     }
 }
 
-fn get_isa(target: Option<String>) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
-    let flag_builder = settings::builder();
+fn get_isa(target: Option<String>, pic: bool) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+    let mut flag_builder = settings::builder();
+    if pic {
+        flag_builder.set("is_pic", "true").unwrap();
+    }
     let isa_builder = if let Some(targ) = target {
         cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target")
     } else {
@@ -120,7 +124,7 @@ fn get_isa(target: Option<String>) -> Box<dyn cranelift_codegen::isa::TargetIsa>
 impl Translator<ObjectModule> {
     fn new(target: Option<String>) -> Self {
         // Make an object module.
-        let isa = get_isa(target);
+        let isa = get_isa(target, true);
         let pointer_type = isa.pointer_type();
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
