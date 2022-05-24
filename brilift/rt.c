@@ -3,11 +3,11 @@
 #include <inttypes.h>
 #include <string.h>
 
-void print_int(int64_t i) {
+void _bril_print_int(int64_t i) {
     printf("%" PRId64, i);
 }
 
-void print_bool(char i) {
+void _bril_print_bool(char i) {
     if (i) {
         printf("true");
     } else {
@@ -15,22 +15,22 @@ void print_bool(char i) {
     }
 }
 
-void print_sep() {
+void _bril_print_sep() {
     printf(" ");
 }
 
-void print_end() {
+void _bril_print_end() {
     printf("\n");
 }
 
-int64_t parse_int(char **args, int64_t idx) {
+int64_t _bril_parse_int(char **args, int64_t idx) {
     char *arg = args[idx];
     int64_t res;
     sscanf(arg, "%" SCNd64, &res);
     return res;
 }
 
-char parse_bool(char **args, int64_t idx) {
+char _bril_parse_bool(char **args, int64_t idx) {
     char *arg = args[idx];
     return !!strcmp(arg, "true");
 }

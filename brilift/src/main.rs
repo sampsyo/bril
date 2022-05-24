@@ -51,10 +51,10 @@ impl RTFunc {
 
     fn name(&self) -> &'static str {
         match self {
-            Self::PrintInt => "print_int",
-            Self::PrintBool => "print_bool",
-            Self::PrintSep => "print_sep",
-            Self::PrintEnd => "print_end",
+            Self::PrintInt => "_bril_print_int",
+            Self::PrintBool => "_bril_print_bool",
+            Self::PrintSep => "_bril_print_sep",
+            Self::PrintEnd => "_bril_print_end",
         }
     }
 }
@@ -91,8 +91,8 @@ impl RTSetupFunc {
 
     fn name(&self) -> &'static str {
         match self {
-            Self::ParseInt => "parse_int",
-            Self::ParseBool => "parse_bool",
+            Self::ParseInt => "_bril_parse_int",
+            Self::ParseBool => "_bril_parse_bool",
         }
     }
 }
