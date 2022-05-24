@@ -11,27 +11,19 @@ use cranelift_module::{default_libcall_names, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule};
 use std::collections::HashMap;
 use std::fs;
+use enum_map::{enum_map, Enum, EnumMap};
 
-struct RTSigs {
-    print_int: ir::Signature,
-    print_bool: ir::Signature,
-    print_sep: ir::Signature,
-    print_end: ir::Signature,
+#[derive(Debug, Enum)]
+enum RTFunc {
+    PrintInt,
+    PrintBool,
+    PrintSep,
+    PrintEnd,
 }
 
-struct RTIds {
-    print_int: cranelift_module::FuncId,
-    print_bool: cranelift_module::FuncId,
-    print_sep: cranelift_module::FuncId,
-    print_end: cranelift_module::FuncId,
-}
-
-struct RTRefs {
-    print_int: ir::FuncRef,
-    print_bool: ir::FuncRef,
-    print_sep: ir::FuncRef,
-    print_end: ir::FuncRef,
-}
+type RTSigs = EnumMap<RTFunc, ir::Signature>;
+type RTIds = EnumMap<RTFunc, cranelift_module::FuncId>;
+type RTRefs = EnumMap<RTFunc, ir::FuncRef>;
 
 fn tr_type(typ: &bril::Type) -> ir::Type {
     match typ {
@@ -90,23 +82,23 @@ struct Translator<M: Module> {
 
 // TODO Should this be a constant or something?
 fn get_rt_sigs() -> RTSigs {
-    RTSigs {
-        print_int: ir::Signature {
+    enum_map! {
+        RTFunc::PrintInt => ir::Signature {
             params: vec![ir::AbiParam::new(ir::types::I64)],
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
         },
-        print_bool: ir::Signature {
+        RTFunc::PrintBool => ir::Signature {
             params: vec![ir::AbiParam::new(ir::types::B1)],
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
         },
-        print_sep: ir::Signature {
+        RTFunc::PrintSep => ir::Signature {
             params: vec![],
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
         },
-        print_end: ir::Signature {
+        RTFunc::PrintEnd => ir::Signature {
             params: vec![],
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
@@ -114,47 +106,28 @@ fn get_rt_sigs() -> RTSigs {
     }
 }
 
-fn declare_rt<M: Module>(module: &mut M) -> RTIds {
-    // TODO Maybe these should be hash tables or something?
-    let rt_sigs = get_rt_sigs();
-    RTIds {
-        print_int: {
-            module
-                .declare_function(
-                    "print_int",
-                    cranelift_module::Linkage::Import,
-                    &rt_sigs.print_int,
-                )
-                .unwrap()
-        },
-        print_bool: {
-            module
-                .declare_function(
-                    "print_bool",
-                    cranelift_module::Linkage::Import,
-                    &rt_sigs.print_bool,
-                )
-                .unwrap()
-        },
-        print_sep: {
-            module
-                .declare_function(
-                    "print_sep",
-                    cranelift_module::Linkage::Import,
-                    &rt_sigs.print_sep,
-                )
-                .unwrap()
-        },
-        print_end: {
-            module
-                .declare_function(
-                    "print_end",
-                    cranelift_module::Linkage::Import,
-                    &rt_sigs.print_end,
-                )
-                .unwrap()
-        },
+// TODO This too?
+fn get_rt_names() -> EnumMap<RTFunc, &'static str> {
+    enum_map! {
+        RTFunc::PrintInt => "print_int",
+        RTFunc::PrintBool => "print_bool",
+        RTFunc::PrintSep => "print_sep",
+        RTFunc::PrintEnd => "print_end",
     }
+}
+
+fn declare_rt<M: Module>(module: &mut M) -> RTIds {
+    let rt_sigs = get_rt_sigs();
+    let rt_names = get_rt_names();
+    rt_sigs.map(|rtfunc, sig| {
+        module
+            .declare_function(
+                rt_names[rtfunc],
+                cranelift_module::Linkage::Import,
+                &sig,
+            )
+            .unwrap()
+    })
 }
 
 fn get_isa(
@@ -313,19 +286,20 @@ fn compile_inst(
                         if first {
                             first = false;
                         } else {
-                            builder.ins().call(rt_refs.print_sep, &[]);
+                            builder.ins().call(rt_refs[RTFunc::PrintSep], &[]);
                         }
 
                         // Print each value according to its type.
                         let arg_val = builder.use_var(vars[arg]);
                         let arg_type = var_types[arg];
                         let print_func = match arg_type {
-                            bril::Type::Int => rt_refs.print_int,
-                            bril::Type::Bool => rt_refs.print_bool,
+                            bril::Type::Int => RTFunc::PrintInt,
+                            bril::Type::Bool => RTFunc::PrintBool,
                         };
-                        builder.ins().call(print_func, &[arg_val]);
+                        let print_ref = rt_refs[print_func];
+                        builder.ins().call(print_ref, &[arg_val]);
                     }
-                    builder.ins().call(rt_refs.print_end, &[]);
+                    builder.ins().call(rt_refs[RTFunc::PrintEnd], &[]);
                 }
                 bril::EffectOps::Jump => {
                     let block = blocks[&labels[0]];
@@ -441,21 +415,11 @@ impl<M: Module> Translator<M> {
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
         // Declare runtime functions.
-        // TODO Duplication...
-        let rt_refs = RTRefs {
-            print_int: self
+        let rt_refs = self.rt_funcs.map(|_, id| {
+            self
                 .module
-                .declare_func_in_func(self.rt_funcs.print_int, builder.func),
-            print_bool: self
-                .module
-                .declare_func_in_func(self.rt_funcs.print_bool, builder.func),
-            print_sep: self
-                .module
-                .declare_func_in_func(self.rt_funcs.print_sep, builder.func),
-            print_end: self
-                .module
-                .declare_func_in_func(self.rt_funcs.print_end, builder.func),
-        };
+                .declare_func_in_func(id, builder.func)
+        });
 
         // Declare all variables (including for function parameters).
         let var_types = all_vars(&func);
