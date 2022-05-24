@@ -558,10 +558,21 @@ struct Args {
 
     #[argh(switch, short = 'd', description = "dump CLIF IR")]
     dump_ir: bool,
+
+    #[argh(switch, short = 'v', description = "verbose logging")]
+    verbose: bool,
 }
 
 fn main() {
     let args: Args = argh::from_env();
+    
+    // Set up logging.
+    simplelog::TermLogger::init(
+        if args.verbose { simplelog::LevelFilter::Debug } else { simplelog::LevelFilter::Warn },
+        simplelog::Config::default(),
+        simplelog::TerminalMode::Mixed,
+        simplelog::ColorChoice::Auto,
+    ).unwrap();
 
     // Load the Bril program from stdin.
     let prog = bril::load_program();
