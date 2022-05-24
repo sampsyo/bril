@@ -3,15 +3,23 @@
 #include <inttypes.h>
 
 void print_int(int64_t i) {
-    printf("%" PRId64 "\n", i);
+    printf("%" PRId64, i);
 }
 
 void print_bool(char i) {
     if (i) {
-        printf("true\n");
+        printf("true");
     } else {
-        printf("false\n");
+        printf("false");
     }
+}
+
+void print_sep() {
+    printf(" ");
+}
+
+void print_end() {
+    printf("\n");
 }
 
 int64_t parse_int(char **args, int64_t idx) {

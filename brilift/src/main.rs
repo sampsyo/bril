@@ -15,16 +15,22 @@ use std::fs;
 struct RTSigs {
     print_int: ir::Signature,
     print_bool: ir::Signature,
+    print_sep: ir::Signature,
+    print_end: ir::Signature,
 }
 
 struct RTIds {
     print_int: cranelift_module::FuncId,
     print_bool: cranelift_module::FuncId,
+    print_sep: cranelift_module::FuncId,
+    print_end: cranelift_module::FuncId,
 }
 
 struct RTRefs {
     print_int: ir::FuncRef,
     print_bool: ir::FuncRef,
+    print_sep: ir::FuncRef,
+    print_end: ir::FuncRef,
 }
 
 fn tr_type(typ: &bril::Type) -> ir::Type {
@@ -95,6 +101,16 @@ fn get_rt_sigs() -> RTSigs {
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
         },
+        print_sep: ir::Signature {
+            params: vec![],
+            returns: vec![],
+            call_conv: isa::CallConv::SystemV,
+        },
+        print_end: ir::Signature {
+            params: vec![],
+            returns: vec![],
+            call_conv: isa::CallConv::SystemV,
+        },
     }
 }
 
@@ -117,6 +133,24 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
                     "print_bool",
                     cranelift_module::Linkage::Import,
                     &rt_sigs.print_bool,
+                )
+                .unwrap()
+        },
+        print_sep: {
+            module
+                .declare_function(
+                    "print_sep",
+                    cranelift_module::Linkage::Import,
+                    &rt_sigs.print_sep,
+                )
+                .unwrap()
+        },
+        print_end: {
+            module
+                .declare_function(
+                    "print_end",
+                    cranelift_module::Linkage::Import,
+                    &rt_sigs.print_end,
                 )
                 .unwrap()
         },
@@ -266,8 +300,16 @@ fn compile_inst(
         } => {
             match op {
                 bril::EffectOps::Print => {
-                    // TODO Join multiple args on one line.
+                    let mut first = true;
                     for arg in args {
+                        // Separate printed values.
+                        if first {
+                            first = false;
+                        } else {
+                            builder.ins().call(rt_refs.print_sep, &[]);
+                        }
+
+                        // Print each value according to its type.
                         let arg_val = builder.use_var(*vars.get(arg).unwrap());
                         let arg_type = var_types.get(arg).unwrap();
                         let print_func = match arg_type {
@@ -276,6 +318,7 @@ fn compile_inst(
                         };
                         builder.ins().call(print_func, &[arg_val]);
                     }
+                    builder.ins().call(rt_refs.print_end, &[]);
                 }
                 bril::EffectOps::Jump => {
                     let block = *blocks.get(&labels[0]).unwrap();
@@ -391,6 +434,7 @@ impl<M: Module> Translator<M> {
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
         // Declare runtime functions.
+        // TODO Duplication...
         let rt_refs = RTRefs {
             print_int: self
                 .module
@@ -398,6 +442,12 @@ impl<M: Module> Translator<M> {
             print_bool: self
                 .module
                 .declare_func_in_func(self.rt_funcs.print_bool, builder.func),
+            print_sep: self
+                .module
+                .declare_func_in_func(self.rt_funcs.print_sep, builder.func),
+            print_end: self
+                .module
+                .declare_func_in_func(self.rt_funcs.print_end, builder.func),
         };
 
         // Declare all variables (including for function parameters).
