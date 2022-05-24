@@ -463,7 +463,9 @@ impl<M: Module> Translator<M> {
                 ir::AbiParam::new(self.pointer_type),
                 ir::AbiParam::new(self.pointer_type),
             ],
-            returns: vec![],
+            returns: vec![
+                ir::AbiParam::new(self.pointer_type),
+            ],
             call_conv: isa::CallConv::SystemV,
         };
         let main_id = self
@@ -525,7 +527,8 @@ impl<M: Module> Translator<M> {
         let real_main_ref = self.module.declare_func_in_func(real_main_id, builder.func);
         builder.ins().call(real_main_ref, &arg_vals);
 
-        builder.ins().return_(&[]);
+        let zero = builder.ins().iconst(self.pointer_type, 0);
+        builder.ins().return_(&[zero]);
         builder.finalize();
 
         // Add to the module.
