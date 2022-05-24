@@ -529,20 +529,28 @@ impl<M: Module> Translator<M> {
 
         // Declare all variables (including for function parameters).
         let var_types = all_vars(&func);
-        let vars: HashMap<String, Variable> = var_types.iter().enumerate().map(|(i, (name, typ))| {
-            let var = Variable::new(i);
-            builder.declare_var(var, translate_type(typ));
-            (name.to_string(), var)
-        }).collect();
+        let vars: HashMap<String, Variable> = var_types
+            .iter()
+            .enumerate()
+            .map(|(i, (name, typ))| {
+                let var = Variable::new(i);
+                builder.declare_var(var, translate_type(typ));
+                (name.to_string(), var)
+            })
+            .collect();
 
         // Create blocks for every label.
-        let mut blocks = HashMap::<String, ir::Block>::new();
-        for code in &func.instrs {
-            if let bril::Code::Label { label } = code {
-                let block = builder.create_block();
-                blocks.insert(label.to_string(), block);
-            }
-        }
+        let blocks: HashMap<String, ir::Block> = func
+            .instrs
+            .iter()
+            .filter_map(|code| match code {
+                bril::Code::Label { label } => {
+                    let block = builder.create_block();
+                    Some((label.to_string(), block))
+                }
+                _ => None,
+            })
+            .collect();
 
         // "Import" all the functions we may need to call.
         // TODO We could do this only for the functions we actually use...
