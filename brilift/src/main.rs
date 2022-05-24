@@ -21,10 +21,6 @@ enum RTFunc {
     PrintEnd,
 }
 
-type RTSigs = EnumMap<RTFunc, ir::Signature>;
-type RTIds = EnumMap<RTFunc, cranelift_module::FuncId>;
-type RTRefs = EnumMap<RTFunc, ir::FuncRef>;
-
 fn tr_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
@@ -73,7 +69,7 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
 
 // TODO Should really be a trait with two different structs that implement it?
 struct Translator<M: Module> {
-    rt_funcs: RTIds,
+    rt_funcs: EnumMap<RTFunc, cranelift_module::FuncId>,
     module: M,
     context: cranelift_codegen::Context,
     funcs: HashMap<String, cranelift_module::FuncId>,
@@ -81,7 +77,7 @@ struct Translator<M: Module> {
 }
 
 // TODO Should this be a constant or something?
-fn get_rt_sigs() -> RTSigs {
+fn get_rt_sigs() -> EnumMap<RTFunc, ir::Signature> {
     enum_map! {
         RTFunc::PrintInt => ir::Signature {
             params: vec![ir::AbiParam::new(ir::types::I64)],
@@ -116,7 +112,7 @@ fn get_rt_names() -> EnumMap<RTFunc, &'static str> {
     }
 }
 
-fn declare_rt<M: Module>(module: &mut M) -> RTIds {
+fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
     let rt_sigs = get_rt_sigs();
     let rt_names = get_rt_names();
     rt_sigs.map(|rtfunc, sig| {
@@ -255,7 +251,7 @@ fn compile_inst(
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
     var_types: &HashMap<&String, &bril::Type>,
-    rt_refs: &RTRefs,
+    rt_refs: &EnumMap<RTFunc, ir::FuncRef>,
     blocks: &HashMap<String, ir::Block>,
     func_refs: &HashMap<String, ir::FuncRef>,
 ) {
