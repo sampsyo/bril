@@ -9,9 +9,9 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule};
+use enum_map::{enum_map, Enum, EnumMap};
 use std::collections::HashMap;
 use std::fs;
-use enum_map::{enum_map, Enum, EnumMap};
 
 #[derive(Debug, Enum)]
 enum RTFunc {
@@ -81,7 +81,7 @@ impl RTSetupFunc {
                 ],
                 returns: vec![ir::AbiParam::new(ir::types::B1)],
                 call_conv: isa::CallConv::SystemV,
-            }
+            },
         }
     }
 
@@ -106,7 +106,8 @@ fn translate_sig(func: &bril::Function) -> ir::Signature {
         sig.returns.push(ir::AbiParam::new(translate_type(ret)));
     }
     for arg in &func.args {
-        sig.params.push(ir::AbiParam::new(translate_type(&arg.arg_type)));
+        sig.params
+            .push(ir::AbiParam::new(translate_type(&arg.arg_type)));
     }
     sig
 }
@@ -345,10 +346,8 @@ fn compile_inst(
                 }
                 bril::EffectOps::Call => {
                     let func_ref = func_refs[&funcs[0]];
-                    let arg_vals: Vec<ir::Value> = args
-                        .iter()
-                        .map(|arg| builder.use_var(vars[arg]))
-                        .collect();
+                    let arg_vals: Vec<ir::Value> =
+                        args.iter().map(|arg| builder.use_var(vars[arg])).collect();
                     builder.ins().call(func_ref, &arg_vals);
                 }
                 bril::EffectOps::Return => {
@@ -390,10 +389,8 @@ fn compile_inst(
             }
             bril::ValueOps::Call => {
                 let func_ref = func_refs[&funcs[0]];
-                let arg_vals: Vec<ir::Value> = args
-                    .iter()
-                    .map(|arg| builder.use_var(vars[arg]))
-                    .collect();
+                let arg_vals: Vec<ir::Value> =
+                    args.iter().map(|arg| builder.use_var(vars[arg])).collect();
                 let inst = builder.ins().call(func_ref, &arg_vals);
                 let res = builder.inst_results(inst)[0];
                 builder.def_var(vars[dest], res);
@@ -446,11 +443,9 @@ impl<M: Module> Translator<M> {
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
         // Declare runtime functions.
-        let rt_refs = self.rt_funcs.map(|_, id| {
-            self
-                .module
-                .declare_func_in_func(id, builder.func)
-        });
+        let rt_refs = self
+            .rt_funcs
+            .map(|_, id| self.module.declare_func_in_func(id, builder.func));
 
         // Declare all variables (including for function parameters).
         let var_types = all_vars(&func);
