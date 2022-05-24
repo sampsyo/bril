@@ -15,6 +15,7 @@ use std::fs;
 
 /// Runtime functions used by ordinary Bril instructions.
 #[derive(Debug, Enum)]
+#[allow(clippy::enum_variant_names)]
 enum RTFunc {
     PrintInt,
     PrintBool,
@@ -456,7 +457,7 @@ fn compile_body(insts: &[bril::Code], builder: &mut FunctionBuilder, env: &Compi
                 }
 
                 // Compile one instruction.
-                compile_inst(inst, builder, &env);
+                compile_inst(inst, builder, env);
 
                 if is_term(inst) {
                     terminated = true;
