@@ -224,8 +224,8 @@ impl Translator<JITModule> {
         self.module.finalize_definitions();
 
         // TODO Compile all functions.
-        let id = self.funcs.get("main").unwrap();
-        self.module.get_finalized_function(*id)
+        let id = self.funcs["main"];
+        self.module.get_finalized_function(id)
     }
 }
 
@@ -253,10 +253,10 @@ fn gen_icmp(
     dest: &String,
     cc: IntCC,
 ) {
-    let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-    let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+    let lhs = builder.use_var(vars[&args[0]]);
+    let rhs = builder.use_var(vars[&args[1]]);
     let res = builder.ins().icmp(cc, lhs, rhs);
-    builder.def_var(*vars.get(dest).unwrap(), res);
+    builder.def_var(vars[dest], res);
 }
 
 fn gen_binary(
@@ -267,12 +267,12 @@ fn gen_binary(
     dest_type: &bril::Type,
     op: ir::Opcode,
 ) {
-    let lhs = builder.use_var(*vars.get(&args[0]).unwrap());
-    let rhs = builder.use_var(*vars.get(&args[1]).unwrap());
+    let lhs = builder.use_var(vars[&args[0]]);
+    let rhs = builder.use_var(vars[&args[1]]);
     let typ = tr_type(dest_type);
     let (inst, dfg) = builder.ins().Binary(op, typ, lhs, rhs);
     let res = dfg.first_result(inst);
-    builder.def_var(*vars.get(dest).unwrap(), res);
+    builder.def_var(vars[dest], res);
 }
 
 // TODO This has way too many arguments, and they have weird types. Bundle them up into a context
@@ -293,12 +293,11 @@ fn compile_inst(
             const_type: _,
             value,
         } => {
-            let var = vars.get(dest).unwrap();
             let val = match value {
                 bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
                 bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
             };
-            builder.def_var(*var, val);
+            builder.def_var(vars[dest], val);
         }
         bril::Instruction::Effect {
             args,
@@ -318,8 +317,8 @@ fn compile_inst(
                         }
 
                         // Print each value according to its type.
-                        let arg_val = builder.use_var(*vars.get(arg).unwrap());
-                        let arg_type = var_types.get(arg).unwrap();
+                        let arg_val = builder.use_var(vars[arg]);
+                        let arg_type = var_types[arg];
                         let print_func = match arg_type {
                             bril::Type::Int => rt_refs.print_int,
                             bril::Type::Bool => rt_refs.print_bool,
@@ -329,27 +328,27 @@ fn compile_inst(
                     builder.ins().call(rt_refs.print_end, &[]);
                 }
                 bril::EffectOps::Jump => {
-                    let block = *blocks.get(&labels[0]).unwrap();
+                    let block = blocks[&labels[0]];
                     builder.ins().jump(block, &[]);
                 }
                 bril::EffectOps::Branch => {
-                    let arg = builder.use_var(*vars.get(&args[0]).unwrap());
-                    let true_block = *blocks.get(&labels[0]).unwrap();
-                    let false_block = *blocks.get(&labels[1]).unwrap();
+                    let arg = builder.use_var(vars[&args[0]]);
+                    let true_block = blocks[&labels[0]];
+                    let false_block = blocks[&labels[1]];
                     builder.ins().brnz(arg, true_block, &[]);
                     builder.ins().jump(false_block, &[]);
                 }
                 bril::EffectOps::Call => {
-                    let func_ref = *func_refs.get(&funcs[0]).unwrap();
+                    let func_ref = func_refs[&funcs[0]];
                     let arg_vals: Vec<ir::Value> = args
                         .iter()
-                        .map(|arg| builder.use_var(*vars.get(arg).unwrap()))
+                        .map(|arg| builder.use_var(vars[arg]))
                         .collect();
                     builder.ins().call(func_ref, &arg_vals);
                 }
                 bril::EffectOps::Return => {
                     if !args.is_empty() {
-                        let arg = builder.use_var(*vars.get(&args[0]).unwrap());
+                        let arg = builder.use_var(vars[&args[0]]);
                         builder.ins().return_(&[arg]);
                     } else {
                         builder.ins().return_(&[]);
@@ -380,23 +379,23 @@ fn compile_inst(
             bril::ValueOps::And => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Band),
             bril::ValueOps::Or => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Bor),
             bril::ValueOps::Not => {
-                let arg = builder.use_var(*vars.get(&args[0]).unwrap());
+                let arg = builder.use_var(vars[&args[0]]);
                 let res = builder.ins().bnot(arg);
-                builder.def_var(*vars.get(dest).unwrap(), res);
+                builder.def_var(vars[dest], res);
             }
             bril::ValueOps::Call => {
-                let func_ref = *func_refs.get(&funcs[0]).unwrap();
+                let func_ref = func_refs[&funcs[0]];
                 let arg_vals: Vec<ir::Value> = args
                     .iter()
-                    .map(|arg| builder.use_var(*vars.get(arg).unwrap()))
+                    .map(|arg| builder.use_var(vars[arg]))
                     .collect();
                 let inst = builder.ins().call(func_ref, &arg_vals);
                 let res = builder.inst_results(inst)[0];
-                builder.def_var(*vars.get(dest).unwrap(), res);
+                builder.def_var(vars[dest], res);
             }
             bril::ValueOps::Id => {
-                let arg = builder.use_var(*vars.get(&args[0]).unwrap());
-                builder.def_var(*vars.get(dest).unwrap(), arg);
+                let arg = builder.use_var(vars[&args[0]]);
+                builder.def_var(vars[dest], arg);
             }
         },
     }
@@ -526,7 +525,7 @@ impl<M: Module> Translator<M> {
                     }
                 }
                 bril::Code::Label { label } => {
-                    let new_block = *blocks.get(label).unwrap();
+                    let new_block = blocks[label];
 
                     // If the previous block was missing a terminator (fall-through), insert a
                     // jump to the new block.
@@ -636,7 +635,7 @@ impl<M: Module> Translator<M> {
             .collect();
 
         // Call the "real" main function.
-        let real_main_id = *self.funcs.get("main").unwrap();
+        let real_main_id = self.funcs["main"];
         let real_main_ref = self.module.declare_func_in_func(real_main_id, builder.func);
         builder.ins().call(real_main_ref, &arg_vals);
 
@@ -669,7 +668,7 @@ impl<M: Module> Translator<M> {
             }
 
             // Compile every function.
-            let id = *self.funcs.get(&func.name).unwrap();
+            let id = self.funcs[&func.name];
             self.enter_func(&func, id);
             self.emit_func(func);
             self.finish_func(id, dump);
