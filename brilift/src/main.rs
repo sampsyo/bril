@@ -21,20 +21,20 @@ enum RTFunc {
     PrintEnd,
 }
 
-fn tr_type(typ: &bril::Type) -> ir::Type {
+fn translate_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
         bril::Type::Bool => ir::types::B1,
     }
 }
 
-fn tr_sig(func: &bril::Function) -> ir::Signature {
+fn translate_sig(func: &bril::Function) -> ir::Signature {
     let mut sig = ir::Signature::new(isa::CallConv::SystemV);
     if let Some(ret) = &func.return_type {
-        sig.returns.push(ir::AbiParam::new(tr_type(ret)));
+        sig.returns.push(ir::AbiParam::new(translate_type(ret)));
     }
     for arg in &func.args {
-        sig.params.push(ir::AbiParam::new(tr_type(&arg.arg_type)));
+        sig.params.push(ir::AbiParam::new(translate_type(&arg.arg_type)));
     }
     sig
 }
@@ -238,7 +238,7 @@ fn gen_binary(
 ) {
     let lhs = builder.use_var(vars[&args[0]]);
     let rhs = builder.use_var(vars[&args[1]]);
-    let typ = tr_type(dest_type);
+    let typ = translate_type(dest_type);
     let (inst, dfg) = builder.ins().Binary(op, typ, lhs, rhs);
     let res = dfg.first_result(inst);
     builder.def_var(vars[dest], res);
@@ -381,14 +381,14 @@ impl<M: Module> Translator<M> {
             &func.name
         };
 
-        let sig = tr_sig(func);
+        let sig = translate_sig(func);
         self.module
             .declare_function(name, cranelift_module::Linkage::Local, &sig)
             .unwrap()
     }
 
     fn enter_func(&mut self, func: &bril::Function, func_id: cranelift_module::FuncId) {
-        let sig = tr_sig(func);
+        let sig = translate_sig(func);
         self.context.func =
             ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
     }
@@ -422,7 +422,7 @@ impl<M: Module> Translator<M> {
         let mut vars = HashMap::<String, Variable>::new();
         for (i, (name, typ)) in var_types.iter().enumerate() {
             let var = Variable::new(i);
-            builder.declare_var(var, tr_type(typ));
+            builder.declare_var(var, translate_type(typ));
             vars.insert(name.to_string(), var);
         }
 
