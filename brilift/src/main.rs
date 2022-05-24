@@ -350,6 +350,7 @@ impl<M: Module> Translator<M> {
         self.module
             .define_function(func_id, &mut self.context)
             .unwrap();
+        self.context.clear();
     }
 
     fn emit_func(&mut self, func: bril::Function) {
@@ -512,6 +513,7 @@ impl<M: Module> Translator<M> {
         self.module
             .define_function(main_id, &mut self.context)
             .unwrap();
+        self.context.clear();
     }
 
     fn compile_prog(&mut self, prog: bril::Program, dump: bool, wrap_main: bool) {
