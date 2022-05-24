@@ -280,16 +280,19 @@ fn gen_binary(
     builder.def_var(vars[dest], res);
 }
 
-// TODO This has way too many arguments, and they have weird types. Bundle them up into a context
-// of some sort?
+struct CompileEnv {
+    vars: HashMap<String, Variable>,
+    var_types: HashMap<String, bril::Type>,
+    rt_refs: EnumMap<RTFunc, ir::FuncRef>,
+    blocks: HashMap<String, ir::Block>,
+    func_refs: HashMap<String, ir::FuncRef>,
+}
+
+/// Compile one Bril instruction into CLIF.
 fn compile_inst(
     inst: &bril::Instruction,
     builder: &mut FunctionBuilder,
-    vars: &HashMap<String, Variable>,
-    var_types: &HashMap<&String, &bril::Type>,
-    rt_refs: &EnumMap<RTFunc, ir::FuncRef>,
-    blocks: &HashMap<String, ir::Block>,
-    func_refs: &HashMap<String, ir::FuncRef>,
+    env: &CompileEnv,
 ) {
     match inst {
         bril::Instruction::Constant {
@@ -302,7 +305,7 @@ fn compile_inst(
                 bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
                 bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
             };
-            builder.def_var(vars[dest], val);
+            builder.def_var(env.vars[dest], val);
         }
         bril::Instruction::Effect {
             args,
@@ -318,41 +321,40 @@ fn compile_inst(
                         if first {
                             first = false;
                         } else {
-                            builder.ins().call(rt_refs[RTFunc::PrintSep], &[]);
+                            builder.ins().call(env.rt_refs[RTFunc::PrintSep], &[]);
                         }
 
                         // Print each value according to its type.
-                        let arg_val = builder.use_var(vars[arg]);
-                        let arg_type = var_types[arg];
-                        let print_func = match arg_type {
+                        let arg_val = builder.use_var(env.vars[arg]);
+                        let print_func = match env.var_types[arg] {
                             bril::Type::Int => RTFunc::PrintInt,
                             bril::Type::Bool => RTFunc::PrintBool,
                         };
-                        let print_ref = rt_refs[print_func];
+                        let print_ref = env.rt_refs[print_func];
                         builder.ins().call(print_ref, &[arg_val]);
                     }
-                    builder.ins().call(rt_refs[RTFunc::PrintEnd], &[]);
+                    builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
                 }
                 bril::EffectOps::Jump => {
-                    let block = blocks[&labels[0]];
+                    let block = env.blocks[&labels[0]];
                     builder.ins().jump(block, &[]);
                 }
                 bril::EffectOps::Branch => {
-                    let arg = builder.use_var(vars[&args[0]]);
-                    let true_block = blocks[&labels[0]];
-                    let false_block = blocks[&labels[1]];
+                    let arg = builder.use_var(env.vars[&args[0]]);
+                    let true_block = env.blocks[&labels[0]];
+                    let false_block = env.blocks[&labels[1]];
                     builder.ins().brnz(arg, true_block, &[]);
                     builder.ins().jump(false_block, &[]);
                 }
                 bril::EffectOps::Call => {
-                    let func_ref = func_refs[&funcs[0]];
+                    let func_ref = env.func_refs[&funcs[0]];
                     let arg_vals: Vec<ir::Value> =
-                        args.iter().map(|arg| builder.use_var(vars[arg])).collect();
+                        args.iter().map(|arg| builder.use_var(env.vars[arg])).collect();
                     builder.ins().call(func_ref, &arg_vals);
                 }
                 bril::EffectOps::Return => {
                     if !args.is_empty() {
-                        let arg = builder.use_var(vars[&args[0]]);
+                        let arg = builder.use_var(env.vars[&args[0]]);
                         builder.ins().return_(&[arg]);
                     } else {
                         builder.ins().return_(&[]);
@@ -369,35 +371,35 @@ fn compile_inst(
             op,
             op_type,
         } => match op {
-            bril::ValueOps::Add => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Iadd),
-            bril::ValueOps::Sub => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Isub),
-            bril::ValueOps::Mul => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Imul),
-            bril::ValueOps::Div => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Sdiv),
-            bril::ValueOps::Lt => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThan),
-            bril::ValueOps::Le => gen_icmp(builder, vars, args, dest, IntCC::SignedLessThanOrEqual),
-            bril::ValueOps::Eq => gen_icmp(builder, vars, args, dest, IntCC::Equal),
+            bril::ValueOps::Add => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Iadd),
+            bril::ValueOps::Sub => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Isub),
+            bril::ValueOps::Mul => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Imul),
+            bril::ValueOps::Div => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Sdiv),
+            bril::ValueOps::Lt => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThan),
+            bril::ValueOps::Le => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThanOrEqual),
+            bril::ValueOps::Eq => gen_icmp(builder, &env.vars, args, dest, IntCC::Equal),
             bril::ValueOps::Ge => {
-                gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThanOrEqual)
+                gen_icmp(builder, &env.vars, args, dest, IntCC::SignedGreaterThanOrEqual)
             }
-            bril::ValueOps::Gt => gen_icmp(builder, vars, args, dest, IntCC::SignedGreaterThan),
-            bril::ValueOps::And => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Band),
-            bril::ValueOps::Or => gen_binary(builder, vars, args, dest, op_type, ir::Opcode::Bor),
+            bril::ValueOps::Gt => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedGreaterThan),
+            bril::ValueOps::And => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Band),
+            bril::ValueOps::Or => gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Bor),
             bril::ValueOps::Not => {
-                let arg = builder.use_var(vars[&args[0]]);
+                let arg = builder.use_var(env.vars[&args[0]]);
                 let res = builder.ins().bnot(arg);
-                builder.def_var(vars[dest], res);
+                builder.def_var(env.vars[dest], res);
             }
             bril::ValueOps::Call => {
-                let func_ref = func_refs[&funcs[0]];
+                let func_ref = env.func_refs[&funcs[0]];
                 let arg_vals: Vec<ir::Value> =
-                    args.iter().map(|arg| builder.use_var(vars[arg])).collect();
+                    args.iter().map(|arg| builder.use_var(env.vars[arg])).collect();
                 let inst = builder.ins().call(func_ref, &arg_vals);
                 let res = builder.inst_results(inst)[0];
-                builder.def_var(vars[dest], res);
+                builder.def_var(env.vars[dest], res);
             }
             bril::ValueOps::Id => {
-                let arg = builder.use_var(vars[&args[0]]);
-                builder.def_var(vars[dest], arg);
+                let arg = builder.use_var(env.vars[&args[0]]);
+                builder.def_var(env.vars[dest], arg);
             }
         },
     }
@@ -438,7 +440,7 @@ impl<M: Module> Translator<M> {
         self.context.clear();
     }
 
-    fn emit_func(&mut self, func: bril::Function) {
+    fn compile_func(&mut self, func: bril::Function) {
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
@@ -478,13 +480,17 @@ impl<M: Module> Translator<M> {
             })
             .collect();
 
+        // Cloning this map is not so great, but I am pretty bad at Rust!
+        let var_types = var_types.into_iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        let env = CompileEnv { vars, var_types, rt_refs, blocks, func_refs };
+
         // Define variables for function arguments in the entry block.
         let entry_block = builder.create_block();
         builder.switch_to_block(entry_block);
         builder.append_block_params_for_function_params(entry_block);
         for (i, arg) in func.args.iter().enumerate() {
             let param = builder.block_params(entry_block)[i];
-            builder.def_var(vars[&arg.name], param);
+            builder.def_var(env.vars[&arg.name], param);
         }
 
         // Insert instructions.
@@ -500,22 +506,14 @@ impl<M: Module> Translator<M> {
                     }
 
                     // Compile one instruction.
-                    compile_inst(
-                        inst,
-                        &mut builder,
-                        &vars,
-                        &var_types,
-                        &rt_refs,
-                        &blocks,
-                        &func_refs,
-                    );
+                    compile_inst(inst, &mut builder, &env);
 
                     if is_term(inst) {
                         terminated = true;
                     }
                 }
                 bril::Code::Label { label } => {
-                    let new_block = blocks[label];
+                    let new_block = env.blocks[label];
 
                     // If the previous block was missing a terminator (fall-through), insert a
                     // jump to the new block.
@@ -634,7 +632,7 @@ impl<M: Module> Translator<M> {
             // Compile every function.
             let id = self.funcs[&func.name];
             self.enter_func(&func, id);
-            self.emit_func(func);
+            self.compile_func(func);
             self.finish_func(id, dump);
         }
     }
