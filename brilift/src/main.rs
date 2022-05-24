@@ -117,6 +117,31 @@ fn translate_sig(func: &bril::Function) -> ir::Signature {
     sig
 }
 
+/// Translate Bril opcodes that have CLIF equivalents.
+fn translate_op(op: bril::ValueOps) -> ir::Opcode {
+    match op {
+        bril::ValueOps::Add => ir::Opcode::Iadd,
+        bril::ValueOps::Sub => ir::Opcode::Isub,
+        bril::ValueOps::Mul => ir::Opcode::Imul,
+        bril::ValueOps::Div => ir::Opcode::Sdiv,
+        bril::ValueOps::And => ir::Opcode::Band,
+        bril::ValueOps::Or => ir::Opcode::Bor,
+        _ => panic!("not a translatable opcode: {}", op),
+    }
+}
+
+/// Translate Bril opcodes that correspond to CLIF integer comparisons.
+fn translate_intcc(op: bril::ValueOps) -> IntCC {
+    match op {
+        bril::ValueOps::Lt => IntCC::SignedLessThan,
+        bril::ValueOps::Le => IntCC::SignedLessThanOrEqual,
+        bril::ValueOps::Eq => IntCC::Equal,
+        bril::ValueOps::Ge => IntCC::SignedGreaterThanOrEqual,
+        bril::ValueOps::Gt => IntCC::SignedGreaterThan,
+        _ => panic!("not a comparison opcode: {}", op),
+    }
+}
+
 /// Get all the variables defined in a function (and their types), including the arguments.
 fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
     func.instrs
@@ -344,38 +369,36 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             funcs,
             labels,
             op,
-        } => {
-            match op {
-                bril::EffectOps::Print => gen_print(args, builder, env),
-                bril::EffectOps::Jump => {
-                    builder.ins().jump(env.blocks[&labels[0]], &[]);
-                }
-                bril::EffectOps::Branch => {
-                    let arg = builder.use_var(env.vars[&args[0]]);
-                    let true_block = env.blocks[&labels[0]];
-                    let false_block = env.blocks[&labels[1]];
-                    builder.ins().brnz(arg, true_block, &[]);
-                    builder.ins().jump(false_block, &[]);
-                }
-                bril::EffectOps::Call => {
-                    let func_ref = env.func_refs[&funcs[0]];
-                    let arg_vals: Vec<ir::Value> = args
-                        .iter()
-                        .map(|arg| builder.use_var(env.vars[arg]))
-                        .collect();
-                    builder.ins().call(func_ref, &arg_vals);
-                }
-                bril::EffectOps::Return => {
-                    if !args.is_empty() {
-                        let arg = builder.use_var(env.vars[&args[0]]);
-                        builder.ins().return_(&[arg]);
-                    } else {
-                        builder.ins().return_(&[]);
-                    }
-                }
-                bril::EffectOps::Nop => {}
+        } => match op {
+            bril::EffectOps::Print => gen_print(args, builder, env),
+            bril::EffectOps::Jump => {
+                builder.ins().jump(env.blocks[&labels[0]], &[]);
             }
-        }
+            bril::EffectOps::Branch => {
+                let arg = builder.use_var(env.vars[&args[0]]);
+                let true_block = env.blocks[&labels[0]];
+                let false_block = env.blocks[&labels[1]];
+                builder.ins().brnz(arg, true_block, &[]);
+                builder.ins().jump(false_block, &[]);
+            }
+            bril::EffectOps::Call => {
+                let func_ref = env.func_refs[&funcs[0]];
+                let arg_vals: Vec<ir::Value> = args
+                    .iter()
+                    .map(|arg| builder.use_var(env.vars[arg]))
+                    .collect();
+                builder.ins().call(func_ref, &arg_vals);
+            }
+            bril::EffectOps::Return => {
+                if !args.is_empty() {
+                    let arg = builder.use_var(env.vars[&args[0]]);
+                    builder.ins().return_(&[arg]);
+                } else {
+                    builder.ins().return_(&[]);
+                }
+            }
+            bril::EffectOps::Nop => {}
+        },
         bril::Instruction::Value {
             args,
             dest,
@@ -384,39 +407,19 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             op,
             op_type,
         } => match op {
-            bril::ValueOps::Add => {
-                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Iadd)
+            bril::ValueOps::Add
+            | bril::ValueOps::Sub
+            | bril::ValueOps::Mul
+            | bril::ValueOps::Div
+            | bril::ValueOps::And
+            | bril::ValueOps::Or => {
+                gen_binary(builder, &env.vars, args, dest, op_type, translate_op(*op));
             }
-            bril::ValueOps::Sub => {
-                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Isub)
-            }
-            bril::ValueOps::Mul => {
-                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Imul)
-            }
-            bril::ValueOps::Div => {
-                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Sdiv)
-            }
-            bril::ValueOps::Lt => gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThan),
-            bril::ValueOps::Le => {
-                gen_icmp(builder, &env.vars, args, dest, IntCC::SignedLessThanOrEqual)
-            }
-            bril::ValueOps::Eq => gen_icmp(builder, &env.vars, args, dest, IntCC::Equal),
-            bril::ValueOps::Ge => gen_icmp(
-                builder,
-                &env.vars,
-                args,
-                dest,
-                IntCC::SignedGreaterThanOrEqual,
-            ),
-            bril::ValueOps::Gt => {
-                gen_icmp(builder, &env.vars, args, dest, IntCC::SignedGreaterThan)
-            }
-            bril::ValueOps::And => {
-                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Band)
-            }
-            bril::ValueOps::Or => {
-                gen_binary(builder, &env.vars, args, dest, op_type, ir::Opcode::Bor)
-            }
+            bril::ValueOps::Lt
+            | bril::ValueOps::Le
+            | bril::ValueOps::Eq
+            | bril::ValueOps::Ge
+            | bril::ValueOps::Gt => gen_icmp(builder, &env.vars, args, dest, translate_intcc(*op)),
             bril::ValueOps::Not => {
                 let arg = builder.use_var(env.vars[&args[0]]);
                 let res = builder.ins().bnot(arg);
