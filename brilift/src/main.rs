@@ -24,22 +24,22 @@ enum RTFunc {
 impl RTFunc {
     fn sig(&self) -> ir::Signature {
         match self {
-            RTFunc::PrintInt => ir::Signature {
+            Self::PrintInt => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::I64)],
                 returns: vec![],
                 call_conv: isa::CallConv::SystemV,
             },
-            RTFunc::PrintBool => ir::Signature {
+            Self::PrintBool => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::B1)],
                 returns: vec![],
                 call_conv: isa::CallConv::SystemV,
             },
-            RTFunc::PrintSep => ir::Signature {
+            Self::PrintSep => ir::Signature {
                 params: vec![],
                 returns: vec![],
                 call_conv: isa::CallConv::SystemV,
             },
-            RTFunc::PrintEnd => ir::Signature {
+            Self::PrintEnd => ir::Signature {
                 params: vec![],
                 returns: vec![],
                 call_conv: isa::CallConv::SystemV,
@@ -49,10 +49,46 @@ impl RTFunc {
 
     fn name(&self) -> &'static str {
         match self {
-            RTFunc::PrintInt => "print_int",
-            RTFunc::PrintBool => "print_bool",
-            RTFunc::PrintSep => "print_sep",
-            RTFunc::PrintEnd => "print_end",
+            Self::PrintInt => "print_int",
+            Self::PrintBool => "print_bool",
+            Self::PrintSep => "print_sep",
+            Self::PrintEnd => "print_end",
+        }
+    }
+}
+
+#[derive(Debug, Enum)]
+enum RTSetupFunc {
+    ParseInt,
+    ParseBool,
+}
+
+impl RTSetupFunc {
+    fn sig(&self, pointer_type: ir::Type) -> ir::Signature {
+        match self {
+            Self::ParseInt => ir::Signature {
+                params: vec![
+                    ir::AbiParam::new(pointer_type),
+                    ir::AbiParam::new(ir::types::I64),
+                ],
+                returns: vec![ir::AbiParam::new(ir::types::I64)],
+                call_conv: isa::CallConv::SystemV,
+            },
+            Self::ParseBool => ir::Signature {
+                params: vec![
+                    ir::AbiParam::new(pointer_type),
+                    ir::AbiParam::new(ir::types::I64),
+                ],
+                returns: vec![ir::AbiParam::new(ir::types::B1)],
+                call_conv: isa::CallConv::SystemV,
+            }
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        match self {
+            Self::ParseInt => "parse_int",
+            Self::ParseBool => "parse_bool",
         }
     }
 }
@@ -526,48 +562,22 @@ impl<M: Module> Translator<M> {
         self.context.func =
             ir::Function::with_name_signature(ir::ExternalName::user(0, main_id.as_u32()), sig);
 
-        // Declare `main`-specific runtime functions.
-        // TODO Reduce duplication.
-        let parse_int_sig = ir::Signature {
-            params: vec![
-                ir::AbiParam::new(self.pointer_type),
-                ir::AbiParam::new(ir::types::I64),
-            ],
-            returns: vec![ir::AbiParam::new(ir::types::I64)],
-            call_conv: isa::CallConv::SystemV,
+        // Declare `main`-specific setup runtime functions.
+        let rt_setup_refs: EnumMap<RTSetupFunc, ir::FuncRef> = enum_map! {
+            rt_setup_func => {
+                let func_id = self
+                    .module
+                    .declare_function(
+                        rt_setup_func.name(),
+                        cranelift_module::Linkage::Import,
+                        &rt_setup_func.sig(self.pointer_type),
+                    )
+                    .unwrap();
+                self
+                    .module
+                    .declare_func_in_func(func_id, &mut self.context.func)
+            }
         };
-        let parse_int_id = self
-            .module
-            .declare_function(
-                "parse_int",
-                cranelift_module::Linkage::Import,
-                &parse_int_sig,
-            )
-            .unwrap();
-        let parse_int_ref = self
-            .module
-            .declare_func_in_func(parse_int_id, &mut self.context.func);
-
-        // TODO Really reduce duplication!!
-        let parse_bool_sig = ir::Signature {
-            params: vec![
-                ir::AbiParam::new(self.pointer_type),
-                ir::AbiParam::new(ir::types::I64),
-            ],
-            returns: vec![ir::AbiParam::new(ir::types::B1)],
-            call_conv: isa::CallConv::SystemV,
-        };
-        let parse_bool_id = self
-            .module
-            .declare_function(
-                "parse_bool",
-                cranelift_module::Linkage::Import,
-                &parse_bool_sig,
-            )
-            .unwrap();
-        let parse_bool_ref = self
-            .module
-            .declare_func_in_func(parse_bool_id, &mut self.context.func);
 
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
@@ -583,10 +593,10 @@ impl<M: Module> Translator<M> {
             .iter()
             .enumerate()
             .map(|(i, arg)| {
-                let parse_ref = match arg.arg_type {
-                    bril::Type::Int => parse_int_ref,
-                    bril::Type::Bool => parse_bool_ref,
-                };
+                let parse_ref = rt_setup_refs[match arg.arg_type {
+                    bril::Type::Int => RTSetupFunc::ParseInt,
+                    bril::Type::Bool => RTSetupFunc::ParseBool,
+                }];
                 let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
                 let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
                 builder.inst_results(inst)[0]
