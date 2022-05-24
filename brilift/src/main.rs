@@ -326,7 +326,11 @@ impl<M: Module> Translator<M> {
     fn declare_func(&mut self, func: &bril::Function) -> cranelift_module::FuncId {
         // The Bril `main` function gets a different internal name, and we call it from a new
         // proper main function that gets argv/argc.
-        let name = if func.name == "main" { "__bril_main" } else { &func.name };
+        let name = if func.name == "main" {
+            "__bril_main"
+        } else {
+            &func.name
+        };
 
         let sig = tr_sig(func);
         self.module
@@ -450,11 +454,15 @@ impl<M: Module> Translator<M> {
     fn add_main(&mut self, args: &[bril::Argument], dump: bool) {
         // Declare `main` with argc/argv parameters.
         let sig = ir::Signature {
-            params: vec![ir::AbiParam::new(self.pointer_type), ir::AbiParam::new(self.pointer_type)],
+            params: vec![
+                ir::AbiParam::new(self.pointer_type),
+                ir::AbiParam::new(self.pointer_type),
+            ],
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
         };
-        let main_id = self.module
+        let main_id = self
+            .module
             .declare_function("main", cranelift_module::Linkage::Export, &sig)
             .unwrap();
 
@@ -464,19 +472,24 @@ impl<M: Module> Translator<M> {
         // Declare `main`-specific runtime functions.
         // TODO Reduce duplication.
         let parse_int_sig = ir::Signature {
-            params: vec![ir::AbiParam::new(self.pointer_type), ir::AbiParam::new(ir::types::I64)],
+            params: vec![
+                ir::AbiParam::new(self.pointer_type),
+                ir::AbiParam::new(ir::types::I64),
+            ],
             returns: vec![ir::AbiParam::new(ir::types::I64)],
             call_conv: isa::CallConv::SystemV,
         };
-        let parse_int_id =
-            self.module
-                .declare_function(
-                    "parse_int",
-                    cranelift_module::Linkage::Import,
-                    &parse_int_sig,
-                )
-                .unwrap();
-        let parse_int_ref = self.module.declare_func_in_func(parse_int_id, &mut self.context.func);
+        let parse_int_id = self
+            .module
+            .declare_function(
+                "parse_int",
+                cranelift_module::Linkage::Import,
+                &parse_int_sig,
+            )
+            .unwrap();
+        let parse_int_ref = self
+            .module
+            .declare_func_in_func(parse_int_id, &mut self.context.func);
 
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
@@ -488,15 +501,19 @@ impl<M: Module> Translator<M> {
 
         // Parse each argument.
         let argv_arg = builder.block_params(block)[1]; // argc, argv
-        let arg_vals: Vec<ir::Value> = args.iter().enumerate().map(|(i, arg)| {
-            let parse_ref = match arg.arg_type {
-                bril::Type::Int => parse_int_ref,
-                bril::Type::Bool => todo!(),
-            };
-            let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
-            let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
-            builder.inst_results(inst)[0]
-        }).collect();
+        let arg_vals: Vec<ir::Value> = args
+            .iter()
+            .enumerate()
+            .map(|(i, arg)| {
+                let parse_ref = match arg.arg_type {
+                    bril::Type::Int => parse_int_ref,
+                    bril::Type::Bool => todo!(),
+                };
+                let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
+                let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
+                builder.inst_results(inst)[0]
+            })
+            .collect();
 
         // Call the "real" main function.
         let real_main_id = *self.funcs.get("main").unwrap();
@@ -565,14 +582,19 @@ struct Args {
 
 fn main() {
     let args: Args = argh::from_env();
-    
+
     // Set up logging.
     simplelog::TermLogger::init(
-        if args.verbose { simplelog::LevelFilter::Debug } else { simplelog::LevelFilter::Warn },
+        if args.verbose {
+            simplelog::LevelFilter::Debug
+        } else {
+            simplelog::LevelFilter::Warn
+        },
         simplelog::Config::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Load the Bril program from stdin.
     let prog = bril::load_program();
