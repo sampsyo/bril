@@ -529,12 +529,11 @@ impl<M: Module> Translator<M> {
 
         // Declare all variables (including for function parameters).
         let var_types = all_vars(&func);
-        let mut vars = HashMap::<String, Variable>::new();
-        for (i, (name, typ)) in var_types.iter().enumerate() {
+        let vars: HashMap<String, Variable> = var_types.iter().enumerate().map(|(i, (name, typ))| {
             let var = Variable::new(i);
             builder.declare_var(var, translate_type(typ));
-            vars.insert(name.to_string(), var);
-        }
+            (name.to_string(), var)
+        }).collect();
 
         // Create blocks for every label.
         let mut blocks = HashMap::<String, ir::Block>::new();
