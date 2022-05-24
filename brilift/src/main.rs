@@ -3,8 +3,8 @@ use bril_rs as bril;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::InstBuilder;
-use cranelift_codegen::{ir, isa, settings};
 use cranelift_codegen::settings::Configurable;
+use cranelift_codegen::{ir, isa, settings};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{default_libcall_names, Module};
@@ -157,9 +157,15 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
     }
 }
 
-fn get_isa(target: Option<String>, pic: bool, opt_level: &str) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+fn get_isa(
+    target: Option<String>,
+    pic: bool,
+    opt_level: &str,
+) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
     let mut flag_builder = settings::builder();
-    flag_builder.set("opt_level", opt_level).expect("invalid opt level");
+    flag_builder
+        .set("opt_level", opt_level)
+        .expect("invalid opt level");
     if pic {
         flag_builder.set("is_pic", "true").unwrap();
     }
@@ -269,6 +275,8 @@ fn gen_binary(
     builder.def_var(*vars.get(dest).unwrap(), res);
 }
 
+// TODO This has way too many arguments, and they have weird types. Bundle them up into a context
+// of some sort?
 fn compile_inst(
     inst: &bril::Instruction,
     builder: &mut FunctionBuilder,
@@ -503,7 +511,15 @@ impl<M: Module> Translator<M> {
                     }
 
                     // Compile one instruction.
-                    compile_inst(inst, &mut builder, &vars, &var_types, &rt_refs, &blocks, &func_refs);
+                    compile_inst(
+                        inst,
+                        &mut builder,
+                        &vars,
+                        &var_types,
+                        &rt_refs,
+                        &blocks,
+                        &func_refs,
+                    );
 
                     if is_term(inst) {
                         terminated = true;
@@ -541,9 +557,7 @@ impl<M: Module> Translator<M> {
                 ir::AbiParam::new(self.pointer_type),
                 ir::AbiParam::new(self.pointer_type),
             ],
-            returns: vec![
-                ir::AbiParam::new(self.pointer_type),
-            ],
+            returns: vec![ir::AbiParam::new(self.pointer_type)],
             call_conv: isa::CallConv::SystemV,
         };
         let main_id = self
