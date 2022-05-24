@@ -106,8 +106,9 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
     }
 }
 
-fn get_isa(target: Option<String>, pic: bool) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+fn get_isa(target: Option<String>, pic: bool, opt_level: &str) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
     let mut flag_builder = settings::builder();
+    flag_builder.set("opt_level", opt_level).expect("invalid opt level");
     if pic {
         flag_builder.set("is_pic", "true").unwrap();
     }
@@ -122,9 +123,9 @@ fn get_isa(target: Option<String>, pic: bool) -> Box<dyn cranelift_codegen::isa:
 }
 
 impl Translator<ObjectModule> {
-    fn new(target: Option<String>) -> Self {
+    fn new(target: Option<String>, opt_level: &str) -> Self {
         // Make an object module.
-        let isa = get_isa(target, true);
+        let isa = get_isa(target, true, opt_level);
         let pointer_type = isa.pointer_type();
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
@@ -582,6 +583,14 @@ struct Args {
 
     #[argh(switch, short = 'v', description = "verbose logging")]
     verbose: bool,
+
+    #[argh(
+        option,
+        short = 'O',
+        description = "optimization level (none, speed, or speed_and_size)",
+        default = "String::from(\"none\")"
+    )]
+    opt_level: String,
 }
 
 fn main() {
@@ -608,7 +617,7 @@ fn main() {
         trans.compile_prog(prog, args.dump_ir, false);
         trans.compile();
     } else {
-        let mut trans = Translator::<ObjectModule>::new(args.target);
+        let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
         trans.compile_prog(prog, args.dump_ir, true);
         trans.emit(&args.output);
     }
