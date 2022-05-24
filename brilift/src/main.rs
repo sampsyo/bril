@@ -576,6 +576,27 @@ impl<M: Module> Translator<M> {
             .module
             .declare_func_in_func(parse_int_id, &mut self.context.func);
 
+        // TODO Really reduce duplication!!
+        let parse_bool_sig = ir::Signature {
+            params: vec![
+                ir::AbiParam::new(self.pointer_type),
+                ir::AbiParam::new(ir::types::I64),
+            ],
+            returns: vec![ir::AbiParam::new(ir::types::B1)],
+            call_conv: isa::CallConv::SystemV,
+        };
+        let parse_bool_id = self
+            .module
+            .declare_function(
+                "parse_bool",
+                cranelift_module::Linkage::Import,
+                &parse_bool_sig,
+            )
+            .unwrap();
+        let parse_bool_ref = self
+            .module
+            .declare_func_in_func(parse_bool_id, &mut self.context.func);
+
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
@@ -592,7 +613,7 @@ impl<M: Module> Translator<M> {
             .map(|(i, arg)| {
                 let parse_ref = match arg.arg_type {
                     bril::Type::Int => parse_int_ref,
-                    bril::Type::Bool => todo!(),
+                    bril::Type::Bool => parse_bool_ref,
                 };
                 let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
                 let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
