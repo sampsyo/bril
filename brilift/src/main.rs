@@ -13,6 +13,7 @@ use enum_map::{enum_map, Enum, EnumMap};
 use std::collections::HashMap;
 use std::fs;
 
+/// Runtime functions used by ordinary Bril instructions.
 #[derive(Debug, Enum)]
 enum RTFunc {
     PrintInt,
@@ -57,6 +58,8 @@ impl RTFunc {
     }
 }
 
+/// Runtime functions used in the native `main` function, which dispatches to the proper Bril
+/// `main` function.
 #[derive(Debug, Enum)]
 enum RTSetupFunc {
     ParseInt,
@@ -93,6 +96,7 @@ impl RTSetupFunc {
     }
 }
 
+/// Translate a Bril type into a CLIF type.
 fn translate_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
@@ -100,6 +104,7 @@ fn translate_type(typ: &bril::Type) -> ir::Type {
     }
 }
 
+/// Generate a CLIF signature for a Bril function.
 fn translate_sig(func: &bril::Function) -> ir::Signature {
     let mut sig = ir::Signature::new(isa::CallConv::SystemV);
     if let Some(ret) = &func.return_type {
@@ -149,6 +154,7 @@ struct Translator<M: Module> {
     pointer_type: ir::Type,
 }
 
+/// Declare all our runtime functions in a CLIF module.
 fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
     enum_map! {
         rtfunc =>
@@ -162,6 +168,7 @@ fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::Fu
     }
 }
 
+/// Configure a Cranelift target ISA object.
 fn get_isa(
     target: Option<String>,
     pic: bool,
@@ -184,6 +191,7 @@ fn get_isa(
         .unwrap()
 }
 
+/// AOT compiler that generates `.o` files.
 impl Translator<ObjectModule> {
     fn new(target: Option<String>, opt_level: &str) -> Self {
         // Make an object module.
@@ -208,6 +216,7 @@ impl Translator<ObjectModule> {
     }
 }
 
+/// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
     fn new() -> Self {
         // Cranelift JIT scaffolding.
@@ -234,6 +243,7 @@ impl Translator<JITModule> {
     }
 }
 
+/// Is a given Bril instruction a basic block terminator?
 fn is_term(inst: &bril::Instruction) -> bool {
     if let bril::Instruction::Effect {
         args: _,
@@ -251,6 +261,7 @@ fn is_term(inst: &bril::Instruction) -> bool {
     }
 }
 
+/// Generate a CLIF icmp instruction.
 fn gen_icmp(
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
@@ -264,6 +275,7 @@ fn gen_icmp(
     builder.def_var(vars[dest], res);
 }
 
+/// Generate a CLIF binary operator.
 fn gen_binary(
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
@@ -280,12 +292,36 @@ fn gen_binary(
     builder.def_var(vars[dest], res);
 }
 
+/// An environment for translating Bril into CLIF.
 struct CompileEnv {
     vars: HashMap<String, Variable>,
     var_types: HashMap<String, bril::Type>,
     rt_refs: EnumMap<RTFunc, ir::FuncRef>,
     blocks: HashMap<String, ir::Block>,
     func_refs: HashMap<String, ir::FuncRef>,
+}
+
+/// Implement a Bril `print` instruction in CLIF.
+fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
+    let mut first = true;
+    for arg in args {
+        // Separate printed values.
+        if first {
+            first = false;
+        } else {
+            builder.ins().call(env.rt_refs[RTFunc::PrintSep], &[]);
+        }
+
+        // Print each value according to its type.
+        let arg_val = builder.use_var(env.vars[arg]);
+        let print_func = match env.var_types[arg] {
+            bril::Type::Int => RTFunc::PrintInt,
+            bril::Type::Bool => RTFunc::PrintBool,
+        };
+        let print_ref = env.rt_refs[print_func];
+        builder.ins().call(print_ref, &[arg_val]);
+    }
+    builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
 }
 
 /// Compile one Bril instruction into CLIF.
@@ -310,30 +346,9 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             op,
         } => {
             match op {
-                bril::EffectOps::Print => {
-                    let mut first = true;
-                    for arg in args {
-                        // Separate printed values.
-                        if first {
-                            first = false;
-                        } else {
-                            builder.ins().call(env.rt_refs[RTFunc::PrintSep], &[]);
-                        }
-
-                        // Print each value according to its type.
-                        let arg_val = builder.use_var(env.vars[arg]);
-                        let print_func = match env.var_types[arg] {
-                            bril::Type::Int => RTFunc::PrintInt,
-                            bril::Type::Bool => RTFunc::PrintBool,
-                        };
-                        let print_ref = env.rt_refs[print_func];
-                        builder.ins().call(print_ref, &[arg_val]);
-                    }
-                    builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
-                }
+                bril::EffectOps::Print => gen_print(args, builder, env),
                 bril::EffectOps::Jump => {
-                    let block = env.blocks[&labels[0]];
-                    builder.ins().jump(block, &[]);
+                    builder.ins().jump(env.blocks[&labels[0]], &[]);
                 }
                 bril::EffectOps::Branch => {
                     let arg = builder.use_var(env.vars[&args[0]]);
@@ -634,6 +649,7 @@ impl<M: Module> Translator<M> {
         let real_main_ref = self.module.declare_func_in_func(real_main_id, builder.func);
         builder.ins().call(real_main_ref, &arg_vals);
 
+        // Return 0 from `main`.
         let zero = builder.ins().iconst(self.pointer_type, 0);
         builder.ins().return_(&[zero]);
         builder.finalize();
@@ -674,7 +690,7 @@ impl<M: Module> Translator<M> {
 #[derive(FromArgs)]
 #[argh(description = "Bril compiler")]
 struct Args {
-    #[argh(switch, short = 'j', description = "JIT and run")]
+    #[argh(switch, short = 'j', description = "JIT and run (doesn't work)")]
     jit: bool,
 
     #[argh(option, short = 't', description = "target triple")]
@@ -683,7 +699,7 @@ struct Args {
     #[argh(
         option,
         short = 'o',
-        description = "output file",
+        description = "output object file",
         default = "String::from(\"bril.o\")"
     )]
     output: String,
