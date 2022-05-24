@@ -14,14 +14,17 @@ use std::fs;
 
 struct RTSigs {
     print_int: ir::Signature,
+    print_bool: ir::Signature,
 }
 
 struct RTIds {
     print_int: cranelift_module::FuncId,
+    print_bool: cranelift_module::FuncId,
 }
 
 struct RTRefs {
     print_int: ir::FuncRef,
+    print_bool: ir::FuncRef,
 }
 
 fn tr_type(typ: &bril::Type) -> ir::Type {
@@ -87,6 +90,11 @@ fn get_rt_sigs() -> RTSigs {
             returns: vec![],
             call_conv: isa::CallConv::SystemV,
         },
+        print_bool: ir::Signature {
+            params: vec![ir::AbiParam::new(ir::types::B1)],
+            returns: vec![],
+            call_conv: isa::CallConv::SystemV,
+        },
     }
 }
 
@@ -100,6 +108,15 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
                     "print_int",
                     cranelift_module::Linkage::Import,
                     &rt_sigs.print_int,
+                )
+                .unwrap()
+        },
+        print_bool: {
+            module
+                .declare_function(
+                    "print_bool",
+                    cranelift_module::Linkage::Import,
+                    &rt_sigs.print_bool,
                 )
                 .unwrap()
         },
@@ -222,6 +239,7 @@ fn compile_inst(
     inst: &bril::Instruction,
     builder: &mut FunctionBuilder,
     vars: &HashMap<String, Variable>,
+    var_types: &HashMap<&String, &bril::Type>,
     rt_refs: &RTRefs,
     blocks: &HashMap<String, ir::Block>,
     func_refs: &HashMap<String, ir::FuncRef>,
@@ -248,10 +266,16 @@ fn compile_inst(
         } => {
             match op {
                 bril::EffectOps::Print => {
-                    // TODO Target should depend on the type.
-                    // TODO Deal with multiple args somehow.
-                    let arg = builder.use_var(*vars.get(&args[0]).unwrap());
-                    builder.ins().call(rt_refs.print_int, &[arg]);
+                    // TODO Join multiple args on one line.
+                    for arg in args {
+                        let arg_val = builder.use_var(*vars.get(arg).unwrap());
+                        let arg_type = var_types.get(arg).unwrap();
+                        let print_func = match arg_type {
+                            bril::Type::Int => rt_refs.print_int,
+                            bril::Type::Bool => rt_refs.print_bool,
+                        };
+                        builder.ins().call(print_func, &[arg_val]);
+                    }
                 }
                 bril::EffectOps::Jump => {
                     let block = *blocks.get(&labels[0]).unwrap();
@@ -371,11 +395,15 @@ impl<M: Module> Translator<M> {
             print_int: self
                 .module
                 .declare_func_in_func(self.rt_funcs.print_int, builder.func),
+            print_bool: self
+                .module
+                .declare_func_in_func(self.rt_funcs.print_bool, builder.func),
         };
 
         // Declare all variables (including for function parameters).
+        let var_types = all_vars(&func);
         let mut vars = HashMap::<String, Variable>::new();
-        for (i, (name, typ)) in all_vars(&func).iter().enumerate() {
+        for (i, (name, typ)) in var_types.iter().enumerate() {
             let var = Variable::new(i);
             builder.declare_var(var, tr_type(typ));
             vars.insert(name.to_string(), var);
@@ -425,7 +453,7 @@ impl<M: Module> Translator<M> {
                     }
 
                     // Compile one instruction.
-                    compile_inst(inst, &mut builder, &vars, &rt_refs, &blocks, &func_refs);
+                    compile_inst(inst, &mut builder, &vars, &var_types, &rt_refs, &blocks, &func_refs);
 
                     if is_term(inst) {
                         terminated = true;

@@ -6,6 +6,14 @@ void print_int(int64_t i) {
     printf("%" PRId64 "\n", i);
 }
 
+void print_bool(char i) {
+    if (i) {
+        printf("true\n");
+    } else {
+        printf("false\n");
+    }
+}
+
 int64_t parse_int(char **args, int64_t idx) {
     char *arg = args[idx];
     int64_t res;
