@@ -105,22 +105,22 @@ fn declare_rt<M: Module>(module: &mut M) -> RTIds {
     }
 }
 
+fn get_isa(target: Option<String>) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+    let flag_builder = settings::builder();
+    let isa_builder = if let Some(targ) = target {
+        cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target")
+    } else {
+        cranelift_native::builder().unwrap()
+    };
+    isa_builder
+        .finish(settings::Flags::new(flag_builder))
+        .unwrap()
+}
+
 impl Translator<ObjectModule> {
     fn new(target: Option<String>) -> Self {
         // Make an object module.
-        let flag_builder = settings::builder();
-        let isa = if let Some(targ) = target {
-            let isa_builder =
-                cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target");
-            isa_builder
-                .finish(settings::Flags::new(flag_builder))
-                .unwrap()
-        } else {
-            let isa_builder = cranelift_native::builder().unwrap();
-            isa_builder
-                .finish(settings::Flags::new(flag_builder))
-                .unwrap()
-        };
+        let isa = get_isa(target);
         let pointer_type = isa.pointer_type();
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
