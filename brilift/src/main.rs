@@ -486,13 +486,13 @@ impl<M: Module> Translator<M> {
         builder.append_block_params_for_function_params(block);
 
         // Parse each argument.
-        let argv_arg = builder.block_params(block)[0];
+        let argv_arg = builder.block_params(block)[1]; // argc, argv
         let arg_vals: Vec<ir::Value> = args.iter().enumerate().map(|(i, arg)| {
             let parse_ref = match arg.arg_type {
                 bril::Type::Int => parse_int_ref,
                 bril::Type::Bool => todo!(),
             };
-            let idx_arg = builder.ins().iconst(ir::types::I64, i as i64);
+            let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
             let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
             builder.inst_results(inst)[0]
         }).collect();
