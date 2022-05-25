@@ -44,12 +44,9 @@ impl ConversionError {
     #[doc(hidden)]
     #[must_use]
     pub const fn add_pos(self, pos_var: Option<Position>) -> PositionalConversionError {
-        match self {
-            //Self::PositionalConversionErrorConversion(e) => e,
-            _ => PositionalConversionError {
-                e: self,
-                pos: pos_var,
-            },
+        PositionalConversionError {
+            e: self,
+            pos: pos_var,
         }
     }
 }
@@ -89,8 +86,16 @@ impl Display for PositionalConversionError {
 
 impl TryFrom<AbstractProgram> for Program {
     type Error = PositionalConversionError;
-    fn try_from(AbstractProgram { functions }: AbstractProgram) -> Result<Self, Self::Error> {
+    fn try_from(
+        AbstractProgram {
+            #[cfg(feature = "import")]
+            imports,
+            functions,
+        }: AbstractProgram,
+    ) -> Result<Self, Self::Error> {
         Ok(Self {
+            #[cfg(feature = "import")]
+            imports,
             functions: functions
                 .into_iter()
                 .map(std::convert::TryInto::try_into)

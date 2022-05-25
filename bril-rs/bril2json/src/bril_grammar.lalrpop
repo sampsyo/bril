@@ -18,17 +18,20 @@
 #![allow(clippy::needless_pass_by_value)]
 #![allow(clippy::cast_sign_loss)]
 #![allow(clippy::must_use_candidate)]
+#![allow(clippy::cognitive_complexity)]
+#![allow(clippy::ptr_arg)]
 
 use std::str::FromStr;
+use std::path::PathBuf;
 use crate::Lines;
-use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal};
+use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal, Import, ImportedFunction};
 
 grammar(lines : &Lines);
 
 match {
     r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
     r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // func
-    "const", "true", "false",
+    "const", "true", "false", "from", "import", "as"
 } else {
     r"\s*" => { }, /// Whitespace
     r"#[^\n\r]*[\n\r]*" => { }, /// Comments
@@ -36,11 +39,38 @@ match {
     r"(\+|-)?[0-9]+", // int
     r"(\+|-)?[0-9]*\.[0-9]+", // float
     r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
+} else {
+    r#""[^"]*""#, // string literal for path
 }
 
 pub AbstractProgram : AbstractProgram = {
-    <f :(<AbstractFunction>)*> => AbstractProgram {
+    <i: (<Imports>)*> <f :(<AbstractFunction>)*> => AbstractProgram {
+        imports: i,
         functions : f,
+    }
+}
+
+Imports : Import = {
+    "from" <p: Path> "import" <n:(<ImportedFunction> ","?)*> ";" => {
+        Import {
+            path: p,
+            functions: n,
+        }
+    }
+}
+
+ImportedFunction : ImportedFunction = {
+    <n:Func> <a:Alias?> => {
+        ImportedFunction {
+            name: n,
+            alias: a,
+        }
+    }
+}
+
+Alias : String = {
+    "as" <a:Func> => {
+        a
     }
 }
 
@@ -151,6 +181,11 @@ pub Func : String = {
     <i:r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix("@").unwrap().to_owned(),
 }
 
+Path: PathBuf = {
+    <p:r#""[^"]*""#> => {
+        PathBuf::from(p.trim_matches('\"'))
+    }
+}
 
 Label: String = {
     <i:r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix(".").unwrap().to_owned(),

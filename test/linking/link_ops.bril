@@ -1,0 +1,24 @@
+# ARGS: ../../benchmarks/
+from "bitwise-ops.bril" import @AND, @OR as @LIB_OR, @loop_subroutine;
+
+# Does OR and throws out the result
+@OR(a: int, b: int): int{
+    v1: int = call @LIB_OR a b;
+    zero: int = const 0;
+    ret zero;
+}
+
+@test(){
+    a: int = const 1;
+    b: int = const 0;
+    ans: int = call @AND a b;
+    print ans;
+    ans: int = call @LIB_OR a b;
+    print ans;
+    ans: int = call @OR a b;
+    print ans;
+}
+
+@main(){
+    call @test;
+}
