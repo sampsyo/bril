@@ -22,3 +22,4 @@
     - [OCaml Library](tools/ocaml.md)
     - [Rust Library](tools/rust.md)
     - [Benchmark Runner](tools/brench.md)
+    - [Compiler](tools/brilift.md)
