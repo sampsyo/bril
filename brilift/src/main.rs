@@ -68,7 +68,11 @@ enum RTSetupFunc {
 }
 
 impl RTSetupFunc {
-    fn sig(&self, pointer_type: ir::Type, call_conv: cranelift_codegen::isa::CallConv) -> ir::Signature {
+    fn sig(
+        &self,
+        pointer_type: ir::Type,
+        call_conv: cranelift_codegen::isa::CallConv,
+    ) -> ir::Signature {
         match self {
             Self::ParseInt => ir::Signature {
                 params: vec![
