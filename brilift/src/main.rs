@@ -251,11 +251,47 @@ unsafe fn run(main_ptr: *const u8) {
     func();
 }
 
+#[no_mangle]
+pub extern "C" fn rt_print_int(i: i64) {
+    print!("{}", i);
+}
+
+#[no_mangle]
+pub extern "C" fn rt_print_bool(b: bool) {
+    print!("{}", b);
+}
+
+#[no_mangle]
+pub extern "C" fn rt_print_sep() {
+    print!(" ");
+}
+
+#[no_mangle]
+pub extern "C" fn rt_print_end() {
+    print!("\n");
+}
+
+fn rt_impl(func: &RTFunc) -> *const u8 {
+    match func {
+        RTFunc::PrintInt => rt_print_int as *const u8,
+        RTFunc::PrintBool => rt_print_int as *const u8,
+        RTFunc::PrintSep => rt_print_sep as *const u8,
+        RTFunc::PrintEnd => rt_print_end as *const u8,
+    }
+}
+
 /// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
     fn new() -> Self {
-        // Cranelift JIT scaffolding.
-        let builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
+        // Provide runtime functions.
+        let mut builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
+        enum_map! {
+            rtfunc => {
+                let ptr = rt_impl(&rtfunc);
+                builder.symbol(rtfunc.name(), ptr);
+            }
+        };
+
         let mut module = JITModule::new(builder);
 
         Self {
