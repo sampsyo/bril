@@ -5,6 +5,8 @@ on:
     paths:
      - 'brilirs/**/*.rs'
      - 'brilirs/**/*.toml'
+     - 'brilift/**/*.rs'
+     - 'brilift/**/*.toml'
      - 'bril-rs/**/*.rs'
      - 'bril-rs/**/*.toml'
      - 'bril-rs/**/*.lalrpop'
@@ -14,6 +16,8 @@ on:
     paths:
      - 'brilirs/**/*.rs'
      - 'brilirs/**/*.toml'
+     - 'brilift/**/*.rs'
+     - 'brilift/**/*.toml'
      - 'bril-rs/**/*.rs'
      - 'bril-rs/**/*.toml'
      - 'bril-rs/**/*.lalrpop'
@@ -25,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml"]
+        path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml"]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
