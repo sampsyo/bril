@@ -7,3 +7,5 @@ node_modules/
 hypothesis_*
 __pycache__
 .vscode
+
+**/*.o
