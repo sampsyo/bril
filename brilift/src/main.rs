@@ -177,7 +177,6 @@ struct Translator<M: Module> {
     module: M,
     context: cranelift_codegen::Context,
     funcs: HashMap<String, cranelift_module::FuncId>,
-    pointer_type: ir::Type,
 }
 
 /// Declare all our runtime functions in a CLIF module.
@@ -222,7 +221,6 @@ impl Translator<ObjectModule> {
     fn new(target: Option<String>, opt_level: &str) -> Self {
         // Make an object module.
         let isa = get_isa(target, true, opt_level);
-        let pointer_type = isa.pointer_type();
         let mut module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
 
@@ -231,7 +229,6 @@ impl Translator<ObjectModule> {
             module,
             context: cranelift_codegen::Context::new(),
             funcs: HashMap::new(),
-            pointer_type,
         }
     }
 
@@ -248,14 +245,12 @@ impl Translator<JITModule> {
         // Cranelift JIT scaffolding.
         let builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
         let mut module = JITModule::new(builder);
-        let pointer_type = module.isa().pointer_type();
 
         Self {
             rt_funcs: declare_rt(&mut module),
             context: module.make_context(),
             module,
             funcs: HashMap::new(),
-            pointer_type,
         }
     }
 
@@ -593,12 +588,13 @@ impl<M: Module> Translator<M> {
     /// Generate a proper `main` function that calls the Bril `main` function.
     fn add_main(&mut self, args: &[bril::Argument], dump: bool) {
         // Declare `main` with argc/argv parameters.
+        let pointer_type = self.module.isa().pointer_type();
         let sig = ir::Signature {
             params: vec![
-                ir::AbiParam::new(self.pointer_type),
-                ir::AbiParam::new(self.pointer_type),
+                ir::AbiParam::new(pointer_type),
+                ir::AbiParam::new(pointer_type),
             ],
-            returns: vec![ir::AbiParam::new(self.pointer_type)],
+            returns: vec![ir::AbiParam::new(pointer_type)],
             call_conv: self.module.isa().default_call_conv(),
         };
         let main_id = self
@@ -618,7 +614,7 @@ impl<M: Module> Translator<M> {
                     .declare_function(
                         rt_setup_func.name(),
                         cranelift_module::Linkage::Import,
-                        &rt_setup_func.sig(self.pointer_type, call_conv),
+                        &rt_setup_func.sig(pointer_type, call_conv),
                     )
                     .unwrap();
                 self
@@ -657,7 +653,7 @@ impl<M: Module> Translator<M> {
         builder.ins().call(real_main_ref, &arg_vals);
 
         // Return 0 from `main`.
-        let zero = builder.ins().iconst(self.pointer_type, 0);
+        let zero = builder.ins().iconst(self.module.isa().pointer_type(), 0);
         builder.ins().return_(&[zero]);
         builder.finalize();
 
