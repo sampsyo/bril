@@ -12,6 +12,7 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use enum_map::{enum_map, Enum, EnumMap};
 use std::collections::HashMap;
 use std::fs;
+use core::mem;
 
 /// Runtime functions used by ordinary Bril instructions.
 #[derive(Debug, Enum)]
@@ -243,6 +244,13 @@ impl Translator<ObjectModule> {
     }
 }
 
+/// Run the JITted code.
+// TODO Support `main` arguments somehow.
+unsafe fn run(main_ptr: *const u8) {
+    let func = mem::transmute::<_, fn() -> ()>(main_ptr);
+    func();
+}
+
 /// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
     fn new() -> Self {
@@ -258,11 +266,11 @@ impl Translator<JITModule> {
         }
     }
 
-    fn compile(mut self) -> *const u8 {
+    // Dispose of the translator and obtain the entry-point code pointer.
+    fn get_main(mut self) -> *const u8 {
         self.module.clear_context(&mut self.context);
         self.module.finalize_definitions();
 
-        // TODO Compile all functions.
         let id = self.funcs["main"];
         self.module.get_finalized_function(id)
     }
@@ -748,7 +756,8 @@ fn main() {
     if args.jit {
         let mut trans = Translator::<JITModule>::new();
         trans.compile_prog(prog, args.dump_ir, false);
-        trans.compile();
+        let code = trans.get_main();
+        unsafe { run(code) };
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
         trans.compile_prog(prog, args.dump_ir, true);
