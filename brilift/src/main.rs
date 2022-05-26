@@ -24,27 +24,27 @@ enum RTFunc {
 }
 
 impl RTFunc {
-    fn sig(&self) -> ir::Signature {
+    fn sig(&self, call_conv: cranelift_codegen::isa::CallConv) -> ir::Signature {
         match self {
             Self::PrintInt => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::I64)],
                 returns: vec![],
-                call_conv: isa::CallConv::SystemV,
+                call_conv,
             },
             Self::PrintBool => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::B1)],
                 returns: vec![],
-                call_conv: isa::CallConv::SystemV,
+                call_conv,
             },
             Self::PrintSep => ir::Signature {
                 params: vec![],
                 returns: vec![],
-                call_conv: isa::CallConv::SystemV,
+                call_conv,
             },
             Self::PrintEnd => ir::Signature {
                 params: vec![],
                 returns: vec![],
-                call_conv: isa::CallConv::SystemV,
+                call_conv,
             },
         }
     }
@@ -68,7 +68,7 @@ enum RTSetupFunc {
 }
 
 impl RTSetupFunc {
-    fn sig(&self, pointer_type: ir::Type) -> ir::Signature {
+    fn sig(&self, pointer_type: ir::Type, call_conv: cranelift_codegen::isa::CallConv) -> ir::Signature {
         match self {
             Self::ParseInt => ir::Signature {
                 params: vec![
@@ -76,7 +76,7 @@ impl RTSetupFunc {
                     ir::AbiParam::new(ir::types::I64),
                 ],
                 returns: vec![ir::AbiParam::new(ir::types::I64)],
-                call_conv: isa::CallConv::SystemV,
+                call_conv,
             },
             Self::ParseBool => ir::Signature {
                 params: vec![
@@ -84,7 +84,7 @@ impl RTSetupFunc {
                     ir::AbiParam::new(ir::types::I64),
                 ],
                 returns: vec![ir::AbiParam::new(ir::types::B1)],
-                call_conv: isa::CallConv::SystemV,
+                call_conv,
             },
         }
     }
@@ -107,7 +107,7 @@ fn translate_type(typ: &bril::Type) -> ir::Type {
 
 /// Generate a CLIF signature for a Bril function.
 fn translate_sig(func: &bril::Function) -> ir::Signature {
-    let mut sig = ir::Signature::new(isa::CallConv::SystemV);
+    let mut sig = ir::Signature::new(isa::CallConv::Fast);
     if let Some(ret) = &func.return_type {
         sig.returns.push(ir::AbiParam::new(translate_type(ret)));
     }
@@ -188,7 +188,7 @@ fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::Fu
                 .declare_function(
                     rtfunc.name(),
                     cranelift_module::Linkage::Import,
-                    &rtfunc.sig(),
+                    &rtfunc.sig(module.isa().default_call_conv()),
                 )
                 .unwrap()
     }
@@ -599,7 +599,7 @@ impl<M: Module> Translator<M> {
                 ir::AbiParam::new(self.pointer_type),
             ],
             returns: vec![ir::AbiParam::new(self.pointer_type)],
-            call_conv: isa::CallConv::SystemV,
+            call_conv: self.module.isa().default_call_conv(),
         };
         let main_id = self
             .module
@@ -610,6 +610,7 @@ impl<M: Module> Translator<M> {
             ir::Function::with_name_signature(ir::ExternalName::user(0, main_id.as_u32()), sig);
 
         // Declare `main`-specific setup runtime functions.
+        let call_conv = self.module.isa().default_call_conv();
         let rt_setup_refs: EnumMap<RTSetupFunc, ir::FuncRef> = enum_map! {
             rt_setup_func => {
                 let func_id = self
@@ -617,7 +618,7 @@ impl<M: Module> Translator<M> {
                     .declare_function(
                         rt_setup_func.name(),
                         cranelift_module::Linkage::Import,
-                        &rt_setup_func.sig(self.pointer_type),
+                        &rt_setup_func.sig(self.pointer_type, call_conv),
                     )
                     .unwrap();
                 self
