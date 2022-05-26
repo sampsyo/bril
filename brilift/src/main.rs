@@ -1,3 +1,5 @@
+mod rt;
+
 use argh::FromArgs;
 use bril_rs as bril;
 use cranelift_codegen::entity::EntityRef;
@@ -56,6 +58,15 @@ impl RTFunc {
             Self::PrintBool => "_bril_print_bool",
             Self::PrintSep => "_bril_print_sep",
             Self::PrintEnd => "_bril_print_end",
+        }
+    }
+
+    fn rt_impl(&self) -> *const u8 {
+        match self {
+            RTFunc::PrintInt => rt::print_int as *const u8,
+            RTFunc::PrintBool => rt::print_int as *const u8,
+            RTFunc::PrintSep => rt::print_sep as *const u8,
+            RTFunc::PrintEnd => rt::print_end as *const u8,
         }
     }
 }
@@ -271,15 +282,6 @@ pub extern "C" fn rt_print_end() {
     print!("\n");
 }
 
-fn rt_impl(func: &RTFunc) -> *const u8 {
-    match func {
-        RTFunc::PrintInt => rt_print_int as *const u8,
-        RTFunc::PrintBool => rt_print_int as *const u8,
-        RTFunc::PrintSep => rt_print_sep as *const u8,
-        RTFunc::PrintEnd => rt_print_end as *const u8,
-    }
-}
-
 /// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
     fn new() -> Self {
@@ -287,8 +289,8 @@ impl Translator<JITModule> {
         let mut builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
         enum_map! {
             rtfunc => {
-                let ptr = rt_impl(&rtfunc);
-                builder.symbol(rtfunc.name(), ptr);
+                let f: RTFunc = rtfunc;
+                builder.symbol(f.name(), f.rt_impl());
             }
         };
 
