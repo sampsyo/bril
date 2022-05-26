@@ -2,6 +2,7 @@ mod rt;
 
 use argh::FromArgs;
 use bril_rs as bril;
+use core::mem;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::InstBuilder;
@@ -14,7 +15,6 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use enum_map::{enum_map, Enum, EnumMap};
 use std::collections::HashMap;
 use std::fs;
-use core::mem;
 
 /// Runtime functions used by ordinary Bril instructions.
 #[derive(Debug, Enum)]
@@ -260,26 +260,6 @@ impl Translator<ObjectModule> {
 unsafe fn run(main_ptr: *const u8) {
     let func = mem::transmute::<_, fn() -> ()>(main_ptr);
     func();
-}
-
-#[no_mangle]
-pub extern "C" fn rt_print_int(i: i64) {
-    print!("{}", i);
-}
-
-#[no_mangle]
-pub extern "C" fn rt_print_bool(b: bool) {
-    print!("{}", b);
-}
-
-#[no_mangle]
-pub extern "C" fn rt_print_sep() {
-    print!(" ");
-}
-
-#[no_mangle]
-pub extern "C" fn rt_print_end() {
-    print!("\n");
 }
 
 /// JIT compiler that totally does not work yet.

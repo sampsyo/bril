@@ -15,5 +15,5 @@ pub extern "C" fn print_sep() {
 
 #[no_mangle]
 pub extern "C" fn print_end() {
-    print!("\n");
+    println!();
 }
