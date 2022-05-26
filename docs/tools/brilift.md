@@ -19,8 +19,8 @@ You can build it using [Cargo][]:
 
 
     $ cd brilift
-    $ cargo build
-    $ cargo install  # If you want the executable on your $PATH.
+    $ cargo run -- --help
+    $ cargo install --path .  # If you want the executable on your $PATH.
 
 [bril-rs]: rust.md
 [cargo]: https://doc.rust-lang.org/cargo/
