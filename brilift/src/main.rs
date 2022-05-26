@@ -319,9 +319,9 @@ fn gen_binary(
 }
 
 /// An environment for translating Bril into CLIF.
-struct CompileEnv {
+struct CompileEnv<'a> {
     vars: HashMap<String, Variable>,
-    var_types: HashMap<String, bril::Type>,
+    var_types: HashMap<&'a String, &'a bril::Type>,
     rt_refs: EnumMap<RTFunc, ir::FuncRef>,
     blocks: HashMap<String, ir::Block>,
     func_refs: HashMap<String, ir::FuncRef>,
@@ -566,11 +566,6 @@ impl<M: Module> Translator<M> {
             })
             .collect();
 
-        // Cloning this map is not so great, but I am pretty bad at Rust!
-        let var_types = var_types
-            .into_iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect();
         let env = CompileEnv {
             vars,
             var_types,
