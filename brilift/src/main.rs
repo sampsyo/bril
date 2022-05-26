@@ -7,14 +7,62 @@ use cranelift_codegen::settings::Configurable;
 use cranelift_codegen::{ir, isa, settings};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_jit::{JITBuilder, JITModule};
-use cranelift_module::{default_libcall_names, Module};
+use cranelift_module::{default_libcall_names, FuncOrDataId, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule};
-use enum_map::{enum_map, Enum, EnumMap};
 use std::collections::HashMap;
 use std::fs;
 
-/// Runtime functions used by ordinary Bril instructions.
-#[derive(Debug, Enum)]
+trait RTFuncUtils {
+    fn sig(
+        &self,
+        pointer_type: ir::Type,
+        call_conv: cranelift_codegen::isa::CallConv,
+    ) -> ir::Signature;
+
+    fn name(&self) -> &'static str;
+
+    fn get_func_id<M: Module>(
+        &self,
+        module: &mut M,
+        call_conv: cranelift_codegen::isa::CallConv,
+    ) -> cranelift_module::FuncId {
+        match module.get_name(self.name()) {
+            Some(FuncOrDataId::Func(f)) => f,
+            Some(_) => panic!("Expected {} to be a function, not data", self.name()),
+            None => module
+                .declare_function(
+                    self.name(),
+                    cranelift_module::Linkage::Import,
+                    &self.sig(module.isa().pointer_type(), call_conv),
+                )
+                .unwrap(),
+        }
+    }
+
+    fn get_func_ref<M: Module>(
+        &self,
+        module: &mut M,
+        f: &mut ir::Function,
+        call_conv: cranelift_codegen::isa::CallConv,
+    ) -> ir::FuncRef {
+        let f_id = self.get_func_id(module, call_conv);
+        module.declare_func_in_func(f_id, f)
+    }
+}
+
+/// The RTFuncUtils gives you this function for those structs, however, sometimes you just want to get the reference for an already declared function based off of the string name.
+fn get_already_declared_func_ref<M: Module>(
+    name: &str,
+    module: &mut M,
+    f: &mut ir::Function,
+) -> ir::FuncRef {
+    match module.get_name(name) {
+        Some(FuncOrDataId::Func(f_id)) => module.declare_func_in_func(f_id, f),
+        _ => panic!(),
+    }
+}
+
+#[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
 enum RTFunc {
     PrintInt,
@@ -23,8 +71,12 @@ enum RTFunc {
     PrintEnd,
 }
 
-impl RTFunc {
-    fn sig(&self, call_conv: cranelift_codegen::isa::CallConv) -> ir::Signature {
+impl RTFuncUtils for RTFunc {
+    fn sig(
+        &self,
+        _pointer_type: ir::Type,
+        call_conv: cranelift_codegen::isa::CallConv,
+    ) -> ir::Signature {
         match self {
             Self::PrintInt => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::I64)],
@@ -61,13 +113,13 @@ impl RTFunc {
 
 /// Runtime functions used in the native `main` function, which dispatches to the proper Bril
 /// `main` function.
-#[derive(Debug, Enum)]
+#[derive(Debug)]
 enum RTSetupFunc {
     ParseInt,
     ParseBool,
 }
 
-impl RTSetupFunc {
+impl RTFuncUtils for RTSetupFunc {
     fn sig(
         &self,
         pointer_type: ir::Type,
@@ -177,24 +229,9 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
 
 // TODO Should really be a trait with two different structs that implement it?
 struct Translator<M: Module> {
-    rt_funcs: EnumMap<RTFunc, cranelift_module::FuncId>,
     module: M,
     context: cranelift_codegen::Context,
     funcs: HashMap<String, cranelift_module::FuncId>,
-}
-
-/// Declare all our runtime functions in a CLIF module.
-fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
-    enum_map! {
-        rtfunc =>
-            module
-                .declare_function(
-                    rtfunc.name(),
-                    cranelift_module::Linkage::Import,
-                    &rtfunc.sig(module.isa().default_call_conv()),
-                )
-                .unwrap()
-    }
 }
 
 /// Configure a Cranelift target ISA object.
@@ -225,11 +262,10 @@ impl Translator<ObjectModule> {
     fn new(target: Option<String>, opt_level: &str) -> Self {
         // Make an object module.
         let isa = get_isa(target, true, opt_level);
-        let mut module =
+        let module =
             ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
 
         Self {
-            rt_funcs: declare_rt(&mut module),
             module,
             context: cranelift_codegen::Context::new(),
             funcs: HashMap::new(),
@@ -248,10 +284,9 @@ impl Translator<JITModule> {
     fn new() -> Self {
         // Cranelift JIT scaffolding.
         let builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
-        let mut module = JITModule::new(builder);
+        let module = JITModule::new(builder);
 
         Self {
-            rt_funcs: declare_rt(&mut module),
             context: module.make_context(),
             module,
             funcs: HashMap::new(),
@@ -318,168 +353,175 @@ fn gen_binary(
 }
 
 /// An environment for translating Bril into CLIF.
-struct CompileEnv<'a> {
+struct CompileEnv<'a, M: Module> {
+    module: &'a mut M,
     vars: HashMap<String, Variable>,
     var_types: HashMap<&'a String, &'a bril::Type>,
-    rt_refs: EnumMap<RTFunc, ir::FuncRef>,
     blocks: HashMap<String, ir::Block>,
-    func_refs: HashMap<String, ir::FuncRef>,
 }
 
-/// Implement a Bril `print` instruction in CLIF.
-fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
-    let mut first = true;
-    for arg in args {
-        // Separate printed values.
-        if first {
-            first = false;
-        } else {
-            builder.ins().call(env.rt_refs[RTFunc::PrintSep], &[]);
-        }
+impl<'a, M: Module> CompileEnv<'a, M> {
+    /// Implement a Bril `print` instruction in CLIF.
+    fn gen_print(&mut self, args: &[String], builder: &mut FunctionBuilder) {
+        let call_conv = self.module.isa().default_call_conv();
+        let mut first = true;
+        for arg in args {
+            // Separate printed values.
+            if first {
+                first = false;
+            } else {
+                let f = RTFunc::PrintSep.get_func_ref(&mut self.module, builder.func, call_conv);
+                builder.ins().call(f, &[]);
+            }
 
-        // Print each value according to its type.
-        let arg_val = builder.use_var(env.vars[arg]);
-        let print_func = match env.var_types[arg] {
-            bril::Type::Int => RTFunc::PrintInt,
-            bril::Type::Bool => RTFunc::PrintBool,
-        };
-        let print_ref = env.rt_refs[print_func];
-        builder.ins().call(print_ref, &[arg_val]);
-    }
-    builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
-}
-
-/// Compile one Bril instruction into CLIF.
-fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &CompileEnv) {
-    match inst {
-        bril::Instruction::Constant {
-            dest,
-            op: _,
-            const_type: _,
-            value,
-        } => {
-            let val = match value {
-                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
-                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
+            // Print each value according to its type.
+            let arg_val = builder.use_var(self.vars[arg]);
+            let print_func = match self.var_types[arg] {
+                bril::Type::Int => RTFunc::PrintInt,
+                bril::Type::Bool => RTFunc::PrintBool,
             };
-            builder.def_var(env.vars[dest], val);
+            let print_ref = print_func.get_func_ref(&mut self.module, builder.func, call_conv);
+            builder.ins().call(print_ref, &[arg_val]);
         }
-        bril::Instruction::Effect {
-            args,
-            funcs,
-            labels,
-            op,
-        } => match op {
-            bril::EffectOps::Print => gen_print(args, builder, env),
-            bril::EffectOps::Jump => {
-                builder.ins().jump(env.blocks[&labels[0]], &[]);
-            }
-            bril::EffectOps::Branch => {
-                let arg = builder.use_var(env.vars[&args[0]]);
-                let true_block = env.blocks[&labels[0]];
-                let false_block = env.blocks[&labels[1]];
-                builder.ins().brnz(arg, true_block, &[]);
-                builder.ins().jump(false_block, &[]);
-            }
-            bril::EffectOps::Call => {
-                let func_ref = env.func_refs[&funcs[0]];
-                let arg_vals: Vec<ir::Value> = args
-                    .iter()
-                    .map(|arg| builder.use_var(env.vars[arg]))
-                    .collect();
-                builder.ins().call(func_ref, &arg_vals);
-            }
-            bril::EffectOps::Return => {
-                if !args.is_empty() {
-                    let arg = builder.use_var(env.vars[&args[0]]);
-                    builder.ins().return_(&[arg]);
-                } else {
-                    builder.ins().return_(&[]);
-                }
-            }
-            bril::EffectOps::Nop => {}
-        },
-        bril::Instruction::Value {
-            args,
-            dest,
-            funcs,
-            labels: _,
-            op,
-            op_type,
-        } => match op {
-            bril::ValueOps::Add
-            | bril::ValueOps::Sub
-            | bril::ValueOps::Mul
-            | bril::ValueOps::Div
-            | bril::ValueOps::And
-            | bril::ValueOps::Or => {
-                gen_binary(builder, &env.vars, args, dest, op_type, translate_op(*op));
-            }
-            bril::ValueOps::Lt
-            | bril::ValueOps::Le
-            | bril::ValueOps::Eq
-            | bril::ValueOps::Ge
-            | bril::ValueOps::Gt => gen_icmp(builder, &env.vars, args, dest, translate_intcc(*op)),
-            bril::ValueOps::Not => {
-                let arg = builder.use_var(env.vars[&args[0]]);
-                let res = builder.ins().bnot(arg);
-                builder.def_var(env.vars[dest], res);
-            }
-            bril::ValueOps::Call => {
-                let func_ref = env.func_refs[&funcs[0]];
-                let arg_vals: Vec<ir::Value> = args
-                    .iter()
-                    .map(|arg| builder.use_var(env.vars[arg]))
-                    .collect();
-                let inst = builder.ins().call(func_ref, &arg_vals);
-                let res = builder.inst_results(inst)[0];
-                builder.def_var(env.vars[dest], res);
-            }
-            bril::ValueOps::Id => {
-                let arg = builder.use_var(env.vars[&args[0]]);
-                builder.def_var(env.vars[dest], arg);
-            }
-        },
+        let f = RTFunc::PrintEnd.get_func_ref(&mut self.module, builder.func, call_conv);
+        builder.ins().call(f, &[]);
     }
-}
 
-fn compile_body(insts: &[bril::Code], builder: &mut FunctionBuilder, env: &CompileEnv) {
-    let mut terminated = false; // Entry block is open.
-    for code in insts {
-        match code {
-            bril::Code::Instruction(inst) => {
-                // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
-                if terminated {
-                    let block = builder.create_block();
-                    builder.switch_to_block(block);
+    /// Compile one Bril instruction into CLIF.
+    fn compile_inst(&mut self, inst: &bril::Instruction, builder: &mut FunctionBuilder) {
+        match inst {
+            bril::Instruction::Constant {
+                dest,
+                op: _,
+                const_type: _,
+                value,
+            } => {
+                let val = match value {
+                    bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
+                    bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
+                };
+                builder.def_var(self.vars[dest], val);
+            }
+            bril::Instruction::Effect {
+                args,
+                funcs,
+                labels,
+                op,
+            } => match op {
+                bril::EffectOps::Print => self.gen_print(args, builder),
+                bril::EffectOps::Jump => {
+                    builder.ins().jump(self.blocks[&labels[0]], &[]);
+                }
+                bril::EffectOps::Branch => {
+                    let arg = builder.use_var(self.vars[&args[0]]);
+                    let true_block = self.blocks[&labels[0]];
+                    let false_block = self.blocks[&labels[1]];
+                    builder.ins().brnz(arg, true_block, &[]);
+                    builder.ins().jump(false_block, &[]);
+                }
+                bril::EffectOps::Call => {
+                    let func_ref =
+                        get_already_declared_func_ref(&funcs[0], self.module, builder.func);
+                    let arg_vals: Vec<ir::Value> = args
+                        .iter()
+                        .map(|arg| builder.use_var(self.vars[arg]))
+                        .collect();
+                    builder.ins().call(func_ref, &arg_vals);
+                }
+                bril::EffectOps::Return => {
+                    if !args.is_empty() {
+                        let arg = builder.use_var(self.vars[&args[0]]);
+                        builder.ins().return_(&[arg]);
+                    } else {
+                        builder.ins().return_(&[]);
+                    }
+                }
+                bril::EffectOps::Nop => {}
+            },
+            bril::Instruction::Value {
+                args,
+                dest,
+                funcs,
+                labels: _,
+                op,
+                op_type,
+            } => match op {
+                bril::ValueOps::Add
+                | bril::ValueOps::Sub
+                | bril::ValueOps::Mul
+                | bril::ValueOps::Div
+                | bril::ValueOps::And
+                | bril::ValueOps::Or => {
+                    gen_binary(builder, &self.vars, args, dest, op_type, translate_op(*op));
+                }
+                bril::ValueOps::Lt
+                | bril::ValueOps::Le
+                | bril::ValueOps::Eq
+                | bril::ValueOps::Ge
+                | bril::ValueOps::Gt => {
+                    gen_icmp(builder, &self.vars, args, dest, translate_intcc(*op))
+                }
+                bril::ValueOps::Not => {
+                    let arg = builder.use_var(self.vars[&args[0]]);
+                    let res = builder.ins().bnot(arg);
+                    builder.def_var(self.vars[dest], res);
+                }
+                bril::ValueOps::Call => {
+                    let func_ref =
+                        get_already_declared_func_ref(&funcs[0], self.module, builder.func);
+                    let arg_vals: Vec<ir::Value> = args
+                        .iter()
+                        .map(|arg| builder.use_var(self.vars[arg]))
+                        .collect();
+                    let inst = builder.ins().call(func_ref, &arg_vals);
+                    let res = builder.inst_results(inst)[0];
+                    builder.def_var(self.vars[dest], res);
+                }
+                bril::ValueOps::Id => {
+                    let arg = builder.use_var(self.vars[&args[0]]);
+                    builder.def_var(self.vars[dest], arg);
+                }
+            },
+        }
+    }
+    fn compile_body(&mut self, insts: &[bril::Code], builder: &mut FunctionBuilder) {
+        let mut terminated = false; // Entry block is open.
+        for code in insts {
+            match code {
+                bril::Code::Instruction(inst) => {
+                    // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
+                    if terminated {
+                        let block = builder.create_block();
+                        builder.switch_to_block(block);
+                        terminated = false;
+                    }
+
+                    // Compile one instruction.
+                    self.compile_inst(inst, builder);
+
+                    if is_term(inst) {
+                        terminated = true;
+                    }
+                }
+                bril::Code::Label { label } => {
+                    let new_block = self.blocks[label];
+
+                    // If the previous block was missing a terminator (fall-through), insert a
+                    // jump to the new block.
+                    if !terminated {
+                        builder.ins().jump(new_block, &[]);
+                    }
                     terminated = false;
+
+                    builder.switch_to_block(new_block);
                 }
-
-                // Compile one instruction.
-                compile_inst(inst, builder, env);
-
-                if is_term(inst) {
-                    terminated = true;
-                }
-            }
-            bril::Code::Label { label } => {
-                let new_block = env.blocks[label];
-
-                // If the previous block was missing a terminator (fall-through), insert a
-                // jump to the new block.
-                if !terminated {
-                    builder.ins().jump(new_block, &[]);
-                }
-                terminated = false;
-
-                builder.switch_to_block(new_block);
             }
         }
-    }
 
-    // Implicit return in the last block.
-    if !terminated {
-        builder.ins().return_(&[]);
+        // Implicit return in the last block.
+        if !terminated {
+            builder.ins().return_(&[]);
+        }
     }
 }
 
@@ -522,11 +564,6 @@ impl<M: Module> Translator<M> {
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
-        // Declare runtime functions.
-        let rt_refs = self
-            .rt_funcs
-            .map(|_, id| self.module.declare_func_in_func(id, builder.func));
-
         // Declare all variables (including for function parameters).
         let var_types = all_vars(&func);
         let vars: HashMap<String, Variable> = var_types
@@ -552,25 +589,11 @@ impl<M: Module> Translator<M> {
             })
             .collect();
 
-        // "Import" all the functions we may need to call.
-        // TODO We could do this only for the functions we actually use...
-        let func_refs: HashMap<String, ir::FuncRef> = self
-            .funcs
-            .iter()
-            .map(|(name, id)| {
-                (
-                    name.to_owned(),
-                    self.module.declare_func_in_func(*id, builder.func),
-                )
-            })
-            .collect();
-
-        let env = CompileEnv {
+        let mut env = CompileEnv {
+            module: &mut self.module,
             vars,
             var_types,
-            rt_refs,
             blocks,
-            func_refs,
         };
 
         // Define variables for function arguments in the entry block.
@@ -583,7 +606,7 @@ impl<M: Module> Translator<M> {
         }
 
         // Insert instructions.
-        compile_body(&func.instrs, &mut builder, &env);
+        env.compile_body(&func.instrs, &mut builder);
 
         builder.seal_all_blocks();
         builder.finalize();
@@ -609,23 +632,7 @@ impl<M: Module> Translator<M> {
         self.context.func =
             ir::Function::with_name_signature(ir::ExternalName::user(0, main_id.as_u32()), sig);
 
-        // Declare `main`-specific setup runtime functions.
         let call_conv = self.module.isa().default_call_conv();
-        let rt_setup_refs: EnumMap<RTSetupFunc, ir::FuncRef> = enum_map! {
-            rt_setup_func => {
-                let func_id = self
-                    .module
-                    .declare_function(
-                        rt_setup_func.name(),
-                        cranelift_module::Linkage::Import,
-                        &rt_setup_func.sig(pointer_type, call_conv),
-                    )
-                    .unwrap();
-                self
-                    .module
-                    .declare_func_in_func(func_id, &mut self.context.func)
-            }
-        };
 
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
@@ -641,10 +648,11 @@ impl<M: Module> Translator<M> {
             .iter()
             .enumerate()
             .map(|(i, arg)| {
-                let parse_ref = rt_setup_refs[match arg.arg_type {
+                let parse_ref = match arg.arg_type {
                     bril::Type::Int => RTSetupFunc::ParseInt,
                     bril::Type::Bool => RTSetupFunc::ParseBool,
-                }];
+                }
+                .get_func_ref(&mut self.module, builder.func, call_conv);
                 let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
                 let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
                 builder.inst_results(inst)[0]
