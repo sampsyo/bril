@@ -264,9 +264,34 @@ unsafe fn run(main_ptr: *const u8) {
 
 /// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
+    // `cranelift_jit` does not yet support PIC on AArch64:
+    // https://github.com/bytecodealliance/wasmtime/issues/2735
+    // The default initialization path for `JITBuilder` is hard-coded to use PIC, so we manually
+    // disable it here. Once this is fully supported in `cranelift_jit`, we can switch to the
+    // generic versin below unconditionally.
+    #[cfg(target_arch = "aarch64")]
+    fn jit_builder() -> JITBuilder {
+        let mut flag_builder = settings::builder();
+        flag_builder.set("use_colocated_libcalls", "false").unwrap();
+        flag_builder.set("is_pic", "false").unwrap();  // PIC unsupported on ARM.
+        let isa_builder = cranelift_native::builder().unwrap();
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .unwrap();
+        JITBuilder::with_isa(isa, cranelift_module::default_libcall_names())
+    }
+
+    // The normal way to set up a JIT builder.
+    #[cfg(not(target_arch = "aarch64"))]
+    fn jit_builder() -> JITBuilder {
+        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
+    }
+
     fn new() -> Self {
+        // Set up the JIT.
+        let mut builder = Self::jit_builder();
+
         // Provide runtime functions.
-        let mut builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
         enum_map! {
             rtfunc => {
                 let f: RTFunc = rtfunc;
