@@ -1,5 +1,8 @@
+mod rt;
+
 use argh::FromArgs;
 use bril_rs as bril;
+use core::mem;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::InstBuilder;
@@ -55,6 +58,15 @@ impl RTFunc {
             Self::PrintBool => "_bril_print_bool",
             Self::PrintSep => "_bril_print_sep",
             Self::PrintEnd => "_bril_print_end",
+        }
+    }
+
+    fn rt_impl(&self) -> *const u8 {
+        match self {
+            RTFunc::PrintInt => rt::print_int as *const u8,
+            RTFunc::PrintBool => rt::print_int as *const u8,
+            RTFunc::PrintSep => rt::print_sep as *const u8,
+            RTFunc::PrintEnd => rt::print_end as *const u8,
         }
     }
 }
@@ -243,11 +255,50 @@ impl Translator<ObjectModule> {
     }
 }
 
+/// Run the JITted code.
+// TODO Support `main` arguments somehow.
+unsafe fn run(main_ptr: *const u8) {
+    let func = mem::transmute::<_, fn() -> ()>(main_ptr);
+    func();
+}
+
 /// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
+    // `cranelift_jit` does not yet support PIC on AArch64:
+    // https://github.com/bytecodealliance/wasmtime/issues/2735
+    // The default initialization path for `JITBuilder` is hard-coded to use PIC, so we manually
+    // disable it here. Once this is fully supported in `cranelift_jit`, we can switch to the
+    // generic versin below unconditionally.
+    #[cfg(target_arch = "aarch64")]
+    fn jit_builder() -> JITBuilder {
+        let mut flag_builder = settings::builder();
+        flag_builder.set("use_colocated_libcalls", "false").unwrap();
+        flag_builder.set("is_pic", "false").unwrap(); // PIC unsupported on ARM.
+        let isa_builder = cranelift_native::builder().unwrap();
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .unwrap();
+        JITBuilder::with_isa(isa, cranelift_module::default_libcall_names())
+    }
+
+    // The normal way to set up a JIT builder.
+    #[cfg(not(target_arch = "aarch64"))]
+    fn jit_builder() -> JITBuilder {
+        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap()
+    }
+
     fn new() -> Self {
-        // Cranelift JIT scaffolding.
-        let builder = JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
+        // Set up the JIT.
+        let mut builder = Self::jit_builder();
+
+        // Provide runtime functions.
+        enum_map! {
+            rtfunc => {
+                let f: RTFunc = rtfunc;
+                builder.symbol(f.name(), f.rt_impl());
+            }
+        };
+
         let mut module = JITModule::new(builder);
 
         Self {
@@ -258,11 +309,11 @@ impl Translator<JITModule> {
         }
     }
 
-    fn compile(mut self) -> *const u8 {
+    // Dispose of the translator and obtain the entry-point code pointer.
+    fn get_main(mut self) -> *const u8 {
         self.module.clear_context(&mut self.context);
         self.module.finalize_definitions();
 
-        // TODO Compile all functions.
         let id = self.funcs["main"];
         self.module.get_finalized_function(id)
     }
@@ -748,7 +799,8 @@ fn main() {
     if args.jit {
         let mut trans = Translator::<JITModule>::new();
         trans.compile_prog(prog, args.dump_ir, false);
-        trans.compile();
+        let code = trans.get_main();
+        unsafe { run(code) };
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
         trans.compile_prog(prog, args.dump_ir, true);
