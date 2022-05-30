@@ -1,12 +1,12 @@
 Cranelift Compiler
 ==================
 
-Brilift is a compiler from Bril to native code using the [Cranelift][] code generator.
+Brilift is a ahead-of-time or just-in-time compiler from Bril to native code using the [Cranelift][] code generator.
 It supports [core Bril][core] only.
 
-Brilift is an ahead-of-time compiler.
-It emits `.o` files and also provides a simple run-time library.
+In AOT mode, Brilift emits `.o` files and also provides a simple run-time library.
 By linking these together, you get a complete native executable.
+In JIT mode, Brilift mimics an interpreter.
 
 [cranelift]: https://github.com/bytecodealliance/wasmtime/tree/main/cranelift
 [core]: ../lang/core.md
@@ -25,8 +25,8 @@ You can build it using [Cargo][]:
 [bril-rs]: rust.md
 [cargo]: https://doc.rust-lang.org/cargo/
 
-Compile Stuff
--------------
+Ahead-of-Time Compilation
+-------------------------
 
 Provide the `brilift` executable with a Bril JSON program:
 
@@ -46,18 +46,27 @@ Then, you will want to link `rt.o` and `bril.o` to produce an executable:
 
 If your Bril `@main` function takes arguments, those are now command-line arguments to the `myprog` executable.
 
+Just-in-Time Compilation
+------------------------
+
+Use the `-j` flag to compile and run the program immediately:
+
+    $ bril2json < something.bril | brilift -j
+
 Options
 -------
 
 Type `brilift --help` to see the full list of options:
 
-* `-o <FILE>`: Place the output object file in `<FILE>` instead of `bril.o` (the default).
-* `-t <TARGET>`: Specify the target triple, as interpreted by Cranelift. These triples resemble the [target triples][triple] that LLVM also understands, for example. For instance, `x86_64-unknown-darwin-macho` is the triple for macOS on Intel processors.
+* `-j`: JIT-compile the code and run it immediately, instead of AOT-compiling an object file (the default).
 * `-O [none|speed|speed_and_size]`: An [optimization level][opt_level], according to Cranelift. The default is `none`.
 * `-v`: Enable lots of logging from the Cranelift library.
 * `-d`: Dump the Cranelift IR text for debugging.
 
-There is also a `-j` option that tries to use a JIT to run the code immediately, instead of the default AOT mode, but that does not work at all yet.
+These options are only relevant in AOT mode:
+
+* `-o <FILE>`: Place the output object file in `<FILE>` instead of `bril.o` (the default).
+* `-t <TARGET>`: Specify the target triple, as interpreted by Cranelift. These triples resemble the [target triples][triple] that LLVM also understands, for example. For instance, `x86_64-unknown-darwin-macho` is the triple for macOS on Intel processors.
 
 [opt_level]: https://docs.rs/cranelift-codegen/0.84.0/cranelift_codegen/settings/struct.Flags.html#method.opt_level
 [triple]: https://clang.llvm.org/docs/CrossCompilation.html#target-triple
