@@ -273,7 +273,7 @@ impl Translator<JITModule> {
     fn jit_builder() -> JITBuilder {
         let mut flag_builder = settings::builder();
         flag_builder.set("use_colocated_libcalls", "false").unwrap();
-        flag_builder.set("is_pic", "false").unwrap();  // PIC unsupported on ARM.
+        flag_builder.set("is_pic", "false").unwrap(); // PIC unsupported on ARM.
         let isa_builder = cranelift_native::builder().unwrap();
         let isa = isa_builder
             .finish(settings::Flags::new(flag_builder))
