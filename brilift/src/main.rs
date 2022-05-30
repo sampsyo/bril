@@ -284,7 +284,7 @@ impl Translator<JITModule> {
     // The normal way to set up a JIT builder.
     #[cfg(not(target_arch = "aarch64"))]
     fn jit_builder() -> JITBuilder {
-        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap();
+        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap()
     }
 
     fn new() -> Self {
