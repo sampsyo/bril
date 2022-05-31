@@ -12,7 +12,11 @@ TESTS := test/parse/*.bril \
 	benchmarks/*.bril
 
 CHECKS := test/parse/*.bril \
-	test/interp/*.bril \
+	test/core/*.bril \
+	test/float/*.bril \
+	test/mixed/*.bril \
+	test/spec/*.bril \
+	test/ssa/*.bril \
 	test/mem/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/*.bril
