@@ -255,11 +255,20 @@ impl Translator<ObjectModule> {
     }
 }
 
-/// Run the JITted code.
-// TODO Support `main` arguments somehow.
-unsafe fn run(main_ptr: *const u8) {
-    let func = mem::transmute::<_, fn() -> ()>(main_ptr);
-    func();
+fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
+    vals.iter().map(|lit| {
+        match lit {
+            bril::Literal::Int(i) => i as *const i64 as *const u8,
+            bril::Literal::Bool(b) => b as *const bool as *const u8,
+        }
+    }).collect()
+}
+
+/// Run a JITted wrapper function.
+unsafe fn run(main_ptr: *const u8, args: &[bril::Literal]) {
+    let arg_ptrs = val_ptrs(args);
+    let func = mem::transmute::<_, fn(*const *const u8) -> ()>(main_ptr);
+    func(arg_ptrs.as_ptr());
 }
 
 /// JIT compiler that totally does not work yet.
@@ -873,7 +882,7 @@ fn main() {
         let mut trans = Translator::<JITModule>::new();
         let entry_id = trans.compile_prog(prog, args.dump_ir, false, true);
         let code = trans.get_func_ptr(entry_id);
-        unsafe { run(code) };
+        unsafe { run(code, &[]) };
     } else {
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
         trans.compile_prog(prog, args.dump_ir, true, false);
