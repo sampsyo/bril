@@ -577,7 +577,7 @@ impl<M: Module> Translator<M> {
         self.context.clear();
     }
 
-    fn compile_func(&mut self, func: bril::Function) {
+    fn compile_func(&mut self, func: &bril::Function) {
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
@@ -795,7 +795,7 @@ impl<M: Module> Translator<M> {
     }
 
     // TODO The two arguments here (and in fact including the wrapper emission here) is ugly and bad...
-    fn compile_prog(&mut self, prog: bril::Program, dump: bool, c_main: bool, mem_main: bool) -> cranelift_module::FuncId {
+    fn compile_prog(&mut self, prog: &bril::Program, dump: bool) {
         // Declare all functions.
         for func in &prog.functions {
             let id = self.declare_func(func);
@@ -803,28 +803,17 @@ impl<M: Module> Translator<M> {
         }
 
         // Define all functions.
-        let mut out_id: Option<cranelift_module::FuncId> = None; // TODO ugly
-        for func in prog.functions {
-            // If it's main, (maybe) wrap it in an entry function.
-            if func.name == "main" {
-                out_id = if c_main {
-                    Some(self.add_c_main(&func.args, dump))
-                } else if mem_main {
-                    Some(self.add_mem_wrapper("main", &func.args, dump))
-                } else {
-                    None
-                };
-            }
-
-            // Compile every function.
+        for func in &prog.functions {
             let id = self.funcs[&func.name];
             self.enter_func(&func, id);
             self.compile_func(func);
             self.finish_func(id, dump);
         }
-
-        out_id.unwrap() // TODO ugly
     }
+}
+
+fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {
+    funcs.iter().find(|f| f.name == name).unwrap()
 }
 
 #[derive(FromArgs)]
@@ -857,6 +846,9 @@ struct Args {
         default = "String::from(\"none\")"
     )]
     opt_level: String,
+
+    #[argh(positional, description = "arguments for @main function (JIT mode only)")]
+    args: Vec<String>,
 }
 
 fn main() {
@@ -879,13 +871,27 @@ fn main() {
     let prog = bril::load_program();
 
     if args.jit {
+        // Compile.
         let mut trans = Translator::<JITModule>::new();
-        let entry_id = trans.compile_prog(prog, args.dump_ir, false, true);
+        trans.compile_prog(&prog, args.dump_ir);
+
+        // Add a JIT wrapper for `main`.
+        let main = find_func(&prog.functions, "main");
+        let entry_id = trans.add_mem_wrapper("main", &main.args, args.dump_ir);
+
+        // Run the program.
         let code = trans.get_func_ptr(entry_id);
         unsafe { run(code, &[]) };
     } else {
+        // Compile.
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
-        trans.compile_prog(prog, args.dump_ir, true, false);
+        trans.compile_prog(&prog, args.dump_ir);
+
+        // Add a C-style `main` wrapper.
+        let main = find_func(&prog.functions, "main");
+        trans.add_c_main(&main.args, args.dump_ir);
+
+        // Write object file.
         trans.emit(&args.output);
     }
 }
