@@ -64,7 +64,7 @@ impl RTFunc {
     fn rt_impl(&self) -> *const u8 {
         match self {
             RTFunc::PrintInt => rt::print_int as *const u8,
-            RTFunc::PrintBool => rt::print_int as *const u8,
+            RTFunc::PrintBool => rt::print_bool as *const u8,
             RTFunc::PrintSep => rt::print_sep as *const u8,
             RTFunc::PrintEnd => rt::print_end as *const u8,
         }
