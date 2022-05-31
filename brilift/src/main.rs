@@ -879,13 +879,18 @@ fn main() {
         let main = find_func(&prog.functions, "main");
         let entry_id = trans.add_mem_wrapper("main", &main.args, args.dump_ir);
 
-        // Run the program.
+        // Parse CLI arguments.
+        if main.args.len() != args.args.len() {
+            panic!("@main expects {} arguments; got {}", main.args.len(), args.args.len());
+        }
         let main_args: Vec<bril::Literal> = main.args.iter().zip(args.args).map(|(arg, val_str)| {
             match arg.arg_type {
                 bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
                 bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
             }
         }).collect();
+
+        // Run the program.
         let code = trans.get_func_ptr(entry_id);
         unsafe { run(code, &main_args) };
     } else {
