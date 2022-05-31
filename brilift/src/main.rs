@@ -256,12 +256,12 @@ impl Translator<ObjectModule> {
 }
 
 fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
-    vals.iter().map(|lit| {
-        match lit {
+    vals.iter()
+        .map(|lit| match lit {
             bril::Literal::Int(i) => i as *const i64 as *const u8,
             bril::Literal::Bool(b) => b as *const bool as *const u8,
-        }
-    }).collect()
+        })
+        .collect()
 }
 
 /// Run a JITted wrapper function.
@@ -587,7 +587,7 @@ impl<M: Module> Translator<M> {
             .map(|_, id| self.module.declare_func_in_func(id, builder.func));
 
         // Declare all variables (including for function parameters).
-        let var_types = all_vars(&func);
+        let var_types = all_vars(func);
         let vars: HashMap<String, Variable> = var_types
             .iter()
             .enumerate()
@@ -736,13 +736,16 @@ impl<M: Module> Translator<M> {
     /// Add a function that wraps a Bril function to invoke it with arguments that come from
     /// memory. The new function takes a single pointer as an argument, which points to an array of
     /// pointers to the arguments.
-    fn add_mem_wrapper(&mut self, name: &str, args: &[bril::Argument], dump: bool) -> cranelift_module::FuncId {
+    fn add_mem_wrapper(
+        &mut self,
+        name: &str,
+        args: &[bril::Argument],
+        dump: bool,
+    ) -> cranelift_module::FuncId {
         // Declare wrapper function.
         let pointer_type = self.module.isa().pointer_type();
         let sig = ir::Signature {
-            params: vec![
-                ir::AbiParam::new(pointer_type),
-            ],
+            params: vec![ir::AbiParam::new(pointer_type)],
             returns: vec![],
             call_conv: self.module.isa().default_call_conv(),
         };
@@ -766,24 +769,32 @@ impl<M: Module> Translator<M> {
         let base_ptr = builder.block_params(block)[0];
         let ptr_size = pointer_type.bytes();
         let flags = ir::MemFlags::trusted();
-        let arg_vals: Vec<ir::Value> = args.iter().enumerate().map(|(i, arg)| {
-            // Load the pointer.
-            let offset = (ptr_size * (i as u32)) as i32;
-            let arg_ptr = builder.ins().load(pointer_type, flags, base_ptr, offset);
+        let arg_vals: Vec<ir::Value> = args
+            .iter()
+            .enumerate()
+            .map(|(i, arg)| {
+                // Load the pointer.
+                let offset = (ptr_size * (i as u32)) as i32;
+                let arg_ptr = builder.ins().load(pointer_type, flags, base_ptr, offset);
 
-            // Load the argument value. Boolean values are stored as entire byte, so we need to
-            // load the byte first and then get the b1.
-            let arg_type = translate_type(&arg.arg_type);
-            let mem_type = match arg.arg_type {
-                bril::Type::Bool => ir::types::I8,
-                _ => arg_type,
-            };
-            let arg_val = builder.ins().load(mem_type, flags, arg_ptr, 0);
-            match arg.arg_type {
-                bril::Type::Bool => builder.ins().icmp_imm(ir::condcodes::IntCC::NotEqual, arg_val, 0),
-                _ => arg_val,
-            }
-        }).collect();
+                // Load the argument value. Boolean values are stored as entire byte, so we need to
+                // load the byte first and then get the b1.
+                let arg_type = translate_type(&arg.arg_type);
+                let mem_type = match arg.arg_type {
+                    bril::Type::Bool => ir::types::I8,
+                    _ => arg_type,
+                };
+                let arg_val = builder.ins().load(mem_type, flags, arg_ptr, 0);
+                match arg.arg_type {
+                    bril::Type::Bool => {
+                        builder
+                            .ins()
+                            .icmp_imm(ir::condcodes::IntCC::NotEqual, arg_val, 0)
+                    }
+                    _ => arg_val,
+                }
+            })
+            .collect();
 
         // Call the "real" main function.
         let real_func_id = self.funcs[name];
@@ -815,7 +826,7 @@ impl<M: Module> Translator<M> {
         // Define all functions.
         for func in &prog.functions {
             let id = self.funcs[&func.name];
-            self.enter_func(&func, id);
+            self.enter_func(func, id);
             self.compile_func(func);
             self.finish_func(id, dump);
         }
@@ -857,7 +868,10 @@ struct Args {
     )]
     opt_level: String,
 
-    #[argh(positional, description = "arguments for @main function (JIT mode only)")]
+    #[argh(
+        positional,
+        description = "arguments for @main function (JIT mode only)"
+    )]
     args: Vec<String>,
 }
 
@@ -891,14 +905,21 @@ fn main() {
 
         // Parse CLI arguments.
         if main.args.len() != args.args.len() {
-            panic!("@main expects {} arguments; got {}", main.args.len(), args.args.len());
+            panic!(
+                "@main expects {} arguments; got {}",
+                main.args.len(),
+                args.args.len()
+            );
         }
-        let main_args: Vec<bril::Literal> = main.args.iter().zip(args.args).map(|(arg, val_str)| {
-            match arg.arg_type {
+        let main_args: Vec<bril::Literal> = main
+            .args
+            .iter()
+            .zip(args.args)
+            .map(|(arg, val_str)| match arg.arg_type {
                 bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
                 bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
-            }
-        }).collect();
+            })
+            .collect();
 
         // Run the program.
         let code = trans.get_func_ptr(entry_id);
