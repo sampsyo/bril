@@ -880,8 +880,14 @@ fn main() {
         let entry_id = trans.add_mem_wrapper("main", &main.args, args.dump_ir);
 
         // Run the program.
+        let main_args: Vec<bril::Literal> = main.args.iter().zip(args.args).map(|(arg, val_str)| {
+            match arg.arg_type {
+                bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
+                bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
+            }
+        }).collect();
         let code = trans.get_func_ptr(entry_id);
-        unsafe { run(code, &[]) };
+        unsafe { run(code, &main_args) };
     } else {
         // Compile.
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
