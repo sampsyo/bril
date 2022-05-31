@@ -1,9 +1,12 @@
 TESTS := test/parse/*.bril \
 	test/print/*.json \
-	test/interp*/*.bril \
+	test/core*/*.bril \
 	test/ts*/*.ts \
-	test/mem/*.bril \
-	test/fail/*.bril \
+	test/float/*.bril \
+	test/mem*/*.bril \
+	test/mixed/*.bril \
+	test/spec*/*.bril \
+	test/ssa*/*.bril \
 	test/check/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/*.bril
