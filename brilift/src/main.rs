@@ -771,8 +771,18 @@ impl<M: Module> Translator<M> {
             let offset = (ptr_size * (i as u32)) as i32;
             let arg_ptr = builder.ins().load(pointer_type, flags, base_ptr, offset);
 
-            // Load the argument value.
-            builder.ins().load(translate_type(&arg.arg_type), flags, arg_ptr, 0)
+            // Load the argument value. Boolean values are stored as entire byte, so we need to
+            // load the byte first and then get the b1.
+            let arg_type = translate_type(&arg.arg_type);
+            let mem_type = match arg.arg_type {
+                bril::Type::Bool => ir::types::I8,
+                _ => arg_type,
+            };
+            let arg_val = builder.ins().load(mem_type, flags, arg_ptr, 0);
+            match arg.arg_type {
+                bril::Type::Bool => builder.ins().icmp_imm(ir::condcodes::IntCC::NotEqual, arg_val, 0),
+                _ => arg_val,
+            }
         }).collect();
 
         // Call the "real" main function.
