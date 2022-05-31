@@ -640,8 +640,9 @@ impl<M: Module> Translator<M> {
         builder.finalize();
     }
 
-    /// Generate a proper `main` function that calls the Bril `main` function.
-    fn add_main(&mut self, args: &[bril::Argument], dump: bool) {
+    /// Generate a C-style `main` function that parses command-line arguments and then calls the
+    /// Bril `main` function.
+    fn add_c_main(&mut self, args: &[bril::Argument], dump: bool) {
         // Declare `main` with argc/argv parameters.
         let pointer_type = self.module.isa().pointer_type();
         let sig = ir::Signature {
@@ -733,7 +734,7 @@ impl<M: Module> Translator<M> {
         for func in prog.functions {
             // If it's main, (maybe) wrap it in an entry function.
             if wrap_main && func.name == "main" {
-                self.add_main(&func.args, dump);
+                self.add_c_main(&func.args, dump);
             }
 
             // Compile every function.
