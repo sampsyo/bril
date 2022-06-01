@@ -3,6 +3,7 @@ on:
     branches:
      - main
     paths:
+     - '.github/workflows/rust.yaml'
      - 'brilirs/**/*.rs'
      - 'brilirs/**/*.toml'
      - 'brilift/**/*.rs'
@@ -14,6 +15,7 @@ on:
     branches:
      - main
     paths:
+     - '.github/workflows/rust.yaml'
      - 'brilirs/**/*.rs'
      - 'brilirs/**/*.toml'
      - 'brilift/**/*.rs'
@@ -60,7 +62,14 @@ jobs:
         run: cd bril-txt ; flit install --symlink
 
       - name: Install Turnt
-        run: pip install turnt
+        # run: pip install turnt  # Use instead if pip turnt version >= 1.6
+        uses: actions/checkout@v2
+        with:
+          repository: cucapra/turnt
+          path: './turnt'
+      - name: Install Turnt part 2
+        run: cd turnt ; flit install --symlink
+
       - name: Problem matcher
         run: echo '::add-matcher::.github/tap-matcher.json'
 
