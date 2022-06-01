@@ -1,1 +1,1 @@
-command = "cargo run --manifest-path ../../brilirs/Cargo.toml -- --file {filename} --text {args}"
+command = "cargo run --manifest-path ../../../brilirs/Cargo.toml -- --file {filename} --text {args}"

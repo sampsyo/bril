@@ -1,7 +1,7 @@
 TARGET := x86_64-unknown-darwin-macho
 RUST_TARGET := x86_64-apple-darwin
 
-TESTS :=  ../test/interp/*.bril
+TESTS :=  ../test/interp/core/*.bril
 BENCHMARKS := ../benchmarks/*.bril
 TOML := turnt_brilift.toml
 
@@ -14,11 +14,11 @@ install:
 	cargo install --path .
 
 .PHONY: test
-test:
-	turnt -c $(TOML) $(TESTS)
+test: rt.o
+	turnt -v -c ../$(TOML) $(TESTS)
 
 .PHONY: benchmark
-benchmark:
+benchmark: rt.o
 	turnt -c $(TOML) $(BENCHMARKS)
 
 rt.o: rt.c
