@@ -32,5 +32,5 @@ int64_t _bril_parse_int(char **args, int64_t idx) {
 
 char _bril_parse_bool(char **args, int64_t idx) {
     char *arg = args[idx];
-    return !!strcmp(arg, "true");
+    return !strcmp(arg, "true");
 }
