@@ -11,7 +11,6 @@ pub mod abstract_program;
 pub mod conversion;
 /// Provides the structured representation of Bril programs
 pub mod program;
-// todo maybe not reexport the program structs? I don't know the most rust way to provide these especially since abstract_program relies on Literal in program
 pub use abstract_program::*;
 pub use program::*;
 

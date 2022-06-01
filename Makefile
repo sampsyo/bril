@@ -1,21 +1,30 @@
 TESTS := test/parse/*.bril \
 	test/print/*.json \
-	test/interp*/*.bril \
 	test/ts*/*.ts \
-	test/mem/*.bril \
-	test/fail/*.bril \
 	test/check/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/*.bril
 
+INTERP_TESTS := test/interp*/core*/*.bril \
+	test/interp*/float/*.bril \
+	test/interp*/mem*/*.bril \
+	test/interp*/mixed/*.bril \
+	test/interp*/spec*/*.bril \
+	test/interp*/ssa*/*.bril \
+
 CHECKS := test/parse/*.bril \
-	test/interp/*.bril \
-	test/mem/*.bril \
+	test/interp/core/*.bril \
+	test/interp/float/*.bril \
+	test/interp/mixed/*.bril \
+	test/interp/spec/*.bril \
+	test/interp/ssa/*.bril \
+	test/interp/mem/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/*.bril
 
 .PHONY: test
 test:
+	turnt -v -c ../turnt.toml $(TURNTARGS) $(INTERP_TESTS)
 	turnt $(TURNTARGS) $(TESTS)
 
 .PHONY: check
