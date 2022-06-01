@@ -1,7 +1,7 @@
 TARGET := x86_64-unknown-darwin-macho
 RUST_TARGET := x86_64-apple-darwin
 
-TESTS :=  ../test/core/*.bril
+TESTS :=  ../test/interp/core/*.bril
 BENCHMARKS := ../benchmarks/*.bril
 TOML := turnt_brilift.toml
 
@@ -15,7 +15,7 @@ install:
 
 .PHONY: test
 test: rt.o
-	turnt -c $(TOML) $(TESTS)
+	turnt -v -c ../$(TOML) $(TESTS)
 
 .PHONY: benchmark
 benchmark: rt.o

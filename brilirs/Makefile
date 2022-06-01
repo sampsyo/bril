@@ -1,11 +1,12 @@
-TESTS := ../test/check/*.bril \
-../test/core*/*.bril \
-../test/float/*.bril \
-../test/mem*/*.bril \
-../test/mixed/*.bril \
-../test/ssa*/*.bril \
+TESTS := ../test/interp*/core*/*.bril \
+../test/interp*/float/*.bril \
+../test/interp*/mem*/*.bril \
+../test/interp*/mixed/*.bril \
+../test/interp*/ssa*/*.bril \
 
 #../test/spec*/*.bril \
+
+CHECK := ../test/check/*.bril
 
 BENCHMARKS := ../benchmarks/*.bril
 
@@ -15,7 +16,8 @@ install:
 
 .PHONY: test
 test:
-	turnt -c turnt_brilirs.toml $(TESTS)
+	turnt -c ../turnt_brilirs.toml $(TESTS)
+	turnt -c turnt_brilirs.toml $(CHECK)
 
 .PHONY: benchmark
 benchmark:

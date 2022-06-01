@@ -1,3 +1,0 @@
-command = "bril2json < {base}.bril | brili"
-return_code = 2
-output.err = "2"
