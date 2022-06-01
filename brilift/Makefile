@@ -3,7 +3,7 @@ RUST_TARGET := x86_64-apple-darwin
 
 TESTS :=  ../test/interp/core/*.bril
 BENCHMARKS := ../benchmarks/*.bril
-TOML := turnt_brilift.toml
+TOML := turnt_brilift_aot.toml
 
 .PHONY: build
 build:

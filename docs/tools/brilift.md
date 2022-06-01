@@ -53,6 +53,9 @@ Use the `-j` flag to compile and run the program immediately:
 
     $ bril2json < something.bril | brilift -j
 
+Pass any arguments to the Bril `@main` function as command-line arguments to Brilift.
+For example, if you have a function `@main(foo: int, bar: bool)`, you can type `brilift -j 42 true`.
+
 Options
 -------
 

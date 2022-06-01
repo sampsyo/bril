@@ -64,7 +64,7 @@ impl RTFunc {
     fn rt_impl(&self) -> *const u8 {
         match self {
             RTFunc::PrintInt => rt::print_int as *const u8,
-            RTFunc::PrintBool => rt::print_int as *const u8,
+            RTFunc::PrintBool => rt::print_bool as *const u8,
             RTFunc::PrintSep => rt::print_sep as *const u8,
             RTFunc::PrintEnd => rt::print_end as *const u8,
         }
@@ -255,11 +255,20 @@ impl Translator<ObjectModule> {
     }
 }
 
-/// Run the JITted code.
-// TODO Support `main` arguments somehow.
-unsafe fn run(main_ptr: *const u8) {
-    let func = mem::transmute::<_, fn() -> ()>(main_ptr);
-    func();
+fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
+    vals.iter()
+        .map(|lit| match lit {
+            bril::Literal::Int(i) => i as *const i64 as *const u8,
+            bril::Literal::Bool(b) => b as *const bool as *const u8,
+        })
+        .collect()
+}
+
+/// Run a JITted wrapper function.
+unsafe fn run(main_ptr: *const u8, args: &[bril::Literal]) {
+    let arg_ptrs = val_ptrs(args);
+    let func = mem::transmute::<_, fn(*const *const u8) -> ()>(main_ptr);
+    func(arg_ptrs.as_ptr());
 }
 
 /// JIT compiler that totally does not work yet.
@@ -309,13 +318,12 @@ impl Translator<JITModule> {
         }
     }
 
-    // Dispose of the translator and obtain the entry-point code pointer.
-    fn get_main(mut self) -> *const u8 {
+    // Dispose of the translator and obtain an entry-point code pointer.
+    fn get_func_ptr(mut self, func_id: cranelift_module::FuncId) -> *const u8 {
         self.module.clear_context(&mut self.context);
         self.module.finalize_definitions();
 
-        let id = self.funcs["main"];
-        self.module.get_finalized_function(id)
+        self.module.get_finalized_function(func_id)
     }
 }
 
@@ -569,7 +577,7 @@ impl<M: Module> Translator<M> {
         self.context.clear();
     }
 
-    fn compile_func(&mut self, func: bril::Function) {
+    fn compile_func(&mut self, func: &bril::Function) {
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
@@ -579,7 +587,7 @@ impl<M: Module> Translator<M> {
             .map(|_, id| self.module.declare_func_in_func(id, builder.func));
 
         // Declare all variables (including for function parameters).
-        let var_types = all_vars(&func);
+        let var_types = all_vars(func);
         let vars: HashMap<String, Variable> = var_types
             .iter()
             .enumerate()
@@ -640,8 +648,9 @@ impl<M: Module> Translator<M> {
         builder.finalize();
     }
 
-    /// Generate a proper `main` function that calls the Bril `main` function.
-    fn add_main(&mut self, args: &[bril::Argument], dump: bool) {
+    /// Generate a C-style `main` function that parses command-line arguments and then calls the
+    /// Bril `main` function.
+    fn add_c_main(&mut self, args: &[bril::Argument], dump: bool) -> cranelift_module::FuncId {
         // Declare `main` with argc/argv parameters.
         let pointer_type = self.module.isa().pointer_type();
         let sig = ir::Signature {
@@ -720,9 +729,94 @@ impl<M: Module> Translator<M> {
             .define_function(main_id, &mut self.context)
             .unwrap();
         self.context.clear();
+
+        main_id
     }
 
-    fn compile_prog(&mut self, prog: bril::Program, dump: bool, wrap_main: bool) {
+    /// Add a function that wraps a Bril function to invoke it with arguments that come from
+    /// memory. The new function takes a single pointer as an argument, which points to an array of
+    /// pointers to the arguments.
+    fn add_mem_wrapper(
+        &mut self,
+        name: &str,
+        args: &[bril::Argument],
+        dump: bool,
+    ) -> cranelift_module::FuncId {
+        // Declare wrapper function.
+        let pointer_type = self.module.isa().pointer_type();
+        let sig = ir::Signature {
+            params: vec![ir::AbiParam::new(pointer_type)],
+            returns: vec![],
+            call_conv: self.module.isa().default_call_conv(),
+        };
+        let wrapped_name = format!("{}_wrapper", name);
+        let wrapper_id = self
+            .module
+            .declare_function(&wrapped_name, cranelift_module::Linkage::Export, &sig)
+            .unwrap();
+
+        self.context.func =
+            ir::Function::with_name_signature(ir::ExternalName::user(0, wrapper_id.as_u32()), sig);
+        let mut fn_builder_ctx = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
+
+        let block = builder.create_block();
+        builder.switch_to_block(block);
+        builder.seal_block(block);
+        builder.append_block_params_for_function_params(block);
+
+        // Load every argument from memory.
+        let base_ptr = builder.block_params(block)[0];
+        let ptr_size = pointer_type.bytes();
+        let flags = ir::MemFlags::trusted();
+        let arg_vals: Vec<ir::Value> = args
+            .iter()
+            .enumerate()
+            .map(|(i, arg)| {
+                // Load the pointer.
+                let offset = (ptr_size * (i as u32)) as i32;
+                let arg_ptr = builder.ins().load(pointer_type, flags, base_ptr, offset);
+
+                // Load the argument value. Boolean values are stored as entire byte, so we need to
+                // load the byte first and then get the b1.
+                let arg_type = translate_type(&arg.arg_type);
+                let mem_type = match arg.arg_type {
+                    bril::Type::Bool => ir::types::I8,
+                    _ => arg_type,
+                };
+                let arg_val = builder.ins().load(mem_type, flags, arg_ptr, 0);
+                match arg.arg_type {
+                    bril::Type::Bool => {
+                        builder
+                            .ins()
+                            .icmp_imm(ir::condcodes::IntCC::NotEqual, arg_val, 0)
+                    }
+                    _ => arg_val,
+                }
+            })
+            .collect();
+
+        // Call the "real" main function.
+        let real_func_id = self.funcs[name];
+        let real_func_ref = self.module.declare_func_in_func(real_func_id, builder.func);
+        builder.ins().call(real_func_ref, &arg_vals);
+
+        builder.ins().return_(&[]);
+
+        // Add to the module.
+        if dump {
+            println!("{}", self.context.func.display());
+        }
+        self.module
+            .define_function(wrapper_id, &mut self.context)
+            .unwrap();
+        self.context.clear();
+
+        wrapper_id
+    }
+
+    // TODO The two arguments here (and in fact including the wrapper emission here) is ugly and bad...
+    fn compile_prog(&mut self, prog: &bril::Program, dump: bool) {
         // Declare all functions.
         for func in &prog.functions {
             let id = self.declare_func(func);
@@ -730,19 +824,17 @@ impl<M: Module> Translator<M> {
         }
 
         // Define all functions.
-        for func in prog.functions {
-            // If it's main, (maybe) wrap it in an entry function.
-            if wrap_main && func.name == "main" {
-                self.add_main(&func.args, dump);
-            }
-
-            // Compile every function.
+        for func in &prog.functions {
             let id = self.funcs[&func.name];
-            self.enter_func(&func, id);
+            self.enter_func(func, id);
             self.compile_func(func);
             self.finish_func(id, dump);
         }
     }
+}
+
+fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {
+    funcs.iter().find(|f| f.name == name).unwrap()
 }
 
 #[derive(FromArgs)]
@@ -775,6 +867,12 @@ struct Args {
         default = "String::from(\"none\")"
     )]
     opt_level: String,
+
+    #[argh(
+        positional,
+        description = "arguments for @main function (JIT mode only)"
+    )]
+    args: Vec<String>,
 }
 
 fn main() {
@@ -797,13 +895,45 @@ fn main() {
     let prog = bril::load_program();
 
     if args.jit {
+        // Compile.
         let mut trans = Translator::<JITModule>::new();
-        trans.compile_prog(prog, args.dump_ir, false);
-        let code = trans.get_main();
-        unsafe { run(code) };
+        trans.compile_prog(&prog, args.dump_ir);
+
+        // Add a JIT wrapper for `main`.
+        let main = find_func(&prog.functions, "main");
+        let entry_id = trans.add_mem_wrapper("main", &main.args, args.dump_ir);
+
+        // Parse CLI arguments.
+        if main.args.len() != args.args.len() {
+            panic!(
+                "@main expects {} arguments; got {}",
+                main.args.len(),
+                args.args.len()
+            );
+        }
+        let main_args: Vec<bril::Literal> = main
+            .args
+            .iter()
+            .zip(args.args)
+            .map(|(arg, val_str)| match arg.arg_type {
+                bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
+                bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
+            })
+            .collect();
+
+        // Run the program.
+        let code = trans.get_func_ptr(entry_id);
+        unsafe { run(code, &main_args) };
     } else {
+        // Compile.
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
-        trans.compile_prog(prog, args.dump_ir, true);
+        trans.compile_prog(&prog, args.dump_ir);
+
+        // Add a C-style `main` wrapper.
+        let main = find_func(&prog.functions, "main");
+        trans.add_c_main(&main.args, args.dump_ir);
+
+        // Write object file.
         trans.emit(&args.output);
     }
 }
