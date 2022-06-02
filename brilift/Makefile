@@ -3,7 +3,6 @@ RUST_TARGET := x86_64-apple-darwin
 
 TESTS :=  ../test/interp/core/*.bril
 BENCHMARKS := ../benchmarks/*.bril
-TOML := turnt_brilift_aot.toml
 
 .PHONY: build
 build:
@@ -15,11 +14,13 @@ install:
 
 .PHONY: test
 test: rt.o
-	turnt -c $(TOML) $(TESTS)
+	turnt -c turnt_brilift_aot.toml $(TESTS)
+	turnt -c turnt_brilift_jit.toml $(TESTS)
 
 .PHONY: benchmark
 benchmark: rt.o
-	turnt -c $(TOML) $(BENCHMARKS)
+	turnt -c turnt_brilift_aot.toml $(BENCHMARKS)
+	turnt -c turnt_brilift_jit.toml $(BENCHMARKS)
 
 rt.o: rt.c
 	cc -target $(TARGET) -c -o $@ $^
