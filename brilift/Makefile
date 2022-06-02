@@ -15,7 +15,7 @@ install:
 
 .PHONY: test
 test: rt.o
-	turnt -v -c ../$(TOML) $(TESTS)
+	turnt -c $(TOML) $(TESTS)
 
 .PHONY: benchmark
 benchmark: rt.o

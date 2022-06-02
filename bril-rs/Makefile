@@ -4,7 +4,7 @@ TESTS :=  ../test/print/*.json \
 
 .PHONY: test
 test:
-	turnt --diff -c turnt_bril_rs.toml $(TESTS)
+	turnt -c turnt_bril_rs.toml $(TESTS)
 
 .PHONY: install
 install:
