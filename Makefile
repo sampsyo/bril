@@ -24,7 +24,7 @@ CHECKS := test/parse/*.bril \
 
 .PHONY: test
 test:
-	turnt -v -c ../turnt.toml $(TURNTARGS) $(INTERP_TESTS)
+	turnt -c ../turnt.toml $(TURNTARGS) $(INTERP_TESTS)
 	turnt $(TURNTARGS) $(TESTS)
 
 .PHONY: check
