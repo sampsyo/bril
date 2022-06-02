@@ -1,1 +1,1 @@
-command = "bril2json < {filename} | ../../../brilift/target/release/brilift -j -- {args}"
+command = "bril2json < {filename} | ../../brilift/target/release/brilift -j -- {args}"
