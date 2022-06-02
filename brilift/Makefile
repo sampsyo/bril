@@ -1,8 +1,13 @@
 TARGET := x86_64-unknown-darwin-macho
 RUST_TARGET := x86_64-apple-darwin
 
+# Brilift only supports core Bril for now, so we select those tests &
+# benchmarks.
 TESTS :=  ../test/interp/core/*.bril
-BENCHMARKS := ../benchmarks/*.bril
+BENCHMARKS := $(shell grep -L 'ptr\|float' ../benchmarks/*.bril)
+
+foo:
+	echo $(BENCHMARKS)
 
 .PHONY: build
 build:
