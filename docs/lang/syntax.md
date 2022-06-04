@@ -67,7 +67,7 @@ An Instruction represents a unit of computational work.
 Every instruction must have this field:
 
 * `op`, a string: the *opcode* that determines what the instruction does.
-  (See the [*Operations*](#operations) section, below.)
+  (See the [*Core Language*](core.md) section and the subsequent extension sections for listings of the available opcodes.)
 
 Depending on the opcode, the instruction might also have:
 
