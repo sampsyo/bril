@@ -20,7 +20,7 @@ Each of the extensions to [Bril core][core] is feature gated. To ignore an exten
 There are two helper functions: `load_program` will read a valid Bril program from stdin, and `output_program` will write your Bril program to stdout. Otherwise, this library can be treated like any other [serde][] JSON representation.
 
 Tools
----
+-----
 
 This library supports fully compatible Rust implementations of `bril2txt` and `bril2json`. This library also implements the [import][] extension with a static linker called `brild`.
 
@@ -38,6 +38,7 @@ To maintain consistency and cleanliness, run:
 ```bash
 cargo fmt
 cargo clippy
+cargo doc
 make test
 make features
 ```

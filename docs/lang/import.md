@@ -14,13 +14,13 @@ Implementations of this extension must define a method of resolving the relative
 Bril programs that use the import extension can also be imported and should maintain the above semantics. The programmer is allowed to create cycles of imports.
 
 Syntax
-======
+------
 
 The Bril JSON representation is as shown:
 
     {
         "functions": [
-            ...
+            …
         ],
         "imports": [
             {
