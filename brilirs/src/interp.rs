@@ -35,7 +35,6 @@ struct Environment {
 }
 
 impl Environment {
-  #[inline(always)]
   pub fn new(size: usize) -> Self {
     Self {
       current_pointer: 0,
@@ -45,7 +44,7 @@ impl Environment {
       env: vec![Value::default(); max(size, 50)],
     }
   }
-  #[inline(always)]
+
   pub fn get(&self, ident: &usize) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
@@ -58,7 +57,6 @@ impl Environment {
     self.env.get(past_pointer + *ident).unwrap()
   }
 
-  #[inline(always)]
   pub fn set(&mut self, ident: usize, val: Value) {
     self.env[self.current_pointer + ident] = val;
   }
@@ -105,12 +103,10 @@ impl Default for Heap {
 }
 
 impl Heap {
-  #[inline(always)]
   fn is_empty(&self) -> bool {
     self.memory.is_empty()
   }
 
-  #[inline(always)]
   fn alloc(&mut self, amount: i64) -> Result<Value, InterpError> {
     if amount < 0 {
       return Err(InterpError::CannotAllocSize(amount));
@@ -123,7 +119,6 @@ impl Heap {
     Ok(Value::Pointer(Pointer { base, offset: 0 }))
   }
 
-  #[inline(always)]
   fn free(&mut self, key: &Pointer) -> Result<(), InterpError> {
     if self.memory.remove(&key.base).is_some() && key.offset == 0 {
       Ok(())
@@ -132,7 +127,6 @@ impl Heap {
     }
   }
 
-  #[inline(always)]
   fn write(&mut self, key: &Pointer, val: Value) -> Result<(), InterpError> {
     match self.memory.get_mut(&key.base) {
       Some(vec) if vec.len() > (key.offset as usize) && key.offset >= 0 => {
@@ -143,7 +137,6 @@ impl Heap {
     }
   }
 
-  #[inline(always)]
   fn read(&self, key: &Pointer) -> Result<&Value, InterpError> {
     self
       .memory
@@ -158,14 +151,12 @@ impl Heap {
 }
 
 // A getter function for when you just want the Value enum
-#[inline(always)]
 fn get_value<'a>(vars: &'a Environment, index: usize, args: &[usize]) -> &'a Value {
   vars.get(&args[index])
 }
 
 // A getter function for when you know what constructor of the Value enum you have and
 // you just want the underlying value(like a f64).
-#[inline(always)]
 fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[usize]) -> T
 where
   T: From<&'a Value>,
@@ -218,7 +209,6 @@ impl fmt::Display for Value {
 }
 
 impl From<&bril_rs::Literal> for Value {
-  #[inline(always)]
   fn from(l: &bril_rs::Literal) -> Self {
     match l {
       bril_rs::Literal::Int(i) => Self::Int(*i),
@@ -229,7 +219,6 @@ impl From<&bril_rs::Literal> for Value {
 }
 
 impl From<bril_rs::Literal> for Value {
-  #[inline(always)]
   fn from(l: bril_rs::Literal) -> Self {
     match l {
       bril_rs::Literal::Int(i) => Self::Int(i),
@@ -240,7 +229,6 @@ impl From<bril_rs::Literal> for Value {
 }
 
 impl From<&Value> for i64 {
-  #[inline(always)]
   fn from(value: &Value) -> Self {
     if let Value::Int(i) = value {
       *i
@@ -251,7 +239,6 @@ impl From<&Value> for i64 {
 }
 
 impl From<&Value> for bool {
-  #[inline(always)]
   fn from(value: &Value) -> Self {
     if let Value::Bool(b) = value {
       *b
@@ -262,7 +249,6 @@ impl From<&Value> for bool {
 }
 
 impl From<&Value> for f64 {
-  #[inline(always)]
   fn from(value: &Value) -> Self {
     if let Value::Float(f) = value {
       *f
@@ -273,7 +259,6 @@ impl From<&Value> for f64 {
 }
 
 impl<'a> From<&'a Value> for &'a Pointer {
-  #[inline(always)]
   fn from(value: &'a Value) -> Self {
     if let Value::Pointer(p) = value {
       p
@@ -296,7 +281,6 @@ fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut En
     })
 }
 
-#[inline(always)]
 fn execute_value_op<'a, T: std::io::Write>(
   state: &'a mut State<T>,
   op: &bril_rs::ValueOps,
@@ -462,7 +446,6 @@ fn execute_value_op<'a, T: std::io::Write>(
   Ok(())
 }
 
-#[inline(always)]
 fn execute_effect_op<'a, T: std::io::Write>(
   state: &'a mut State<T>,
   func: &BBFunction,
