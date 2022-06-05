@@ -19,13 +19,11 @@ install:
 
 .PHONY: test
 test: rt.o
-	turnt -c turnt_brilift_aot.toml $(TESTS)
-	turnt -c turnt_brilift_jit.toml $(TESTS)
+	turnt -e brilift-aot -e brilift-jit $(TESTS)
 
 .PHONY: benchmark
 benchmark: rt.o
-	turnt -c turnt_brilift_aot.toml $(BENCHMARKS)
-	turnt -c turnt_brilift_jit.toml $(BENCHMARKS)
+	turnt -e brilift-aot -e brilift-jit $(BENCHMARKS)
 
 rt.o: rt.c
 	cc -target $(TARGET) -c -o $@ $^

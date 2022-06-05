@@ -1,2 +1,8 @@
+[envs.bril-txt]
 command = "bril2txt < {filename}"
+output.bril = "-"
+
+[envs.bril-rs]
+default = false
+command = "cargo run --example bril2txt --manifest-path ../../bril-rs/Cargo.toml < {filename}"
 output.bril = "-"

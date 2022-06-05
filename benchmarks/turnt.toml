@@ -1,3 +1,18 @@
+[envs.brili]
 command = "bril2json < {filename} | brili -p {args}"
 output.out = "-"
 output.prof = "2"
+
+[envs.brilirs]
+default = false
+command = "cargo run --manifest-path ../brilirs/Cargo.toml --quiet -- --text --file {filename} -p {args}"
+output.out = "-"
+output.prof = "2"
+
+[envs.brilift-aot]
+default = false
+command = "bril2json < {filename} | ../brilift/run.sh {args}"
+
+[envs.brilift-jit]
+default = false
+command = "bril2json < {filename} | ../brilift/target/release/brilift -j -- {args}"

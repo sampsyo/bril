@@ -1,3 +1,0 @@
-command = "cargo run --manifest-path ../../brilirs/Cargo.toml -- --check --file {filename} --text {args}"
-return_code = 2
-output = {}

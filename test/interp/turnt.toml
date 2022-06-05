@@ -1,1 +1,14 @@
+[envs.brili]
 command = "bril2json < {filename} | brili {args}"
+
+[envs.brilirs]
+default = false
+command = "cargo run --manifest-path ../../brilirs/Cargo.toml -- --file {filename} --text {args}"
+
+[envs.brilift-aot]
+default = false
+command = "bril2json < {filename} | ../../brilift/run.sh {args}"
+
+[envs.brilift-jit]
+default = false
+command = "bril2json < {filename} | ../../brilift/target/release/brilift -j -- {args}"
