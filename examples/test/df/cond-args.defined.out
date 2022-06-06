@@ -1,0 +1,12 @@
+b1:
+  in:  ∅
+  out: a, b
+left:
+  in:  a, b
+  out: a, b, c
+right:
+  in:  a, b
+  out: a, b, c
+end:
+  in:  a, b, c
+  out: a, b, c, d

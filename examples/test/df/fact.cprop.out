@@ -1,0 +1,12 @@
+b1:
+  in:  ∅
+  out: i: 8, result: 1
+header:
+  in:  cond: ?, i: ?, one: 1, result: ?, zero: 0
+  out: cond: ?, i: ?, one: 1, result: ?, zero: 0
+body:
+  in:  cond: ?, i: ?, one: 1, result: ?, zero: 0
+  out: cond: ?, i: ?, one: 1, result: ?, zero: 0
+end:
+  in:  cond: ?, i: ?, one: 1, result: ?, zero: 0
+  out: cond: ?, i: ?, one: 1, result: ?, zero: 0

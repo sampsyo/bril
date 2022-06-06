@@ -1,0 +1,12 @@
+b1:
+  in:  ∅
+  out: a: 47, b: 42
+left:
+  in:  a: 47, b: 42
+  out: a: 47, b: 1, c: 5
+right:
+  in:  a: 47, b: 42
+  out: a: 2, b: 42, c: 10
+end:
+  in:  a: ?, b: ?, c: ?
+  out: a: ?, b: ?, c: ?, d: ?
