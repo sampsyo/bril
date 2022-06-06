@@ -11,12 +11,17 @@ use std::{env, path::PathBuf};
 include!("src/cli.rs");
 
 fn main() -> Result<(), Error> {
-  let out_dir = match env::var_os("CARGO_MANIFEST_DIR") {
-    None => return Ok(()),
+  // Waiting on https://github.com/rust-lang/cargo/issues/5457 / https://github.com/rust-lang/cargo/issues/6790 to clean this up
+  let out_dir = match env::var_os("OUT_DIR") {
+    None => {println!(
+        "cargo:warning=Did not find out dir",
+      ); return Ok(())},
     Some(out_dir) => out_dir,
   };
 
-  let app = Cli::command();
+  let mut app = Cli::command();
+  app.set_bin_name("brilirs");
+
   let bin_name = app.get_name().to_string();
 
   let shell: Box<dyn Generator> = match env::var("SHELL") {
