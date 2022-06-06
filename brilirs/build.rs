@@ -13,9 +13,10 @@ include!("src/cli.rs");
 fn main() -> Result<(), Error> {
   // Waiting on https://github.com/rust-lang/cargo/issues/5457 / https://github.com/rust-lang/cargo/issues/6790 to clean this up
   let out_dir = match env::var_os("OUT_DIR") {
-    None => {println!(
-        "cargo:warning=Did not find out dir",
-      ); return Ok(())},
+    None => {
+      println!("cargo:warning=Did not find out dir",);
+      return Ok(());
+    }
     Some(out_dir) => out_dir,
   };
 

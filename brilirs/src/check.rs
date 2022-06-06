@@ -8,34 +8,30 @@ use crate::error::InterpError;
 
 use fxhash::FxHashMap;
 
-#[inline(always)]
 const fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
-  if expected != args.len() {
+  if expected == args.len() {
+    Ok(())
+  } else {
     Err(InterpError::BadNumArgs(expected, args.len()))
-  } else {
-    Ok(())
   }
 }
 
-#[inline(always)]
 const fn check_num_funcs(expected: usize, funcs: &[String]) -> Result<(), InterpError> {
-  if expected != funcs.len() {
+  if expected == funcs.len() {
+    Ok(())
+  } else {
     Err(InterpError::BadNumFuncs(expected, funcs.len()))
-  } else {
-    Ok(())
   }
 }
 
-#[inline(always)]
 const fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), InterpError> {
-  if expected != labels.len() {
-    Err(InterpError::BadNumLabels(expected, labels.len()))
-  } else {
+  if expected == labels.len() {
     Ok(())
+  } else {
+    Err(InterpError::BadNumLabels(expected, labels.len()))
   }
 }
 
-#[inline(always)]
 fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(), InterpError> {
   if expected == actual {
     Ok(())
@@ -44,7 +40,6 @@ fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(
   }
 }
 
-#[inline(always)]
 fn update_env<'a>(
   env: &mut FxHashMap<&'a str, &'a Type>,
   dest: &'a str,
@@ -59,7 +54,6 @@ fn update_env<'a>(
   }
 }
 
-#[inline(always)]
 fn get_type<'a>(
   env: &'a FxHashMap<&'a str, &'a Type>,
   index: usize,
@@ -74,7 +68,6 @@ fn get_type<'a>(
     .ok_or_else(|| InterpError::VarUndefined(args[index].to_string()))
 }
 
-#[inline(always)]
 fn get_ptr_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
   match typ {
     bril_rs::Type::Pointer(ptr_type) => Ok(ptr_type),
@@ -488,9 +481,9 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Positi
     done_list.push(b);
     block.exit.iter().for_each(|e| {
       if !done_list.contains(e) && !work_list.contains(e) {
-        work_list.push(*e)
+        work_list.push(*e);
       }
-    })
+    });
   }
 
   Ok(())
@@ -499,6 +492,8 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Positi
 /// Provides validation of Bril programs. This involves
 /// statically checking the types and number of arguments to Bril
 /// instructions.
+/// # Errors
+/// Will return an error if typechecking fails or if the input program is not well-formed.
 pub fn type_check(bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
   bbprog
     .func_index
