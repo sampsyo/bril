@@ -1,3 +1,10 @@
+[envs.brilck]
 command = "bril2json -p < {filename} | brilck"
 return_code = 1
 output.err = "2"
+
+[envs.brilirs]
+default = false
+command = "cargo run --manifest-path ../../brilirs/Cargo.toml -- --check --file {filename} --text {args}"
+return_code = 2
+output = {}

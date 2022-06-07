@@ -1,2 +1,8 @@
+[envs.bril-txt]
 command = "bril2json {args} < {filename}"
+output.json = "-"
+
+[envs.bril-rs]
+default = false
+command = "cargo run --manifest-path ../../bril-rs/bril2json/Cargo.toml -- {args} < {filename}"
 output.json = "-"

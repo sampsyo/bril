@@ -15,11 +15,11 @@ install:
 
 .PHONY: test
 test:
-	turnt -c turnt_brilirs.toml $(TESTS)
+	turnt -e brilirs $(TESTS)
 
 .PHONY: benchmark
 benchmark:
-	turnt -c turnt_brilirs.toml $(BENCHMARKS)
+	turnt -e brilirs $(BENCHMARKS)
 
 .PHONY: release
 release:

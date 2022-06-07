@@ -1,1 +1,11 @@
-command = "bril2json < {filename} | python3 ../../dom.py {args}"
+[envs.dom]
+command = "bril2json < {filename} | python3 ../../dom.py dom"
+output."dom.json" = "-"
+
+[envs.front]
+command = "bril2json < {filename} | python3 ../../dom.py front"
+output."front.json" = "-"
+
+[envs.tree]
+command = "bril2json < {filename} | python3 ../../dom.py tree"
+output."tree.json" = "-"

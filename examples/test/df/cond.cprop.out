@@ -1,0 +1,12 @@
+b1:
+  in:  ∅
+  out: a: 47, b: 42, cond: True
+left:
+  in:  a: 47, b: 42, cond: True
+  out: a: 47, b: 1, c: 5, cond: True
+right:
+  in:  a: 47, b: 42, cond: True
+  out: a: 2, b: 42, c: 10, cond: True
+end:
+  in:  a: ?, b: ?, c: ?, cond: True
+  out: a: ?, b: ?, c: ?, cond: True, d: ?

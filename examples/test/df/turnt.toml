@@ -1,1 +1,11 @@
-command = "bril2json < {filename} | python3 ../../df.py {args}"
+[envs.defined]
+command = "bril2json < {filename} | python3 ../../df.py defined"
+output."defined.out" = "-"
+
+[envs.live]
+command = "bril2json < {filename} | python3 ../../df.py live"
+output."live.out" = "-"
+
+[envs.cprop]
+command = "bril2json < {filename} | python3 ../../df.py cprop"
+output."cprop.out" = "-"

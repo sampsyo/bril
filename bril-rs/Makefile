@@ -4,7 +4,7 @@ TESTS :=  ../test/print/*.json \
 
 .PHONY: test
 test:
-	turnt -c turnt_bril_rs.toml $(TESTS)
+	turnt -e bril-rs $(TESTS)
 
 .PHONY: install
 install:

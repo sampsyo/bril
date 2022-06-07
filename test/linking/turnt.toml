@@ -1,1 +1,2 @@
+[envs.bril-rs]
 command = "cargo run --manifest-path ../../bril-rs/brild/Cargo.toml -- --file {filename} --libs {args} | cargo run --manifest-path ../../brilirs/Cargo.toml"
