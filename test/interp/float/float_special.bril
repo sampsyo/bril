@@ -1,0 +1,8 @@
+@main {
+  v0: float = const 0.0;
+  v1: float = const -0.0;
+  res: bool = feq v0 v1;
+  print v0;
+  print v1;
+  print res;
+}

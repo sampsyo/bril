@@ -37,6 +37,36 @@
           "dest": "v4",
           "op": "fmul",
           "type": "float"
+        },
+        {
+          "dest": "v5",
+          "op": "const",
+          "type": "float",
+          "value": 1.0
+        },
+        {
+          "dest": "v6",
+          "op": "const",
+          "type": "float",
+          "value": 1000000.0
+        },
+        {
+          "dest": "v7",
+          "op": "const",
+          "type": "float",
+          "value": 1e-6
+        },
+        {
+          "dest": "v8",
+          "op": "const",
+          "type": "float",
+          "value": -1000000.0
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "float",
+          "value": 110000000000.0
         }
       ],
       "name": "main"
