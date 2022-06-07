@@ -18,6 +18,3 @@ Cargo.lock
 # Intellij
 .idea/*
 *.iml
-
-# tab completions file
-brilirs.*

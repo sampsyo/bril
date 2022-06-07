@@ -58,6 +58,7 @@ pub enum InterpError {
 }
 
 impl InterpError {
+  #[must_use]
   pub fn add_pos(self, pos: Option<Position>) -> PositionalInterpError {
     match self {
       Self::PositionalInterpErrorConversion(e) => e,

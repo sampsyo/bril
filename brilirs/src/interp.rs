@@ -35,7 +35,6 @@ struct Environment {
 }
 
 impl Environment {
-  #[inline(always)]
   pub fn new(size: usize) -> Self {
     Self {
       current_pointer: 0,
@@ -45,7 +44,7 @@ impl Environment {
       env: vec![Value::default(); max(size, 50)],
     }
   }
-  #[inline(always)]
+
   pub fn get(&self, ident: &usize) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
@@ -58,7 +57,6 @@ impl Environment {
     self.env.get(past_pointer + *ident).unwrap()
   }
 
-  #[inline(always)]
   pub fn set(&mut self, ident: usize, val: Value) {
     self.env[self.current_pointer + ident] = val;
   }
@@ -79,7 +77,7 @@ impl Environment {
           self.current_pointer + self.current_frame_size,
         ),
         Value::default(),
-      )
+      );
     }
   }
 
@@ -105,25 +103,20 @@ impl Default for Heap {
 }
 
 impl Heap {
-  #[inline(always)]
   fn is_empty(&self) -> bool {
     self.memory.is_empty()
   }
 
-  #[inline(always)]
   fn alloc(&mut self, amount: i64) -> Result<Value, InterpError> {
-    if amount < 0 {
-      return Err(InterpError::CannotAllocSize(amount));
-    }
+    let amount: usize = amount
+      .try_into()
+      .map_err(|_| InterpError::CannotAllocSize(amount))?;
     let base = self.base_num_counter;
     self.base_num_counter += 1;
-    self
-      .memory
-      .insert(base, vec![Value::default(); amount as usize]);
+    self.memory.insert(base, vec![Value::default(); amount]);
     Ok(Value::Pointer(Pointer { base, offset: 0 }))
   }
 
-  #[inline(always)]
   fn free(&mut self, key: &Pointer) -> Result<(), InterpError> {
     if self.memory.remove(&key.base).is_some() && key.offset == 0 {
       Ok(())
@@ -132,23 +125,31 @@ impl Heap {
     }
   }
 
-  #[inline(always)]
   fn write(&mut self, key: &Pointer, val: Value) -> Result<(), InterpError> {
+    // Will check that key.offset is >=0
+    let offset: usize = key
+      .offset
+      .try_into()
+      .map_err(|_| InterpError::InvalidMemoryAccess(key.base, key.offset))?;
     match self.memory.get_mut(&key.base) {
-      Some(vec) if vec.len() > (key.offset as usize) && key.offset >= 0 => {
-        vec[key.offset as usize] = val;
+      Some(vec) if vec.len() > offset => {
+        vec[offset] = val;
         Ok(())
       }
       Some(_) | None => Err(InterpError::InvalidMemoryAccess(key.base, key.offset)),
     }
   }
 
-  #[inline(always)]
   fn read(&self, key: &Pointer) -> Result<&Value, InterpError> {
+    // Will check that key.offset is >=0
+    let offset: usize = key
+      .offset
+      .try_into()
+      .map_err(|_| InterpError::InvalidMemoryAccess(key.base, key.offset))?;
     self
       .memory
       .get(&key.base)
-      .and_then(|vec| vec.get(key.offset as usize))
+      .and_then(|vec| vec.get(offset))
       .ok_or(InterpError::InvalidMemoryAccess(key.base, key.offset))
       .and_then(|val| match val {
         Value::Uninitialized => Err(InterpError::UsingUninitializedMemory),
@@ -158,14 +159,12 @@ impl Heap {
 }
 
 // A getter function for when you just want the Value enum
-#[inline(always)]
 fn get_value<'a>(vars: &'a Environment, index: usize, args: &[usize]) -> &'a Value {
   vars.get(&args[index])
 }
 
 // A getter function for when you know what constructor of the Value enum you have and
 // you just want the underlying value(like a f64).
-#[inline(always)]
 fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[usize]) -> T
 where
   T: From<&'a Value>,
@@ -218,7 +217,6 @@ impl fmt::Display for Value {
 }
 
 impl From<&bril_rs::Literal> for Value {
-  #[inline(always)]
   fn from(l: &bril_rs::Literal) -> Self {
     match l {
       bril_rs::Literal::Int(i) => Self::Int(*i),
@@ -229,7 +227,6 @@ impl From<&bril_rs::Literal> for Value {
 }
 
 impl From<bril_rs::Literal> for Value {
-  #[inline(always)]
   fn from(l: bril_rs::Literal) -> Self {
     match l {
       bril_rs::Literal::Int(i) => Self::Int(i),
@@ -240,7 +237,6 @@ impl From<bril_rs::Literal> for Value {
 }
 
 impl From<&Value> for i64 {
-  #[inline(always)]
   fn from(value: &Value) -> Self {
     if let Value::Int(i) = value {
       *i
@@ -251,7 +247,6 @@ impl From<&Value> for i64 {
 }
 
 impl From<&Value> for bool {
-  #[inline(always)]
   fn from(value: &Value) -> Self {
     if let Value::Bool(b) = value {
       *b
@@ -262,7 +257,6 @@ impl From<&Value> for bool {
 }
 
 impl From<&Value> for f64 {
-  #[inline(always)]
   fn from(value: &Value) -> Self {
     if let Value::Float(f) = value {
       *f
@@ -273,7 +267,6 @@ impl From<&Value> for f64 {
 }
 
 impl<'a> From<&'a Value> for &'a Pointer {
-  #[inline(always)]
   fn from(value: &'a Value) -> Self {
     if let Value::Pointer(p) = value {
       p
@@ -293,21 +286,23 @@ fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut En
     .for_each(|(arg_name, expected_arg)| {
       let arg = vars.get_from_last_frame(arg_name).clone();
       vars.set(*expected_arg, arg);
-    })
+    });
 }
 
-#[inline(always)]
 fn execute_value_op<'a, T: std::io::Write>(
   state: &'a mut State<T>,
-  op: &bril_rs::ValueOps,
+  op: bril_rs::ValueOps,
   dest: usize,
   args: &[usize],
   labels: &[String],
   funcs: &[usize],
   last_label: Option<&String>,
 ) -> Result<(), InterpError> {
-  use bril_rs::ValueOps::*;
-  match *op {
+  use bril_rs::ValueOps::{
+    Add, Alloc, And, Call, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt, Fle, Flt, Fmul, Fsub, Ge, Gt, Id,
+    Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
+  };
+  match op {
     Add => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
       let arg1 = get_arg::<i64>(&state.env, 1, args);
@@ -428,7 +423,7 @@ fn execute_value_op<'a, T: std::io::Write>(
 
       state.env.pop_frame();
 
-      state.env.set(dest, result)
+      state.env.set(dest, result);
     }
     Phi => match last_label {
       None => return Err(InterpError::NoLastLabel),
@@ -445,34 +440,35 @@ fn execute_value_op<'a, T: std::io::Write>(
     Alloc => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
       let res = state.heap.alloc(arg0)?;
-      state.env.set(dest, res)
+      state.env.set(dest, res);
     }
     Load => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let res = state.heap.read(arg0)?;
-      state.env.set(dest, res.clone())
+      state.env.set(dest, res.clone());
     }
     PtrAdd => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_arg::<i64>(&state.env, 1, args);
       let res = Value::Pointer(arg0.add(arg1));
-      state.env.set(dest, res)
+      state.env.set(dest, res);
     }
   }
   Ok(())
 }
 
-#[inline(always)]
 fn execute_effect_op<'a, T: std::io::Write>(
   state: &'a mut State<T>,
   func: &BBFunction,
-  op: &bril_rs::EffectOps,
+  op: bril_rs::EffectOps,
   args: &[usize],
   funcs: &[usize],
   curr_block: &BasicBlock,
   next_block_idx: &mut Option<usize>,
 ) -> Result<Option<Value>, InterpError> {
-  use bril_rs::EffectOps::*;
+  use bril_rs::EffectOps::{
+    Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store,
+  };
   match op {
     Jump => {
       *next_block_idx = Some(curr_block.exit[0]);
@@ -517,11 +513,11 @@ fn execute_effect_op<'a, T: std::io::Write>(
     Store => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_value(&state.env, 1, args);
-      state.heap.write(arg0, arg1.clone())?
+      state.heap.write(arg0, arg1.clone())?;
     }
     Free => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-      state.heap.free(arg0)?
+      state.heap.free(arg0)?;
     }
     Speculate | Commit | Guard => unimplemented!(),
   }
@@ -542,7 +538,7 @@ fn execute<'a, T: std::io::Write>(
     let curr_instrs = &curr_block.instrs;
     let curr_numified_instrs = &curr_block.numified_instrs;
     // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
-    state.instruction_count += curr_instrs.len() as u32;
+    state.instruction_count += curr_instrs.len();
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
@@ -565,11 +561,14 @@ fn execute<'a, T: std::io::Write>(
           // Integer literals can be promoted to Floating point
           if const_type == &bril_rs::Type::Float {
             match value {
+              // So yes, as clippy points out, you technically lose precision here on the `*i as f64` cast. On the other hand, you already give up precision when you start using floats and I haven't been able to find a case where you are giving up precision in the cast that you don't already lose by using floating points.
+              // So it's probably fine unless proven otherwise.
+              #[allow(clippy::cast_precision_loss)]
               bril_rs::Literal::Int(i) => state
                 .env
                 .set(numified_code.dest.unwrap(), Value::Float(*i as f64)),
               bril_rs::Literal::Float(f) => {
-                state.env.set(numified_code.dest.unwrap(), Value::Float(*f))
+                state.env.set(numified_code.dest.unwrap(), Value::Float(*f));
               }
               bril_rs::Literal::Bool(_) => unreachable!(),
             }
@@ -590,7 +589,7 @@ fn execute<'a, T: std::io::Write>(
         } => {
           execute_value_op(
             state,
-            op,
+            *op,
             numified_code.dest.unwrap(),
             &numified_code.args,
             labels,
@@ -609,7 +608,7 @@ fn execute<'a, T: std::io::Write>(
           result = execute_effect_op(
             state,
             func,
-            op,
+            *op,
             &numified_code.args,
             &numified_code.funcs,
             curr_block,
@@ -691,7 +690,7 @@ struct State<'a, T: std::io::Write> {
   env: Environment,
   heap: Heap,
   out: T,
-  instruction_count: u32,
+  instruction_count: usize,
 }
 
 impl<'a, T: std::io::Write> State<'a, T> {
@@ -706,7 +705,11 @@ impl<'a, T: std::io::Write> State<'a, T> {
   }
 }
 
-/// The entrance point to the interpreter. It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [std::io::Write]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [std::io::stderr]
+/// The entrance point to the interpreter. It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [`std::io::Write`]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [`std::io::stderr`]
+/// # Panics
+/// This should not panic with normal use except if there is a bug or if you are using an unimplemented feature
+/// # Errors
+/// Will error on malformed `BBProgram`, like if the original Bril program was not well-formed
 pub fn execute_main<T: std::io::Write, U: std::io::Write>(
   prog: &BBProgram,
   out: T,

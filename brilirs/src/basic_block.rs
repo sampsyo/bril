@@ -22,6 +22,9 @@ impl TryFrom<Program> for BBProgram {
 
 impl BBProgram {
   /// Converts a [`Program`] into a [`BBProgram`]
+  /// # Errors
+  /// Will return an error if the program is invalid in some way.
+  /// Reasons include the `Program` have multiple functions with the same name, a function name is not found, or a label is expected by an instruction but missing.
   pub fn new(prog: Program) -> Result<Self, InterpError> {
     let num_funcs = prog.functions.len();
 
@@ -39,17 +42,18 @@ impl BBProgram {
       .collect::<Result<Vec<BBFunction>, InterpError>>()?;
 
     let bb = Self {
-      index_of_main: func_map.get(&"main".to_string()).cloned(),
+      index_of_main: func_map.get(&"main".to_string()).copied(),
       func_index,
     };
-    if func_map.len() != num_funcs {
-      Err(InterpError::DuplicateFunction)
-    } else {
+    if func_map.len() == num_funcs {
       Ok(bb)
+    } else {
+      Err(InterpError::DuplicateFunction)
     }
   }
 
   #[doc(hidden)]
+  #[must_use]
   pub fn get(&self, func_name: usize) -> Option<&BBFunction> {
     self.func_index.get(func_name)
   }
@@ -137,7 +141,7 @@ impl NumifiedInstruction {
           .map(|f| {
             func_map
               .get(f)
-              .cloned()
+              .copied()
               .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(*pos))
           })
           .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
@@ -155,7 +159,7 @@ impl NumifiedInstruction {
           .map(|f| {
             func_map
               .get(f)
-              .cloned()
+              .copied()
               .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(*pos))
           })
           .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
@@ -182,7 +186,7 @@ pub struct BBFunction {
 impl BBFunction {
   fn new(f: Function, func_map: &FxHashMap<String, usize>) -> Result<Self, InterpError> {
     let (mut func, label_map) = Self::find_basic_blocks(f, func_map)?;
-    func.build_cfg(label_map)?;
+    func.build_cfg(&label_map)?;
     Ok(func)
   }
 
@@ -278,7 +282,7 @@ impl BBFunction {
     ))
   }
 
-  fn build_cfg(&mut self, label_map: FxHashMap<String, usize>) -> Result<(), InterpError> {
+  fn build_cfg(&mut self, label_map: &FxHashMap<String, usize>) -> Result<(), InterpError> {
     if self.blocks.is_empty() {
       return Ok(());
     }
