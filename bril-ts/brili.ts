@@ -577,7 +577,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   case "print": {
     let args = instr.args || [];
-    let values = args.map(i => get(state.env, i).toString());
+    let values = args.map(function (i) { let val = get(state.env, i); if (Object.is(-0, val)) { return "-0"} else {return val.toString()}});
     console.log(...values);
     return NEXT;
   }
