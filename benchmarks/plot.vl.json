@@ -1,0 +1,16 @@
+{
+  "data": {"url": "bench.csv"},
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "bench",
+      "type": "ordinal"
+    },
+    "y": {
+      "field": "speedup",
+      "type": "quantitative"
+    },
+    "xOffset": { "field": "mode" },
+    "color": { "field": "mode" }
+  }
+}
