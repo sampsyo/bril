@@ -34,7 +34,7 @@ rt.o: rt.c
 	cc $(CFLAGS) -c -o $@ $^
 
 %.o: %.bril
-	bril2json < $^ | ./target/debug/brilift $(BRILFLAGS) -o $@
+	bril2json < $^ | ./target/release/brilift $(BRILFLAGS) -o $@
 
 %: %.o rt.o
 	cc $(CFLAGS) -o $@ $^
