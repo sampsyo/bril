@@ -31,27 +31,29 @@ def get_results(bench_files):
 
 def summarize(bench_files):
     means = defaultdict(dict)
-
-    writer = csv.DictWriter(sys.stdout, ['bench', 'mode', 'mean', 'stddev'])
-    writer.writeheader()
-    for bench, mode, res in get_results(bench_files):
+    results = list(get_results(bench_files))
+    for bench, mode, res in results:
         means[bench][mode] = res['mean']
+
+    writer = csv.DictWriter(
+        sys.stdout,
+        ['bench', 'mode', 'mean', 'stddev', 'speedup'],
+    )
+    writer.writeheader()
+    speedups = {k: [] for k in MODES}
+    for bench, mode, res in results:
+        speedup = means[bench][BASELINE] / res['mean']
+        print('{} {} {:.2f}x'.format(bench, mode, speedup), file=sys.stderr)
+        speedups[mode].append(speedup)
+
         writer.writerow({
             'bench': bench,
             'mode': mode,
             'mean': res['mean'],
-            'stddev': res['stddev']
+            'stddev': res['stddev'],
+            'speedup': speedup,
         })
 
-    speedups = {k: [] for k in MODES}
-    for bench, modes in means.items():
-        baseline = modes[BASELINE]
-        print(bench, file=sys.stderr, end=': ')
-        for mode in MODES:
-            speedup = baseline / modes[mode]
-            speedups[mode].append(speedup)
-            print('{} {:.2f}x'.format(mode, speedup), file=sys.stderr, end=' ')
-        print(file=sys.stderr)
     for mode, speedup_list in speedups.items():
         print('{}: {:.2f}x'.format(
             mode,
