@@ -4,4 +4,9 @@
   v2: float = const 0.3;
   v3: float = fadd v0 v1;
   v4: float = fmul v2 v2;
+  v5: float = const 1.;
+  v6: float = const 1e6;
+  # v7: float = const 1E-6;
+  v8: float = const -1E+6;
+  v9: float = const +.11e12;
 }
