@@ -8,7 +8,8 @@ from collections import defaultdict
 
 MODES = {
     'brili': 'brili ',
-    'brilift-jit': 'brilift -j'
+    'brilift-jit': 'brilift -j',
+    'brilirs': 'brilirs ',
 }
 BASELINE = 'brili'
 

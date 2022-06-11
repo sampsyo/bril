@@ -22,6 +22,9 @@ command = "bril2json < {filename} | ../brilift/target/release/brilift -j -- {arg
 default = false
 command = """
 bril2json < {filename} > {base}.json
-hyperfine --warmup 3 --export-json bench.json -L interp 'brili','../brilift/target/release/brilift -j --' '{{interp}} {args} < {base}.json'
+hyperfine --warmup 3 --export-json bench.json -L interp 'brili',\
+'../brilift/target/release/brilift -j --',\
+'../brilirs/target/release/brilirs' \
+'{{interp}} {args} < {base}.json'
 rm -f {base}.json"""
 output."bench.json" = "bench.json"
