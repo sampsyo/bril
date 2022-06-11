@@ -16,3 +16,12 @@ command = "bril2json < {filename} | ../brilift/run.sh {args}"
 [envs.brilift-jit]
 default = false
 command = "bril2json < {filename} | ../brilift/target/release/brilift -j -- {args}"
+
+# Execution speed benchmark.
+[envs.bench]
+default = false
+command = """
+bril2json < {filename} > {base}.json
+hyperfine --warmup 3 --export-json bench.json -L interp 'brili','../brilift/target/release/brilift -j --' '{{interp}} {args} < {base}.json'
+rm -f {base}.json"""
+output."bench.json" = "bench.json"
