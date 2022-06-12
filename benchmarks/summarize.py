@@ -4,12 +4,14 @@ import sys
 import os
 import csv
 import statistics
+import re
 from collections import defaultdict
 
 MODES = {
-    'brili': 'brili ',
-    'brilift-jit': 'brilift -j',
-    'brilirs': 'brilirs ',
+    'brili': r'\bbrili\b',
+    'brilirs': r'\bbrilirs\b',
+    'brilift-jit': r'\bbrilift -j',
+    'brilift-aot': r'^\./[^/]+ '
 }
 BASELINE = 'brili'
 
@@ -22,7 +24,7 @@ def get_results(bench_files):
         bench, _ = os.path.basename(fn).split('.', 1)
         for res in bench_data["results"]:
             for mode, pat in MODES.items():
-                if pat in res['command']:
+                if re.search(pat, res['command']):
                     break
             else:
                 assert False, "unknown benchmark command"
