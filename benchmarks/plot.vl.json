@@ -1,0 +1,27 @@
+{
+  "data": {"url": "bench.csv"},
+  "mark": "bar",
+  "transform": [
+    {"filter": "datum.mode !== 'brili'"}
+  ],
+  "encoding": {
+    "x": {
+      "title": "",
+      "field": "bench",
+      "type": "ordinal"
+    },
+    "y": {
+      "title": "speedup over brili",
+      "field": "speedup",
+      "type": "quantitative",
+      "axis": {
+        "labelExpr": "datum.label + '×'"
+      }
+    },
+    "xOffset": { "field": "mode" },
+    "color": {
+      "title": "implementation",
+      "field": "mode"
+    }
+  }
+}

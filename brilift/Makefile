@@ -1,10 +1,15 @@
-TARGET := x86_64-unknown-darwin-macho
-RUST_TARGET := x86_64-apple-darwin
+# Set TARGET to cross-compile. Brilift's AOT mode doesn't yet support macOS on
+# ARM, so on Apple Silicon devices, you'll need to do this to run compiled
+# programs through Rosetta 2:
+# TARGET := x86_64-unknown-darwin-macho
 
 # Brilift only supports core Bril for now, so we select those tests &
 # benchmarks.
 TESTS :=  ../test/interp/core/*.bril
 BENCHMARKS := $(shell grep -L 'ptr\|float' ../benchmarks/*.bril)
+
+CFLAGS := $(if $(TARGET),-target $(TARGET))
+BRILFLAGS := $(if $(TARGET),-t $(TARGET))
 
 foo:
 	echo $(BENCHMARKS)
@@ -26,10 +31,10 @@ benchmark: rt.o
 	turnt -e brilift-aot -e brilift-jit $(BENCHMARKS)
 
 rt.o: rt.c
-	cc -target $(TARGET) -c -o $@ $^
+	cc $(CFLAGS) -c -o $@ $^
 
 %.o: %.bril
-	bril2json < $^ | ./target/debug/brilift -t $(TARGET) -o $@
+	bril2json < $^ | ./target/release/brilift $(BRILFLAGS) -o $@
 
 %: %.o rt.o
-	cc -target $(TARGET) -o $@ $^
+	cc $(CFLAGS) -o $@ $^
