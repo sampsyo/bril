@@ -9,3 +9,4 @@ __pycache__
 .vscode
 
 **/*.o
+.DS_Store

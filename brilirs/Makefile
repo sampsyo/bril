@@ -12,6 +12,11 @@ BENCHMARKS := ../benchmarks/core/*.bril \
 ../benchmarks/mem/*.bril \
 ../benchmarks/mixed/*.bril \
 
+LONGBENCHMARKS := ../benchmarks/long/*.bril \
+../benchmarks/core/ackermann.bril \
+../benchmarks/mem/eight-queens.bril \
+../benchmarks/mem/mat-mul.bril \
+
 .PHONY: install
 install:
 	RUSTFLAGS="-C target-cpu=native" cargo install --path .
@@ -37,12 +42,24 @@ pgo:
 pgo-install:
 	RUSTFLAGS="-Cprofile-use=$(shell pwd)/merged.profdata" cargo install --path .
 
-.PHONY: compare
-compare: release
-	./benchmark.sh
-	#hyperfine --export-markdown results.md --warmup 5 \
-	-L interp brili,./target/release/brilirs \
-	"bril2json < ../benchmarks/check-primes.bril | {interp} -p 50"
+# `make bench` or `make longbench` to get performance metrics
+# `make bench_rust.csv` to get the harmonic mean of each benchmark
+# `make plot` to get a plot of your evaluation
+
+.PHONY: bench
+bench:
+	turnt -c ../brilirs/turnt.toml -e bench --save $(BENCHMARKS)
+
+.PHONY: longbench
+longbench:
+	turnt -c ../brilirs/turnt.toml -e bench --save $(LONGBENCHMARKS)
+
+bench_rust.csv: $(wildcard ../benchmarks/**/*.bench_rust.json)
+	python3 ../benchmarks/summarize.py $^ > $@
+
+plot: plot.svg
+%.svg: %.vl.json bench_rust.csv
+	npx -p vega -p vega-lite vl2svg $*.vl.json > $@
 
 # This is primarily used for running examples and debuging a bril program
 .PHONY: example
