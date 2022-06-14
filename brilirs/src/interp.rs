@@ -496,9 +496,6 @@ fn execute_effect_op<'a, T: std::io::Write>(
           .collect::<Vec<String>>()
           .join(" ")
       )
-      // We call flush here in case `out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
-      // Otherwise we would expect this flush to be a nop.
-      .and_then(|_| state.out.flush())
       .map_err(|e| InterpError::IoError(Box::new(e)))?;
     }
     Nop => {}
@@ -740,6 +737,11 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
   if !state.heap.is_empty() {
     return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos));
   }
+
+  state
+    .out
+    .flush()
+    .map_err(|e| InterpError::IoError(Box::new(e)))?;
 
   if profiling {
     writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
