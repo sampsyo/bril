@@ -16,7 +16,7 @@ void _bril_print_bool(char i) {
 }
 
 void _bril_print_float(double f) {
-    printf("%.16lg", f);
+    printf("%.17lg", f);
 }
 
 void _bril_print_sep() {
