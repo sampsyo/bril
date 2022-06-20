@@ -186,11 +186,11 @@ fn translate_intcc(op: bril::ValueOps) -> IntCC {
 /// Translate Bril opcodes that correspond to CLIF floating point comparisons.
 fn translate_floatcc(op: bril::ValueOps) -> FloatCC {
     match op {
-        bril::ValueOps::Lt => FloatCC::LessThan,
-        bril::ValueOps::Le => FloatCC::LessThanOrEqual,
-        bril::ValueOps::Eq => FloatCC::Equal,
-        bril::ValueOps::Ge => FloatCC::GreaterThanOrEqual,
-        bril::ValueOps::Gt => FloatCC::GreaterThan,
+        bril::ValueOps::Flt => FloatCC::LessThan,
+        bril::ValueOps::Fle => FloatCC::LessThanOrEqual,
+        bril::ValueOps::Feq => FloatCC::Equal,
+        bril::ValueOps::Fge => FloatCC::GreaterThanOrEqual,
+        bril::ValueOps::Fgt => FloatCC::GreaterThan,
         _ => panic!("not a comparison opcode: {}", op),
     }
 }
