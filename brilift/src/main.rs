@@ -4,7 +4,7 @@ use argh::FromArgs;
 use bril_rs as bril;
 use core::mem;
 use cranelift_codegen::entity::EntityRef;
-use cranelift_codegen::ir::condcodes::{IntCC, FloatCC};
+use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::settings::Configurable;
 use cranelift_codegen::{ir, isa, settings};
@@ -460,7 +460,11 @@ fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
     builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
 }
 
-fn compile_const(builder: &mut FunctionBuilder, typ: &bril::Type, lit: &bril::Literal) -> ir::Value {
+fn compile_const(
+    builder: &mut FunctionBuilder,
+    typ: &bril::Type,
+    lit: &bril::Literal,
+) -> ir::Value {
     match typ {
         bril::Type::Int => {
             let val = match lit {
@@ -581,12 +585,14 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             | bril::ValueOps::Fmul
             | bril::ValueOps::Fdiv => {
                 gen_binary(builder, &env.vars, args, dest, op_type, translate_op(*op));
-            },
+            }
             bril::ValueOps::Flt
             | bril::ValueOps::Fle
             | bril::ValueOps::Feq
             | bril::ValueOps::Fge
-            | bril::ValueOps::Fgt => gen_fcmp(builder, &env.vars, args, dest, translate_floatcc(*op)),
+            | bril::ValueOps::Fgt => {
+                gen_fcmp(builder, &env.vars, args, dest, translate_floatcc(*op))
+            }
         },
     }
 }
