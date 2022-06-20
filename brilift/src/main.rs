@@ -460,20 +460,43 @@ fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
     builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
 }
 
+fn compile_const(builder: &mut FunctionBuilder, typ: &bril::Type, lit: &bril::Literal) -> ir::Value {
+    match typ {
+        bril::Type::Int => {
+            let val = match lit {
+                bril::Literal::Int(i) => *i,
+                _ => panic!("incorrect literal type for int"),
+            };
+            builder.ins().iconst(ir::types::I64, val)
+        }
+        bril::Type::Bool => {
+            let val = match lit {
+                bril::Literal::Bool(b) => *b,
+                _ => panic!("incorrect literal type for bool"),
+            };
+            builder.ins().bconst(ir::types::B1, val)
+        }
+        bril::Type::Float => {
+            let val = match lit {
+                bril::Literal::Float(f) => *f,
+                bril::Literal::Int(i) => *i as f64,
+                _ => panic!("incorrect literal type for float"),
+            };
+            builder.ins().f64const(val)
+        }
+    }
+}
+
 /// Compile one Bril instruction into CLIF.
 fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &CompileEnv) {
     match inst {
         bril::Instruction::Constant {
             dest,
             op: _,
-            const_type: _,
+            const_type: typ,
             value,
         } => {
-            let val = match value {
-                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
-                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
-                bril::Literal::Float(f) => builder.ins().f64const(*f),
-            };
+            let val = compile_const(builder, typ, value);
             builder.def_var(env.vars[dest], val);
         }
         bril::Instruction::Effect {
