@@ -9,6 +9,11 @@ pub extern "C" fn print_bool(b: bool) {
 }
 
 #[no_mangle]
+pub extern "C" fn print_float(f: f64) {
+    print!("{}", f);
+}
+
+#[no_mangle]
 pub extern "C" fn print_sep() {
     print!(" ");
 }

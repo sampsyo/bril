@@ -15,6 +15,10 @@ void _bril_print_bool(char i) {
     }
 }
 
+void _bril_print_float(double f) {
+    printf("%.16lg", f);
+}
+
 void _bril_print_sep() {
     printf(" ");
 }
@@ -33,4 +37,11 @@ int64_t _bril_parse_int(char **args, int64_t idx) {
 char _bril_parse_bool(char **args, int64_t idx) {
     char *arg = args[idx];
     return !strcmp(arg, "true");
+}
+
+double _bril_parse_float(char **args, int64_t idx) {
+    char *arg = args[idx];
+    double res;
+    sscanf(arg, "%lf", &res);
+    return res;
 }

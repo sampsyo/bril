@@ -1,4 +1,4 @@
-CORE_BENCH := $(shell grep -L 'ptr\|float' *.bril)
+CORE_BENCH := $(shell grep -L 'ptr' *.bril)
 
 .PHONY: bench clean plot
 bench:

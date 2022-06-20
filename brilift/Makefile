@@ -5,8 +5,8 @@
 
 # Brilift only supports core Bril for now, so we select those tests &
 # benchmarks.
-TESTS :=  ../test/interp/core/*.bril
-BENCHMARKS := $(shell grep -L 'ptr\|float' ../benchmarks/*.bril)
+TESTS := ../test/interp/core/*.bril ../test/interp/float/*.bril
+BENCHMARKS := $(shell grep -L 'ptr' ../benchmarks/*.bril)
 
 CFLAGS := $(if $(TARGET),-target $(TARGET))
 BRILFLAGS := $(if $(TARGET),-t $(TARGET))
