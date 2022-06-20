@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
+#include <math.h>
 
 void _bril_print_int(int64_t i) {
     printf("%" PRId64, i);
@@ -16,7 +17,17 @@ void _bril_print_bool(char i) {
 }
 
 void _bril_print_float(double f) {
-    printf("%.17lg", f);
+    if (isnan(f)) {
+        printf("NaN");
+    } else if (isinf(f)) {
+        if (f < 0) {
+            printf("-Infinity");
+        } else {
+            printf("Infinity");
+        }
+    } else {
+        printf("%.17lg", f);
+    }
 }
 
 void _bril_print_sep() {
