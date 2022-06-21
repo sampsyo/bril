@@ -4,7 +4,7 @@ use argh::FromArgs;
 use bril_rs as bril;
 use core::mem;
 use cranelift_codegen::entity::EntityRef;
-use cranelift_codegen::ir::condcodes::IntCC;
+use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::settings::Configurable;
 use cranelift_codegen::{ir, isa, settings};
@@ -22,6 +22,7 @@ use std::fs;
 enum RTFunc {
     PrintInt,
     PrintBool,
+    PrintFloat,
     PrintSep,
     PrintEnd,
 }
@@ -36,6 +37,11 @@ impl RTFunc {
             },
             Self::PrintBool => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::B1)],
+                returns: vec![],
+                call_conv,
+            },
+            Self::PrintFloat => ir::Signature {
+                params: vec![ir::AbiParam::new(ir::types::F64)],
                 returns: vec![],
                 call_conv,
             },
@@ -56,6 +62,7 @@ impl RTFunc {
         match self {
             Self::PrintInt => "_bril_print_int",
             Self::PrintBool => "_bril_print_bool",
+            Self::PrintFloat => "_bril_print_float",
             Self::PrintSep => "_bril_print_sep",
             Self::PrintEnd => "_bril_print_end",
         }
@@ -65,6 +72,7 @@ impl RTFunc {
         match self {
             RTFunc::PrintInt => rt::print_int as *const u8,
             RTFunc::PrintBool => rt::print_bool as *const u8,
+            RTFunc::PrintFloat => rt::print_float as *const u8,
             RTFunc::PrintSep => rt::print_sep as *const u8,
             RTFunc::PrintEnd => rt::print_end as *const u8,
         }
@@ -74,9 +82,11 @@ impl RTFunc {
 /// Runtime functions used in the native `main` function, which dispatches to the proper Bril
 /// `main` function.
 #[derive(Debug, Enum)]
+#[allow(clippy::enum_variant_names)]
 enum RTSetupFunc {
     ParseInt,
     ParseBool,
+    ParseFloat,
 }
 
 impl RTSetupFunc {
@@ -102,6 +112,14 @@ impl RTSetupFunc {
                 returns: vec![ir::AbiParam::new(ir::types::B1)],
                 call_conv,
             },
+            Self::ParseFloat => ir::Signature {
+                params: vec![
+                    ir::AbiParam::new(pointer_type),
+                    ir::AbiParam::new(ir::types::I64),
+                ],
+                returns: vec![ir::AbiParam::new(ir::types::F64)],
+                call_conv,
+            },
         }
     }
 
@@ -109,6 +127,7 @@ impl RTSetupFunc {
         match self {
             Self::ParseInt => "_bril_parse_int",
             Self::ParseBool => "_bril_parse_bool",
+            Self::ParseFloat => "_bril_parse_float",
         }
     }
 }
@@ -118,6 +137,7 @@ fn translate_type(typ: &bril::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
         bril::Type::Bool => ir::types::B1,
+        bril::Type::Float => ir::types::F64,
     }
 }
 
@@ -143,6 +163,10 @@ fn translate_op(op: bril::ValueOps) -> ir::Opcode {
         bril::ValueOps::Div => ir::Opcode::Sdiv,
         bril::ValueOps::And => ir::Opcode::Band,
         bril::ValueOps::Or => ir::Opcode::Bor,
+        bril::ValueOps::Fadd => ir::Opcode::Fadd,
+        bril::ValueOps::Fsub => ir::Opcode::Fsub,
+        bril::ValueOps::Fmul => ir::Opcode::Fmul,
+        bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
         _ => panic!("not a translatable opcode: {}", op),
     }
 }
@@ -155,6 +179,18 @@ fn translate_intcc(op: bril::ValueOps) -> IntCC {
         bril::ValueOps::Eq => IntCC::Equal,
         bril::ValueOps::Ge => IntCC::SignedGreaterThanOrEqual,
         bril::ValueOps::Gt => IntCC::SignedGreaterThan,
+        _ => panic!("not a comparison opcode: {}", op),
+    }
+}
+
+/// Translate Bril opcodes that correspond to CLIF floating point comparisons.
+fn translate_floatcc(op: bril::ValueOps) -> FloatCC {
+    match op {
+        bril::ValueOps::Flt => FloatCC::LessThan,
+        bril::ValueOps::Fle => FloatCC::LessThanOrEqual,
+        bril::ValueOps::Feq => FloatCC::Equal,
+        bril::ValueOps::Fge => FloatCC::GreaterThanOrEqual,
+        bril::ValueOps::Fgt => FloatCC::GreaterThan,
         _ => panic!("not a comparison opcode: {}", op),
     }
 }
@@ -260,6 +296,7 @@ fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
         .map(|lit| match lit {
             bril::Literal::Int(i) => i as *const i64 as *const u8,
             bril::Literal::Bool(b) => b as *const bool as *const u8,
+            bril::Literal::Float(f) => f as *const f64 as *const u8,
         })
         .collect()
 }
@@ -351,11 +388,25 @@ fn gen_icmp(
     vars: &HashMap<String, Variable>,
     args: &[String],
     dest: &String,
-    cc: IntCC,
+    cc: ir::condcodes::IntCC,
 ) {
     let lhs = builder.use_var(vars[&args[0]]);
     let rhs = builder.use_var(vars[&args[1]]);
     let res = builder.ins().icmp(cc, lhs, rhs);
+    builder.def_var(vars[dest], res);
+}
+
+/// Generate a CLIF fcmp instruction.
+fn gen_fcmp(
+    builder: &mut FunctionBuilder,
+    vars: &HashMap<String, Variable>,
+    args: &[String],
+    dest: &String,
+    cc: ir::condcodes::FloatCC,
+) {
+    let lhs = builder.use_var(vars[&args[0]]);
+    let rhs = builder.use_var(vars[&args[1]]);
+    let res = builder.ins().fcmp(cc, lhs, rhs);
     builder.def_var(vars[dest], res);
 }
 
@@ -401,11 +452,43 @@ fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
         let print_func = match env.var_types[arg] {
             bril::Type::Int => RTFunc::PrintInt,
             bril::Type::Bool => RTFunc::PrintBool,
+            bril::Type::Float => RTFunc::PrintFloat,
         };
         let print_ref = env.rt_refs[print_func];
         builder.ins().call(print_ref, &[arg_val]);
     }
     builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
+}
+
+fn compile_const(
+    builder: &mut FunctionBuilder,
+    typ: &bril::Type,
+    lit: &bril::Literal,
+) -> ir::Value {
+    match typ {
+        bril::Type::Int => {
+            let val = match lit {
+                bril::Literal::Int(i) => *i,
+                _ => panic!("incorrect literal type for int"),
+            };
+            builder.ins().iconst(ir::types::I64, val)
+        }
+        bril::Type::Bool => {
+            let val = match lit {
+                bril::Literal::Bool(b) => *b,
+                _ => panic!("incorrect literal type for bool"),
+            };
+            builder.ins().bconst(ir::types::B1, val)
+        }
+        bril::Type::Float => {
+            let val = match lit {
+                bril::Literal::Float(f) => *f,
+                bril::Literal::Int(i) => *i as f64,
+                _ => panic!("incorrect literal type for float"),
+            };
+            builder.ins().f64const(val)
+        }
+    }
 }
 
 /// Compile one Bril instruction into CLIF.
@@ -414,13 +497,10 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
         bril::Instruction::Constant {
             dest,
             op: _,
-            const_type: _,
+            const_type: typ,
             value,
         } => {
-            let val = match value {
-                bril::Literal::Int(i) => builder.ins().iconst(ir::types::I64, *i),
-                bril::Literal::Bool(b) => builder.ins().bconst(ir::types::B1, *b),
-            };
+            let val = compile_const(builder, typ, value);
             builder.def_var(env.vars[dest], val);
         }
         bril::Instruction::Effect {
@@ -497,6 +577,21 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             bril::ValueOps::Id => {
                 let arg = builder.use_var(env.vars[&args[0]]);
                 builder.def_var(env.vars[dest], arg);
+            }
+
+            // Floating point extension.
+            bril::ValueOps::Fadd
+            | bril::ValueOps::Fsub
+            | bril::ValueOps::Fmul
+            | bril::ValueOps::Fdiv => {
+                gen_binary(builder, &env.vars, args, dest, op_type, translate_op(*op));
+            }
+            bril::ValueOps::Flt
+            | bril::ValueOps::Fle
+            | bril::ValueOps::Feq
+            | bril::ValueOps::Fge
+            | bril::ValueOps::Fgt => {
+                gen_fcmp(builder, &env.vars, args, dest, translate_floatcc(*op))
             }
         },
     }
@@ -704,6 +799,7 @@ impl<M: Module> Translator<M> {
                 let parse_ref = rt_setup_refs[match arg.arg_type {
                     bril::Type::Int => RTSetupFunc::ParseInt,
                     bril::Type::Bool => RTSetupFunc::ParseBool,
+                    bril::Type::Float => RTSetupFunc::ParseFloat,
                 }];
                 let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
                 let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
@@ -815,7 +911,6 @@ impl<M: Module> Translator<M> {
         wrapper_id
     }
 
-    // TODO The two arguments here (and in fact including the wrapper emission here) is ugly and bad...
     fn compile_prog(&mut self, prog: &bril::Program, dump: bool) {
         // Declare all functions.
         for func in &prog.functions {
@@ -918,6 +1013,7 @@ fn main() {
             .map(|(arg, val_str)| match arg.arg_type {
                 bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
                 bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
+                bril::Type::Float => bril::Literal::Bool(val_str.parse().unwrap()),
             })
             .collect();
 
