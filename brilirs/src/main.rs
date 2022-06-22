@@ -27,7 +27,7 @@ fn main() {
 
   if let Err(e) = brilirs::run_input(
     input_string.as_bytes(),
-    std::io::stdout(),
+    std::io::BufWriter::new(std::io::stdout()),
     &args.args,
     args.profile,
     std::io::stderr(),
