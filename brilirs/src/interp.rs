@@ -209,7 +209,7 @@ impl fmt::Display for Value {
       Self::Bool(b) => write!(f, "{b}"),
       Self::Float(v) if v.is_infinite() && v.is_sign_positive() => write!(f, "Infinity"),
       Self::Float(v) if v.is_infinite() && v.is_sign_negative() => write!(f, "-Infinity"),
-      Self::Float(v) => write!(f, "{v}"),
+      Self::Float(v) => write!(f, "{v:.17}"),
       Self::Pointer(p) => write!(f, "{p:?}"),
       Self::Uninitialized => unreachable!(),
     }
