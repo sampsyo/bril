@@ -18,6 +18,8 @@ The floating point extension adds one new base type:
 Floating point numbers are 64-bit, double-precision [IEEE 754][] values.
 (There is no single-precision type.)
 
+Floating point numbers are outputted with 17 decimal points of precision. Positive and negative zeros compare as equal but are distinct values when printed. Nan and Infinity are valid runtime values that are represented as `-Infinity`/`Infinity`/`NaN` respectively.
+
 [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_754
 
 Operations
