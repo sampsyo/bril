@@ -1,7 +1,10 @@
 #!/bin/sh
 set -e
 
-TARGET=x86_64-unknown-darwin-macho
+# Set this if you need to use a target other than the native platform---for
+# example, to run under Rosetta on macOS with Apple Silicon.
+# TARGET=x86_64-unknown-darwin-macho
+
 HERE=`dirname $0`
 
 RUST_BACKTRACE=1 cargo run --manifest-path $HERE/Cargo.toml --quiet -- -t $TARGET -o tmp_run.o
