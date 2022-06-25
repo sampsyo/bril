@@ -39,3 +39,11 @@ There are also comparison operators, which take two `float` values and produce a
 - `fle`
 - `fgt`
 - `fge`
+
+Printing
+--------
+
+The [core `print` operation](./core.md#miscellaneous) prints `float` values with 17 decimal digits of precision, including trailing zeros.
+(This is like using the `%.17lf` format specifier in C's `printf`.)
+Positive and negative zero, while they are equal according to `feq`, look different when printed.
+Not-a-number values are printed as `NaN`; infinite values are printed as the strings `Infinity` or `-Infinity`.
