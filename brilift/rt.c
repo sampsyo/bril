@@ -26,7 +26,7 @@ void _bril_print_float(double f) {
             printf("Infinity");
         }
     } else {
-        printf("%.17lg", f);
+        printf("%.17lf", f);
     }
 }
 
