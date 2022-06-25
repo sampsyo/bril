@@ -56,3 +56,11 @@ double _bril_parse_float(char **args, int64_t idx) {
     sscanf(arg, "%lf", &res);
     return res;
 }
+
+void *_bril_alloc(int64_t size) {
+    return malloc(size);
+}
+
+void _bril_free(void *ptr) {
+    free(ptr);
+}

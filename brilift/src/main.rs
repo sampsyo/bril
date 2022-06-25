@@ -25,10 +25,12 @@ enum RTFunc {
     PrintFloat,
     PrintSep,
     PrintEnd,
+    Alloc,
+    Free,
 }
 
 impl RTFunc {
-    fn sig(&self, call_conv: cranelift_codegen::isa::CallConv) -> ir::Signature {
+    fn sig(&self, pointer_type: ir::Type, call_conv: cranelift_codegen::isa::CallConv) -> ir::Signature {
         match self {
             Self::PrintInt => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::I64)],
@@ -55,6 +57,16 @@ impl RTFunc {
                 returns: vec![],
                 call_conv,
             },
+            Self::Alloc => ir::Signature {
+                params: vec![ir::AbiParam::new(ir::types::I64)],
+                returns: vec![ir::AbiParam::new(pointer_type)],
+                call_conv,
+            },
+            Self::Free => ir::Signature {
+                params: vec![ir::AbiParam::new(pointer_type)],
+                returns: vec![],
+                call_conv,
+            },
         }
     }
 
@@ -65,6 +77,8 @@ impl RTFunc {
             Self::PrintFloat => "_bril_print_float",
             Self::PrintSep => "_bril_print_sep",
             Self::PrintEnd => "_bril_print_end",
+            Self::Alloc => "_bril_alloc",
+            Self::Free => "_bril_free",
         }
     }
 
@@ -75,6 +89,8 @@ impl RTFunc {
             RTFunc::PrintFloat => rt::print_float as *const u8,
             RTFunc::PrintSep => rt::print_sep as *const u8,
             RTFunc::PrintEnd => rt::print_end as *const u8,
+            RTFunc::Alloc => rt::mem_alloc as *const u8,
+            RTFunc::Free => rt::mem_free as *const u8,
         }
     }
 }
@@ -133,23 +149,24 @@ impl RTSetupFunc {
 }
 
 /// Translate a Bril type into a CLIF type.
-fn translate_type(typ: &bril::Type) -> ir::Type {
+fn translate_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
         bril::Type::Bool => ir::types::B1,
         bril::Type::Float => ir::types::F64,
+        bril::Type::Pointer(_) => pointer_type,
     }
 }
 
 /// Generate a CLIF signature for a Bril function.
-fn translate_sig(func: &bril::Function) -> ir::Signature {
+fn translate_sig(func: &bril::Function, pointer_type: ir::Type) -> ir::Signature {
     let mut sig = ir::Signature::new(isa::CallConv::Fast);
     if let Some(ret) = &func.return_type {
-        sig.returns.push(ir::AbiParam::new(translate_type(ret)));
+        sig.returns.push(ir::AbiParam::new(translate_type(ret, pointer_type)));
     }
     for arg in &func.args {
         sig.params
-            .push(ir::AbiParam::new(translate_type(&arg.arg_type)));
+            .push(ir::AbiParam::new(translate_type(&arg.arg_type, pointer_type)));
     }
     sig
 }
@@ -239,7 +256,7 @@ fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::Fu
                 .declare_function(
                     rtfunc.name(),
                     cranelift_module::Linkage::Import,
-                    &rtfunc.sig(module.isa().default_call_conv()),
+                    &rtfunc.sig(module.isa().pointer_type(), module.isa().default_call_conv()),
                 )
                 .unwrap()
     }
@@ -418,10 +435,11 @@ fn gen_binary(
     dest: &String,
     dest_type: &bril::Type,
     op: ir::Opcode,
+    pointer_type: ir::Type,
 ) {
     let lhs = builder.use_var(vars[&args[0]]);
     let rhs = builder.use_var(vars[&args[1]]);
-    let typ = translate_type(dest_type);
+    let typ = translate_type(dest_type, pointer_type);
     let (inst, dfg) = builder.ins().Binary(op, typ, lhs, rhs);
     let res = dfg.first_result(inst);
     builder.def_var(vars[dest], res);
@@ -453,6 +471,7 @@ fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
             bril::Type::Int => RTFunc::PrintInt,
             bril::Type::Bool => RTFunc::PrintBool,
             bril::Type::Float => RTFunc::PrintFloat,
+            bril::Type::Pointer(_) => todo!(),
         };
         let print_ref = env.rt_refs[print_func];
         builder.ins().call(print_ref, &[arg_val]);
@@ -488,7 +507,37 @@ fn compile_const(
             };
             builder.ins().f64const(val)
         }
+        bril::Type::Pointer(_) => panic!("pointer literals not allowed")
     }
+}
+
+/// Emit Cranelift code to load a Bril value from memory.
+fn emit_load(builder: &mut FunctionBuilder, pointer_type: ir::Type, typ: &bril::Type, ptr: ir::Value) -> ir::Value {
+    // Most types can be loaded/stored directly, but Boolean values are stored as entire byte, so
+    // we need to load the byte first and then get the b1.
+    let mem_type = match typ {
+        bril::Type::Bool => ir::types::I8,
+        _ => translate_type(typ, pointer_type),
+    };
+    let val = builder.ins().load(mem_type, ir::MemFlags::trusted(), ptr, 0);
+    match typ {
+        bril::Type::Bool => {
+            builder
+                .ins()
+                .icmp_imm(ir::condcodes::IntCC::NotEqual, val, 0)
+        }
+        _ => val,
+    }
+}
+
+/// Emit cranelift code to store a Bril value to memory.
+fn emit_store(builder: &mut FunctionBuilder, pointer_type: ir::Type, typ: &bril::Type, ptr: ir::Value, val: ir::Value) {
+    // Convert booleans to bytes for storing in memory.
+    let mem_val = match typ {
+        bril::Type::Bool => builder.ins().bint(ir::types::I8, val),
+        _ => val,
+    };
+    builder.ins().store(ir::MemFlags::trusted(), mem_val, ptr, 0);
 }
 
 /// Compile one Bril instruction into CLIF.
@@ -537,6 +586,14 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
                 }
             }
             bril::EffectOps::Nop => {}
+            bril::EffectOps::Store => {
+                let ptr_arg = builder.use_var(env.vars[&args[0]]);
+                let val_arg = builder.use_var(env.vars[&args[1]]);
+                emit_store(builder, pointer_type, env.var_types[&args[1]], ptr_arg, val_arg);
+            }
+            bril::EffectOps::Free => {
+                todo!();
+            }
         },
         bril::Instruction::Value {
             args,
@@ -592,6 +649,12 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             | bril::ValueOps::Fge
             | bril::ValueOps::Fgt => {
                 gen_fcmp(builder, &env.vars, args, dest, translate_floatcc(*op))
+            }
+            
+            // Memory extension.
+            bril::ValueOps::Alloc => {
+                let size = builder.use_var(env.vars[&args[0]]);
+                todo!();
             }
         },
     }
@@ -864,31 +927,17 @@ impl<M: Module> Translator<M> {
         // Load every argument from memory.
         let base_ptr = builder.block_params(block)[0];
         let ptr_size = pointer_type.bytes();
-        let flags = ir::MemFlags::trusted();
         let arg_vals: Vec<ir::Value> = args
             .iter()
             .enumerate()
             .map(|(i, arg)| {
                 // Load the pointer.
                 let offset = (ptr_size * (i as u32)) as i32;
-                let arg_ptr = builder.ins().load(pointer_type, flags, base_ptr, offset);
+                let arg_ptr = builder.ins().load(pointer_type, ir::MemFlags::trusted(), base_ptr, offset);
+                
+                // Load the argument value.
+                emit_load(&mut builder, pointer_type, &arg.arg_type, arg_ptr)
 
-                // Load the argument value. Boolean values are stored as entire byte, so we need to
-                // load the byte first and then get the b1.
-                let arg_type = translate_type(&arg.arg_type);
-                let mem_type = match arg.arg_type {
-                    bril::Type::Bool => ir::types::I8,
-                    _ => arg_type,
-                };
-                let arg_val = builder.ins().load(mem_type, flags, arg_ptr, 0);
-                match arg.arg_type {
-                    bril::Type::Bool => {
-                        builder
-                            .ins()
-                            .icmp_imm(ir::condcodes::IntCC::NotEqual, arg_val, 0)
-                    }
-                    _ => arg_val,
-                }
             })
             .collect();
 

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bril-rs = { path = "../bril-rs", features = ["float"] }
+bril-rs = { path = "../bril-rs", features = ["float", "memory"] }
 cranelift-codegen = { version = "0.83.0", features = ["all-arch"] }
 cranelift-frontend = "0.83.0"
 cranelift-object = "0.83.0"

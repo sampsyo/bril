@@ -30,3 +30,13 @@ pub extern "C" fn print_sep() {
 pub extern "C" fn print_end() {
     println!();
 }
+
+#[no_mangle]
+pub extern "C" fn mem_alloc() {
+    todo!();
+}
+
+#[no_mangle]
+pub extern "C" fn mem_free() {
+    
+}
