@@ -1,4 +1,5 @@
 use std::alloc;
+use std::mem::size_of;
 
 #[no_mangle]
 pub extern "C" fn print_int(i: i64) {
@@ -33,16 +34,33 @@ pub extern "C" fn print_end() {
     println!();
 }
 
+const ALIGN: usize = 8;
+const EXTRA_SIZE: usize = size_of::<usize>();
+
 #[no_mangle]
 pub extern "C" fn mem_alloc(count: i64, bytes: i64) -> *mut u8 {
-    let size = count * bytes;
-    let layout = alloc::Layout::from_size_align(size.try_into().unwrap(), bytes.try_into().unwrap()).unwrap();
+    // The logical size of the allocation.
+    let payload_size: usize = (count * bytes).try_into().unwrap();
+
+    // Allocate one extra word to store the size.
+    let layout = alloc::Layout::from_size_align(payload_size + EXTRA_SIZE, ALIGN).unwrap();
+
     unsafe {
-        return alloc::alloc(layout);
+        let ptr = alloc::alloc(layout);
+        *(ptr as *mut usize) = payload_size;
+        ptr.offset(EXTRA_SIZE as isize) // Pointer to the payload.
     }
 }
 
 #[no_mangle]
 pub extern "C" fn mem_free(ptr: *mut u8) {
-    // Nothing for now...
+    // `ptr` points at the payload, which is immediately preceded by the size (which does not
+    // include the size of the size itself).
+    unsafe {
+        let base_ptr = ptr.offset(-(EXTRA_SIZE as isize));
+        let payload_size = *(base_ptr as *mut usize);
+
+        let layout = alloc::Layout::from_size_align(payload_size + EXTRA_SIZE, ALIGN).unwrap();
+        alloc::dealloc(base_ptr, layout);
+    }
 }
