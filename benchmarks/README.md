@@ -3,6 +3,8 @@ Bril Benchmarks
 
 This directory contains a suite of benchmarks in Bril contributed by the community. You can read [more details in the documentation][bench-docs].
 
+The benchmarks are organized based on which Bril extensions they use. `mixed` is a catch-all for Bril programs using more than one extension. `long` contains benchmarks designed to stress a Bril interpreter or runtime to help optimize these tools.
+
 There is also some basic infrastructure here for benchmarking the wall-clock execution time of Bril implementations. Run the benchmarks comparing [the reference interpreter][brili], [brilirs][], and [brilift][] by installing [Hyperfine][] and then typing:
 
     make bench

@@ -1,0 +1,4 @@
+# ARGS: 3 3.0 -0.3
+@main(float_one : float, float_two : float, float_three : float) {
+  print float_one float_two float_three;
+}

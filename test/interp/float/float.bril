@@ -1,4 +1,4 @@
-@main {
+@main() {
   v0: float = const 9.0;
   v1: float = const -20.0;
   res: float = fdiv v0 v1;

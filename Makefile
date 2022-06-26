@@ -9,7 +9,10 @@ TESTS := test/parse/*.bril \
 	test/interp*/spec*/*.bril \
 	test/interp*/ssa*/*.bril \
 	examples/test/*/*.bril \
-	benchmarks/*.bril
+	benchmarks/core/*.bril \
+	benchmarks/float/*.bril \
+	benchmarks/mem/*.bril \
+	benchmarks/mixed/*.bril \
 
 CHECKS := test/parse/*.bril \
 	test/interp/core/*.bril \
@@ -19,7 +22,10 @@ CHECKS := test/parse/*.bril \
 	test/interp/ssa/*.bril \
 	test/interp/mem/*.bril \
 	examples/test/*/*.bril \
-	benchmarks/*.bril
+	benchmarks/core/*.bril \
+	benchmarks/float/*.bril \
+	benchmarks/mem/*.bril \
+	benchmarks/mixed/*.bril \
 
 .PHONY: test
 test:
