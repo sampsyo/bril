@@ -1,5 +1,3 @@
-use std::fmt;
-
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
 use bril_rs::Instruction;
@@ -12,6 +10,7 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use std::cmp::max;
+use std::fmt;
 
 // The Environment is the data structure used to represent the stack of the program.
 // The values of all variables are store here. Each variable is represented as a number so
@@ -214,6 +213,26 @@ impl fmt::Display for Value {
       Self::Uninitialized => unreachable!(),
     }
   }
+}
+
+fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(), std::io::Error> {
+  match val {
+    Value::Int(i) => {
+      let mut buf = itoa::Buffer::new();
+      let s = buf.format(*i);
+      out.write_all(s.as_bytes())
+    }
+    Value::Bool(b) => out.write_all(b.to_string().as_bytes()),
+    Value::Float(f) if f.is_infinite() && f.is_sign_positive() => out.write_all(b"Infinity"),
+    Value::Float(f) if f.is_infinite() && f.is_sign_negative() => out.write_all(b"-Infinity"),
+    Value::Float(f) if f.is_nan() => out.write_all(b"NaN"),
+    // Todo one could optimize this just like with Value::Int by using https://docs.rs/ryu/latest/ryu/struct.Buffer.html
+    Value::Float(f) => out.write_all(format!("{f:.17}").as_bytes()),
+    Value::Pointer(p) => out.write_all(format!("{p:?}").as_bytes()),
+    Value::Uninitialized => unreachable!(),
+  }?;
+  // Add new line
+  out.write_all(&[b'\n'])
 }
 
 impl From<&bril_rs::Literal> for Value {
@@ -487,16 +506,23 @@ fn execute_effect_op<'a, T: std::io::Write>(
       )
     }
     Print => {
-      writeln!(
-        state.out,
-        "{}",
-        args
-          .iter()
-          .map(|a| state.env.get(a).to_string())
-          .collect::<Vec<String>>()
-          .join(" ")
-      )
-      .map_err(|e| InterpError::IoError(Box::new(e)))?;
+      // In the typical case, users only print out one value at a time
+      // So we can usually avoid extra allocations by providing that string directly
+      if args.len() == 1 {
+        optimized_val_output(&mut state.out, state.env.get(args.get(0).unwrap()))
+          .map_err(|e| InterpError::IoError(Box::new(e)))?;
+      } else {
+        writeln!(
+          state.out,
+          "{}",
+          args
+            .iter()
+            .map(|a| state.env.get(a).to_string())
+            .collect::<Vec<String>>()
+            .join(" ")
+        )
+        .map_err(|e| InterpError::IoError(Box::new(e)))?;
+      }
     }
     Nop => {}
     Call => {
