@@ -36,8 +36,8 @@ jobs:
           - "cd bril-rs && make features"
           - "cd brilirs && make test TURNTARGS=-v"
           - "cd brilirs && make benchmark TURNTARGS=-v"
-          - "cd brilift && cargo build --release && make rt.o && make test TURNTARGS=-vp"
-          - "cd brilift && cargo build --release && make rt.o && make benchmark TURNTARGS=-vp"
+          - "cd brilift && cargo build --release && make rt.o && make test TURNTARGS=-v"
+          - "cd brilift && cargo build --release && make rt.o && make benchmark TURNTARGS=-v"
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
