@@ -46,5 +46,5 @@ pub extern "C" fn mem_alloc(count: i64, bytes: i64) -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn mem_free(ptr: *mut u8) {
-    todo!();
+    // Nothing for now...
 }

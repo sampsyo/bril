@@ -601,7 +601,8 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
                 emit_store(builder, env.var_types[&args[1]], ptr_arg, val_arg);
             }
             bril::EffectOps::Free => {
-                todo!();
+                let ptr_arg = builder.use_var(env.vars[&args[0]]);
+                builder.ins().call(env.rt_refs[RTFunc::Free], &[ptr_arg]);
             }
         },
         bril::Instruction::Value {
@@ -674,7 +675,9 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
                 let bytes_val = builder.ins().iconst(ir::types::I64, elem_bytes as i64);
 
                 // Call the allocate function.
-                builder.ins().call(env.rt_refs[RTFunc::Alloc], &[count_val, bytes_val]);
+                let inst = builder.ins().call(env.rt_refs[RTFunc::Alloc], &[count_val, bytes_val]);
+                let res = builder.inst_results(inst)[0];
+                builder.def_var(env.vars[dest], res);
             }
             bril::ValueOps::Load => {
                 let ptr = builder.use_var(env.vars[&args[0]]);

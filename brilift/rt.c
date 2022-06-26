@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 void _bril_print_int(int64_t i) {
     printf("%" PRId64, i);
