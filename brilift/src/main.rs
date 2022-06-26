@@ -691,9 +691,13 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             }
             bril::ValueOps::PtrAdd => {
                 let orig_ptr = builder.use_var(env.vars[&args[0]]);
+                let amt = builder.use_var(env.vars[&args[1]]);
+
                 let size = pointee_bytes(op_type, env.pointer_type);
                 let bytes_val = builder.ins().iconst(ir::types::I64, size as i64);
-                let res = builder.ins().iadd(orig_ptr, bytes_val);
+                let offset_val = builder.ins().imul(amt, bytes_val);
+
+                let res = builder.ins().iadd(orig_ptr, offset_val);
                 builder.def_var(env.vars[dest], res);
             }
         },
