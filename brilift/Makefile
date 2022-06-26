@@ -1,7 +1,7 @@
 # Set TARGET to cross-compile. Brilift's AOT mode doesn't yet support macOS on
 # ARM, so on Apple Silicon devices, you'll need to do this to run compiled
 # programs through Rosetta 2:
-TARGET := x86_64-unknown-darwin-macho
+# TARGET := x86_64-unknown-darwin-macho
 
 # Brilift only supports core Bril for now, so we select those tests &
 # benchmarks.
