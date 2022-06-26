@@ -17,7 +17,7 @@ pub extern "C" fn print_float(f: f64) {
             print!("Infinity");
         }
     } else {
-        print!("{}", f);
+        print!("{:.17}", f);
     }
 }
 

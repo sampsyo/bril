@@ -24,11 +24,11 @@ install:
 
 .PHONY: test
 test: rt.o
-	turnt -e brilift-aot -e brilift-jit $(TESTS)
+	turnt -e brilift-aot -e brilift-jit $(TURNTARGS) $(TESTS)
 
 .PHONY: benchmark
 benchmark: rt.o
-	turnt -e brilift-aot -e brilift-jit $(BENCHMARKS)
+	turnt -e brilift-aot -e brilift-jit $(TURNTARGS) $(BENCHMARKS)
 
 rt.o: rt.c
 	cc $(CFLAGS) -c -o $@ $^
