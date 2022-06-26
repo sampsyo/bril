@@ -57,8 +57,8 @@ double _bril_parse_float(char **args, int64_t idx) {
     return res;
 }
 
-void *_bril_alloc(int64_t size) {
-    return malloc(size);
+void *_bril_alloc(int64_t size, int64_t bytes) {
+    return malloc(size * bytes);
 }
 
 void _bril_free(void *ptr) {

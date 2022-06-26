@@ -1,3 +1,7 @@
+use std::alloc;
+
+use crate::all_vars;
+
 #[no_mangle]
 pub extern "C" fn print_int(i: i64) {
     print!("{}", i);
@@ -32,11 +36,15 @@ pub extern "C" fn print_end() {
 }
 
 #[no_mangle]
-pub extern "C" fn mem_alloc() {
-    todo!();
+pub extern "C" fn mem_alloc(count: i64, bytes: i64) -> *mut u8 {
+    let size = count * bytes;
+    let layout = alloc::Layout::from_size_align(size.try_into().unwrap(), bytes.try_into().unwrap()).unwrap();
+    unsafe {
+        return alloc::alloc(layout);
+    }
 }
 
 #[no_mangle]
-pub extern "C" fn mem_free() {
-    
+pub extern "C" fn mem_free(ptr: *mut u8) {
+    todo!();
 }
