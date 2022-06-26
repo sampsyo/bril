@@ -7,7 +7,12 @@ set -e
 
 HERE=`dirname $0`
 
-RUST_BACKTRACE=1 cargo run --manifest-path $HERE/Cargo.toml --quiet -- -t $TARGET -o tmp_run.o
-cc -target $TARGET -o tmp_run tmp_run.o $HERE/rt.o
+if [ -n "$TARGET" ]; then
+    CFLAGS="-target $TARGET"
+    BFLAGS="-t $TARGET"
+fi
+
+RUST_BACKTRACE=1 cargo run --manifest-path $HERE/Cargo.toml --quiet -- $BFLAGS -o tmp_run.o
+cc $CFLAGS -o tmp_run tmp_run.o $HERE/rt.o
 ./tmp_run $@
 rm tmp_run.o tmp_run
