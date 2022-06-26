@@ -48,7 +48,7 @@ pub extern "C" fn mem_alloc(count: i64, bytes: i64) -> *mut u8 {
     unsafe {
         let ptr = alloc::alloc(layout);
         *(ptr as *mut usize) = payload_size;
-        ptr.offset(EXTRA_SIZE as isize) // Pointer to the payload.
+        ptr.add(EXTRA_SIZE) // Pointer to the payload.
     }
 }
 
@@ -57,7 +57,7 @@ pub extern "C" fn mem_free(ptr: *mut u8) {
     // `ptr` points at the payload, which is immediately preceded by the size (which does not
     // include the size of the size itself).
     unsafe {
-        let base_ptr = ptr.offset(-(EXTRA_SIZE as isize));
+        let base_ptr = ptr.sub(EXTRA_SIZE);
         let payload_size = *(base_ptr as *mut usize);
 
         let layout = alloc::Layout::from_size_align(payload_size + EXTRA_SIZE, ALIGN).unwrap();
