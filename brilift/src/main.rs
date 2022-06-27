@@ -348,13 +348,6 @@ fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
         .collect()
 }
 
-/// Run a JITted wrapper function.
-unsafe fn run(main_ptr: *const u8, args: &[bril::Literal]) {
-    let arg_ptrs = val_ptrs(args);
-    let func = mem::transmute::<_, fn(*const *const u8) -> ()>(main_ptr);
-    func(arg_ptrs.as_ptr());
-}
-
 /// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
     // `cranelift_jit` does not yet support PIC on AArch64:
@@ -402,13 +395,21 @@ impl Translator<JITModule> {
         }
     }
 
-    // Obtain an entry-point code pointer. The pointer remains valid as long as the translator
-    // itself (and therefore the `JITModule`) lives.
+    /// Obtain an entry-point code pointer. The pointer remains valid as long as the translator
+    /// itself (and therefore the `JITModule`) lives.
     fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
         self.module.clear_context(&mut self.context);
         self.module.finalize_definitions();
 
         self.module.get_finalized_function(func_id)
+    }
+
+    /// Run a JITted wrapper function.
+    unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
+        let func_ptr = self.get_func_ptr(func_id);
+        let arg_ptrs = val_ptrs(args);
+        let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
+        func(arg_ptrs.as_ptr());
     }
 }
 
@@ -1150,9 +1151,8 @@ fn main() {
             })
             .collect();
 
-        // Run the program.
-        let code = trans.get_func_ptr(entry_id);
-        unsafe { run(code, &main_args) };
+        // Invoke the main function.
+        unsafe { trans.run(entry_id, &main_args) };
     } else {
         // Compile.
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
