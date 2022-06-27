@@ -226,7 +226,6 @@ fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(
     Value::Float(f) if f.is_infinite() && f.is_sign_positive() => out.write_all(b"Infinity"),
     Value::Float(f) if f.is_infinite() && f.is_sign_negative() => out.write_all(b"-Infinity"),
     Value::Float(f) if f.is_nan() => out.write_all(b"NaN"),
-    // Todo one could optimize this just like with Value::Int by using https://docs.rs/ryu/latest/ryu/struct.Buffer.html
     Value::Float(f) => out.write_all(format!("{f:.17}").as_bytes()),
     Value::Pointer(p) => out.write_all(format!("{p:?}").as_bytes()),
     Value::Uninitialized => unreachable!(),
