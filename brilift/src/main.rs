@@ -1131,7 +1131,7 @@ fn main() {
             .map(|(arg, val_str)| match arg.arg_type {
                 bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
                 bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
-                bril::Type::Float => bril::Literal::Bool(val_str.parse().unwrap()),
+                bril::Type::Float => bril::Literal::Float(val_str.parse().unwrap()),
                 bril::Type::Pointer(_) => unimplemented!("pointers not supported as main args"),
             })
             .collect();
