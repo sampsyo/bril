@@ -5,8 +5,8 @@
 
 # Brilift only supports core Bril for now, so we select those tests &
 # benchmarks.
-TESTS := ../test/interp/core/*.bril ../test/interp/float/*.bril
-BENCHMARKS := $(shell grep -L 'ptr' ../benchmarks/*.bril)
+TESTS := ../test/interp/core/*.bril ../test/interp/float/*.bril ../test/interp/mem/*.bril
+BENCHMARKS := ../benchmarks/*.bril
 
 CFLAGS := $(if $(TARGET),-target $(TARGET))
 BRILFLAGS := $(if $(TARGET),-t $(TARGET))
@@ -34,7 +34,7 @@ rt.o: rt.c
 	cc $(CFLAGS) -c -o $@ $^
 
 %.o: %.bril
-	bril2json < $^ | ./target/release/brilift $(BRILFLAGS) -o $@
+	bril2json < $^ | cargo run -- $(BRILFLAGS) -o $@
 
 %: %.o rt.o
 	cc $(CFLAGS) -o $@ $^

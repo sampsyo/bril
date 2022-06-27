@@ -1,8 +1,8 @@
-CORE_BENCH := $(shell grep -L 'ptr' *.bril)
+BENCHMARKS := $(wildcard *.bril)
 
 .PHONY: bench clean plot
 bench:
-	turnt -e bench --save $(CORE_BENCH)
+	turnt -e bench --save $(BENCHMARKS)
 clean:
 	rm -f *.bench.json plot.svg bench.csv
 plot: plot.svg

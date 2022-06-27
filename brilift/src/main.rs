@@ -25,10 +25,16 @@ enum RTFunc {
     PrintFloat,
     PrintSep,
     PrintEnd,
+    Alloc,
+    Free,
 }
 
 impl RTFunc {
-    fn sig(&self, call_conv: cranelift_codegen::isa::CallConv) -> ir::Signature {
+    fn sig(
+        &self,
+        pointer_type: ir::Type,
+        call_conv: cranelift_codegen::isa::CallConv,
+    ) -> ir::Signature {
         match self {
             Self::PrintInt => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::I64)],
@@ -55,6 +61,19 @@ impl RTFunc {
                 returns: vec![],
                 call_conv,
             },
+            Self::Alloc => ir::Signature {
+                params: vec![
+                    ir::AbiParam::new(ir::types::I64),
+                    ir::AbiParam::new(ir::types::I64),
+                ],
+                returns: vec![ir::AbiParam::new(pointer_type)],
+                call_conv,
+            },
+            Self::Free => ir::Signature {
+                params: vec![ir::AbiParam::new(pointer_type)],
+                returns: vec![],
+                call_conv,
+            },
         }
     }
 
@@ -65,6 +84,8 @@ impl RTFunc {
             Self::PrintFloat => "_bril_print_float",
             Self::PrintSep => "_bril_print_sep",
             Self::PrintEnd => "_bril_print_end",
+            Self::Alloc => "_bril_alloc",
+            Self::Free => "_bril_free",
         }
     }
 
@@ -75,6 +96,8 @@ impl RTFunc {
             RTFunc::PrintFloat => rt::print_float as *const u8,
             RTFunc::PrintSep => rt::print_sep as *const u8,
             RTFunc::PrintEnd => rt::print_end as *const u8,
+            RTFunc::Alloc => rt::mem_alloc as *const u8,
+            RTFunc::Free => rt::mem_free as *const u8,
         }
     }
 }
@@ -133,23 +156,47 @@ impl RTSetupFunc {
 }
 
 /// Translate a Bril type into a CLIF type.
-fn translate_type(typ: &bril::Type) -> ir::Type {
+fn translate_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
         bril::Type::Bool => ir::types::B1,
         bril::Type::Float => ir::types::F64,
+        bril::Type::Pointer(_) => pointer_type,
     }
 }
 
+/// Get the type used to store the value in *memory*.
+fn translate_mem_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
+    match typ {
+        // b1 values need to be stored as entire bytes.
+        bril::Type::Bool => ir::types::I8,
+
+        // Everything else is stored as-is.
+        _ => translate_type(typ, pointer_type),
+    }
+}
+
+/// Get the element size of the pointed-to type in bytes. `typ` must be a Bril pointer type.
+fn pointee_bytes(typ: &bril::Type, pointer_type: ir::Type) -> u32 {
+    let pointee_type = match typ {
+        bril::Type::Pointer(t) => t,
+        _ => panic!("alloc for non-pointer type"),
+    };
+    translate_mem_type(pointee_type, pointer_type).bytes()
+}
+
 /// Generate a CLIF signature for a Bril function.
-fn translate_sig(func: &bril::Function) -> ir::Signature {
+fn translate_sig(func: &bril::Function, pointer_type: ir::Type) -> ir::Signature {
     let mut sig = ir::Signature::new(isa::CallConv::Fast);
     if let Some(ret) = &func.return_type {
-        sig.returns.push(ir::AbiParam::new(translate_type(ret)));
+        sig.returns
+            .push(ir::AbiParam::new(translate_type(ret, pointer_type)));
     }
     for arg in &func.args {
-        sig.params
-            .push(ir::AbiParam::new(translate_type(&arg.arg_type)));
+        sig.params.push(ir::AbiParam::new(translate_type(
+            &arg.arg_type,
+            pointer_type,
+        )));
     }
     sig
 }
@@ -239,7 +286,7 @@ fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::Fu
                 .declare_function(
                     rtfunc.name(),
                     cranelift_module::Linkage::Import,
-                    &rtfunc.sig(module.isa().default_call_conv()),
+                    &rtfunc.sig(module.isa().pointer_type(), module.isa().default_call_conv()),
                 )
                 .unwrap()
     }
@@ -301,13 +348,6 @@ fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
         .collect()
 }
 
-/// Run a JITted wrapper function.
-unsafe fn run(main_ptr: *const u8, args: &[bril::Literal]) {
-    let arg_ptrs = val_ptrs(args);
-    let func = mem::transmute::<_, fn(*const *const u8) -> ()>(main_ptr);
-    func(arg_ptrs.as_ptr());
-}
-
 /// JIT compiler that totally does not work yet.
 impl Translator<JITModule> {
     // `cranelift_jit` does not yet support PIC on AArch64:
@@ -355,12 +395,21 @@ impl Translator<JITModule> {
         }
     }
 
-    // Dispose of the translator and obtain an entry-point code pointer.
-    fn get_func_ptr(mut self, func_id: cranelift_module::FuncId) -> *const u8 {
+    /// Obtain an entry-point code pointer. The pointer remains valid as long as the translator
+    /// itself (and therefore the `JITModule`) lives.
+    fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
         self.module.clear_context(&mut self.context);
         self.module.finalize_definitions();
 
         self.module.get_finalized_function(func_id)
+    }
+
+    /// Run a JITted wrapper function.
+    unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
+        let func_ptr = self.get_func_ptr(func_id);
+        let arg_ptrs = val_ptrs(args);
+        let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
+        func(arg_ptrs.as_ptr());
     }
 }
 
@@ -418,10 +467,11 @@ fn gen_binary(
     dest: &String,
     dest_type: &bril::Type,
     op: ir::Opcode,
+    pointer_type: ir::Type,
 ) {
     let lhs = builder.use_var(vars[&args[0]]);
     let rhs = builder.use_var(vars[&args[1]]);
-    let typ = translate_type(dest_type);
+    let typ = translate_type(dest_type, pointer_type);
     let (inst, dfg) = builder.ins().Binary(op, typ, lhs, rhs);
     let res = dfg.first_result(inst);
     builder.def_var(vars[dest], res);
@@ -434,6 +484,7 @@ struct CompileEnv<'a> {
     rt_refs: EnumMap<RTFunc, ir::FuncRef>,
     blocks: HashMap<String, ir::Block>,
     func_refs: HashMap<String, ir::FuncRef>,
+    pointer_type: ir::Type,
 }
 
 /// Implement a Bril `print` instruction in CLIF.
@@ -453,6 +504,7 @@ fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
             bril::Type::Int => RTFunc::PrintInt,
             bril::Type::Bool => RTFunc::PrintBool,
             bril::Type::Float => RTFunc::PrintFloat,
+            bril::Type::Pointer(_) => todo!(),
         };
         let print_ref = env.rt_refs[print_func];
         builder.ins().call(print_ref, &[arg_val]);
@@ -488,7 +540,41 @@ fn compile_const(
             };
             builder.ins().f64const(val)
         }
+        bril::Type::Pointer(_) => panic!("pointer literals not allowed"),
     }
+}
+
+/// Emit Cranelift code to load a Bril value from memory.
+fn emit_load(
+    builder: &mut FunctionBuilder,
+    pointer_type: ir::Type,
+    typ: &bril::Type,
+    ptr: ir::Value,
+) -> ir::Value {
+    // Most types can be loaded/stored directly, but Boolean values are stored as entire byte, so
+    // we need to load the byte first and then get the b1.
+    let mem_type = translate_mem_type(typ, pointer_type);
+    let val = builder
+        .ins()
+        .load(mem_type, ir::MemFlags::trusted(), ptr, 0);
+    match typ {
+        bril::Type::Bool => builder
+            .ins()
+            .icmp_imm(ir::condcodes::IntCC::NotEqual, val, 0),
+        _ => val,
+    }
+}
+
+/// Emit cranelift code to store a Bril value to memory.
+fn emit_store(builder: &mut FunctionBuilder, typ: &bril::Type, ptr: ir::Value, val: ir::Value) {
+    // Convert booleans to bytes for storing in memory.
+    let mem_val = match typ {
+        bril::Type::Bool => builder.ins().bint(ir::types::I8, val),
+        _ => val,
+    };
+    builder
+        .ins()
+        .store(ir::MemFlags::trusted(), mem_val, ptr, 0);
 }
 
 /// Compile one Bril instruction into CLIF.
@@ -537,6 +623,15 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
                 }
             }
             bril::EffectOps::Nop => {}
+            bril::EffectOps::Store => {
+                let ptr_arg = builder.use_var(env.vars[&args[0]]);
+                let val_arg = builder.use_var(env.vars[&args[1]]);
+                emit_store(builder, env.var_types[&args[1]], ptr_arg, val_arg);
+            }
+            bril::EffectOps::Free => {
+                let ptr_arg = builder.use_var(env.vars[&args[0]]);
+                builder.ins().call(env.rt_refs[RTFunc::Free], &[ptr_arg]);
+            }
         },
         bril::Instruction::Value {
             args,
@@ -552,7 +647,15 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             | bril::ValueOps::Div
             | bril::ValueOps::And
             | bril::ValueOps::Or => {
-                gen_binary(builder, &env.vars, args, dest, op_type, translate_op(*op));
+                gen_binary(
+                    builder,
+                    &env.vars,
+                    args,
+                    dest,
+                    op_type,
+                    translate_op(*op),
+                    env.pointer_type,
+                );
             }
             bril::ValueOps::Lt
             | bril::ValueOps::Le
@@ -584,7 +687,15 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             | bril::ValueOps::Fsub
             | bril::ValueOps::Fmul
             | bril::ValueOps::Fdiv => {
-                gen_binary(builder, &env.vars, args, dest, op_type, translate_op(*op));
+                gen_binary(
+                    builder,
+                    &env.vars,
+                    args,
+                    dest,
+                    op_type,
+                    translate_op(*op),
+                    env.pointer_type,
+                );
             }
             bril::ValueOps::Flt
             | bril::ValueOps::Fle
@@ -592,6 +703,38 @@ fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &C
             | bril::ValueOps::Fge
             | bril::ValueOps::Fgt => {
                 gen_fcmp(builder, &env.vars, args, dest, translate_floatcc(*op))
+            }
+
+            // Memory extension.
+            bril::ValueOps::Alloc => {
+                // The number of elements to allocate comes from the program.
+                let count_val = builder.use_var(env.vars[&args[0]]);
+
+                // The bytes per element depends on the type.
+                let elem_bytes = pointee_bytes(op_type, env.pointer_type);
+                let bytes_val = builder.ins().iconst(ir::types::I64, elem_bytes as i64);
+
+                // Call the allocate function.
+                let inst = builder
+                    .ins()
+                    .call(env.rt_refs[RTFunc::Alloc], &[count_val, bytes_val]);
+                let res = builder.inst_results(inst)[0];
+                builder.def_var(env.vars[dest], res);
+            }
+            bril::ValueOps::Load => {
+                let ptr = builder.use_var(env.vars[&args[0]]);
+                let val = emit_load(builder, env.pointer_type, op_type, ptr);
+                builder.def_var(env.vars[dest], val);
+            }
+            bril::ValueOps::PtrAdd => {
+                let orig_ptr = builder.use_var(env.vars[&args[0]]);
+                let amt = builder.use_var(env.vars[&args[1]]);
+
+                let size = pointee_bytes(op_type, env.pointer_type);
+                let offset_val = builder.ins().imul_imm(amt, size as i64);
+
+                let res = builder.ins().iadd(orig_ptr, offset_val);
+                builder.def_var(env.vars[dest], res);
             }
         },
     }
@@ -647,14 +790,14 @@ impl<M: Module> Translator<M> {
             &func.name
         };
 
-        let sig = translate_sig(func);
+        let sig = translate_sig(func, self.module.isa().pointer_type());
         self.module
             .declare_function(name, cranelift_module::Linkage::Local, &sig)
             .unwrap()
     }
 
     fn enter_func(&mut self, func: &bril::Function, func_id: cranelift_module::FuncId) {
-        let sig = translate_sig(func);
+        let sig = translate_sig(func, self.module.isa().pointer_type());
         self.context.func =
             ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
     }
@@ -688,7 +831,7 @@ impl<M: Module> Translator<M> {
             .enumerate()
             .map(|(i, (name, typ))| {
                 let var = Variable::new(i);
-                builder.declare_var(var, translate_type(typ));
+                builder.declare_var(var, translate_type(typ, self.module.isa().pointer_type()));
                 (name.to_string(), var)
             })
             .collect();
@@ -725,6 +868,7 @@ impl<M: Module> Translator<M> {
             rt_refs,
             blocks,
             func_refs,
+            pointer_type: self.module.isa().pointer_type(),
         };
 
         // Define variables for function arguments in the entry block.
@@ -800,6 +944,7 @@ impl<M: Module> Translator<M> {
                     bril::Type::Int => RTSetupFunc::ParseInt,
                     bril::Type::Bool => RTSetupFunc::ParseBool,
                     bril::Type::Float => RTSetupFunc::ParseFloat,
+                    bril::Type::Pointer(_) => unimplemented!("can't print pointers"),
                 }];
                 let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
                 let inst = builder.ins().call(parse_ref, &[argv_arg, idx_arg]);
@@ -864,31 +1009,19 @@ impl<M: Module> Translator<M> {
         // Load every argument from memory.
         let base_ptr = builder.block_params(block)[0];
         let ptr_size = pointer_type.bytes();
-        let flags = ir::MemFlags::trusted();
         let arg_vals: Vec<ir::Value> = args
             .iter()
             .enumerate()
             .map(|(i, arg)| {
                 // Load the pointer.
                 let offset = (ptr_size * (i as u32)) as i32;
-                let arg_ptr = builder.ins().load(pointer_type, flags, base_ptr, offset);
+                let arg_ptr =
+                    builder
+                        .ins()
+                        .load(pointer_type, ir::MemFlags::trusted(), base_ptr, offset);
 
-                // Load the argument value. Boolean values are stored as entire byte, so we need to
-                // load the byte first and then get the b1.
-                let arg_type = translate_type(&arg.arg_type);
-                let mem_type = match arg.arg_type {
-                    bril::Type::Bool => ir::types::I8,
-                    _ => arg_type,
-                };
-                let arg_val = builder.ins().load(mem_type, flags, arg_ptr, 0);
-                match arg.arg_type {
-                    bril::Type::Bool => {
-                        builder
-                            .ins()
-                            .icmp_imm(ir::condcodes::IntCC::NotEqual, arg_val, 0)
-                    }
-                    _ => arg_val,
-                }
+                // Load the argument value.
+                emit_load(&mut builder, pointer_type, &arg.arg_type, arg_ptr)
             })
             .collect();
 
@@ -1014,12 +1147,12 @@ fn main() {
                 bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
                 bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
                 bril::Type::Float => bril::Literal::Bool(val_str.parse().unwrap()),
+                bril::Type::Pointer(_) => unimplemented!("pointers not supported as main args"),
             })
             .collect();
 
-        // Run the program.
-        let code = trans.get_func_ptr(entry_id);
-        unsafe { run(code, &main_args) };
+        // Invoke the main function.
+        unsafe { trans.run(entry_id, &main_args) };
     } else {
         // Compile.
         let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);

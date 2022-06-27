@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 void _bril_print_int(int64_t i) {
     printf("%" PRId64, i);
@@ -55,4 +56,12 @@ double _bril_parse_float(char **args, int64_t idx) {
     double res;
     sscanf(arg, "%lf", &res);
     return res;
+}
+
+void *_bril_alloc(int64_t size, int64_t bytes) {
+    return malloc(size * bytes);
+}
+
+void _bril_free(void *ptr) {
+    free(ptr);
 }

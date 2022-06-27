@@ -2,7 +2,7 @@ Cranelift Compiler
 ==================
 
 Brilift is a ahead-of-time or just-in-time compiler from Bril to native code using the [Cranelift][] code generator.
-It supports [core Bril][core] only.
+It supports [core Bril][core], [floating point][float], and the [memory extension][mem].
 
 In AOT mode, Brilift emits `.o` files and also provides a simple run-time library.
 By linking these together, you get a complete native executable.
@@ -10,6 +10,8 @@ In JIT mode, Brilift mimics an interpreter.
 
 [cranelift]: https://github.com/bytecodealliance/wasmtime/tree/main/cranelift
 [core]: ../lang/core.md
+[float]: ../lang/float.md
+[mem]: ../lang/memory.md
 
 Build
 -----
