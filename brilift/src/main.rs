@@ -402,8 +402,9 @@ impl Translator<JITModule> {
         }
     }
 
-    // Dispose of the translator and obtain an entry-point code pointer.
-    fn get_func_ptr(mut self, func_id: cranelift_module::FuncId) -> *const u8 {
+    // Obtain an entry-point code pointer. The pointer remains valid as long as the translator
+    // itself (and therefore the `JITModule`) lives.
+    fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
         self.module.clear_context(&mut self.context);
         self.module.finalize_definitions();
 
