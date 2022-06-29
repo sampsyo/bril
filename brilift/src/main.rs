@@ -192,47 +192,6 @@ fn translate_sig(func: &bril::Function, pointer_type: ir::Type) -> ir::Signature
     sig
 }
 
-/// Translate Bril opcodes that have CLIF equivalents.
-fn translate_op(op: bril::ValueOps) -> ir::Opcode {
-    match op {
-        bril::ValueOps::Add => ir::Opcode::Iadd,
-        bril::ValueOps::Sub => ir::Opcode::Isub,
-        bril::ValueOps::Mul => ir::Opcode::Imul,
-        bril::ValueOps::Div => ir::Opcode::Sdiv,
-        bril::ValueOps::And => ir::Opcode::Band,
-        bril::ValueOps::Or => ir::Opcode::Bor,
-        bril::ValueOps::Fadd => ir::Opcode::Fadd,
-        bril::ValueOps::Fsub => ir::Opcode::Fsub,
-        bril::ValueOps::Fmul => ir::Opcode::Fmul,
-        bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
-        _ => panic!("not a translatable opcode: {}", op),
-    }
-}
-
-/// Translate Bril opcodes that correspond to CLIF integer comparisons.
-fn translate_intcc(op: bril::ValueOps) -> IntCC {
-    match op {
-        bril::ValueOps::Lt => IntCC::SignedLessThan,
-        bril::ValueOps::Le => IntCC::SignedLessThanOrEqual,
-        bril::ValueOps::Eq => IntCC::Equal,
-        bril::ValueOps::Ge => IntCC::SignedGreaterThanOrEqual,
-        bril::ValueOps::Gt => IntCC::SignedGreaterThan,
-        _ => panic!("not a comparison opcode: {}", op),
-    }
-}
-
-/// Translate Bril opcodes that correspond to CLIF floating point comparisons.
-fn translate_floatcc(op: bril::ValueOps) -> FloatCC {
-    match op {
-        bril::ValueOps::Flt => FloatCC::LessThan,
-        bril::ValueOps::Fle => FloatCC::LessThanOrEqual,
-        bril::ValueOps::Feq => FloatCC::Equal,
-        bril::ValueOps::Fge => FloatCC::GreaterThanOrEqual,
-        bril::ValueOps::Fgt => FloatCC::GreaterThan,
-        _ => panic!("not a comparison opcode: {}", op),
-    }
-}
-
 /// Get all the variables defined in a function (and their types), including the arguments.
 fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
     func.instrs
@@ -259,34 +218,6 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
         })
         .chain(func.args.iter().map(|arg| (&arg.name, &arg.arg_type)))
         .collect()
-}
-
-fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
-    vals.iter()
-        .map(|lit| match lit {
-            bril::Literal::Int(i) => i as *const i64 as *const u8,
-            bril::Literal::Bool(b) => b as *const bool as *const u8,
-            bril::Literal::Float(f) => f as *const f64 as *const u8,
-        })
-        .collect()
-}
-
-/// Is a given Bril instruction a basic block terminator?
-fn is_term(inst: &bril::Instruction) -> bool {
-    if let bril::Instruction::Effect {
-        args: _,
-        funcs: _,
-        labels: _,
-        op,
-    } = inst
-    {
-        matches!(
-            op,
-            bril::EffectOps::Branch | bril::EffectOps::Jump | bril::EffectOps::Return
-        )
-    } else {
-        false
-    }
 }
 
 /// Emit Cranelift code to load a Bril value from memory.
@@ -446,6 +377,47 @@ impl CompileEnv<'_> {
         }
     }
 
+    /// Translate Bril opcodes that have CLIF equivalents.
+    fn translate_op(op: bril::ValueOps) -> ir::Opcode {
+        match op {
+            bril::ValueOps::Add => ir::Opcode::Iadd,
+            bril::ValueOps::Sub => ir::Opcode::Isub,
+            bril::ValueOps::Mul => ir::Opcode::Imul,
+            bril::ValueOps::Div => ir::Opcode::Sdiv,
+            bril::ValueOps::And => ir::Opcode::Band,
+            bril::ValueOps::Or => ir::Opcode::Bor,
+            bril::ValueOps::Fadd => ir::Opcode::Fadd,
+            bril::ValueOps::Fsub => ir::Opcode::Fsub,
+            bril::ValueOps::Fmul => ir::Opcode::Fmul,
+            bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
+            _ => panic!("not a translatable opcode: {}", op),
+        }
+    }
+
+    /// Translate Bril opcodes that correspond to CLIF integer comparisons.
+    fn translate_intcc(op: bril::ValueOps) -> IntCC {
+        match op {
+            bril::ValueOps::Lt => IntCC::SignedLessThan,
+            bril::ValueOps::Le => IntCC::SignedLessThanOrEqual,
+            bril::ValueOps::Eq => IntCC::Equal,
+            bril::ValueOps::Ge => IntCC::SignedGreaterThanOrEqual,
+            bril::ValueOps::Gt => IntCC::SignedGreaterThan,
+            _ => panic!("not a comparison opcode: {}", op),
+        }
+    }
+
+    /// Translate Bril opcodes that correspond to CLIF floating point comparisons.
+    fn translate_floatcc(op: bril::ValueOps) -> FloatCC {
+        match op {
+            bril::ValueOps::Flt => FloatCC::LessThan,
+            bril::ValueOps::Fle => FloatCC::LessThanOrEqual,
+            bril::ValueOps::Feq => FloatCC::Equal,
+            bril::ValueOps::Fge => FloatCC::GreaterThanOrEqual,
+            bril::ValueOps::Fgt => FloatCC::GreaterThan,
+            _ => panic!("not a comparison opcode: {}", op),
+        }
+    }
+
     /// Compile one Bril instruction into CLIF.
     fn compile_inst(&self, inst: &bril::Instruction, builder: &mut FunctionBuilder) {
         match inst {
@@ -516,13 +488,15 @@ impl CompileEnv<'_> {
                 | bril::ValueOps::Div
                 | bril::ValueOps::And
                 | bril::ValueOps::Or => {
-                    self.gen_binary(builder, args, dest, op_type, translate_op(*op));
+                    self.gen_binary(builder, args, dest, op_type, Self::translate_op(*op));
                 }
                 bril::ValueOps::Lt
                 | bril::ValueOps::Le
                 | bril::ValueOps::Eq
                 | bril::ValueOps::Ge
-                | bril::ValueOps::Gt => self.gen_icmp(builder, args, dest, translate_intcc(*op)),
+                | bril::ValueOps::Gt => {
+                    self.gen_icmp(builder, args, dest, Self::translate_intcc(*op))
+                }
                 bril::ValueOps::Not => {
                     let arg = builder.use_var(self.vars[&args[0]]);
                     let res = builder.ins().bnot(arg);
@@ -548,13 +522,15 @@ impl CompileEnv<'_> {
                 | bril::ValueOps::Fsub
                 | bril::ValueOps::Fmul
                 | bril::ValueOps::Fdiv => {
-                    self.gen_binary(builder, args, dest, op_type, translate_op(*op));
+                    self.gen_binary(builder, args, dest, op_type, Self::translate_op(*op));
                 }
                 bril::ValueOps::Flt
                 | bril::ValueOps::Fle
                 | bril::ValueOps::Feq
                 | bril::ValueOps::Fge
-                | bril::ValueOps::Fgt => self.gen_fcmp(builder, args, dest, translate_floatcc(*op)),
+                | bril::ValueOps::Fgt => {
+                    self.gen_fcmp(builder, args, dest, Self::translate_floatcc(*op))
+                }
 
                 // Memory extension.
                 bril::ValueOps::Alloc => {
@@ -591,6 +567,24 @@ impl CompileEnv<'_> {
         }
     }
 
+    /// Is a given Bril instruction a basic block terminator?
+    fn is_term(inst: &bril::Instruction) -> bool {
+        if let bril::Instruction::Effect {
+            args: _,
+            funcs: _,
+            labels: _,
+            op,
+        } = inst
+        {
+            matches!(
+                op,
+                bril::EffectOps::Branch | bril::EffectOps::Jump | bril::EffectOps::Return
+            )
+        } else {
+            false
+        }
+    }
+
     /// Emit the body of a Bril function into a CLIF function.
     fn compile_body(&self, insts: &[bril::Code], builder: &mut FunctionBuilder) {
         let mut terminated = false; // Entry block is open.
@@ -607,7 +601,7 @@ impl CompileEnv<'_> {
                     // Compile one instruction.
                     self.compile_inst(inst, builder);
 
-                    if is_term(inst) {
+                    if Self::is_term(inst) {
                         terminated = true;
                     }
                 }
@@ -1033,10 +1027,20 @@ impl Translator<JITModule> {
         self.module.get_finalized_function(func_id)
     }
 
+    fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
+        vals.iter()
+            .map(|lit| match lit {
+                bril::Literal::Int(i) => i as *const i64 as *const u8,
+                bril::Literal::Bool(b) => b as *const bool as *const u8,
+                bril::Literal::Float(f) => f as *const f64 as *const u8,
+            })
+            .collect()
+    }
+
     /// Run a JITted wrapper function.
     unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
         let func_ptr = self.get_func_ptr(func_id);
-        let arg_ptrs = val_ptrs(args);
+        let arg_ptrs = Self::val_ptrs(args);
         let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
         func(arg_ptrs.as_ptr());
     }
