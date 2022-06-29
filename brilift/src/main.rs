@@ -176,15 +176,6 @@ fn translate_mem_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
     }
 }
 
-/// Get the element size of the pointed-to type in bytes. `typ` must be a Bril pointer type.
-fn pointee_bytes(typ: &bril::Type, pointer_type: ir::Type) -> u32 {
-    let pointee_type = match typ {
-        bril::Type::Pointer(t) => t,
-        _ => panic!("alloc for non-pointer type"),
-    };
-    translate_mem_type(pointee_type, pointer_type).bytes()
-}
-
 /// Generate a CLIF signature for a Bril function.
 fn translate_sig(func: &bril::Function, pointer_type: ir::Type) -> ir::Signature {
     let mut sig = ir::Signature::new(isa::CallConv::Fast);
@@ -342,6 +333,15 @@ struct CompileEnv<'a> {
 }
 
 impl CompileEnv<'_> {
+    /// Get the element size of the pointed-to type in bytes. `typ` must be a Bril pointer type.
+    fn pointee_bytes(&self, typ: &bril::Type) -> u32 {
+        let pointee_type = match typ {
+            bril::Type::Pointer(t) => t,
+            _ => panic!("alloc for non-pointer type"),
+        };
+        translate_mem_type(pointee_type, self.pointer_type).bytes()
+    }
+
     /// Generate a CLIF icmp instruction.
     fn gen_icmp(
         &self,
@@ -445,6 +445,7 @@ impl CompileEnv<'_> {
             bril::Type::Pointer(_) => panic!("pointer literals not allowed"),
         }
     }
+
     /// Compile one Bril instruction into CLIF.
     fn compile_inst(&self, inst: &bril::Instruction, builder: &mut FunctionBuilder) {
         match inst {
@@ -561,7 +562,7 @@ impl CompileEnv<'_> {
                     let count_val = builder.use_var(self.vars[&args[0]]);
 
                     // The bytes per element depends on the type.
-                    let elem_bytes = pointee_bytes(op_type, self.pointer_type);
+                    let elem_bytes = self.pointee_bytes(op_type);
                     let bytes_val = builder.ins().iconst(ir::types::I64, elem_bytes as i64);
 
                     // Call the allocate function.
@@ -580,7 +581,7 @@ impl CompileEnv<'_> {
                     let orig_ptr = builder.use_var(self.vars[&args[0]]);
                     let amt = builder.use_var(self.vars[&args[1]]);
 
-                    let size = pointee_bytes(op_type, self.pointer_type);
+                    let size = self.pointee_bytes(op_type);
                     let offset_val = builder.ins().imul_imm(amt, size as i64);
 
                     let res = builder.ins().iadd(orig_ptr, offset_val);
