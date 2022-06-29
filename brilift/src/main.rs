@@ -684,6 +684,26 @@ impl<M: Module> Translator<M> {
         self.context.clear();
     }
 
+    /// A hacked version of `Module::declare_func_in_func` that *never* uses colocated function calls.
+    ///
+    /// This works around a limitatation in the `object` crate for AOT compilation: it doesn't seem
+    /// to support `Arm64Call` relocations and their 26-bit offsets, which are used by default for
+    /// calls to Cranelift's "colocated" (i.e., within-the-same-module) functions. Our workaround
+    /// is just to turn off colocated calls altogether.
+    fn declare_func_in_func(
+        module: &mut M,
+        func: cranelift_module::FuncId,
+        in_func: &mut ir::Function,
+    ) -> ir::FuncRef {
+        let decl = module.declarations().get_function_decl(func);
+        let signature = in_func.import_signature(decl.signature.clone());
+        in_func.import_function(ir::ExtFuncData {
+            name: ir::ExternalName::user(0, func.as_u32()),
+            signature,
+            colocated: false, // This is the key difference with cranelift_module.
+        })
+    }
+
     fn compile_func(&mut self, func: &bril::Function) {
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
@@ -723,7 +743,12 @@ impl<M: Module> Translator<M> {
         let func_refs: HashMap<&String, ir::FuncRef> = self
             .funcs
             .iter()
-            .map(|(name, id)| (name, self.module.declare_func_in_func(*id, builder.func)))
+            .map(|(name, id)| {
+                (
+                    name,
+                    Self::declare_func_in_func(&mut self.module, *id, builder.func),
+                )
+            })
             .collect();
 
         let env = CompileEnv {
@@ -818,7 +843,8 @@ impl<M: Module> Translator<M> {
 
         // Call the "real" main function.
         let real_main_id = self.funcs["main"];
-        let real_main_ref = self.module.declare_func_in_func(real_main_id, builder.func);
+        let real_main_ref =
+            Self::declare_func_in_func(&mut self.module, real_main_id, builder.func);
         builder.ins().call(real_main_ref, &arg_vals);
 
         // Return 0 from `main`.
