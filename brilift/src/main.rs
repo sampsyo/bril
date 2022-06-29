@@ -270,74 +270,6 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
         .collect()
 }
 
-// TODO Should really be a trait with two different structs that implement it?
-struct Translator<M: Module> {
-    rt_funcs: EnumMap<RTFunc, cranelift_module::FuncId>,
-    module: M,
-    context: cranelift_codegen::Context,
-    funcs: HashMap<String, cranelift_module::FuncId>,
-}
-
-/// Declare all our runtime functions in a CLIF module.
-fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
-    enum_map! {
-        rtfunc =>
-            module
-                .declare_function(
-                    rtfunc.name(),
-                    cranelift_module::Linkage::Import,
-                    &rtfunc.sig(module.isa().pointer_type(), module.isa().default_call_conv()),
-                )
-                .unwrap()
-    }
-}
-
-/// Configure a Cranelift target ISA object.
-fn get_isa(
-    target: Option<String>,
-    pic: bool,
-    opt_level: &str,
-) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
-    let mut flag_builder = settings::builder();
-    flag_builder
-        .set("opt_level", opt_level)
-        .expect("invalid opt level");
-    if pic {
-        flag_builder.set("is_pic", "true").unwrap();
-    }
-    let isa_builder = if let Some(targ) = target {
-        cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target")
-    } else {
-        cranelift_native::builder().unwrap()
-    };
-    isa_builder
-        .finish(settings::Flags::new(flag_builder))
-        .unwrap()
-}
-
-/// AOT compiler that generates `.o` files.
-impl Translator<ObjectModule> {
-    fn new(target: Option<String>, opt_level: &str) -> Self {
-        // Make an object module.
-        let isa = get_isa(target, true, opt_level);
-        let mut module =
-            ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
-
-        Self {
-            rt_funcs: declare_rt(&mut module),
-            module,
-            context: cranelift_codegen::Context::new(),
-            funcs: HashMap::new(),
-        }
-    }
-
-    fn emit(self, output: &str) {
-        let prod = self.module.finish();
-        let objdata = prod.emit().expect("emission failed");
-        fs::write(output, objdata).expect("failed to write .o file");
-    }
-}
-
 fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
     vals.iter()
         .map(|lit| match lit {
@@ -346,71 +278,6 @@ fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
             bril::Literal::Float(f) => f as *const f64 as *const u8,
         })
         .collect()
-}
-
-/// JIT compiler that totally does not work yet.
-impl Translator<JITModule> {
-    // `cranelift_jit` does not yet support PIC on AArch64:
-    // https://github.com/bytecodealliance/wasmtime/issues/2735
-    // The default initialization path for `JITBuilder` is hard-coded to use PIC, so we manually
-    // disable it here. Once this is fully supported in `cranelift_jit`, we can switch to the
-    // generic versin below unconditionally.
-    #[cfg(target_arch = "aarch64")]
-    fn jit_builder() -> JITBuilder {
-        let mut flag_builder = settings::builder();
-        flag_builder.set("use_colocated_libcalls", "false").unwrap();
-        flag_builder.set("is_pic", "false").unwrap(); // PIC unsupported on ARM.
-        let isa_builder = cranelift_native::builder().unwrap();
-        let isa = isa_builder
-            .finish(settings::Flags::new(flag_builder))
-            .unwrap();
-        JITBuilder::with_isa(isa, cranelift_module::default_libcall_names())
-    }
-
-    // The normal way to set up a JIT builder.
-    #[cfg(not(target_arch = "aarch64"))]
-    fn jit_builder() -> JITBuilder {
-        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap()
-    }
-
-    fn new() -> Self {
-        // Set up the JIT.
-        let mut builder = Self::jit_builder();
-
-        // Provide runtime functions.
-        enum_map! {
-            rtfunc => {
-                let f: RTFunc = rtfunc;
-                builder.symbol(f.name(), f.rt_impl());
-            }
-        };
-
-        let mut module = JITModule::new(builder);
-
-        Self {
-            rt_funcs: declare_rt(&mut module),
-            context: module.make_context(),
-            module,
-            funcs: HashMap::new(),
-        }
-    }
-
-    /// Obtain an entry-point code pointer. The pointer remains valid as long as the translator
-    /// itself (and therefore the `JITModule`) lives.
-    fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
-        self.module.clear_context(&mut self.context);
-        self.module.finalize_definitions();
-
-        self.module.get_finalized_function(func_id)
-    }
-
-    /// Run a JITted wrapper function.
-    unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
-        let func_ptr = self.get_func_ptr(func_id);
-        let arg_ptrs = val_ptrs(args);
-        let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
-        func(arg_ptrs.as_ptr());
-    }
 }
 
 /// Is a given Bril instruction a basic block terminator?
@@ -765,7 +632,29 @@ impl CompileEnv<'_> {
     }
 }
 
+/// A compiler from an entire Bril program to a CLIF module.
+struct Translator<M: Module> {
+    rt_funcs: EnumMap<RTFunc, cranelift_module::FuncId>,
+    module: M,
+    context: cranelift_codegen::Context,
+    funcs: HashMap<String, cranelift_module::FuncId>,
+}
+
 impl<M: Module> Translator<M> {
+    /// Declare all our runtime functions in a CLIF module.
+    fn declare_rt(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
+        enum_map! {
+            rtfunc =>
+                module
+                    .declare_function(
+                        rtfunc.name(),
+                        cranelift_module::Linkage::Import,
+                        &rtfunc.sig(module.isa().pointer_type(), module.isa().default_call_conv()),
+                    )
+                    .unwrap()
+        }
+    }
+
     fn declare_func(&mut self, func: &bril::Function) -> cranelift_module::FuncId {
         // The Bril `main` function gets a different internal name, and we call it from a new
         // proper main function that gets argv/argc.
@@ -1041,8 +930,115 @@ impl<M: Module> Translator<M> {
     }
 }
 
-fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {
-    funcs.iter().find(|f| f.name == name).unwrap()
+/// AOT compiler that generates `.o` files.
+impl Translator<ObjectModule> {
+    /// Configure a Cranelift target ISA object.
+    fn get_isa(
+        target: Option<String>,
+        pic: bool,
+        opt_level: &str,
+    ) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+        let mut flag_builder = settings::builder();
+        flag_builder
+            .set("opt_level", opt_level)
+            .expect("invalid opt level");
+        if pic {
+            flag_builder.set("is_pic", "true").unwrap();
+        }
+        let isa_builder = if let Some(targ) = target {
+            cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target")
+        } else {
+            cranelift_native::builder().unwrap()
+        };
+        isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .unwrap()
+    }
+
+    fn new(target: Option<String>, opt_level: &str) -> Self {
+        // Make an object module.
+        let isa = Self::get_isa(target, true, opt_level);
+        let mut module =
+            ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
+
+        Self {
+            rt_funcs: Self::declare_rt(&mut module),
+            module,
+            context: cranelift_codegen::Context::new(),
+            funcs: HashMap::new(),
+        }
+    }
+
+    fn emit(self, output: &str) {
+        let prod = self.module.finish();
+        let objdata = prod.emit().expect("emission failed");
+        fs::write(output, objdata).expect("failed to write .o file");
+    }
+}
+
+/// A JIT compiler.
+impl Translator<JITModule> {
+    // `cranelift_jit` does not yet support PIC on AArch64:
+    // https://github.com/bytecodealliance/wasmtime/issues/2735
+    // The default initialization path for `JITBuilder` is hard-coded to use PIC, so we manually
+    // disable it here. Once this is fully supported in `cranelift_jit`, we can switch to the
+    // generic versin below unconditionally.
+    #[cfg(target_arch = "aarch64")]
+    fn jit_builder() -> JITBuilder {
+        let mut flag_builder = settings::builder();
+        flag_builder.set("use_colocated_libcalls", "false").unwrap();
+        flag_builder.set("is_pic", "false").unwrap(); // PIC unsupported on ARM.
+        let isa_builder = cranelift_native::builder().unwrap();
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .unwrap();
+        JITBuilder::with_isa(isa, cranelift_module::default_libcall_names())
+    }
+
+    // The normal way to set up a JIT builder.
+    #[cfg(not(target_arch = "aarch64"))]
+    fn jit_builder() -> JITBuilder {
+        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap()
+    }
+
+    fn new() -> Self {
+        // Set up the JIT.
+        let mut builder = Self::jit_builder();
+
+        // Provide runtime functions.
+        enum_map! {
+            rtfunc => {
+                let f: RTFunc = rtfunc;
+                builder.symbol(f.name(), f.rt_impl());
+            }
+        };
+
+        let mut module = JITModule::new(builder);
+
+        Self {
+            rt_funcs: Self::declare_rt(&mut module),
+            context: module.make_context(),
+            module,
+            funcs: HashMap::new(),
+        }
+    }
+
+    /// Obtain an entry-point code pointer. The pointer remains valid as long as the translator
+    /// itself (and therefore the `JITModule`) lives.
+    fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
+        self.module.clear_context(&mut self.context);
+        self.module.finalize_definitions();
+
+        self.module.get_finalized_function(func_id)
+    }
+
+    /// Run a JITted wrapper function.
+    unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
+        let func_ptr = self.get_func_ptr(func_id);
+        let arg_ptrs = val_ptrs(args);
+        let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
+        func(arg_ptrs.as_ptr());
+    }
 }
 
 #[derive(FromArgs)]
@@ -1081,6 +1077,10 @@ struct Args {
         description = "arguments for @main function (JIT mode only)"
     )]
     args: Vec<String>,
+}
+
+fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {
+    funcs.iter().find(|f| f.name == name).unwrap()
 }
 
 fn main() {
