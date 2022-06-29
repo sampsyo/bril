@@ -1,4 +1,4 @@
-# ARGS: ../../benchmarks/
+# ARGS: ../../benchmarks/core
 from "bitwise-ops.bril" import @AND, @OR as @LIB_OR, @loop_subroutine;
 
 # Does OR and throws out the result
