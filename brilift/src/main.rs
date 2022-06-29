@@ -176,15 +176,6 @@ fn translate_mem_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
     }
 }
 
-/// Get the element size of the pointed-to type in bytes. `typ` must be a Bril pointer type.
-fn pointee_bytes(typ: &bril::Type, pointer_type: ir::Type) -> u32 {
-    let pointee_type = match typ {
-        bril::Type::Pointer(t) => t,
-        _ => panic!("alloc for non-pointer type"),
-    };
-    translate_mem_type(pointee_type, pointer_type).bytes()
-}
-
 /// Generate a CLIF signature for a Bril function.
 fn translate_sig(func: &bril::Function, pointer_type: ir::Type) -> ir::Signature {
     let mut sig = ir::Signature::new(isa::CallConv::Fast);
@@ -199,47 +190,6 @@ fn translate_sig(func: &bril::Function, pointer_type: ir::Type) -> ir::Signature
         )));
     }
     sig
-}
-
-/// Translate Bril opcodes that have CLIF equivalents.
-fn translate_op(op: bril::ValueOps) -> ir::Opcode {
-    match op {
-        bril::ValueOps::Add => ir::Opcode::Iadd,
-        bril::ValueOps::Sub => ir::Opcode::Isub,
-        bril::ValueOps::Mul => ir::Opcode::Imul,
-        bril::ValueOps::Div => ir::Opcode::Sdiv,
-        bril::ValueOps::And => ir::Opcode::Band,
-        bril::ValueOps::Or => ir::Opcode::Bor,
-        bril::ValueOps::Fadd => ir::Opcode::Fadd,
-        bril::ValueOps::Fsub => ir::Opcode::Fsub,
-        bril::ValueOps::Fmul => ir::Opcode::Fmul,
-        bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
-        _ => panic!("not a translatable opcode: {}", op),
-    }
-}
-
-/// Translate Bril opcodes that correspond to CLIF integer comparisons.
-fn translate_intcc(op: bril::ValueOps) -> IntCC {
-    match op {
-        bril::ValueOps::Lt => IntCC::SignedLessThan,
-        bril::ValueOps::Le => IntCC::SignedLessThanOrEqual,
-        bril::ValueOps::Eq => IntCC::Equal,
-        bril::ValueOps::Ge => IntCC::SignedGreaterThanOrEqual,
-        bril::ValueOps::Gt => IntCC::SignedGreaterThan,
-        _ => panic!("not a comparison opcode: {}", op),
-    }
-}
-
-/// Translate Bril opcodes that correspond to CLIF floating point comparisons.
-fn translate_floatcc(op: bril::ValueOps) -> FloatCC {
-    match op {
-        bril::ValueOps::Flt => FloatCC::LessThan,
-        bril::ValueOps::Fle => FloatCC::LessThanOrEqual,
-        bril::ValueOps::Feq => FloatCC::Equal,
-        bril::ValueOps::Fge => FloatCC::GreaterThanOrEqual,
-        bril::ValueOps::Fgt => FloatCC::GreaterThan,
-        _ => panic!("not a comparison opcode: {}", op),
-    }
 }
 
 /// Get all the variables defined in a function (and their types), including the arguments.
@@ -270,284 +220,10 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
         .collect()
 }
 
-// TODO Should really be a trait with two different structs that implement it?
-struct Translator<M: Module> {
-    rt_funcs: EnumMap<RTFunc, cranelift_module::FuncId>,
-    module: M,
-    context: cranelift_codegen::Context,
-    funcs: HashMap<String, cranelift_module::FuncId>,
-}
-
-/// Declare all our runtime functions in a CLIF module.
-fn declare_rt<M: Module>(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
-    enum_map! {
-        rtfunc =>
-            module
-                .declare_function(
-                    rtfunc.name(),
-                    cranelift_module::Linkage::Import,
-                    &rtfunc.sig(module.isa().pointer_type(), module.isa().default_call_conv()),
-                )
-                .unwrap()
-    }
-}
-
-/// Configure a Cranelift target ISA object.
-fn get_isa(
-    target: Option<String>,
-    pic: bool,
-    opt_level: &str,
-) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
-    let mut flag_builder = settings::builder();
-    flag_builder
-        .set("opt_level", opt_level)
-        .expect("invalid opt level");
-    if pic {
-        flag_builder.set("is_pic", "true").unwrap();
-    }
-    let isa_builder = if let Some(targ) = target {
-        cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target")
-    } else {
-        cranelift_native::builder().unwrap()
-    };
-    isa_builder
-        .finish(settings::Flags::new(flag_builder))
-        .unwrap()
-}
-
-/// AOT compiler that generates `.o` files.
-impl Translator<ObjectModule> {
-    fn new(target: Option<String>, opt_level: &str) -> Self {
-        // Make an object module.
-        let isa = get_isa(target, true, opt_level);
-        let mut module =
-            ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
-
-        Self {
-            rt_funcs: declare_rt(&mut module),
-            module,
-            context: cranelift_codegen::Context::new(),
-            funcs: HashMap::new(),
-        }
-    }
-
-    fn emit(self, output: &str) {
-        let prod = self.module.finish();
-        let objdata = prod.emit().expect("emission failed");
-        fs::write(output, objdata).expect("failed to write .o file");
-    }
-}
-
-fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
-    vals.iter()
-        .map(|lit| match lit {
-            bril::Literal::Int(i) => i as *const i64 as *const u8,
-            bril::Literal::Bool(b) => b as *const bool as *const u8,
-            bril::Literal::Float(f) => f as *const f64 as *const u8,
-        })
-        .collect()
-}
-
-/// JIT compiler that totally does not work yet.
-impl Translator<JITModule> {
-    // `cranelift_jit` does not yet support PIC on AArch64:
-    // https://github.com/bytecodealliance/wasmtime/issues/2735
-    // The default initialization path for `JITBuilder` is hard-coded to use PIC, so we manually
-    // disable it here. Once this is fully supported in `cranelift_jit`, we can switch to the
-    // generic versin below unconditionally.
-    #[cfg(target_arch = "aarch64")]
-    fn jit_builder() -> JITBuilder {
-        let mut flag_builder = settings::builder();
-        flag_builder.set("use_colocated_libcalls", "false").unwrap();
-        flag_builder.set("is_pic", "false").unwrap(); // PIC unsupported on ARM.
-        let isa_builder = cranelift_native::builder().unwrap();
-        let isa = isa_builder
-            .finish(settings::Flags::new(flag_builder))
-            .unwrap();
-        JITBuilder::with_isa(isa, cranelift_module::default_libcall_names())
-    }
-
-    // The normal way to set up a JIT builder.
-    #[cfg(not(target_arch = "aarch64"))]
-    fn jit_builder() -> JITBuilder {
-        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap()
-    }
-
-    fn new() -> Self {
-        // Set up the JIT.
-        let mut builder = Self::jit_builder();
-
-        // Provide runtime functions.
-        enum_map! {
-            rtfunc => {
-                let f: RTFunc = rtfunc;
-                builder.symbol(f.name(), f.rt_impl());
-            }
-        };
-
-        let mut module = JITModule::new(builder);
-
-        Self {
-            rt_funcs: declare_rt(&mut module),
-            context: module.make_context(),
-            module,
-            funcs: HashMap::new(),
-        }
-    }
-
-    /// Obtain an entry-point code pointer. The pointer remains valid as long as the translator
-    /// itself (and therefore the `JITModule`) lives.
-    fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
-        self.module.clear_context(&mut self.context);
-        self.module.finalize_definitions();
-
-        self.module.get_finalized_function(func_id)
-    }
-
-    /// Run a JITted wrapper function.
-    unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
-        let func_ptr = self.get_func_ptr(func_id);
-        let arg_ptrs = val_ptrs(args);
-        let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
-        func(arg_ptrs.as_ptr());
-    }
-}
-
-/// Is a given Bril instruction a basic block terminator?
-fn is_term(inst: &bril::Instruction) -> bool {
-    if let bril::Instruction::Effect {
-        args: _,
-        funcs: _,
-        labels: _,
-        op,
-    } = inst
-    {
-        matches!(
-            op,
-            bril::EffectOps::Branch | bril::EffectOps::Jump | bril::EffectOps::Return
-        )
-    } else {
-        false
-    }
-}
-
-/// Generate a CLIF icmp instruction.
-fn gen_icmp(
-    builder: &mut FunctionBuilder,
-    vars: &HashMap<String, Variable>,
-    args: &[String],
-    dest: &String,
-    cc: ir::condcodes::IntCC,
-) {
-    let lhs = builder.use_var(vars[&args[0]]);
-    let rhs = builder.use_var(vars[&args[1]]);
-    let res = builder.ins().icmp(cc, lhs, rhs);
-    builder.def_var(vars[dest], res);
-}
-
-/// Generate a CLIF fcmp instruction.
-fn gen_fcmp(
-    builder: &mut FunctionBuilder,
-    vars: &HashMap<String, Variable>,
-    args: &[String],
-    dest: &String,
-    cc: ir::condcodes::FloatCC,
-) {
-    let lhs = builder.use_var(vars[&args[0]]);
-    let rhs = builder.use_var(vars[&args[1]]);
-    let res = builder.ins().fcmp(cc, lhs, rhs);
-    builder.def_var(vars[dest], res);
-}
-
-/// Generate a CLIF binary operator.
-fn gen_binary(
-    builder: &mut FunctionBuilder,
-    vars: &HashMap<String, Variable>,
-    args: &[String],
-    dest: &String,
-    dest_type: &bril::Type,
-    op: ir::Opcode,
-    pointer_type: ir::Type,
-) {
-    let lhs = builder.use_var(vars[&args[0]]);
-    let rhs = builder.use_var(vars[&args[1]]);
-    let typ = translate_type(dest_type, pointer_type);
-    let (inst, dfg) = builder.ins().Binary(op, typ, lhs, rhs);
-    let res = dfg.first_result(inst);
-    builder.def_var(vars[dest], res);
-}
-
-/// An environment for translating Bril into CLIF.
-struct CompileEnv<'a> {
-    vars: HashMap<String, Variable>,
-    var_types: HashMap<&'a String, &'a bril::Type>,
-    rt_refs: EnumMap<RTFunc, ir::FuncRef>,
-    blocks: HashMap<String, ir::Block>,
-    func_refs: HashMap<String, ir::FuncRef>,
-    pointer_type: ir::Type,
-}
-
-/// Implement a Bril `print` instruction in CLIF.
-fn gen_print(args: &[String], builder: &mut FunctionBuilder, env: &CompileEnv) {
-    let mut first = true;
-    for arg in args {
-        // Separate printed values.
-        if first {
-            first = false;
-        } else {
-            builder.ins().call(env.rt_refs[RTFunc::PrintSep], &[]);
-        }
-
-        // Print each value according to its type.
-        let arg_val = builder.use_var(env.vars[arg]);
-        let print_func = match env.var_types[arg] {
-            bril::Type::Int => RTFunc::PrintInt,
-            bril::Type::Bool => RTFunc::PrintBool,
-            bril::Type::Float => RTFunc::PrintFloat,
-            bril::Type::Pointer(_) => todo!(),
-        };
-        let print_ref = env.rt_refs[print_func];
-        builder.ins().call(print_ref, &[arg_val]);
-    }
-    builder.ins().call(env.rt_refs[RTFunc::PrintEnd], &[]);
-}
-
-fn compile_const(
-    builder: &mut FunctionBuilder,
-    typ: &bril::Type,
-    lit: &bril::Literal,
-) -> ir::Value {
-    match typ {
-        bril::Type::Int => {
-            let val = match lit {
-                bril::Literal::Int(i) => *i,
-                _ => panic!("incorrect literal type for int"),
-            };
-            builder.ins().iconst(ir::types::I64, val)
-        }
-        bril::Type::Bool => {
-            let val = match lit {
-                bril::Literal::Bool(b) => *b,
-                _ => panic!("incorrect literal type for bool"),
-            };
-            builder.ins().bconst(ir::types::B1, val)
-        }
-        bril::Type::Float => {
-            let val = match lit {
-                bril::Literal::Float(f) => *f,
-                bril::Literal::Int(i) => *i as f64,
-                _ => panic!("incorrect literal type for float"),
-            };
-            builder.ins().f64const(val)
-        }
-        bril::Type::Pointer(_) => panic!("pointer literals not allowed"),
-    }
-}
-
 /// Emit Cranelift code to load a Bril value from memory.
 fn emit_load(
-    builder: &mut FunctionBuilder,
     pointer_type: ir::Type,
+    builder: &mut FunctionBuilder,
     typ: &bril::Type,
     ptr: ir::Value,
 ) -> ir::Value {
@@ -577,210 +253,403 @@ fn emit_store(builder: &mut FunctionBuilder, typ: &bril::Type, ptr: ir::Value, v
         .store(ir::MemFlags::trusted(), mem_val, ptr, 0);
 }
 
-/// Compile one Bril instruction into CLIF.
-fn compile_inst(inst: &bril::Instruction, builder: &mut FunctionBuilder, env: &CompileEnv) {
-    match inst {
-        bril::Instruction::Constant {
-            dest,
-            op: _,
-            const_type: typ,
-            value,
-        } => {
-            let val = compile_const(builder, typ, value);
-            builder.def_var(env.vars[dest], val);
+/// An environment for translating Bril into CLIF.
+struct CompileEnv<'a> {
+    vars: HashMap<&'a String, Variable>,
+    var_types: HashMap<&'a String, &'a bril::Type>,
+    rt_refs: EnumMap<RTFunc, ir::FuncRef>,
+    blocks: HashMap<&'a String, ir::Block>,
+    func_refs: HashMap<&'a String, ir::FuncRef>,
+    pointer_type: ir::Type,
+}
+
+impl CompileEnv<'_> {
+    /// Get the element size of the pointed-to type in bytes. `typ` must be a Bril pointer type.
+    fn pointee_bytes(&self, typ: &bril::Type) -> u32 {
+        let pointee_type = match typ {
+            bril::Type::Pointer(t) => t,
+            _ => panic!("alloc for non-pointer type"),
+        };
+        translate_mem_type(pointee_type, self.pointer_type).bytes()
+    }
+
+    /// Generate a CLIF icmp instruction.
+    fn gen_icmp(
+        &self,
+        builder: &mut FunctionBuilder,
+        args: &[String],
+        dest: &String,
+        cc: ir::condcodes::IntCC,
+    ) {
+        let lhs = builder.use_var(self.vars[&args[0]]);
+        let rhs = builder.use_var(self.vars[&args[1]]);
+        let res = builder.ins().icmp(cc, lhs, rhs);
+        builder.def_var(self.vars[dest], res);
+    }
+
+    /// Generate a CLIF fcmp instruction.
+    fn gen_fcmp(
+        &self,
+        builder: &mut FunctionBuilder,
+        args: &[String],
+        dest: &String,
+        cc: ir::condcodes::FloatCC,
+    ) {
+        let lhs = builder.use_var(self.vars[&args[0]]);
+        let rhs = builder.use_var(self.vars[&args[1]]);
+        let res = builder.ins().fcmp(cc, lhs, rhs);
+        builder.def_var(self.vars[dest], res);
+    }
+
+    /// Generate a CLIF binary operator.
+    fn gen_binary(
+        &self,
+        builder: &mut FunctionBuilder,
+        args: &[String],
+        dest: &String,
+        dest_type: &bril::Type,
+        op: ir::Opcode,
+    ) {
+        let lhs = builder.use_var(self.vars[&args[0]]);
+        let rhs = builder.use_var(self.vars[&args[1]]);
+        let typ = translate_type(dest_type, self.pointer_type);
+        let (inst, dfg) = builder.ins().Binary(op, typ, lhs, rhs);
+        let res = dfg.first_result(inst);
+        builder.def_var(self.vars[dest], res);
+    }
+
+    /// Implement a Bril `print` instruction in CLIF.
+    fn gen_print(&self, args: &[String], builder: &mut FunctionBuilder) {
+        let mut first = true;
+        for arg in args {
+            // Separate printed values.
+            if first {
+                first = false;
+            } else {
+                builder.ins().call(self.rt_refs[RTFunc::PrintSep], &[]);
+            }
+
+            // Print each value according to its type.
+            let arg_val = builder.use_var(self.vars[arg]);
+            let print_func = match self.var_types[arg] {
+                bril::Type::Int => RTFunc::PrintInt,
+                bril::Type::Bool => RTFunc::PrintBool,
+                bril::Type::Float => RTFunc::PrintFloat,
+                bril::Type::Pointer(_) => todo!(),
+            };
+            let print_ref = self.rt_refs[print_func];
+            builder.ins().call(print_ref, &[arg_val]);
         }
-        bril::Instruction::Effect {
-            args,
-            funcs,
-            labels,
-            op,
-        } => match op {
-            bril::EffectOps::Print => gen_print(args, builder, env),
-            bril::EffectOps::Jump => {
-                builder.ins().jump(env.blocks[&labels[0]], &[]);
+        builder.ins().call(self.rt_refs[RTFunc::PrintEnd], &[]);
+    }
+
+    /// Implement a Bril constant as a CLIF constant assignment.
+    fn compile_const(
+        &self,
+        builder: &mut FunctionBuilder,
+        typ: &bril::Type,
+        lit: &bril::Literal,
+    ) -> ir::Value {
+        match typ {
+            bril::Type::Int => {
+                let val = match lit {
+                    bril::Literal::Int(i) => *i,
+                    _ => panic!("incorrect literal type for int"),
+                };
+                builder.ins().iconst(ir::types::I64, val)
             }
-            bril::EffectOps::Branch => {
-                let arg = builder.use_var(env.vars[&args[0]]);
-                let true_block = env.blocks[&labels[0]];
-                let false_block = env.blocks[&labels[1]];
-                builder.ins().brnz(arg, true_block, &[]);
-                builder.ins().jump(false_block, &[]);
+            bril::Type::Bool => {
+                let val = match lit {
+                    bril::Literal::Bool(b) => *b,
+                    _ => panic!("incorrect literal type for bool"),
+                };
+                builder.ins().bconst(ir::types::B1, val)
             }
-            bril::EffectOps::Call => {
-                let func_ref = env.func_refs[&funcs[0]];
-                let arg_vals: Vec<ir::Value> = args
-                    .iter()
-                    .map(|arg| builder.use_var(env.vars[arg]))
-                    .collect();
-                builder.ins().call(func_ref, &arg_vals);
+            bril::Type::Float => {
+                let val = match lit {
+                    bril::Literal::Float(f) => *f,
+                    bril::Literal::Int(i) => *i as f64,
+                    _ => panic!("incorrect literal type for float"),
+                };
+                builder.ins().f64const(val)
             }
-            bril::EffectOps::Return => {
-                if !args.is_empty() {
-                    let arg = builder.use_var(env.vars[&args[0]]);
-                    builder.ins().return_(&[arg]);
-                } else {
-                    builder.ins().return_(&[]);
+            bril::Type::Pointer(_) => panic!("pointer literals not allowed"),
+        }
+    }
+
+    /// Translate Bril opcodes that have CLIF equivalents.
+    fn translate_op(op: bril::ValueOps) -> ir::Opcode {
+        match op {
+            bril::ValueOps::Add => ir::Opcode::Iadd,
+            bril::ValueOps::Sub => ir::Opcode::Isub,
+            bril::ValueOps::Mul => ir::Opcode::Imul,
+            bril::ValueOps::Div => ir::Opcode::Sdiv,
+            bril::ValueOps::And => ir::Opcode::Band,
+            bril::ValueOps::Or => ir::Opcode::Bor,
+            bril::ValueOps::Fadd => ir::Opcode::Fadd,
+            bril::ValueOps::Fsub => ir::Opcode::Fsub,
+            bril::ValueOps::Fmul => ir::Opcode::Fmul,
+            bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
+            _ => panic!("not a translatable opcode: {}", op),
+        }
+    }
+
+    /// Translate Bril opcodes that correspond to CLIF integer comparisons.
+    fn translate_intcc(op: bril::ValueOps) -> IntCC {
+        match op {
+            bril::ValueOps::Lt => IntCC::SignedLessThan,
+            bril::ValueOps::Le => IntCC::SignedLessThanOrEqual,
+            bril::ValueOps::Eq => IntCC::Equal,
+            bril::ValueOps::Ge => IntCC::SignedGreaterThanOrEqual,
+            bril::ValueOps::Gt => IntCC::SignedGreaterThan,
+            _ => panic!("not a comparison opcode: {}", op),
+        }
+    }
+
+    /// Translate Bril opcodes that correspond to CLIF floating point comparisons.
+    fn translate_floatcc(op: bril::ValueOps) -> FloatCC {
+        match op {
+            bril::ValueOps::Flt => FloatCC::LessThan,
+            bril::ValueOps::Fle => FloatCC::LessThanOrEqual,
+            bril::ValueOps::Feq => FloatCC::Equal,
+            bril::ValueOps::Fge => FloatCC::GreaterThanOrEqual,
+            bril::ValueOps::Fgt => FloatCC::GreaterThan,
+            _ => panic!("not a comparison opcode: {}", op),
+        }
+    }
+
+    /// Compile one Bril instruction into CLIF.
+    fn compile_inst(&self, inst: &bril::Instruction, builder: &mut FunctionBuilder) {
+        match inst {
+            bril::Instruction::Constant {
+                dest,
+                op: _,
+                const_type: typ,
+                value,
+            } => {
+                let val = self.compile_const(builder, typ, value);
+                builder.def_var(self.vars[dest], val);
+            }
+            bril::Instruction::Effect {
+                args,
+                funcs,
+                labels,
+                op,
+            } => match op {
+                bril::EffectOps::Print => self.gen_print(args, builder),
+                bril::EffectOps::Jump => {
+                    builder.ins().jump(self.blocks[&labels[0]], &[]);
                 }
-            }
-            bril::EffectOps::Nop => {}
-            bril::EffectOps::Store => {
-                let ptr_arg = builder.use_var(env.vars[&args[0]]);
-                let val_arg = builder.use_var(env.vars[&args[1]]);
-                emit_store(builder, env.var_types[&args[1]], ptr_arg, val_arg);
-            }
-            bril::EffectOps::Free => {
-                let ptr_arg = builder.use_var(env.vars[&args[0]]);
-                builder.ins().call(env.rt_refs[RTFunc::Free], &[ptr_arg]);
-            }
-        },
-        bril::Instruction::Value {
-            args,
-            dest,
-            funcs,
+                bril::EffectOps::Branch => {
+                    let arg = builder.use_var(self.vars[&args[0]]);
+                    let true_block = self.blocks[&labels[0]];
+                    let false_block = self.blocks[&labels[1]];
+                    builder.ins().brnz(arg, true_block, &[]);
+                    builder.ins().jump(false_block, &[]);
+                }
+                bril::EffectOps::Call => {
+                    let func_ref = self.func_refs[&funcs[0]];
+                    let arg_vals: Vec<ir::Value> = args
+                        .iter()
+                        .map(|arg| builder.use_var(self.vars[arg]))
+                        .collect();
+                    builder.ins().call(func_ref, &arg_vals);
+                }
+                bril::EffectOps::Return => {
+                    if !args.is_empty() {
+                        let arg = builder.use_var(self.vars[&args[0]]);
+                        builder.ins().return_(&[arg]);
+                    } else {
+                        builder.ins().return_(&[]);
+                    }
+                }
+                bril::EffectOps::Nop => {}
+                bril::EffectOps::Store => {
+                    let ptr_arg = builder.use_var(self.vars[&args[0]]);
+                    let val_arg = builder.use_var(self.vars[&args[1]]);
+                    emit_store(builder, self.var_types[&args[1]], ptr_arg, val_arg);
+                }
+                bril::EffectOps::Free => {
+                    let ptr_arg = builder.use_var(self.vars[&args[0]]);
+                    builder.ins().call(self.rt_refs[RTFunc::Free], &[ptr_arg]);
+                }
+            },
+            bril::Instruction::Value {
+                args,
+                dest,
+                funcs,
+                labels: _,
+                op,
+                op_type,
+            } => match op {
+                bril::ValueOps::Add
+                | bril::ValueOps::Sub
+                | bril::ValueOps::Mul
+                | bril::ValueOps::Div
+                | bril::ValueOps::And
+                | bril::ValueOps::Or => {
+                    self.gen_binary(builder, args, dest, op_type, Self::translate_op(*op));
+                }
+                bril::ValueOps::Lt
+                | bril::ValueOps::Le
+                | bril::ValueOps::Eq
+                | bril::ValueOps::Ge
+                | bril::ValueOps::Gt => {
+                    self.gen_icmp(builder, args, dest, Self::translate_intcc(*op))
+                }
+                bril::ValueOps::Not => {
+                    let arg = builder.use_var(self.vars[&args[0]]);
+                    let res = builder.ins().bnot(arg);
+                    builder.def_var(self.vars[dest], res);
+                }
+                bril::ValueOps::Call => {
+                    let func_ref = self.func_refs[&funcs[0]];
+                    let arg_vals: Vec<ir::Value> = args
+                        .iter()
+                        .map(|arg| builder.use_var(self.vars[arg]))
+                        .collect();
+                    let inst = builder.ins().call(func_ref, &arg_vals);
+                    let res = builder.inst_results(inst)[0];
+                    builder.def_var(self.vars[dest], res);
+                }
+                bril::ValueOps::Id => {
+                    let arg = builder.use_var(self.vars[&args[0]]);
+                    builder.def_var(self.vars[dest], arg);
+                }
+
+                // Floating point extension.
+                bril::ValueOps::Fadd
+                | bril::ValueOps::Fsub
+                | bril::ValueOps::Fmul
+                | bril::ValueOps::Fdiv => {
+                    self.gen_binary(builder, args, dest, op_type, Self::translate_op(*op));
+                }
+                bril::ValueOps::Flt
+                | bril::ValueOps::Fle
+                | bril::ValueOps::Feq
+                | bril::ValueOps::Fge
+                | bril::ValueOps::Fgt => {
+                    self.gen_fcmp(builder, args, dest, Self::translate_floatcc(*op))
+                }
+
+                // Memory extension.
+                bril::ValueOps::Alloc => {
+                    // The number of elements to allocate comes from the program.
+                    let count_val = builder.use_var(self.vars[&args[0]]);
+
+                    // The bytes per element depends on the type.
+                    let elem_bytes = self.pointee_bytes(op_type);
+                    let bytes_val = builder.ins().iconst(ir::types::I64, elem_bytes as i64);
+
+                    // Call the allocate function.
+                    let inst = builder
+                        .ins()
+                        .call(self.rt_refs[RTFunc::Alloc], &[count_val, bytes_val]);
+                    let res = builder.inst_results(inst)[0];
+                    builder.def_var(self.vars[dest], res);
+                }
+                bril::ValueOps::Load => {
+                    let ptr = builder.use_var(self.vars[&args[0]]);
+                    let val = emit_load(self.pointer_type, builder, op_type, ptr);
+                    builder.def_var(self.vars[dest], val);
+                }
+                bril::ValueOps::PtrAdd => {
+                    let orig_ptr = builder.use_var(self.vars[&args[0]]);
+                    let amt = builder.use_var(self.vars[&args[1]]);
+
+                    let size = self.pointee_bytes(op_type);
+                    let offset_val = builder.ins().imul_imm(amt, size as i64);
+
+                    let res = builder.ins().iadd(orig_ptr, offset_val);
+                    builder.def_var(self.vars[dest], res);
+                }
+            },
+        }
+    }
+
+    /// Is a given Bril instruction a basic block terminator?
+    fn is_term(inst: &bril::Instruction) -> bool {
+        if let bril::Instruction::Effect {
+            args: _,
+            funcs: _,
             labels: _,
             op,
-            op_type,
-        } => match op {
-            bril::ValueOps::Add
-            | bril::ValueOps::Sub
-            | bril::ValueOps::Mul
-            | bril::ValueOps::Div
-            | bril::ValueOps::And
-            | bril::ValueOps::Or => {
-                gen_binary(
-                    builder,
-                    &env.vars,
-                    args,
-                    dest,
-                    op_type,
-                    translate_op(*op),
-                    env.pointer_type,
-                );
-            }
-            bril::ValueOps::Lt
-            | bril::ValueOps::Le
-            | bril::ValueOps::Eq
-            | bril::ValueOps::Ge
-            | bril::ValueOps::Gt => gen_icmp(builder, &env.vars, args, dest, translate_intcc(*op)),
-            bril::ValueOps::Not => {
-                let arg = builder.use_var(env.vars[&args[0]]);
-                let res = builder.ins().bnot(arg);
-                builder.def_var(env.vars[dest], res);
-            }
-            bril::ValueOps::Call => {
-                let func_ref = env.func_refs[&funcs[0]];
-                let arg_vals: Vec<ir::Value> = args
-                    .iter()
-                    .map(|arg| builder.use_var(env.vars[arg]))
-                    .collect();
-                let inst = builder.ins().call(func_ref, &arg_vals);
-                let res = builder.inst_results(inst)[0];
-                builder.def_var(env.vars[dest], res);
-            }
-            bril::ValueOps::Id => {
-                let arg = builder.use_var(env.vars[&args[0]]);
-                builder.def_var(env.vars[dest], arg);
-            }
+        } = inst
+        {
+            matches!(
+                op,
+                bril::EffectOps::Branch | bril::EffectOps::Jump | bril::EffectOps::Return
+            )
+        } else {
+            false
+        }
+    }
 
-            // Floating point extension.
-            bril::ValueOps::Fadd
-            | bril::ValueOps::Fsub
-            | bril::ValueOps::Fmul
-            | bril::ValueOps::Fdiv => {
-                gen_binary(
-                    builder,
-                    &env.vars,
-                    args,
-                    dest,
-                    op_type,
-                    translate_op(*op),
-                    env.pointer_type,
-                );
-            }
-            bril::ValueOps::Flt
-            | bril::ValueOps::Fle
-            | bril::ValueOps::Feq
-            | bril::ValueOps::Fge
-            | bril::ValueOps::Fgt => {
-                gen_fcmp(builder, &env.vars, args, dest, translate_floatcc(*op))
-            }
+    /// Emit the body of a Bril function into a CLIF function.
+    fn compile_body(&self, insts: &[bril::Code], builder: &mut FunctionBuilder) {
+        let mut terminated = false; // Entry block is open.
+        for code in insts {
+            match code {
+                bril::Code::Instruction(inst) => {
+                    // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
+                    if terminated {
+                        let block = builder.create_block();
+                        builder.switch_to_block(block);
+                        terminated = false;
+                    }
 
-            // Memory extension.
-            bril::ValueOps::Alloc => {
-                // The number of elements to allocate comes from the program.
-                let count_val = builder.use_var(env.vars[&args[0]]);
+                    // Compile one instruction.
+                    self.compile_inst(inst, builder);
 
-                // The bytes per element depends on the type.
-                let elem_bytes = pointee_bytes(op_type, env.pointer_type);
-                let bytes_val = builder.ins().iconst(ir::types::I64, elem_bytes as i64);
+                    if Self::is_term(inst) {
+                        terminated = true;
+                    }
+                }
+                bril::Code::Label { label } => {
+                    let new_block = self.blocks[label];
 
-                // Call the allocate function.
-                let inst = builder
-                    .ins()
-                    .call(env.rt_refs[RTFunc::Alloc], &[count_val, bytes_val]);
-                let res = builder.inst_results(inst)[0];
-                builder.def_var(env.vars[dest], res);
+                    // If the previous block was missing a terminator (fall-through), insert a
+                    // jump to the new block.
+                    if !terminated {
+                        builder.ins().jump(new_block, &[]);
+                    }
+                    terminated = false;
+
+                    builder.switch_to_block(new_block);
+                }
             }
-            bril::ValueOps::Load => {
-                let ptr = builder.use_var(env.vars[&args[0]]);
-                let val = emit_load(builder, env.pointer_type, op_type, ptr);
-                builder.def_var(env.vars[dest], val);
-            }
-            bril::ValueOps::PtrAdd => {
-                let orig_ptr = builder.use_var(env.vars[&args[0]]);
-                let amt = builder.use_var(env.vars[&args[1]]);
+        }
 
-                let size = pointee_bytes(op_type, env.pointer_type);
-                let offset_val = builder.ins().imul_imm(amt, size as i64);
-
-                let res = builder.ins().iadd(orig_ptr, offset_val);
-                builder.def_var(env.vars[dest], res);
-            }
-        },
+        // Implicit return in the last block.
+        if !terminated {
+            builder.ins().return_(&[]);
+        }
     }
 }
 
-fn compile_body(insts: &[bril::Code], builder: &mut FunctionBuilder, env: &CompileEnv) {
-    let mut terminated = false; // Entry block is open.
-    for code in insts {
-        match code {
-            bril::Code::Instruction(inst) => {
-                // If a normal instruction immediately follows a terminator, we need a new (anonymous) block.
-                if terminated {
-                    let block = builder.create_block();
-                    builder.switch_to_block(block);
-                    terminated = false;
-                }
-
-                // Compile one instruction.
-                compile_inst(inst, builder, env);
-
-                if is_term(inst) {
-                    terminated = true;
-                }
-            }
-            bril::Code::Label { label } => {
-                let new_block = env.blocks[label];
-
-                // If the previous block was missing a terminator (fall-through), insert a
-                // jump to the new block.
-                if !terminated {
-                    builder.ins().jump(new_block, &[]);
-                }
-                terminated = false;
-
-                builder.switch_to_block(new_block);
-            }
-        }
-    }
-
-    // Implicit return in the last block.
-    if !terminated {
-        builder.ins().return_(&[]);
-    }
+/// A compiler from an entire Bril program to a CLIF module.
+struct Translator<M: Module> {
+    rt_funcs: EnumMap<RTFunc, cranelift_module::FuncId>,
+    module: M,
+    context: cranelift_codegen::Context,
+    funcs: HashMap<String, cranelift_module::FuncId>,
 }
 
 impl<M: Module> Translator<M> {
+    /// Declare all our runtime functions in a CLIF module.
+    fn declare_rt(module: &mut M) -> EnumMap<RTFunc, cranelift_module::FuncId> {
+        enum_map! {
+            rtfunc =>
+                module
+                    .declare_function(
+                        rtfunc.name(),
+                        cranelift_module::Linkage::Import,
+                        &rtfunc.sig(module.isa().pointer_type(), module.isa().default_call_conv()),
+                    )
+                    .unwrap()
+        }
+    }
+
     fn declare_func(&mut self, func: &bril::Function) -> cranelift_module::FuncId {
         // The Bril `main` function gets a different internal name, and we call it from a new
         // proper main function that gets argv/argc.
@@ -826,24 +695,24 @@ impl<M: Module> Translator<M> {
 
         // Declare all variables (including for function parameters).
         let var_types = all_vars(func);
-        let vars: HashMap<String, Variable> = var_types
+        let vars: HashMap<&String, Variable> = var_types
             .iter()
             .enumerate()
             .map(|(i, (name, typ))| {
                 let var = Variable::new(i);
                 builder.declare_var(var, translate_type(typ, self.module.isa().pointer_type()));
-                (name.to_string(), var)
+                (*name, var)
             })
             .collect();
 
         // Create blocks for every label.
-        let blocks: HashMap<String, ir::Block> = func
+        let blocks: HashMap<&String, ir::Block> = func
             .instrs
             .iter()
             .filter_map(|code| match code {
                 bril::Code::Label { label } => {
                     let block = builder.create_block();
-                    Some((label.to_string(), block))
+                    Some((label, block))
                 }
                 _ => None,
             })
@@ -851,15 +720,10 @@ impl<M: Module> Translator<M> {
 
         // "Import" all the functions we may need to call.
         // TODO We could do this only for the functions we actually use...
-        let func_refs: HashMap<String, ir::FuncRef> = self
+        let func_refs: HashMap<&String, ir::FuncRef> = self
             .funcs
             .iter()
-            .map(|(name, id)| {
-                (
-                    name.to_owned(),
-                    self.module.declare_func_in_func(*id, builder.func),
-                )
-            })
+            .map(|(name, id)| (name, self.module.declare_func_in_func(*id, builder.func)))
             .collect();
 
         let env = CompileEnv {
@@ -881,7 +745,7 @@ impl<M: Module> Translator<M> {
         }
 
         // Insert instructions.
-        compile_body(&func.instrs, &mut builder, &env);
+        env.compile_body(&func.instrs, &mut builder);
 
         builder.seal_all_blocks();
         builder.finalize();
@@ -1021,7 +885,7 @@ impl<M: Module> Translator<M> {
                         .load(pointer_type, ir::MemFlags::trusted(), base_ptr, offset);
 
                 // Load the argument value.
-                emit_load(&mut builder, pointer_type, &arg.arg_type, arg_ptr)
+                emit_load(pointer_type, &mut builder, &arg.arg_type, arg_ptr)
             })
             .collect();
 
@@ -1061,8 +925,125 @@ impl<M: Module> Translator<M> {
     }
 }
 
-fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {
-    funcs.iter().find(|f| f.name == name).unwrap()
+/// AOT compiler that generates `.o` files.
+impl Translator<ObjectModule> {
+    /// Configure a Cranelift target ISA object.
+    fn get_isa(
+        target: Option<String>,
+        pic: bool,
+        opt_level: &str,
+    ) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+        let mut flag_builder = settings::builder();
+        flag_builder
+            .set("opt_level", opt_level)
+            .expect("invalid opt level");
+        if pic {
+            flag_builder.set("is_pic", "true").unwrap();
+        }
+        let isa_builder = if let Some(targ) = target {
+            cranelift_codegen::isa::lookup_by_name(&targ).expect("invalid target")
+        } else {
+            cranelift_native::builder().unwrap()
+        };
+        isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .unwrap()
+    }
+
+    fn new(target: Option<String>, opt_level: &str) -> Self {
+        // Make an object module.
+        let isa = Self::get_isa(target, true, opt_level);
+        let mut module =
+            ObjectModule::new(ObjectBuilder::new(isa, "foo", default_libcall_names()).unwrap());
+
+        Self {
+            rt_funcs: Self::declare_rt(&mut module),
+            module,
+            context: cranelift_codegen::Context::new(),
+            funcs: HashMap::new(),
+        }
+    }
+
+    fn emit(self, output: &str) {
+        let prod = self.module.finish();
+        let objdata = prod.emit().expect("emission failed");
+        fs::write(output, objdata).expect("failed to write .o file");
+    }
+}
+
+/// A JIT compiler.
+impl Translator<JITModule> {
+    // `cranelift_jit` does not yet support PIC on AArch64:
+    // https://github.com/bytecodealliance/wasmtime/issues/2735
+    // The default initialization path for `JITBuilder` is hard-coded to use PIC, so we manually
+    // disable it here. Once this is fully supported in `cranelift_jit`, we can switch to the
+    // generic versin below unconditionally.
+    #[cfg(target_arch = "aarch64")]
+    fn jit_builder() -> JITBuilder {
+        let mut flag_builder = settings::builder();
+        flag_builder.set("use_colocated_libcalls", "false").unwrap();
+        flag_builder.set("is_pic", "false").unwrap(); // PIC unsupported on ARM.
+        let isa_builder = cranelift_native::builder().unwrap();
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .unwrap();
+        JITBuilder::with_isa(isa, cranelift_module::default_libcall_names())
+    }
+
+    // The normal way to set up a JIT builder.
+    #[cfg(not(target_arch = "aarch64"))]
+    fn jit_builder() -> JITBuilder {
+        JITBuilder::new(cranelift_module::default_libcall_names()).unwrap()
+    }
+
+    fn new() -> Self {
+        // Set up the JIT.
+        let mut builder = Self::jit_builder();
+
+        // Provide runtime functions.
+        enum_map! {
+            rtfunc => {
+                let f: RTFunc = rtfunc;
+                builder.symbol(f.name(), f.rt_impl());
+            }
+        };
+
+        let mut module = JITModule::new(builder);
+
+        Self {
+            rt_funcs: Self::declare_rt(&mut module),
+            context: module.make_context(),
+            module,
+            funcs: HashMap::new(),
+        }
+    }
+
+    /// Obtain an entry-point code pointer. The pointer remains valid as long as the translator
+    /// itself (and therefore the `JITModule`) lives.
+    fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
+        self.module.clear_context(&mut self.context);
+        self.module.finalize_definitions();
+
+        self.module.get_finalized_function(func_id)
+    }
+
+    fn val_ptrs(vals: &[bril::Literal]) -> Vec<*const u8> {
+        vals.iter()
+            .map(|lit| match lit {
+                bril::Literal::Int(i) => i as *const i64 as *const u8,
+                bril::Literal::Bool(b) => b as *const bool as *const u8,
+                bril::Literal::Float(f) => f as *const f64 as *const u8,
+            })
+            .collect()
+    }
+
+    /// Run a JITted wrapper function.
+    unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
+        let func_ptr = self.get_func_ptr(func_id);
+        let arg_ptrs = Self::val_ptrs(args);
+        let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
+        func(arg_ptrs.as_ptr());
+    }
 }
 
 #[derive(FromArgs)]
@@ -1101,6 +1082,10 @@ struct Args {
         description = "arguments for @main function (JIT mode only)"
     )]
     args: Vec<String>,
+}
+
+fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {
+    funcs.iter().find(|f| f.name == name).unwrap()
 }
 
 fn main() {
