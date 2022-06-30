@@ -171,19 +171,14 @@ where
   T::from(vars.get(&args[index]))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 enum Value {
   Int(i64),
   Bool(bool),
   Float(f64),
   Pointer(Pointer),
+  #[default]
   Uninitialized,
-}
-
-impl Default for Value {
-  fn default() -> Self {
-    Self::Uninitialized
-  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
