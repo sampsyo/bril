@@ -1,10 +1,8 @@
 use crate::{
   basic_block::{BBFunction, BBProgram, NumifiedInstruction},
-  error::PositionalInterpError,
+  error::{InterpError, PositionalInterpError},
 };
 use bril_rs::{ConstOps, EffectOps, Instruction, Type, ValueOps};
-
-use crate::error::InterpError;
 
 use fxhash::FxHashMap;
 

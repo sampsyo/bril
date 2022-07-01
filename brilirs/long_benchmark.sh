@@ -3,12 +3,12 @@
 # Some ideas for faster code
 # Feature gate type checking?
 
-files=( "../benchmarks/ackermann.bril" "../benchmarks/eight-queens.bril" \
-        "../benchmarks/mat-mul.bril" "../benchmarks/function_call.bril"
+files=( "../benchmarks/core/ackermann.bril" "../benchmarks/mem/eight-queens.bril" \
+        "../benchmarks/mem/mat-mul.bril" "../benchmarks/long/function_call.bril"
 
         )
-jsons=( "../benchmarks/ackermann.json" "../benchmarks/eight-queens.json" \
-        "../benchmarks/mat-mul.json" "../benchmarks/function_call.json"
+jsons=( "../benchmarks/core/ackermann.json" "../benchmarks/mem/eight-queens.json" \
+        "../benchmarks/mem/mat-mul.json" "../benchmarks/long/function_call.json"
 
         )
 args=( "3 6" "8" "50 109658" "25")
