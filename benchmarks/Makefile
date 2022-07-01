@@ -7,7 +7,7 @@ BENCHMARKS := core/*.bril \
 bench:
 	turnt -e bench --save $(BENCHMARKS)
 clean:
-	rm -f **/*.bench.json plot.svg bench.csv
+	rm -f **/*.bench.json plot.svg bench.csv bench.json
 plot: plot.svg
 
 bench.csv: $(wildcard **/*.bench.json)

@@ -1,3 +1,4 @@
 **/*.bench.json
+bench.json
 bench.csv
 plot.svg
