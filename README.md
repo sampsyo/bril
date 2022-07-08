@@ -20,15 +20,14 @@ Install the Tools
 ### Reference Interpreter
 
 You will want the IR interpreter, which uses [Deno][].
-Go to the `bril-ts` directory and do this:
+Just type this:
 
     $ deno install brili.ts
 
 As Deno tells you, you will then need to add `$HOME/.deno/bin` to [your `$PATH`][path].
 You will then have `brili`, which takes a Bril program as JSON on stdin and executes it.
 
-[node]: https://nodejs.org/en/
-[yarn]: https://yarnpkg.com/en/
+[deno]: https://deno.land
 [path]: https://unix.stackexchange.com/a/26059/61192
 
 ### Text Format
