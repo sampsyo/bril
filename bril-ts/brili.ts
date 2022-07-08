@@ -1,6 +1,5 @@
-#!/usr/bin/env node
-import * as bril from './bril';
-import {readStdin, unreachable} from './util';
+import * as bril from './bril.ts';
+import {readStdin, unreachable} from './util.ts';
 
 /**
  * An interpreter error to print to the console.
@@ -845,7 +844,7 @@ function evalProg(prog: bril.Program) {
   }
 
   // Silly argument parsing to find the `-p` flag.
-  let args: string[] = process.argv.slice(2, process.argv.length);
+  let args: string[] = Deno.args;
   let profiling = false;
   let pidx = args.indexOf('-p');
   if (pidx > -1) {
@@ -886,14 +885,11 @@ async function main() {
   catch(e) {
     if (e instanceof BriliError) {
       console.error(`error: ${e.message}`);
-      process.exit(2);
+      Deno.exit(2);
     } else {
       throw e;
     }
   }
 }
-
-// Make unhandled promise rejections terminate.
-process.on('unhandledRejection', e => { throw e });
 
 main();
