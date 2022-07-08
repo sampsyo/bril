@@ -25,7 +25,7 @@ jobs:
             python-version: '3.10'
 
       - name: Install TypeScript tools
-        run: cd bril-ts ; deno install brili.ts ; deno install brilck.ts ; deno install ts2bril.ts
+        run: cd bril-ts ; deno install brili.ts ; deno install brilck.ts ; deno install --allow-env --allow-read ts2bril.ts
 
       - name: Install Flit
         run: pip install flit
@@ -65,7 +65,7 @@ jobs:
             python-version: '3.10'
 
       - name: Install TypeScript tools
-        run: cd bril-ts ; deno install brili.ts ; deno install brilck.ts ; deno install ts2bril.ts
+        run: cd bril-ts ; deno install brili.ts ; deno install brilck.ts ; deno install --allow-env --allow-read ts2bril.ts
 
       - name: Install Flit
         run: pip install flit
