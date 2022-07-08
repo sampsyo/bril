@@ -20,6 +20,7 @@
     - [Type Inference](tools/infer.md)
     - [Type Checker](tools/brilck.md)
     - [Benchmarks](tools/bench.md)
+    - [TypeScript Library](tools/ts.md)
     - [OCaml Library](tools/ocaml.md)
     - [Rust Library](tools/rust.md)
     - [Benchmark Runner](tools/brench.md)
