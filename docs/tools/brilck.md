@@ -7,10 +7,14 @@ It also checks calls and return values and the labels used in control flow.
 Install
 -------
 
-The `brilck` tool comes with the same [TypeScript][] package as the [reference interpreter](interp.md).
-Follow [those instructions](interp.md#install) to install it.
+The `brilck` tool uses [Deno][].
+Go to the `bril-ts` directory and type:
 
-[typescript]: https://www.typescriptlang.org
+    $ deno install brilck.ts
+
+If you haven't already, you will then need to add `$HOME/.deno/bin` to [your `$PATH`][path].
+
+[deno]: https://deno.land
 
 Check
 -----
