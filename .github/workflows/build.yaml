@@ -12,11 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/setup-node@v2
+      - uses: denoland/setup-deno@v1
         with:
-            node-version: '17'
-            cache: 'yarn'
-            cache-dependency-path: 'bril-ts/yarn.lock'
+          deno-version: v1.x
 
       - uses: actions/cache@v2
         with:
@@ -27,7 +25,7 @@ jobs:
             python-version: '3.10'
 
       - name: Install TypeScript tools
-        run: cd bril-ts ; yarn ; yarn build ; yarn link
+        run: cd bril-ts ; deno install brili.ts ; deno install brilck.ts ; deno install ts2bril.ts
 
       - name: Install Flit
         run: pip install flit
@@ -54,11 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/setup-node@v2
+      - uses: denoland/setup-deno@v1
         with:
-            node-version: '17'
-            cache: 'yarn'
-            cache-dependency-path: 'bril-ts/yarn.lock'
+          deno-version: v1.x
 
       - uses: actions/cache@v2
         with:
@@ -69,7 +65,7 @@ jobs:
             python-version: '3.10'
 
       - name: Install TypeScript tools
-        run: cd bril-ts ; yarn ; yarn build ; yarn link
+        run: cd bril-ts ; deno install brili.ts ; deno install brilck.ts ; deno install ts2bril.ts
 
       - name: Install Flit
         run: pip install flit
