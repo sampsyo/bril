@@ -1,6 +1,6 @@
 import * as ts from 'https://esm.sh/typescript@3.4.3';
-import * as bril from './bril.ts';
-import {Builder} from './builder.ts';
+import * as bril from './bril-ts/bril.ts';
+import {Builder} from './bril-ts/builder.ts';
 
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.PlusToken,               ["add", "int"]],

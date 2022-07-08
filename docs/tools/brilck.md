@@ -8,7 +8,7 @@ Install
 -------
 
 The `brilck` tool uses [Deno][].
-Go to the `bril-ts` directory and type:
+Type this:
 
     $ deno install brilck.ts
 

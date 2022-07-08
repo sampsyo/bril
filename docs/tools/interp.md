@@ -11,7 +11,7 @@ Install
 -------
 
 To use the interpreter, you will need [Deno][].
-Go to the `bril-ts` directory and do this:
+Just run:
 
     $ deno install brili.ts
 
