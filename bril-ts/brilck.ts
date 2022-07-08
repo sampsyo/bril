@@ -1,7 +1,6 @@
-#!/usr/bin/env node
-import * as bril from './bril';
-import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './types';
-import {readStdin, unreachable} from './util';
+import * as bril from './bril.ts';
+import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './types.ts';
+import {readStdin, unreachable} from './util.ts';
 
 /**
  * The JavaScript types of Bril constant values.
@@ -395,13 +394,13 @@ function checkProg(prog: bril.Program) {
 }
 
 async function main() {
-  if (process.argv[2]) {
-    CHECK_FILE = process.argv[2];
+  if (Deno.args[0]) {
+    CHECK_FILE = Deno.args[0];
   }
   let prog = JSON.parse(await readStdin()) as bril.Program;
   checkProg(prog);
   if (ERRORS) {
-    process.exit(1);
+    Deno.exit(1);
   }
 }
 
