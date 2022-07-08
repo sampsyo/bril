@@ -1,5 +1,5 @@
-import * as bril from './bril.ts';
-import {readStdin, unreachable} from './util.ts';
+import * as bril from './bril-ts/bril.ts';
+import {readStdin, unreachable} from './bril-ts/util.ts';
 
 /**
  * An interpreter error to print to the console.

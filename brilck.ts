@@ -1,6 +1,6 @@
-import * as bril from './bril.ts';
-import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './types.ts';
-import {readStdin, unreachable} from './util.ts';
+import * as bril from './bril-ts/bril.ts';
+import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './bril-ts/types.ts';
+import {readStdin, unreachable} from './bril-ts/util.ts';
 
 /**
  * The JavaScript types of Bril constant values.
