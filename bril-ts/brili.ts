@@ -844,7 +844,7 @@ function evalProg(prog: bril.Program) {
   }
 
   // Silly argument parsing to find the `-p` flag.
-  let args: string[] = Deno.args;
+  let args: string[] = Array.from(Deno.args);
   let profiling = false;
   let pidx = args.indexOf('-p');
   if (pidx > -1) {
