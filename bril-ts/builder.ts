@@ -1,4 +1,4 @@
-import * as bril from './bril';
+import * as bril from './bril.ts';
 
 /**
  * A utility for building up Bril programs.

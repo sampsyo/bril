@@ -10,11 +10,14 @@ It also emits somewhat obviously inefficient code to keep the compiler simple; s
 Install
 -------
 
-You can build and install the TypeScript compiler the same way as [the interpreter](interp.md), in the `bril-ts` directory:
+The TypeScript compiler uses [Deno][].
+Go to the `bril-ts` directory and type:
 
-    $ yarn
-    $ yarn build
-    $ yarn link
+    $ deno install --allow-env --allow-read ts2bril.ts
+
+If you haven't already, you will then need to add `$HOME/.deno/bin` to [your `$PATH`][path].
+
+[deno]: https://deno.land
 
 Use
 ---
