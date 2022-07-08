@@ -1,9 +1,0 @@
-{
-    "compilerOptions": {
-        "strict": true,
-        "outDir": "build",
-        "target": "es6",
-        "module": "commonjs",
-        "sourceMap": true
-    }
-}
