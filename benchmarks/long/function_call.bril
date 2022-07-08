@@ -1,5 +1,6 @@
 # ARGS: 25
-@main(m: int) {
+@main(starting_m: int) {
+  m : int = id starting_m;
   zero: int = const 0;
   one: int = const 1;
   two: int = const 2;
@@ -19,4 +20,5 @@
   m:int = sub m one;
   call @main m;
 .end:
+  print starting_m;
 }

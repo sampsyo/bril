@@ -1,4 +1,3 @@
-// The group clippy::pedantic is not used as it ends up being more annoying than useful
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![warn(missing_docs)]
 #![allow(clippy::float_cmp)]

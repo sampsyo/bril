@@ -7,7 +7,10 @@ TESTS := ../test/check/*.bril \
 
 #../test/spec*/*.bril \
 
-BENCHMARKS := ../benchmarks/*.bril
+BENCHMARKS := ../benchmarks/core/*.bril \
+../benchmarks/float/*.bril \
+../benchmarks/mem/*.bril \
+../benchmarks/mixed/*.bril \
 
 .PHONY: install
 install:

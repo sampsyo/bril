@@ -1,4 +1,4 @@
-# ARGS: ../linking ../../benchmarks/
+# ARGS: ../linking ../../benchmarks/core
 from "link_ops.bril" import @main as @nested_main;
 
 @main(){

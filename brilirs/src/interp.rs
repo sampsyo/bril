@@ -1,5 +1,3 @@
-use std::fmt;
-
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
 use bril_rs::Instruction;
@@ -12,6 +10,7 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use std::cmp::max;
+use std::fmt;
 
 // The Environment is the data structure used to represent the stack of the program.
 // The values of all variables are store here. Each variable is represented as a number so
@@ -158,36 +157,24 @@ impl Heap {
   }
 }
 
-// A getter function for when you just want the Value enum
-fn get_value<'a>(vars: &'a Environment, index: usize, args: &[usize]) -> &'a Value {
-  vars.get(&args[index])
-}
-
 // A getter function for when you know what constructor of the Value enum you have and
 // you just want the underlying value(like a f64).
-fn get_arg<'a, T>(vars: &'a Environment, index: usize, args: &[usize]) -> T
-where
-  T: From<&'a Value>,
-{
+// Or can just be used to get a owned version of the Value
+fn get_arg<'a, T: From<&'a Value>>(vars: &'a Environment, index: usize, args: &[usize]) -> T {
   T::from(vars.get(&args[index]))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone, Copy)]
 enum Value {
   Int(i64),
   Bool(bool),
   Float(f64),
   Pointer(Pointer),
+  #[default]
   Uninitialized,
 }
 
-impl Default for Value {
-  fn default() -> Self {
-    Self::Uninitialized
-  }
-}
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 struct Pointer {
   base: usize,
   offset: i64,
@@ -213,6 +200,19 @@ impl fmt::Display for Value {
       Self::Pointer(p) => write!(f, "{p:?}"),
       Self::Uninitialized => unreachable!(),
     }
+  }
+}
+
+fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(), std::io::Error> {
+  match val {
+    Value::Int(i) => out.write_all(itoa::Buffer::new().format(*i).as_bytes()),
+    Value::Bool(b) => out.write_all(b.to_string().as_bytes()),
+    Value::Float(f) if f.is_infinite() && f.is_sign_positive() => out.write_all(b"Infinity"),
+    Value::Float(f) if f.is_infinite() && f.is_sign_negative() => out.write_all(b"-Infinity"),
+    Value::Float(f) if f.is_nan() => out.write_all(b"NaN"),
+    Value::Float(f) => out.write_all(format!("{f:.17}").as_bytes()),
+    Value::Pointer(p) => out.write_all(format!("{p:?}").as_bytes()),
+    Value::Uninitialized => unreachable!(),
   }
 }
 
@@ -276,6 +276,12 @@ impl<'a> From<&'a Value> for &'a Pointer {
   }
 }
 
+impl From<&Self> for Value {
+  fn from(value: &Self) -> Self {
+    *value
+  }
+}
+
 // Sets up the Environment for the next function call with the supplied arguments
 fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut Environment) {
   vars.push_frame(callee_func.num_of_vars);
@@ -284,8 +290,8 @@ fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut En
     .iter()
     .zip(callee_func.args_as_nums.iter())
     .for_each(|(arg_name, expected_arg)| {
-      let arg = vars.get_from_last_frame(arg_name).clone();
-      vars.set(*expected_arg, arg);
+      let arg = vars.get_from_last_frame(arg_name);
+      vars.set(*expected_arg, *arg);
     });
 }
 
@@ -366,7 +372,7 @@ fn execute_value_op<'a, T: std::io::Write>(
       state.env.set(dest, Value::Bool(arg0 || arg1));
     }
     Id => {
-      let src = get_value(&state.env, 0, args).clone();
+      let src = get_arg::<Value>(&state.env, 0, args);
       state.env.set(dest, src);
     }
     Fadd => {
@@ -432,8 +438,7 @@ fn execute_value_op<'a, T: std::io::Write>(
           .iter()
           .position(|l| l == last_label)
           .ok_or_else(|| InterpError::PhiMissingLabel(last_label.to_string()))
-          .map(|i| get_value(&state.env, i, args))?
-          .clone();
+          .map(|i| get_arg::<Value>(&state.env, i, args))?;
         state.env.set(dest, arg);
       }
     },
@@ -445,7 +450,7 @@ fn execute_value_op<'a, T: std::io::Write>(
     Load => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let res = state.heap.read(arg0)?;
-      state.env.set(dest, res.clone());
+      state.env.set(dest, *res);
     }
     PtrAdd => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
@@ -459,13 +464,14 @@ fn execute_value_op<'a, T: std::io::Write>(
 
 fn execute_effect_op<'a, T: std::io::Write>(
   state: &'a mut State<T>,
-  func: &BBFunction,
   op: bril_rs::EffectOps,
   args: &[usize],
   funcs: &[usize],
   curr_block: &BasicBlock,
+  // There are two output variables where values are stored to effect the loop execution.
   next_block_idx: &mut Option<usize>,
-) -> Result<Option<Value>, InterpError> {
+  result: &mut Option<Value>,
+) -> Result<(), InterpError> {
   use bril_rs::EffectOps::{
     Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store,
   };
@@ -479,24 +485,28 @@ fn execute_effect_op<'a, T: std::io::Write>(
       *next_block_idx = Some(curr_block.exit[exit_idx]);
     }
     Return => {
-      return Ok(
-        func
-          .return_type
-          .as_ref()
-          .map(|_| get_value(&state.env, 0, args).clone()),
-      )
+      if !args.is_empty() {
+        *result = Some(get_arg::<Value>(&state.env, 0, args));
+      }
     }
     Print => {
-      writeln!(
-        state.out,
-        "{}",
-        args
-          .iter()
-          .map(|a| state.env.get(a).to_string())
-          .collect::<Vec<String>>()
-          .join(" ")
-      )
-      .map_err(|e| InterpError::IoError(Box::new(e)))?;
+      // In the typical case, users only print out one value at a time
+      // So we can usually avoid extra allocations by providing that string directly
+      if args.len() == 1 {
+        optimized_val_output(&mut state.out, state.env.get(args.get(0).unwrap()))?;
+        // Add new line
+        state.out.write_all(&[b'\n'])?;
+      } else {
+        writeln!(
+          state.out,
+          "{}",
+          args
+            .iter()
+            .map(|a| state.env.get(a).to_string())
+            .collect::<Vec<String>>()
+            .join(" ")
+        )?;
+      }
     }
     Nop => {}
     Call => {
@@ -509,8 +519,8 @@ fn execute_effect_op<'a, T: std::io::Write>(
     }
     Store => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-      let arg1 = get_value(&state.env, 1, args);
-      state.heap.write(arg0, arg1.clone())?;
+      let arg1 = get_arg::<Value>(&state.env, 1, args);
+      state.heap.write(arg0, arg1)?;
     }
     Free => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
@@ -518,7 +528,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
     }
     Speculate | Commit | Guard => unimplemented!(),
   }
-  Ok(None)
+  Ok(())
 }
 
 fn execute<'a, T: std::io::Write>(
@@ -528,6 +538,7 @@ fn execute<'a, T: std::io::Write>(
   let mut last_label;
   let mut current_label = None;
   let mut curr_block_idx = 0;
+  // A possible return value
   let mut result = None;
 
   loop {
@@ -539,12 +550,8 @@ fn execute<'a, T: std::io::Write>(
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
-    // This helps to implement fallthrough with basic blocks when there is no control flow instruction at the end of the block
-    let mut next_block_idx = if curr_block.exit.len() == 1 {
-      Some(curr_block.exit[0])
-    } else {
-      None
-    };
+    // A place to store the next block that will be jumped to if specified by an instruction
+    let mut next_block_idx = None;
 
     for (code, numified_code) in curr_instrs.iter().zip(curr_numified_instrs.iter()) {
       match code {
@@ -602,21 +609,25 @@ fn execute<'a, T: std::io::Write>(
           funcs: _,
           pos,
         } => {
-          result = execute_effect_op(
+          execute_effect_op(
             state,
-            func,
             *op,
             &numified_code.args,
             &numified_code.funcs,
             curr_block,
             &mut next_block_idx,
+            &mut result,
           )
           .map_err(|e| e.add_pos(*pos))?;
         }
       }
     }
+
+    // Are we jumping to a new block or are we done?
     if let Some(idx) = next_block_idx {
       curr_block_idx = idx;
+    } else if curr_block.exit.len() == 1 {
+      curr_block_idx = curr_block.exit[0];
     } else {
       return Ok(result);
     }
@@ -738,17 +749,14 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
     return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos));
   }
 
-  state
-    .out
-    .flush()
-    .map_err(|e| InterpError::IoError(Box::new(e)))?;
+  state.out.flush().map_err(InterpError::IoError)?;
 
   if profiling {
     writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
       // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
       // Otherwise we would expect this flush to be a nop.
       .and_then(|_| profiling_out.flush())
-      .map_err(|e| InterpError::IoError(Box::new(e)))?;
+      .map_err(InterpError::IoError)?;
   }
 
   Ok(())

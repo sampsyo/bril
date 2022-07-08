@@ -51,8 +51,8 @@ pub enum InterpError {
   BadFuncArgType(bril_rs::Type, String), // (expected, actual)
   #[error("Expected type `{0:?}` for assignment, found `{1:?}`")]
   BadAsmtType(bril_rs::Type, bril_rs::Type), // (expected, actual). For when the LHS type of an instruction is bad
-  #[error("There has been an io error when trying to print: `{0:?}`")]
-  IoError(Box<std::io::Error>),
+  #[error("There has been an io error: `{0:?}`")]
+  IoError(#[from] std::io::Error),
   #[error("You probably shouldn't see this error, this is here to handle conversions between InterpError and PositionalError")]
   PositionalInterpErrorConversion(#[from] PositionalInterpError),
 }
