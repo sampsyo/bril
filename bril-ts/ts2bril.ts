@@ -1,7 +1,6 @@
-#!/usr/bin/env node
-import * as ts from 'typescript';
-import * as bril from './bril';
-import {Builder} from './builder';
+import * as ts from 'https://esm.sh/typescript@3.4.3';
+import * as bril from './bril.ts';
+import {Builder} from './builder.ts';
 
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.PlusToken,               ["add", "int"]],
@@ -301,12 +300,12 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   return builder.program;
 }
 
-function main() {
+async function main() {
   // Get the TypeScript filename.
-  let filename = process.argv[2];
+  let filename = Deno.args[0];
   if (!filename) {
-    console.error(`usage: ${process.argv[1]} src.ts`)
-    process.exit(1);
+    console.error(`usage: ts2bril src.ts`)
+    Deno.exit(1);
   }
 
   // Load up the TypeScript context.
@@ -329,12 +328,10 @@ function main() {
 
   // Generate Bril code.
   let brilProg = emitBril(sf, checker);
-  process.stdout.write(
-    JSON.stringify(brilProg, undefined, 2)
+  let json = JSON.stringify(brilProg, undefined, 2);
+  await Deno.stdout.write(
+    new TextEncoder().encode(json)
   );
 }
-
-// Make unhandled promise rejections terminate.
-process.on('unhandledRejection', e => { throw e });
 
 main();
