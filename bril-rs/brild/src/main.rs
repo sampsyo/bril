@@ -5,9 +5,9 @@ use std::fs::canonicalize;
 use std::path::PathBuf;
 
 use bril_rs::{load_abstract_program, output_abstract_program, AbstractProgram};
-use brild::{cli::Cli, do_import, handle_program};
+use brild::{cli::Cli, do_import, error::BrildError, handle_program};
 
-fn main() -> std::io::Result<()> {
+fn main() -> Result<(), BrildError> {
     let mut map = HashMap::new();
     let args = Cli::parse();
 
