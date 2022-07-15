@@ -1,47 +1,51 @@
 Import
 ======
 
-Core Bril supports bril programs which are self contained, as in they only reference functions defined within that program. The import extension allows for a Bril program to use functions defined in other Bril programs.
+Typically, Bril programs are self-contained: they only use functions defined elsewhere in the same program. This *import* extension lets Bril code use functions defined in other files.
 
-A Bril import contains two parts: a file name which can be a relative path specifying the Bril program from which functions can be found and a list of zero or more names of functions. Each function name that is imported can optionally be aliased with a new name.
+A Bril import refers to a file and lists the functions to import from it, like this:
 
-If a function is imported, it can then be used in the Bril program as if it were defined within the program like any other function. For example, one can import a function and then use it in a `call` instruction.
+    {
+        "path": "my_library.json",
+        "functions": [{"name": "libfunc"}]
+    }
 
-Well-formed Bril programs that use the import extension always import functions that exist and avoid importing functions that share the same name as another function in scope by giving them a unique alias. If an alias is provided then that function can only be called by the alias.
-
-Implementations of this extension must define a method of resolving the relative paths of the programs being imported to files. This could, but is not required to, be implemented as a list of user-defined library directories or as relative to some source file path. An implementation is only required to support importing the JSON representation of Bril programs.
-
-Bril programs that use the import extension can also be imported and should maintain the above semantics. The programmer is allowed to create cycles of imports.
+This import assumes that there's a Bril file called `my_library.json`, and that it declares a function `@libfunc`. The current Bril file may now invoke `@libfunc` as if it were defined locally.
 
 Syntax
 ------
 
-The Bril JSON representation is as shown:
+The top-level Bril program is extended with an `imports` field:
+
+    { "functions": [<Function>, ...], "imports": [<Import>, ...] }
+
+Each import object has this syntax:
 
     {
+        "path": "<string>",
         "functions": [
-            …
-        ],
-        "imports": [
-            {
-                "functions": [
-                    {
-                        "name": "AND"
-                    },
-                    {
-                        "alias": "LIB_OR",
-                        "name": "OR"
-                    }
-                ],
-                "path": "benchmarks/bitwise-ops.bril"
-            }
+            { "name": "<string>", "alias": "<string>"? },
+            ...
         ]
     }
 
-The grammar of the Bril text representation is then:
+The path is a relative reference to a Bril JSON file containing the functions to import. In the objects in the `functions` list, the `name` is the *original* name of the function, and the optional `alias` is the *local* name that the program will use to refer to the function. A missing `alias` makes the local name equal to the original name.
 
-    'from' PATH 'import' (FUNC ('as' FUNC)? ',')* ';'
+It is an error to refer to functions that do not exist, or to create naming conflicts between imports and local functions (or between different imports). Import cycles are allowed.
 
-With an example being:
+Text Format
+-----------
 
-    from "benchmarks/bitwise-ops.bril" import @AND, @OR as @LIB_OR;
+In Bril's [text format](../tools/text.md), the `import` syntax looks like this:
+
+    from "something.json" import @libfunc, @otherfunc as @myfunc;
+
+Search Paths
+------------
+
+We do not define the exact mechanism for using the `path` string to find the file to import. Reasonable options include:
+
+* Resolve the path relative to the file the `import` appears in.
+* Use a pre-defined set of library search paths.
+
+We only specify what it means to import JSON files; implementations can choose to allow importing other kinds of files too (e.g., text-format source code).
