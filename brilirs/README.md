@@ -28,6 +28,10 @@ interp::execute_main(&bbprog, std::io::stdout(), &args, false, std::io::stderr()
 
 You can also use a `bril_rs::AbstractProgram` called `abstract_program` by converting it into a `bril_rs::Program` using `abstract_program.try_into()?`.
 
+## PGO
+
+You can get a modest performance benefit(~5-7%) by using LLVM's profile guided optimization. See `pgo.sh` and `make pgo`/`make pgo-install` for more details.
+
 ## Contributing
 
 Issues and PRs are welcome. For pull requests, make sure to run the test harness with `make test` and `make benchmark`. There is also `.github/workflows/rust.yaml` which will format your code and check that it is conforming with clippy.
