@@ -15,10 +15,10 @@ use bril_rs::{
 use syn::punctuated::Punctuated;
 use syn::{
     BinOp, Block, Expr, ExprArray, ExprAssign, ExprAssignOp, ExprBinary, ExprBlock, ExprCall,
-    ExprIf, ExprIndex, ExprLit, ExprMacro, ExprParen, ExprPath, ExprReference, ExprRepeat,
-    ExprReturn, ExprUnary, ExprWhile, File, FnArg, Ident, Item, ItemFn, Lit, Local, Macro, Pat,
-    PatIdent, PatType, Path, PathSegment, ReturnType, Signature, Stmt, Type as SType, TypeArray,
-    TypePath, TypeReference, TypeSlice, UnOp,
+    ExprCast, ExprIf, ExprIndex, ExprLit, ExprMacro, ExprParen, ExprPath, ExprReference,
+    ExprRepeat, ExprReturn, ExprUnary, ExprWhile, File, FnArg, Ident, Item, ItemFn, Lit, Local,
+    Macro, Pat, PatIdent, PatType, Path, PathSegment, ReturnType, Signature, Stmt, Type as SType,
+    TypeArray, TypePath, TypeReference, TypeSlice, UnOp,
 };
 
 use proc_macro2::Span;
@@ -227,7 +227,7 @@ fn array_init_helper(
         op: ConstOps::Const,
         pos: None,
         const_type: Type::Int,
-        value: Literal::Int(code.len() as i64),
+        value: Literal::Int(vars.len() as i64),
     }));
     code.push(Code::Instruction(Instruction::Value {
         args: vec![size],
@@ -436,7 +436,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                     (BinOp::Ge(x), Type::Float) => (ValueOps::Fge, Type::Bool, x.spans[0]),
                     (BinOp::Gt(x), Type::Int) => (ValueOps::Gt, Type::Bool, x.spans[0]),
                     (BinOp::Gt(x), Type::Float) => (ValueOps::Fgt, Type::Bool, x.spans[0]),
-                    (_, _) => unimplemented!(),
+                    (_, _) => unimplemented!("{op:?}"),
                 };
 
             let dest = state.fresh_var(op_type.clone());
@@ -485,38 +485,70 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 })
                 .unzip();
             let mut code: Vec<Code> = vec_code.into_iter().flatten().collect();
-            match state.get_ret_type_for_func(&f) {
-                None => {
-                    code.push(Code::Instruction(Instruction::Effect {
-                        args: vars,
-                        funcs: vec![f],
-                        labels: Vec::new(),
-                        op: EffectOps::Call,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(paren_token.span))
-                        } else {
-                            None
-                        },
-                    }));
-                    (None, code)
+            if f == "drop" {
+                code.push(Code::Instruction(Instruction::Effect {
+                    args: vars,
+                    funcs: Vec::new(),
+                    labels: Vec::new(),
+                    op: EffectOps::Free,
+                    pos: if state.is_pos {
+                        Some(from_span_to_position(paren_token.span))
+                    } else {
+                        None
+                    },
+                }));
+                (None, code)
+            } else {
+                match state.get_ret_type_for_func(&f) {
+                    None => {
+                        code.push(Code::Instruction(Instruction::Effect {
+                            args: vars,
+                            funcs: vec![f],
+                            labels: Vec::new(),
+                            op: EffectOps::Call,
+                            pos: if state.is_pos {
+                                Some(from_span_to_position(paren_token.span))
+                            } else {
+                                None
+                            },
+                        }));
+                        (None, code)
+                    }
+                    Some(ret) => {
+                        let dest = state.fresh_var(ret.clone());
+                        code.push(Code::Instruction(Instruction::Value {
+                            args: vars,
+                            dest: dest.clone(),
+                            funcs: vec![f],
+                            labels: Vec::new(),
+                            op: ValueOps::Call,
+                            pos: if state.is_pos {
+                                Some(from_span_to_position(paren_token.span))
+                            } else {
+                                None
+                            },
+                            op_type: ret,
+                        }));
+                        (Some(dest), code)
+                    }
                 }
-                Some(ret) => {
-                    let dest = state.fresh_var(ret.clone());
-                    code.push(Code::Instruction(Instruction::Value {
-                        args: vars,
-                        dest: dest.clone(),
-                        funcs: vec![f],
-                        labels: Vec::new(),
-                        op: ValueOps::Call,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(paren_token.span))
-                        } else {
-                            None
-                        },
-                        op_type: ret,
-                    }));
-                    (Some(dest), code)
+            }
+        }
+        Expr::Cast(ExprCast {
+            attrs,
+            expr,
+            as_token: _,
+            ty,
+        }) if attrs.is_empty() => {
+            if let SType::Path(TypePath { qself: None, path }) = *ty {
+                // ignore casts to usize
+                if path.get_ident().is_some() && path.get_ident().unwrap() == "usize" {
+                    from_expr_to_bril(*expr, state)
+                } else {
+                    panic!("can't handle type in cast: {path:?}");
                 }
+            } else {
+                panic!("can't handle type in cast: {ty:?}");
             }
         }
         Expr::ForLoop(_) => todo!(),
@@ -753,7 +785,6 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
             };
 
             let vars = std::iter::repeat(var.unwrap()).take(array_len).collect();
-
             array_init_helper(vars, code, state)
         }
         Expr::Return(ExprReturn {

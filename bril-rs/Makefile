@@ -1,6 +1,7 @@
 TESTS :=  ../test/print/*.json \
 		../test/parse/*.bril \
-		../test/linking/*.bril
+		../test/linking/*.bril \
+		../test/rs/*.rs
 
 .PHONY: test
 test:

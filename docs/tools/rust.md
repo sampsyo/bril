@@ -24,6 +24,8 @@ Tools
 
 This library supports fully compatible Rust implementations of `bril2txt` and `bril2json`. This library also implements the [import][] extension with a static linker called `brild`.
 
+This library is used in a Rust compiler called `rs2bril` which supports generating [core], [float], and [mem] Bril from a subset of valid Rust.
+
 For ease of use, these tools can be installed and added to your path by running the following in `bril-rs/`:
 
     $ make install
