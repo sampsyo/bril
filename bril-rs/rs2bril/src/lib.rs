@@ -60,8 +60,8 @@ impl State {
         name
     }
 
-    fn starting_new_function(&mut self, name: String) {
-        self.ident_type_map = self.func_context_map.get(&name).unwrap().0.clone();
+    fn starting_new_function(&mut self, name: &String) {
+        self.ident_type_map = self.func_context_map.get(name).unwrap().0.clone();
     }
 
     fn add_type_for_ident(&mut self, ident: String, ty: Type) {
@@ -73,11 +73,7 @@ impl State {
     }
 
     fn get_ret_type_for_func(&self, func: &String) -> Option<Type> {
-        self.func_context_map
-            .get(func)
-            .unwrap()
-            .1
-            .clone()
+        self.func_context_map.get(func).unwrap().1.clone()
     }
 }
 
@@ -98,12 +94,14 @@ fn from_pat_to_string(pat: Pat) -> String {
             ident,
             subpat,
         }) => {
-            if !attrs.is_empty() {
-                panic!("can't handle attributes in function arguments")
-            }
-            if subpat.is_some() {
-                panic!("can't handle subpat in function arguments")
-            }
+            assert!(
+                attrs.is_empty(),
+                "can't handle attributes in function arguments"
+            );
+            assert!(
+                subpat.is_none(),
+                "can't handle subpat in function arguments"
+            );
             ident.to_string()
         }
         _ => panic!("can't handle non-ident pattern"),
@@ -137,9 +135,10 @@ fn from_fnarg_to_argument(f: FnArg, state: &mut State) -> Argument {
             colon_token: _,
             ty,
         }) => {
-            if !attrs.is_empty() {
-                panic!("can't handle attributes in function arguments")
-            }
+            assert!(
+                attrs.is_empty(),
+                "can't handle attributes in function arguments"
+            );
 
             let name = from_pat_to_string(*pat);
             let arg_type = from_type_to_type(*ty);
@@ -167,41 +166,40 @@ fn from_signature_to_function(
     }: Signature,
     state: &mut State,
 ) -> Function {
-    if constness.is_some() {
-        panic!("can't handle const in Rust function")
-    }
+    assert!(constness.is_none(), "can't handle const in Rust function");
 
-    if asyncness.is_some() {
-        panic!("can't handle async in Rust function")
-    }
+    assert!(asyncness.is_none(), "can't handle async in Rust function");
 
-    if unsafety.is_some() {
-        panic!("can't handle unsafety in Rust function")
-    }
+    assert!(unsafety.is_none(), "can't handle unsafety in Rust function");
 
-    if abi.is_some() {
-        panic!("can't handle abi in Rust function")
-    }
+    assert!(abi.is_none(), "can't handle abi in Rust function");
 
-    if !generics.params.is_empty() {
-        panic!("can't handle generics in Rust function")
-    }
+    assert!(
+        generics.params.is_empty(),
+        "can't handle generics in Rust function"
+    );
 
-    if variadic.is_some() {
-        panic!("can't handle variadic in Rust function")
-    }
+    assert!(variadic.is_none(), "can't handle variadic in Rust function");
 
     let return_type = match output {
         ReturnType::Default => None,
         ReturnType::Type(_, ty) => Some(from_type_to_type(*ty)),
     };
 
-    let args : Vec<Argument> = inputs
+    let args: Vec<Argument> = inputs
         .into_iter()
         .map(|i| from_fnarg_to_argument(i, state))
         .collect();
 
-    state.func_context_map.insert(ident.to_string(), (args.iter().map(|a| (a.name.clone(), a.arg_type.clone())).collect(),return_type.clone()));
+    state.func_context_map.insert(
+        ident.to_string(),
+        (
+            args.iter()
+                .map(|a| (a.name.clone(), a.arg_type.clone()))
+                .collect(),
+            return_type.clone(),
+        ),
+    );
 
     Function {
         name: ident.to_string(),
@@ -260,7 +258,7 @@ fn array_init_helper(
             op_type: op_type.clone(),
         }));
         code.push(Code::Instruction(Instruction::Effect {
-            args: vec![index_pointer.clone(), v],
+            args: vec![index_pointer, v],
             funcs: Vec::new(),
             labels: Vec::new(),
             op: EffectOps::Store,
@@ -688,7 +686,8 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                     tokens,
                 },
         }) if attrs.is_empty()
-            && path.get_ident().map(|i| i.to_string()) == Some("println".to_string()) =>
+            && path.get_ident().map(std::string::ToString::to_string)
+                == Some("println".to_string()) =>
         {
             let mut t = tokens.into_iter();
             // to remove format string
@@ -917,12 +916,8 @@ fn from_stmt_to_vec_code(s: Stmt, state: &mut State) -> Vec<Code> {
             init,
             semi_token: _,
         }) => {
-            if !attrs.is_empty() {
-                panic!("can't handle attributes in function body")
-            }
-            if init.is_none() {
-                panic!("must initialize all assignments")
-            }
+            assert!(attrs.is_empty(), "can't handle attributes in function body");
+            assert!(init.is_some(), "must initialize all assignments");
             match pat {
                 Pat::Type(PatType {
                     attrs,
@@ -980,9 +975,7 @@ fn from_item_fn_to_empty_function(
     }: ItemFn,
     state: &mut State,
 ) -> (Function, Block) {
-    if !attrs.is_empty() {
-        panic!("can't handle attributes in Rust function")
-    }
+    assert!(attrs.is_empty(), "can't handle attributes in Rust function");
 
     let func = from_signature_to_function(sig, state);
     (func, *block)
@@ -1006,13 +999,9 @@ pub fn from_file_to_program(
     }: File,
     is_pos: bool,
 ) -> Program {
-    if shebang.is_some() {
-        panic!("can't handle shebang items in Rust file")
-    }
+    assert!(shebang.is_none(), "can't handle shebang items in Rust file");
 
-    if !attrs.is_empty() {
-        panic!("can't handle attributes in Rust file")
-    }
+    assert!(attrs.is_empty(), "can't handle attributes in Rust file");
 
     let mut state = State::new(is_pos);
 
@@ -1032,7 +1021,10 @@ pub fn from_file_to_program(
     Program {
         functions: sigs_processed
             .into_iter()
-            .map(|f| { state.starting_new_function(f.0.name.clone()); from_empty_function_to_function(f, &mut state)})
+            .map(|f| {
+                state.starting_new_function(&f.0.name);
+                from_empty_function_to_function(f, &mut state)
+            })
             .collect(),
     }
 }

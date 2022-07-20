@@ -4,8 +4,8 @@ use std::io::Read;
 
 use bril_rs::output_program;
 
-use rs2bril::from_file_to_program;
 use rs2bril::cli::Cli;
+use rs2bril::from_file_to_program;
 
 use clap::Parser;
 
