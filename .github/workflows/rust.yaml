@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml"]
+        path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml", "bril-rs/rs2bril/Cargo.toml"]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
