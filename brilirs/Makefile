@@ -14,7 +14,7 @@ BENCHMARKS := ../benchmarks/core/*.bril \
 
 .PHONY: install
 install:
-	cargo install --path .
+	RUSTFLAGS="-C target-cpu=native" cargo install --path .
 
 .PHONY: test
 test:
@@ -27,6 +27,15 @@ benchmark:
 .PHONY: release
 release:
 	RUSTFLAGS="-C target-cpu=native" cargo build --release
+
+#https://doc.rust-lang.org/rustc/profile-guided-optimization.html
+.PHONY: pgo
+pgo:
+	RUSTFLAGS="-C target-cpu=native -Cprofile-use=$(shell pwd)/merged.profdata" cargo build --release
+
+.PHONY: pgo-install
+pgo-install:
+	RUSTFLAGS="-Cprofile-use=$(shell pwd)/merged.profdata" cargo install --path .
 
 .PHONY: compare
 compare: release
