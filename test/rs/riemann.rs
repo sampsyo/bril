@@ -19,8 +19,8 @@ fn square_function(x: f64) -> f64 {
 fn left_riemann(a: f64, b: f64, n: f64) -> f64 {
     let diff: f64 = b - a;
     let delta: f64 = diff / n;
-    let i: f64 = n - 1.0;
-    let sum: f64 = 0.0;
+    let mut i: f64 = n - 1.0;
+    let mut sum: f64 = 0.0;
     while !(i == -1.0) {
         sum += square_function(a + (delta * i));
         i -= 1.0;
@@ -31,8 +31,8 @@ fn left_riemann(a: f64, b: f64, n: f64) -> f64 {
 fn right_riemann(a: f64, b: f64, n: f64) -> f64 {
     let diff: f64 = b - a;
     let delta: f64 = diff / n;
-    let i: f64 = n;
-    let sum: f64 = 0.0;
+    let mut i: f64 = n;
+    let mut sum: f64 = 0.0;
     while !(i == 0.0) {
         sum += square_function(a + (delta * i));
         i -= 1.0;
@@ -43,8 +43,8 @@ fn right_riemann(a: f64, b: f64, n: f64) -> f64 {
 fn midpoint_riemann(a: f64, b: f64, n: f64) -> f64 {
     let diff: f64 = b - a;
     let delta: f64 = diff / n;
-    let i: f64 = n-1.0;
-    let sum: f64 = 0.0;
+    let mut i: f64 = n-1.0;
+    let mut sum: f64 = 0.0;
     while !(i == -1.0) {
         sum += square_function(a + ((delta * i) + delta /2.0));
         i -= 1.0;

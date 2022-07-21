@@ -51,7 +51,7 @@ fn sqrt(input: f64) -> f64 {
     let mut notdone: bool = true;
     while notdone {
         let root: f64 = 0.5 * (x + (n / x));
-        let diff: f64 = root - x;
+        let mut diff: f64 = root - x;
         if diff < 0.0 {
             diff = -diff;
         }
