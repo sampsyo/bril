@@ -1,9 +1,13 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
+#![allow(clippy::module_name_repetitions)]
 
 #[doc(hidden)]
 pub mod cli;
+
+#[doc(hidden)]
+pub mod error;
 
 use std::collections::HashMap;
 use std::fs::{canonicalize, File};
@@ -16,13 +20,19 @@ use bril_rs::{
     AbstractProgram, ImportedFunction,
 };
 
+use crate::error::BrildError;
+
 fn mangle_name(path: &Path, func_name: &String) -> String {
     let mut parts = path.components();
     parts.next();
 
     let mut p: Vec<_> = parts
         .into_iter()
-        .map(|c| c.as_os_str().to_str().unwrap())
+        .map(|c| {
+            c.as_os_str().to_str().expect(
+                "Panics if the path does not contain valid unicode which I'm not worried about",
+            )
+        })
         .collect();
     p.push(func_name);
 
@@ -43,7 +53,12 @@ fn mangle_instr(code: AbstractCode, name_resolution_map: &HashMap<String, String
             op,
             funcs: funcs
                 .into_iter()
-                .map(|f| name_resolution_map.get(&f).unwrap().clone())
+                .map(|f| {
+                    name_resolution_map
+                        .get(&f)
+                        .expect("Could not find name for {f}")
+                        .clone()
+                })
                 .collect(),
             args,
             dest,
@@ -64,7 +79,7 @@ fn mangle_instr(code: AbstractCode, name_resolution_map: &HashMap<String, String
                 .map(|f| {
                     name_resolution_map
                         .get(&f)
-                        .unwrap_or_else(|| panic!("Could not find name for {f}"))
+                        .expect("Could not find name for {f}")
                         .clone()
                 })
                 .collect(),
@@ -110,33 +125,35 @@ pub fn handle_program<S: BuildHasher>(
     canonical_path: &Path,
     libs: &[PathBuf],
     is_toplevel: bool,
-) -> std::io::Result<()> {
+) -> Result<(), BrildError> {
     let mut name_resolution_map = HashMap::new();
 
     // Get the mangled names of functions declared in the current file
     program
         .functions
         .iter()
-        .for_each(|AbstractFunction { name, .. }| {
+        .try_for_each(|AbstractFunction { name, .. }| {
             if name_resolution_map
                 .insert(name.clone(), mangle_name(canonical_path, name))
                 .is_some()
             {
                 // Error if the same function is declared twice
-                panic!()
+                Err(BrildError::DuplicateFunction(name.clone()))
+            } else {
+                Ok(())
             }
-        });
+        })?;
 
     // Locate any imports in the current program
     program
         .imports
         .iter()
-        .try_for_each::<_, std::io::Result<()>>(|i| {
+        .try_for_each::<_, Result<(), BrildError>>(|i| {
             let next_path = locate_import(path_map, &i.path, libs, false)?;
 
             i.functions
                 .iter()
-                .for_each(|ImportedFunction { name, alias }| {
+                .try_for_each(|ImportedFunction { name, alias }| {
                     if name_resolution_map
                         .insert(
                             alias.as_ref().unwrap_or(name).clone(),
@@ -144,9 +161,11 @@ pub fn handle_program<S: BuildHasher>(
                         )
                         .is_some()
                     {
-                        panic!()
+                        Err(BrildError::DuplicateFunction(name.clone()))
+                    } else {
+                        Ok(())
                     }
-                });
+                })?;
             Ok(())
         })?;
 
@@ -176,7 +195,7 @@ pub fn do_import<S: BuildHasher>(
     canonical_path: &PathBuf,
     libs: &[PathBuf],
     is_toplevel: bool,
-) -> std::io::Result<()> {
+) -> Result<(), BrildError> {
     // Check whether we've seen this path
     if path_map.contains_key(canonical_path) {
         return Ok(());
@@ -189,7 +208,9 @@ pub fn do_import<S: BuildHasher>(
         Some("bril") => |s| parse_abstract_program_from_read(s, true),
         Some("json") => load_abstract_program_from_read,
         Some(_) | None => {
-            panic!("Don't know how to handle a file without an extension like *.bril/*.json");
+            return Err(BrildError::MissingOrUnknownFileExtension(
+                canonical_path.clone(),
+            ))
         }
     };
 
@@ -207,11 +228,11 @@ fn locate_import<S: BuildHasher>(
     path: &PathBuf,
     libs: &[PathBuf],
     is_toplevel: bool,
-) -> std::io::Result<PathBuf> {
+) -> Result<PathBuf, BrildError> {
     let located_libs: Vec<_> = libs.iter().filter(|lib| lib.join(path).exists()).collect();
 
     if located_libs.is_empty() {
-        panic!()
+        return Err(BrildError::NoPathExists(path.clone()));
     }
 
     if located_libs.len() > 1 {
