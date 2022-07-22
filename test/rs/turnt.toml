@@ -1,0 +1,8 @@
+[envs.bril-rs]
+command = "cargo run --manifest-path ../../bril-rs/rs2bril/Cargo.toml < {filename} | cargo run --manifest-path ../../brilirs/Cargo.toml -- {args}"
+output.out = "-"
+
+[envs.rustc]
+default = false
+command = "rustc {filename} --crate-type bin -o ../../bril-rs/target/a.out && ../../bril-rs/target/a.out {args}"
+output.out = "-"
