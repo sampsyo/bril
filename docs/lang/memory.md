@@ -40,3 +40,11 @@ These are the operations that manipulate memory allocations:
 It is an error to access or free a region that has already been freed.
 It is also an error to access (`load` or `store`) a pointer that is out of bounds, i.e., outside the range of valid indices for a given allocation.
 (Doing a `ptradd` to produce an out-of-bounds pointer is not an error; subsequently accessing that pointer is.)
+
+Printing
+--------
+
+It is not an error to use the [core][] `print` operation on pointers, but the output is not specified.
+Implementations can choose to print any representation of the pointer that they deem helpful.
+
+[core]: ./core.md
