@@ -142,7 +142,7 @@ impl NumifiedInstruction {
             func_map
               .get(f)
               .copied()
-              .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(*pos))
+              .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(pos.clone()))
           })
           .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
       },
@@ -160,7 +160,7 @@ impl NumifiedInstruction {
             func_map
               .get(f)
               .copied()
-              .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(*pos))
+              .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(pos.clone()))
           })
           .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
       },

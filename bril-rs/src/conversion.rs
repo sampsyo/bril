@@ -73,7 +73,7 @@ impl Display for PositionalConversionError {
         match self {
             #[cfg(feature = "position")]
             PositionalConversionError { e, pos: Some(pos) } => {
-                write!(f, "Line {}, Column {}: {e}", pos.row, pos.col)
+                write!(f, "Line {}, Column {}: {e}", pos.pos.row, pos.pos.col)
             }
             #[cfg(not(feature = "position"))]
             PositionalConversionError { e: _, pos: Some(_) } => {
@@ -121,7 +121,7 @@ impl TryFrom<AbstractFunction> for Function {
                 .into_iter()
                 .map(std::convert::TryInto::try_into)
                 .collect::<Result<Vec<Argument>, _>>()
-                .map_err(|e| e.add_pos(pos))?,
+                .map_err(|e| e.add_pos(pos.clone()))?,
             instrs: instrs
                 .into_iter()
                 .map(std::convert::TryInto::try_into)
@@ -129,7 +129,10 @@ impl TryFrom<AbstractFunction> for Function {
             name,
             return_type: match return_type {
                 None => None,
-                Some(t) => Some(t.try_into().map_err(|e: ConversionError| e.add_pos(pos))?),
+                Some(t) => Some(
+                    t.try_into()
+                        .map_err(|e: ConversionError| e.add_pos(pos.clone()))?,
+                ),
             },
             #[cfg(feature = "position")]
             pos,
@@ -183,10 +186,10 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 op,
                 const_type: const_type
                     .try_into()
-                    .map_err(|e: ConversionError| e.add_pos(pos))?,
+                    .map_err(|e: ConversionError| e.add_pos(pos.clone()))?,
                 value,
                 #[cfg(feature = "position")]
-                pos,
+                pos: pos,
             },
             AbstractInstruction::Value {
                 args,
@@ -204,9 +207,9 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 labels,
                 op_type: op_type
                     .try_into()
-                    .map_err(|e: ConversionError| e.add_pos(pos))?,
+                    .map_err(|e: ConversionError| e.add_pos(pos.clone()))?,
                 #[cfg(feature = "position")]
-                pos,
+                pos: pos.clone(),
                 op: match op.as_ref() {
                     "add" => ValueOps::Add,
                     "mul" => ValueOps::Mul,
@@ -266,7 +269,7 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 funcs,
                 labels,
                 #[cfg(feature = "position")]
-                pos,
+                pos: pos.clone(),
                 op: match op.as_ref() {
                     "jmp" => EffectOps::Jump,
                     "br" => EffectOps::Branch,

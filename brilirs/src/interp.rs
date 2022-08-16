@@ -493,7 +493,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
       // In the typical case, users only print out one value at a time
       // So we can usually avoid extra allocations by providing that string directly
       if args.len() == 1 {
-        optimized_val_output(&mut state.out, state.env.get(args.get(0).unwrap()))?;
+        optimized_val_output(&mut state.out, state.env.get(args.first().unwrap()))?;
         // Add new line
         state.out.write_all(&[b'\n'])?;
       } else {
@@ -600,7 +600,7 @@ fn execute<'a, T: std::io::Write>(
             &numified_code.funcs,
             last_label,
           )
-          .map_err(|e| e.add_pos(*pos))?;
+          .map_err(|e| e.add_pos(pos.clone()))?;
         }
         Instruction::Effect {
           op,
@@ -618,7 +618,7 @@ fn execute<'a, T: std::io::Write>(
             &mut next_block_idx,
             &mut result,
           )
-          .map_err(|e| e.add_pos(*pos))?;
+          .map_err(|e| e.add_pos(pos.clone()))?;
         }
       }
     }
@@ -732,21 +732,21 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
 
   if main_func.return_type.is_some() {
     return Err(InterpError::NonEmptyRetForFunc(main_func.name.clone()))
-      .map_err(|e| e.add_pos(main_func.pos));
+      .map_err(|e| e.add_pos(main_func.pos.clone()));
   }
 
   let mut env = Environment::new(main_func.num_of_vars);
   let heap = Heap::default();
 
   env = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
-    .map_err(|e| e.add_pos(main_func.pos))?;
+    .map_err(|e| e.add_pos(main_func.pos.clone()))?;
 
   let mut state = State::new(prog, env, heap, out);
 
   execute(&mut state, main_func)?;
 
   if !state.heap.is_empty() {
-    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos));
+    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos.clone()));
   }
 
   state.out.flush().map_err(InterpError::IoError)?;

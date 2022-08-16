@@ -90,7 +90,7 @@ pub struct Function {
     pub name: String,
     /// The position of this function in the original source code
     #[cfg(feature = "position")]
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub pos: Option<Position>,
     /// The possible return type of this function
     #[serde(rename = "type")]
@@ -152,7 +152,7 @@ pub enum Code {
         label: String,
         /// Where the label is located in source code
         #[cfg(feature = "position")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
     },
     /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#instruction>
@@ -184,7 +184,7 @@ pub enum Instruction {
         op: ConstOps,
         #[cfg(feature = "position")]
         /// The source position of the instruction if provided
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
         /// Type of variable
         #[serde(rename = "type")]
@@ -209,7 +209,7 @@ pub enum Instruction {
         op: ValueOps,
         /// The source position of the instruction if provided
         #[cfg(feature = "position")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
         /// Type of variable
         #[serde(rename = "type")]
@@ -230,7 +230,7 @@ pub enum Instruction {
         op: EffectOps,
         /// The source position of the instruction if provided
         #[cfg(feature = "position")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
     },
 }
@@ -239,11 +239,11 @@ pub enum Instruction {
 impl Instruction {
     /// A helper function to extract the position value if it exists from an instruction
     #[must_use]
-    pub const fn get_pos(&self) -> Option<Position> {
+    pub fn get_pos(&self) -> Option<Position> {
         match self {
             Instruction::Constant { pos, .. }
             | Instruction::Value { pos, .. }
-            | Instruction::Effect { pos, .. } => *pos,
+            | Instruction::Effect { pos, .. } => pos.clone(),
         }
     }
 }
@@ -570,8 +570,21 @@ impl Literal {
 }
 
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#source-positions>
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Position {
+    /// Starting position
+    pub pos: ColRow,
+    /// Optional ending position
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pos_end: Option<ColRow>,
+    /// Optional absolute path to source file
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub src: Option<String>,
+}
+
+/// <https://capra.cs.cornell.edu/bril/lang/syntax.html#source-positions>
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ColRow {
     /// Column
     pub col: u64,
     /// Row

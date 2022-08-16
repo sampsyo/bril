@@ -79,10 +79,58 @@ pub struct PositionalInterpError {
 impl Display for PositionalInterpError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      PositionalInterpError { e, pos: Some(pos) } => {
+      Self {
+        e,
+        pos:
+          Some(Position {
+            pos,
+            pos_end: Some(end),
+            src: Some(s),
+          }),
+      } => {
+        write!(
+          f,
+          "{s}:{}:{} to {s}:{}:{} \n\t {e}",
+          pos.row, pos.col, end.row, end.col
+        )
+      }
+      Self {
+        e,
+        pos:
+          Some(Position {
+            pos,
+            pos_end: None,
+            src: Some(s),
+          }),
+      } => {
+        write!(f, "{s}:{}:{} \n\t {e}", pos.row, pos.col)
+      }
+      Self {
+        e,
+        pos:
+          Some(Position {
+            pos,
+            pos_end: Some(end),
+            src: None,
+          }),
+      } => {
+        write!(
+          f,
+          "Line {}, Column {} to Line {}, Column {}: {e}",
+          pos.row, pos.col, end.row, end.col
+        )
+      }
+      Self {
+        e,
+        pos: Some(Position {
+          pos,
+          pos_end: None,
+          src: None,
+        }),
+      } => {
         write!(f, "Line {}, Column {}: {e}", pos.row, pos.col)
       }
-      PositionalInterpError { e, pos: None } => write!(f, "{e}"),
+      Self { e, pos: None } => write!(f, "{e}"),
     }
   }
 }

@@ -4,6 +4,8 @@
 #![allow(clippy::too_many_lines)]
 // https://github.com/rust-lang/rust-clippy/issues/6902
 #![allow(clippy::use_self)]
+// Buggy in that it wants Eq to be derived on Literal which has an f64 field
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 /// Provides the unstructured representation of Bril programs
 pub mod abstract_program;

@@ -23,12 +23,4 @@ pub struct Cli {
   /// Arguments for the main function
   #[clap(action)]
   pub args: Vec<String>,
-
-  /// This is the original source file that the file input was generated from.
-  /// You would want to provide this if the bril file you are providing to the
-  /// interpreter is in JSON form with source positions and you what brilirs to
-  /// include sections of the source file in its error messages.
-  /// If --text/-t is provided, that will be assumed to be the source file if none are provided.
-  #[clap(short, long, action)]
-  pub source: Option<String>,
 }
