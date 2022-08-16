@@ -87,8 +87,11 @@ pub fn parse_abstract_program_from_read<R: std::io::Read>(
     let mut buffer = String::new();
     input.read_to_string(&mut buffer).unwrap();
     let parser = bril_grammar::AbstractProgramParser::new();
+
+    let src_name = file_name.map(|f| std::fs::canonicalize(f).unwrap().display().to_string());
+
     parser
-        .parse(&Lines::new(&buffer, use_pos, file_name), &buffer)
+        .parse(&Lines::new(&buffer, use_pos, src_name), &buffer)
         .unwrap()
 }
 
