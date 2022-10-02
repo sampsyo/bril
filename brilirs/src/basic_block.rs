@@ -97,14 +97,15 @@ fn get_num_from_map(
   // A map from variables to numbers
   num_var_map: &mut FxHashMap<String, usize>,
 ) -> usize {
-  match num_var_map.get(variable_name) {
-    Some(i) => *i,
-    None => {
-      let x = *num_of_vars;
-      num_var_map.insert(variable_name.to_string(), x);
-      *num_of_vars += 1;
-      x
-    }
+  // https://github.com/rust-lang/rust-clippy/issues/8346
+  #[allow(clippy::option_if_let_else)]
+  if let Some(i) = num_var_map.get(variable_name) {
+    *i
+  } else {
+    let x = *num_of_vars;
+    num_var_map.insert(variable_name.to_string(), x);
+    *num_of_vars += 1;
+    x
   }
 }
 
