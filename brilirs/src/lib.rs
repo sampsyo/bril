@@ -37,7 +37,7 @@ pub fn run_input<T: std::io::Write, U: std::io::Write>(
   //      - bril_rs takes file.json as input
   //      - bril2json takes file.bril as input
   let prog: Program = if text {
-    bril2json::parse_abstract_program_from_read(input, true, src_name).try_into()?
+    bril2json::parse_abstract_program_from_read(input, true, true, src_name).try_into()?
   } else {
     bril_rs::load_abstract_program_from_read(input).try_into()?
   };

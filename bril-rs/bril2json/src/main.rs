@@ -5,5 +5,9 @@ use clap::Parser;
 
 fn main() {
     let args = Cli::parse();
-    output_abstract_program(&parse_abstract_program(args.position, args.file))
+    output_abstract_program(&parse_abstract_program(
+        args.position >= 1,
+        args.position >= 2,
+        args.file,
+    ))
 }

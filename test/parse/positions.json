@@ -9,10 +9,6 @@
             "col": 3,
             "row": 3
           },
-          "pos_end": {
-            "col": 21,
-            "row": 3
-          },
           "type": "int",
           "value": 1
         },
@@ -21,10 +17,6 @@
           "op": "const",
           "pos": {
             "col": 3,
-            "row": 4
-          },
-          "pos_end": {
-            "col": 21,
             "row": 4
           },
           "type": "int",
@@ -38,20 +30,12 @@
           "pos": {
             "col": 3,
             "row": 5
-          },
-          "pos_end": {
-            "col": 14,
-            "row": 5
           }
         },
         {
           "label": "label",
           "pos": {
             "col": 1,
-            "row": 6
-          },
-          "pos_end": {
-            "col": 8,
             "row": 6
           }
         },
@@ -66,10 +50,6 @@
             "col": 3,
             "row": 7
           },
-          "pos_end": {
-            "col": 23,
-            "row": 7
-          },
           "type": "int"
         },
         {
@@ -80,20 +60,12 @@
           "pos": {
             "col": 3,
             "row": 8
-          },
-          "pos_end": {
-            "col": 12,
-            "row": 8
           }
         }
       ],
       "name": "main",
       "pos": {
         "col": 1,
-        "row": 2
-      },
-      "pos_end": {
-        "col": 7,
         "row": 2
       }
     }

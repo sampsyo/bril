@@ -204,20 +204,23 @@ pub fn do_import<S: BuildHasher>(
     path_map.insert(canonical_path.clone(), None);
 
     // Find the correct parser for this path based on the extension
-    let f: Box<dyn Fn(_) -> AbstractProgram> = match canonical_path
-        .extension()
-        .and_then(std::ffi::OsStr::to_str)
-    {
-        Some("bril") => Box::new(|s| {
-            parse_abstract_program_from_read(s, true, Some(canonical_path.display().to_string()))
-        }),
-        Some("json") => Box::new(load_abstract_program_from_read),
-        Some(_) | None => {
-            return Err(BrildError::MissingOrUnknownFileExtension(
-                canonical_path.clone(),
-            ))
-        }
-    };
+    let f: Box<dyn Fn(_) -> AbstractProgram> =
+        match canonical_path.extension().and_then(std::ffi::OsStr::to_str) {
+            Some("bril") => Box::new(|s| {
+                parse_abstract_program_from_read(
+                    s,
+                    true,
+                    true,
+                    Some(canonical_path.display().to_string()),
+                )
+            }),
+            Some("json") => Box::new(load_abstract_program_from_read),
+            Some(_) | None => {
+                return Err(BrildError::MissingOrUnknownFileExtension(
+                    canonical_path.clone(),
+                ))
+            }
+        };
 
     // Get the AbstractProgram representation of the file
     let program = f(File::open(&canonical_path)?);

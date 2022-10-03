@@ -16,14 +16,16 @@ use bril_rs::{AbstractProgram, ColRow, Position};
 #[derive(Clone)]
 pub struct Lines {
     use_pos: bool,
+    with_end: bool,
     new_lines: Vec<usize>,
     src_name: Option<String>,
 }
 
 impl Lines {
-    fn new(input: &str, use_pos: bool, src_name: Option<String>) -> Self {
+    fn new(input: &str, use_pos: bool, with_end: bool, src_name: Option<String>) -> Self {
         Self {
             use_pos,
+            with_end,
             src_name,
             new_lines: input
                 .as_bytes()
@@ -38,7 +40,11 @@ impl Lines {
         if self.use_pos {
             Some(Position {
                 pos: self.get_row_col(starting_index).unwrap(),
-                pos_end: self.get_row_col(ending_index),
+                pos_end: if self.with_end {
+                    self.get_row_col(ending_index)
+                } else {
+                    None
+                },
                 src: self.src_name.clone(),
             })
         } else {
@@ -82,6 +88,7 @@ impl Lines {
 pub fn parse_abstract_program_from_read<R: std::io::Read>(
     mut input: R,
     use_pos: bool,
+    with_end: bool,
     file_name: Option<String>,
 ) -> AbstractProgram {
     let mut buffer = String::new();
@@ -91,7 +98,7 @@ pub fn parse_abstract_program_from_read<R: std::io::Read>(
     let src_name = file_name.map(|f| std::fs::canonicalize(f).unwrap().display().to_string());
 
     parser
-        .parse(&Lines::new(&buffer, use_pos, src_name), &buffer)
+        .parse(&Lines::new(&buffer, use_pos, with_end, src_name), &buffer)
         .unwrap()
 }
 
@@ -99,11 +106,15 @@ pub fn parse_abstract_program_from_read<R: std::io::Read>(
 /// A wrapper around [`parse_abstract_program_from_read`] which assumes [`std::io::Stdin`] if `file_name` is [`None`]
 /// # Panics
 /// Will panic if the input is not well-formed Bril text or if `file_name` does not exist
-pub fn parse_abstract_program(use_pos: bool, file_name: Option<String>) -> AbstractProgram {
+pub fn parse_abstract_program(
+    use_pos: bool,
+    with_end: bool,
+    file_name: Option<String>,
+) -> AbstractProgram {
     let input: Box<dyn std::io::Read> = match file_name.clone() {
         Some(f) => Box::new(File::open(f).unwrap()),
         None => Box::new(std::io::stdin()),
     };
 
-    parse_abstract_program_from_read(input, use_pos, file_name)
+    parse_abstract_program_from_read(input, use_pos, with_end, file_name)
 }

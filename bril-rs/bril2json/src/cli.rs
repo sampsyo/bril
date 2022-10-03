@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgAction::Count, Parser};
 
 #[derive(Parser)]
 #[command(about, version, author)] // keeps the cli synced with Cargo.toml
@@ -7,6 +7,6 @@ pub struct Cli {
     #[arg(short, long, action)]
     pub file: Option<String>,
     /// Flag for whether position information should be included
-    #[arg(short, action)]
-    pub position: bool,
+    #[arg(short, action = Count)]
+    pub position: u8,
 }
