@@ -281,14 +281,14 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
     }
     return;
   },
-  
+
   phi: (env, instr) => {
     let args = instr.args ?? [];
     if (!('type' in instr)) {
       err(`phi needs a result type`, instr.pos);
       return;
     }
-    
+
     // Construct a signature with uniform argument types.
     let argTypes: bril.Type[] = [];
     for (let i = 0; i < args.length; ++i) {
@@ -353,25 +353,27 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
   }
 
   // Gather up all the types of the local variables and all the label names.
-  for (let instr of func.instrs) {
-    if ('dest' in instr) {
-      addType(vars, instr.dest, instr.type, instr.pos);
-    } else if ('label' in instr) {
-      if (labels.has(instr.label)) {
-        err(`multiply defined label .${instr.label}`, instr.pos);
-      } else {
-        labels.add(instr.label);
+  if (func.instrs){
+    for (let instr of func.instrs) {
+      if ('dest' in instr) {
+        addType(vars, instr.dest, instr.type, instr.pos);
+      } else if ('label' in instr) {
+        if (labels.has(instr.label)) {
+          err(`multiply defined label .${instr.label}`, instr.pos);
+        } else {
+          labels.add(instr.label);
+        }
       }
     }
-  }
 
-  // Check each instruction.
-  for (let instr of func.instrs) {
-    if ('op' in instr) {
-      if (instr.op === 'const') {
-        checkConst(instr);
-      } else {
-        checkOp({vars, labels, funcs, ret: func.type}, instr);
+    // Check each instruction.
+    for (let instr of func.instrs) {
+      if ('op' in instr) {
+        if (instr.op === 'const') {
+          checkConst(instr);
+        } else {
+          checkOp({vars, labels, funcs, ret: func.type}, instr);
+        }
       }
     }
   }
