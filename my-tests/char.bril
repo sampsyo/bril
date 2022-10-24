@@ -1,0 +1,20 @@
+@main() {
+  c1: char = const 'a';
+  c2: char = const 'b';
+  print c1;
+  isequal: bool = ceq c1 c2;
+  print isequal;
+
+  tam: int = const 4;
+  pos: int = const 1;
+  charvec: ptr<char> = alloc tam;
+  charvec2: ptr<char> = ptradd charvec pos;
+  c: char = const 'o';
+  c2: char = const 'i';
+  store charvec c;
+  store charvec2 c2;
+  print c;
+  c: char = load charvec2;
+  print c;
+  free charvec;
+}

@@ -1,0 +1,48 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "i0",
+          "op": "const",
+          "type": "int",
+          "value": 4.0
+        },
+        {
+          "args": [
+            "i0"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "float",
+          "value": 9
+        },
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "float",
+          "value": 3
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "res",
+          "op": "fdiv",
+          "type": "float"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
