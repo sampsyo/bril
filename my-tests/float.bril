@@ -1,0 +1,8 @@
+@main() {
+  i0: int = const 4.0;
+  print i0;
+  v0: float = const 9;
+  v1: float = const 3;
+  res: float = fdiv v0 v1;
+  print res;
+}
