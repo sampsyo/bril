@@ -237,10 +237,11 @@ fn type_check_instruction<'a>(
           check_asmt_type(ty, &expected_arg.arg_type)
         })?;
 
-      match &callee_func.return_type {
-        None => Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone())),
-        Some(t) => check_asmt_type(op_type, t),
-      }?;
+      callee_func.return_type.as_ref().map_or_else(
+        || Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone())),
+        |t| check_asmt_type(op_type, t),
+      )?;
+
       update_env(env, dest, op_type)
     }
     Instruction::Value {

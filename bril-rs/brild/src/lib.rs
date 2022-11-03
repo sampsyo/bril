@@ -223,7 +223,7 @@ pub fn do_import<S: BuildHasher>(
         };
 
     // Get the AbstractProgram representation of the file
-    let program = f(File::open(&canonical_path)?);
+    let program = f(File::open(canonical_path)?);
 
     handle_program(path_map, program, canonical_path, libs, is_toplevel)?;
     Ok(())
