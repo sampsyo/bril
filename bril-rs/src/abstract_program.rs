@@ -48,7 +48,7 @@ pub struct AbstractFunction {
     pub name: String,
     /// The position of this function in the original source code
     #[cfg(feature = "position")]
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub pos: Option<Position>,
     /// The possible return type of this function
     #[serde(rename = "type")]
@@ -110,7 +110,7 @@ pub enum AbstractCode {
         label: String,
         /// Where the label is located in source code
         #[cfg(feature = "position")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
     },
     /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#instruction>
@@ -142,7 +142,7 @@ pub enum AbstractInstruction {
         op: ConstOps,
         /// The source position of the instruction if provided
         #[cfg(feature = "position")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
         /// Type of variable
         #[serde(rename = "type")]
@@ -167,7 +167,7 @@ pub enum AbstractInstruction {
         op: String,
         /// The source position of the instruction if provided
         #[cfg(feature = "position")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
         /// Type of variable
         #[serde(rename = "type")]
@@ -188,7 +188,7 @@ pub enum AbstractInstruction {
         op: String,
         /// The source position of the instruction if provided
         #[cfg(feature = "position")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
     },
 }

@@ -1,6 +1,6 @@
 // https://kbknapp.dev/shell-completions/
 
-use clap::IntoApp;
+use clap::CommandFactory;
 use clap_complete::{
   shells::{Bash, Elvish, Fish, PowerShell, Zsh},
   Generator,

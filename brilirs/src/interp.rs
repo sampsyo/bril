@@ -44,16 +44,16 @@ impl Environment {
     }
   }
 
-  pub fn get(&self, ident: &usize) -> &Value {
+  pub fn get(&self, ident: usize) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
-    self.env.get(self.current_pointer + *ident).unwrap()
+    self.env.get(self.current_pointer + ident).unwrap()
   }
 
   // Used for getting arguments that should be passed to the current frame from the previous one
-  pub fn get_from_last_frame(&self, ident: &usize) -> &Value {
+  pub fn get_from_last_frame(&self, ident: usize) -> &Value {
     let past_pointer = self.stack_pointers.last().unwrap().0;
-    self.env.get(past_pointer + *ident).unwrap()
+    self.env.get(past_pointer + ident).unwrap()
   }
 
   pub fn set(&mut self, ident: usize, val: Value) {
@@ -161,7 +161,7 @@ impl Heap {
 // you just want the underlying value(like a f64).
 // Or can just be used to get a owned version of the Value
 fn get_arg<'a, T: From<&'a Value>>(vars: &'a Environment, index: usize, args: &[usize]) -> T {
-  T::from(vars.get(&args[index]))
+  T::from(vars.get(args[index]))
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -290,7 +290,7 @@ fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut En
     .iter()
     .zip(callee_func.args_as_nums.iter())
     .for_each(|(arg_name, expected_arg)| {
-      let arg = vars.get_from_last_frame(arg_name);
+      let arg = vars.get_from_last_frame(*arg_name);
       vars.set(*expected_arg, *arg);
     });
 }
@@ -493,7 +493,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
       // In the typical case, users only print out one value at a time
       // So we can usually avoid extra allocations by providing that string directly
       if args.len() == 1 {
-        optimized_val_output(&mut state.out, state.env.get(args.get(0).unwrap()))?;
+        optimized_val_output(&mut state.out, state.env.get(*args.first().unwrap()))?;
         // Add new line
         state.out.write_all(&[b'\n'])?;
       } else {
@@ -502,7 +502,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
           "{}",
           args
             .iter()
-            .map(|a| state.env.get(a).to_string())
+            .map(|a| state.env.get(*a).to_string())
             .collect::<Vec<String>>()
             .join(" ")
         )?;
@@ -600,7 +600,7 @@ fn execute<'a, T: std::io::Write>(
             &numified_code.funcs,
             last_label,
           )
-          .map_err(|e| e.add_pos(*pos))?;
+          .map_err(|e| e.add_pos(pos.clone()))?;
         }
         Instruction::Effect {
           op,
@@ -618,7 +618,7 @@ fn execute<'a, T: std::io::Write>(
             &mut next_block_idx,
             &mut result,
           )
-          .map_err(|e| e.add_pos(*pos))?;
+          .map_err(|e| e.add_pos(pos.clone()))?;
         }
       }
     }
@@ -732,21 +732,21 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
 
   if main_func.return_type.is_some() {
     return Err(InterpError::NonEmptyRetForFunc(main_func.name.clone()))
-      .map_err(|e| e.add_pos(main_func.pos));
+      .map_err(|e| e.add_pos(main_func.pos.clone()));
   }
 
   let mut env = Environment::new(main_func.num_of_vars);
   let heap = Heap::default();
 
   env = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
-    .map_err(|e| e.add_pos(main_func.pos))?;
+    .map_err(|e| e.add_pos(main_func.pos.clone()))?;
 
   let mut state = State::new(prog, env, heap, out);
 
   execute(&mut state, main_func)?;
 
   if !state.heap.is_empty() {
-    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos));
+    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos.clone()));
   }
 
   state.out.flush().map_err(InterpError::IoError)?;

@@ -1,3 +1,4 @@
+use bril_rs::Position;
 use brilirs::cli::Cli;
 use brilirs::error::PositionalInterpError;
 use clap::Parser;
@@ -7,18 +8,11 @@ use std::io::Read;
 fn main() {
   let args = Cli::parse();
 
-  let mut input: Box<dyn std::io::Read> = match args.file {
+  let input: Box<dyn std::io::Read> = match args.file.clone() {
     None => Box::new(std::io::stdin()),
 
     Some(input_file) => Box::new(File::open(input_file).unwrap()),
   };
-
-  // Here we are reading out the input into a string so that we have it for error reporting
-  // This will be done again during parsing inside of run_input because of the current interface
-  // This is inefficient but probably not meaningfully so since benchmarking has shown that parsing quickly gets out weighted by program execution
-  // If this does matter to you in your profiling, split up parse_abstract_program_from_read/load_abstract_program_from_read so that they can take a string instead of a `Read`
-  let mut input_string = String::new();
-  input.read_to_string(&mut input_string).unwrap();
 
   /*
   todo should you be able to supply output locations from the command line interface?
@@ -26,43 +20,47 @@ fn main() {
   */
 
   if let Err(e) = brilirs::run_input(
-    input_string.as_bytes(),
+    input,
     std::io::BufWriter::new(std::io::stdout()),
     &args.args,
     args.profile,
     std::io::stderr(),
     args.check,
     args.text,
+    args.file,
   ) {
-    let mut source_file = None;
-    if args.text {
-      source_file = Some(&input_string);
-    }
-
-    let mut tmp_string = String::new();
-    if let Some(s) = args.source {
-      File::open(s)
-        .unwrap()
-        .read_to_string(&mut tmp_string)
-        .unwrap();
-      source_file = Some(&tmp_string);
-    }
-
-    if let (
-      Some(f),
-      PositionalInterpError {
-        e: _,
-        pos: Some(pos),
-      },
-    ) = (source_file, &e)
+    eprintln!("error: {e}");
+    if let PositionalInterpError {
+      pos: Some(Position {
+        pos,
+        pos_end,
+        src: Some(src),
+      }),
+      ..
+    } = e
     {
-      // TODO delegate this to a crate that uses spans?
+      let mut f = String::new();
+      File::open(src).unwrap().read_to_string(&mut f).unwrap();
+
       let mut lines = f.split('\n');
-      eprintln!("error: {e}");
+
+      // print the first line
       eprintln!("{}", lines.nth((pos.row - 1) as usize).unwrap());
       eprintln!("{:>width$}", "^", width = pos.col as usize);
-    } else {
-      eprintln!("error: {e}");
+
+      // Then check if there is more
+      if let Some(end) = pos_end {
+        if pos.row != end.row {
+          let mut row = pos.row + 1;
+          while row < end.row {
+            eprintln!("{}", lines.nth((row - 1) as usize).unwrap());
+            eprintln!("^");
+            row += 1;
+          }
+          eprintln!("{}", lines.nth((end.row - 1) as usize).unwrap());
+          eprintln!("{:>width$}", "^", width = end.col as usize);
+        }
+      }
     }
     std::process::exit(2)
   }

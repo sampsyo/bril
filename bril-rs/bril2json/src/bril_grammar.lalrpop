@@ -75,12 +75,12 @@ Alias : String = {
 }
 
 AbstractFunction : AbstractFunction = {
-    <loc:@L> <f: Func> <a: (Argument_List)?> <t:OutputType?> "{" <c :(<AbstractCode>)*> "}" => {let a = a.unwrap_or_default(); AbstractFunction {
+    <loc:@L> <f: Func> <a: (Argument_List)?> <t:OutputType?> <loc2:@R> "{" <c :(<AbstractCode>)*> "}" => {let a = a.unwrap_or_default(); AbstractFunction {
         name : f,
         args : a,
         return_type : t,
         instrs: c,
-        pos : lines.get_position(loc),
+        pos : lines.get_position(loc, loc2),
     }}
 }
 
@@ -100,19 +100,19 @@ AbstractArgument : AbstractArgument = {
 }
 
 AbstractCode : AbstractCode = {
-    <loc:@L> <l: Label> ":" => AbstractCode::Label{ label : l, pos : lines.get_position(loc)},
+    <loc:@L> <l: Label> ":" <loc2:@R> => AbstractCode::Label{ label : l, pos : lines.get_position(loc, loc2)},
     <i: AbstractInstruction> => AbstractCode::Instruction(i),
 }
 
 AbstractInstruction : AbstractInstruction = {
-    <loc:@L> <i:Ident> <t:(":" <AbstractType>)?> "=" <c: ConstOps> <l: Literal> ";" => AbstractInstruction::Constant {
+    <loc:@L> <i:Ident> <t:(":" <AbstractType>)?> "=" <c: ConstOps> <l: Literal> ";" <loc2:@R> => AbstractInstruction::Constant {
         op : c,
         dest : i,
         const_type : t,
         value : l,
-        pos : lines.get_position(loc),
+        pos : lines.get_position(loc, loc2),
     },
-    <loc:@L> <i:Ident> <t:(":" <AbstractType>)?> "=" <v:Ident> <f :(<Args>)*> ";" => {
+    <loc:@L> <i:Ident> <t:(":" <AbstractType>)?> "=" <v:Ident> <f :(<Args>)*> ";" <loc2:@R> => {
         let mut a_vec = Vec::new();
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
@@ -130,10 +130,10 @@ AbstractInstruction : AbstractInstruction = {
             args: a_vec,
             funcs: f_vec,
             labels: l_vec,
-            pos : lines.get_position(loc),
+            pos : lines.get_position(loc, loc2),
         }
     },
-    <loc:@L> <e:Ident> <f :(<Args>)*> ";" => {
+    <loc:@L> <e:Ident> <f :(<Args>)*> ";" <loc2:@R> => {
         let mut a_vec = Vec::new();
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
@@ -149,7 +149,7 @@ AbstractInstruction : AbstractInstruction = {
             args: a_vec,
             funcs: f_vec,
             labels: l_vec,
-            pos : lines.get_position(loc),
+            pos : lines.get_position(loc, loc2),
         }
     }
 

@@ -8,17 +8,17 @@
 pub mod cli;
 
 use bril_rs::{
-    Argument, Code, ConstOps, EffectOps, Function, Instruction, Literal, Position, Program, Type,
-    ValueOps,
+    Argument, Code, ColRow, ConstOps, EffectOps, Function, Instruction, Literal, Position, Program,
+    Type, ValueOps,
 };
 
 use syn::punctuated::Punctuated;
 use syn::{
     BinOp, Block, Expr, ExprArray, ExprAssign, ExprAssignOp, ExprBinary, ExprBlock, ExprCall,
-    ExprCast, ExprIf, ExprIndex, ExprLit, ExprMacro, ExprParen, ExprPath, ExprReference,
-    ExprRepeat, ExprReturn, ExprUnary, ExprWhile, File, FnArg, Ident, Item, ItemFn, Lit, Local,
-    Macro, Pat, PatIdent, PatType, Path, PathSegment, ReturnType, Signature, Stmt, Type as SType,
-    TypeArray, TypePath, TypeReference, TypeSlice, UnOp,
+    ExprCast, ExprIf, ExprIndex, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprParen, ExprPath,
+    ExprReference, ExprRepeat, ExprReturn, ExprUnary, ExprWhile, File, FnArg, Ident, Item, ItemFn,
+    Lit, Local, Macro, Pat, PatIdent, PatType, Path, PathSegment, ReturnType, Signature, Stmt,
+    Type as SType, TypeArray, TypePath, TypeReference, TypeSlice, UnOp,
 };
 
 use proc_macro2::Span;
@@ -30,15 +30,17 @@ use std::collections::HashMap;
 
 struct State {
     is_pos: bool,
+    src: Option<String>,
     temp_var_count: u64,
     ident_type_map: HashMap<String, Type>,
     func_context_map: HashMap<String, (HashMap<String, Type>, Option<Type>)>,
 }
 
 impl State {
-    fn new(is_pos: bool) -> Self {
+    fn new(is_pos: bool, src: Option<String>) -> Self {
         Self {
             is_pos,
+            src,
             temp_var_count: 0,
             ident_type_map: HashMap::new(),
             func_context_map: HashMap::new(),
@@ -77,11 +79,179 @@ impl State {
     }
 }
 
-fn from_span_to_position(span: Span) -> Position {
-    let position = span.start();
+fn from_expr_to_span(expr: &Expr) -> Span {
+    match expr {
+        Expr::Array(ExprArray {
+            attrs: _,
+            bracket_token,
+            elems: _,
+        })
+        | Expr::Repeat(ExprRepeat {
+            attrs: _,
+            bracket_token,
+            expr: _,
+            semi_token: _,
+            len: _,
+        }) => bracket_token.span,
+        Expr::Assign(ExprAssign {
+            attrs: _,
+            left,
+            eq_token: _,
+            right,
+        })
+        | Expr::AssignOp(ExprAssignOp {
+            attrs: _,
+            left,
+            op: _,
+            right,
+        })
+        | Expr::Binary(ExprBinary {
+            attrs: _,
+            left,
+            op: _,
+            right,
+        }) => from_expr_to_span(left)
+            .join(from_expr_to_span(right))
+            .unwrap(),
+        Expr::Block(ExprBlock {
+            attrs: _,
+            label: _,
+            block,
+        }) => block.brace_token.span,
+        Expr::Call(ExprCall {
+            attrs: _,
+            func,
+            paren_token,
+            args: _,
+        }) => from_expr_to_span(func).join(paren_token.span).unwrap(),
+        Expr::Cast(ExprCast {
+            attrs: _,
+            expr,
+            as_token: _,
+            ty: _,
+        })
+        | Expr::Reference(ExprReference {
+            attrs: _,
+            and_token: _,
+            raw: _,
+            mutability: _,
+            expr,
+        }) => from_expr_to_span(expr),
+        Expr::If(ExprIf {
+            attrs: _,
+            if_token,
+            cond: _,
+            then_branch: _,
+            else_branch: Some((_, else_branch)),
+        }) => if_token.span.join(from_expr_to_span(else_branch)).unwrap(),
+        Expr::If(ExprIf {
+            attrs: _,
+            if_token,
+            cond: _,
+            then_branch,
+            else_branch: None,
+        }) => if_token.span.join(then_branch.brace_token.span).unwrap(),
+        Expr::Index(ExprIndex {
+            attrs: _,
+            expr,
+            bracket_token,
+            index: _,
+        }) => from_expr_to_span(expr).join(bracket_token.span).unwrap(),
+        Expr::Let(ExprLet {
+            attrs: _,
+            let_token,
+            pat: _,
+            eq_token: _,
+            expr,
+        }) => let_token.span.join(from_expr_to_span(expr)).unwrap(),
+        Expr::Lit(ExprLit { attrs: _, lit }) => lit.span(),
+        Expr::Loop(ExprLoop {
+            attrs: _,
+            label: _,
+            loop_token,
+            body,
+        }) => loop_token.span.join(body.brace_token.span).unwrap(),
+        Expr::Macro(ExprMacro {
+            attrs: _,
+            mac:
+                Macro {
+                    path: _,
+                    bang_token,
+                    delimiter,
+                    tokens: _,
+                },
+        }) => bang_token
+            .span
+            .join(match delimiter {
+                syn::MacroDelimiter::Paren(p) => p.span,
+                syn::MacroDelimiter::Brace(b) => b.span,
+                syn::MacroDelimiter::Bracket(b) => b.span,
+            })
+            .unwrap(),
+        Expr::Paren(ExprParen {
+            attrs: _,
+            paren_token,
+            expr: _,
+        }) => paren_token.span,
+        Expr::Path(ExprPath {
+            attrs: _,
+            qself: _,
+            path: Path {
+                leading_colon: _,
+                segments,
+            },
+        }) => segments
+            .first()
+            .unwrap()
+            .ident
+            .span()
+            .join(segments.last().unwrap().ident.span())
+            .unwrap(),
+        Expr::Return(ExprReturn {
+            attrs: _,
+            return_token,
+            expr: None,
+        }) => return_token.span,
+        Expr::Return(ExprReturn {
+            attrs: _,
+            return_token,
+            expr: Some(expr),
+        }) => return_token.span.join(from_expr_to_span(expr)).unwrap(),
+        Expr::Unary(ExprUnary { attrs: _, op, expr }) => match op {
+            UnOp::Deref(d) => d.span,
+            UnOp::Not(n) => n.span,
+            UnOp::Neg(n) => n.span,
+        }
+        .join(from_expr_to_span(expr))
+        .unwrap(),
+        Expr::While(ExprWhile {
+            attrs: _,
+            label: _,
+            while_token,
+            cond: _,
+            body,
+        }) => while_token.span.join(body.brace_token.span).unwrap(),
+        _ => todo!(),
+    }
+}
+
+fn from_span_to_position(
+    starting_span: Span,
+    ending_span: Option<Span>,
+    src: Option<String>,
+) -> Position {
+    let start = starting_span.start();
+    let end = ending_span.map_or(starting_span.end(), |s| s.end());
     Position {
-        col: position.column as u64,
-        row: position.line as u64,
+        pos: ColRow {
+            col: start.column as u64,
+            row: start.line as u64,
+        },
+        pos_end: Some(ColRow {
+            col: end.column as u64,
+            row: end.line as u64,
+        }),
+        src,
     }
 }
 
@@ -156,10 +326,10 @@ fn from_signature_to_function(
         asyncness,
         unsafety,
         abi,
-        fn_token: _,
+        fn_token,
         ident,
         generics,
-        paren_token: _,
+        paren_token,
         inputs,
         variadic,
         output,
@@ -204,7 +374,11 @@ fn from_signature_to_function(
     Function {
         name: ident.to_string(),
         pos: if state.is_pos {
-            Some(from_span_to_position(ident.span()))
+            Some(from_span_to_position(
+                fn_token.span,
+                Some(paren_token.span),
+                state.src.clone(),
+            ))
         } else {
             None
         },
@@ -269,6 +443,15 @@ fn array_init_helper(
 }
 
 fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code>) {
+    let pos = if state.is_pos {
+        Some(from_span_to_position(
+            from_expr_to_span(&expr),
+            None,
+            state.src.clone(),
+        ))
+    } else {
+        None
+    };
     match expr {
         Expr::Array(ExprArray {
             attrs,
@@ -288,7 +471,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
         Expr::Assign(ExprAssign {
             attrs,
             left,
-            eq_token,
+            eq_token: _,
             right,
         }) if attrs.is_empty() => {
             let (arg, mut code) = from_expr_to_bril(*right, state);
@@ -306,11 +489,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                         funcs: Vec::new(),
                         labels: Vec::new(),
                         op: ValueOps::Id,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(eq_token.spans[0]))
-                        } else {
-                            None
-                        },
+                        pos,
                         op_type,
                     }));
                     (None, code)
@@ -318,7 +497,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 Expr::Index(ExprIndex {
                     attrs,
                     expr,
-                    bracket_token,
+                    bracket_token: _,
                     index,
                 }) if attrs.is_empty() => {
                     let (arg1, mut code1) = from_expr_to_bril(*expr, state);
@@ -334,11 +513,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                         funcs: Vec::new(),
                         labels: Vec::new(),
                         op: ValueOps::PtrAdd,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(bracket_token.span))
-                        } else {
-                            None
-                        },
+                        pos: pos.clone(),
                         op_type,
                     }));
                     code1.push(Code::Instruction(Instruction::Effect {
@@ -346,11 +521,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                         funcs: Vec::new(),
                         labels: Vec::new(),
                         op: EffectOps::Store,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(eq_token.span))
-                        } else {
-                            None
-                        },
+                        pos,
                     }));
                     (None, code1)
                 }
@@ -367,7 +538,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
             let mut segments = Punctuated::new();
             segments.push(PathSegment::from(Ident::new(
                 assign_arg.clone().unwrap().as_str(),
-                Span::call_site(), // THis probably makes no sense actually. But I'm not sure where to get the span yet
+                Span::call_site(), // This probably makes no sense actually. But I'm not sure where to get the span yet
             )));
             let (arg, mut code) = from_expr_to_bril(
                 Expr::Binary(ExprBinary {
@@ -399,7 +570,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: Vec::new(),
                 op: ValueOps::Id,
-                pos: None,
+                pos,
                 op_type,
             }));
             (None, assign_code)
@@ -414,30 +585,29 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
             let (arg2, mut code2) = from_expr_to_bril(*right, state);
             code1.append(&mut code2);
 
-            let (value_op, op_type, span) =
-                match (op, state.get_type_for_ident(arg1.as_ref().unwrap())) {
-                    (BinOp::Add(x), Type::Int) => (ValueOps::Add, Type::Int, x.spans[0]),
-                    (BinOp::Add(x), Type::Float) => (ValueOps::Fadd, Type::Float, x.spans[0]),
-                    (BinOp::Sub(x), Type::Int) => (ValueOps::Sub, Type::Int, x.spans[0]),
-                    (BinOp::Sub(x), Type::Float) => (ValueOps::Fsub, Type::Float, x.spans[0]),
-                    (BinOp::Mul(x), Type::Int) => (ValueOps::Mul, Type::Int, x.spans[0]),
-                    (BinOp::Mul(x), Type::Float) => (ValueOps::Fmul, Type::Float, x.spans[0]),
-                    (BinOp::Div(x), Type::Int) => (ValueOps::Div, Type::Int, x.spans[0]),
-                    (BinOp::Div(x), Type::Float) => (ValueOps::Fdiv, Type::Float, x.spans[0]),
-                    (BinOp::And(x), _) => (ValueOps::And, Type::Bool, x.spans[0]),
-                    (BinOp::Or(x), _) => (ValueOps::Or, Type::Bool, x.spans[0]),
-                    (BinOp::Eq(x), Type::Int) => (ValueOps::Eq, Type::Bool, x.spans[0]),
-                    (BinOp::Eq(x), Type::Float) => (ValueOps::Feq, Type::Bool, x.spans[0]),
-                    (BinOp::Lt(x), Type::Int) => (ValueOps::Lt, Type::Bool, x.spans[0]),
-                    (BinOp::Lt(x), Type::Float) => (ValueOps::Flt, Type::Bool, x.spans[0]),
-                    (BinOp::Le(x), Type::Int) => (ValueOps::Le, Type::Bool, x.spans[0]),
-                    (BinOp::Le(x), Type::Float) => (ValueOps::Fle, Type::Bool, x.spans[0]),
-                    (BinOp::Ge(x), Type::Int) => (ValueOps::Ge, Type::Bool, x.spans[0]),
-                    (BinOp::Ge(x), Type::Float) => (ValueOps::Fge, Type::Bool, x.spans[0]),
-                    (BinOp::Gt(x), Type::Int) => (ValueOps::Gt, Type::Bool, x.spans[0]),
-                    (BinOp::Gt(x), Type::Float) => (ValueOps::Fgt, Type::Bool, x.spans[0]),
-                    (_, _) => unimplemented!("{op:?}"),
-                };
+            let (value_op, op_type) = match (op, state.get_type_for_ident(arg1.as_ref().unwrap())) {
+                (BinOp::Add(_), Type::Int) => (ValueOps::Add, Type::Int),
+                (BinOp::Add(_), Type::Float) => (ValueOps::Fadd, Type::Float),
+                (BinOp::Sub(_), Type::Int) => (ValueOps::Sub, Type::Int),
+                (BinOp::Sub(_), Type::Float) => (ValueOps::Fsub, Type::Float),
+                (BinOp::Mul(_), Type::Int) => (ValueOps::Mul, Type::Int),
+                (BinOp::Mul(_), Type::Float) => (ValueOps::Fmul, Type::Float),
+                (BinOp::Div(_), Type::Int) => (ValueOps::Div, Type::Int),
+                (BinOp::Div(_), Type::Float) => (ValueOps::Fdiv, Type::Float),
+                (BinOp::And(_), _) => (ValueOps::And, Type::Bool),
+                (BinOp::Or(_), _) => (ValueOps::Or, Type::Bool),
+                (BinOp::Eq(_), Type::Int) => (ValueOps::Eq, Type::Bool),
+                (BinOp::Eq(_), Type::Float) => (ValueOps::Feq, Type::Bool),
+                (BinOp::Lt(_), Type::Int) => (ValueOps::Lt, Type::Bool),
+                (BinOp::Lt(_), Type::Float) => (ValueOps::Flt, Type::Bool),
+                (BinOp::Le(_), Type::Int) => (ValueOps::Le, Type::Bool),
+                (BinOp::Le(_), Type::Float) => (ValueOps::Fle, Type::Bool),
+                (BinOp::Ge(_), Type::Int) => (ValueOps::Ge, Type::Bool),
+                (BinOp::Ge(_), Type::Float) => (ValueOps::Fge, Type::Bool),
+                (BinOp::Gt(_), Type::Int) => (ValueOps::Gt, Type::Bool),
+                (BinOp::Gt(_), Type::Float) => (ValueOps::Fgt, Type::Bool),
+                (_, _) => unimplemented!("{op:?}"),
+            };
 
             let dest = state.fresh_var(op_type.clone());
 
@@ -447,11 +617,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: Vec::new(),
                 op: value_op,
-                pos: if state.is_pos {
-                    Some(from_span_to_position(span))
-                } else {
-                    None
-                },
+                pos,
                 op_type,
             }));
             (Some(dest), code1)
@@ -464,7 +630,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
         Expr::Call(ExprCall {
             attrs,
             func,
-            paren_token,
+            paren_token: _,
             args,
         }) if attrs.is_empty() => {
             let f = match *func {
@@ -491,11 +657,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                     funcs: Vec::new(),
                     labels: Vec::new(),
                     op: EffectOps::Free,
-                    pos: if state.is_pos {
-                        Some(from_span_to_position(paren_token.span))
-                    } else {
-                        None
-                    },
+                    pos,
                 }));
                 (None, code)
             } else {
@@ -506,11 +668,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                             funcs: vec![f],
                             labels: Vec::new(),
                             op: EffectOps::Call,
-                            pos: if state.is_pos {
-                                Some(from_span_to_position(paren_token.span))
-                            } else {
-                                None
-                            },
+                            pos,
                         }));
                         (None, code)
                     }
@@ -522,11 +680,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                             funcs: vec![f],
                             labels: Vec::new(),
                             op: ValueOps::Call,
-                            pos: if state.is_pos {
-                                Some(from_span_to_position(paren_token.span))
-                            } else {
-                                None
-                            },
+                            pos,
                             op_type: ret,
                         }));
                         (Some(dest), code)
@@ -568,11 +722,11 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: vec![then_label.clone(), else_label.clone()],
                 op: EffectOps::Branch,
-                pos: None,
+                pos: pos.clone(),
             }));
             code.push(Code::Label {
                 label: then_label,
-                pos: None,
+                pos: pos.clone(),
             });
 
             code.append(&mut from_block_to_vec_code(then_branch, state));
@@ -582,11 +736,11 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: vec![end_label.clone()],
                 op: EffectOps::Jump,
-                pos: None,
+                pos: pos.clone(),
             }));
             code.push(Code::Label {
                 label: else_label,
-                pos: None,
+                pos: pos.clone(),
             });
 
             if let Some((_, else_branch)) = else_branch {
@@ -602,18 +756,18 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: vec![end_label.clone()],
                 op: EffectOps::Jump,
-                pos: None,
+                pos: pos.clone(),
             }));
             code.push(Code::Label {
                 label: end_label,
-                pos: None,
+                pos,
             });
             (None, code)
         }
         Expr::Index(ExprIndex {
             attrs,
             expr,
-            bracket_token,
+            bracket_token: _,
             index,
         }) if attrs.is_empty() => {
             let (arg1, mut code1) = from_expr_to_bril(*expr, state);
@@ -631,11 +785,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: Vec::new(),
                 op: ValueOps::PtrAdd,
-                pos: if state.is_pos {
-                    Some(from_span_to_position(bracket_token.span))
-                } else {
-                    None
-                },
+                pos: pos.clone(),
                 op_type: pointer_type,
             }));
             let load_dest = state.fresh_var(load_type.clone());
@@ -645,11 +795,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: Vec::new(),
                 op: ValueOps::Load,
-                pos: if state.is_pos {
-                    Some(from_span_to_position(bracket_token.span))
-                } else {
-                    None
-                },
+                pos,
                 op_type: load_type,
             }));
             (Some(load_dest), code1)
@@ -662,11 +808,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                     vec![Code::Instruction(Instruction::Constant {
                         dest,
                         op: ConstOps::Const,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(x.span()))
-                        } else {
-                            None
-                        },
+                        pos,
                         const_type: Type::Int,
                         value: Literal::Int(x.base10_parse::<i64>().unwrap()),
                     })],
@@ -679,11 +821,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                     vec![Code::Instruction(Instruction::Constant {
                         dest,
                         op: ConstOps::Const,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(x.span()))
-                        } else {
-                            None
-                        },
+                        pos,
                         const_type: Type::Float,
                         value: Literal::Float(x.base10_parse::<f64>().unwrap()),
                     })],
@@ -696,11 +834,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                     vec![Code::Instruction(Instruction::Constant {
                         dest,
                         op: ConstOps::Const,
-                        pos: if state.is_pos {
-                            Some(from_span_to_position(x.span))
-                        } else {
-                            None
-                        },
+                        pos,
                         const_type: Type::Bool,
                         value: Literal::Bool(x.value()),
                     })],
@@ -713,7 +847,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
             mac:
                 Macro {
                     path,
-                    bang_token,
+                    bang_token: _,
                     delimiter: _,
                     tokens,
                 },
@@ -740,11 +874,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                     funcs: Vec::new(),
                     labels: Vec::new(),
                     op: EffectOps::Print,
-                    pos: if state.is_pos {
-                        Some(from_span_to_position(bang_token.span))
-                    } else {
-                        None
-                    },
+                    pos,
                 })],
             )
         }
@@ -789,7 +919,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
         }
         Expr::Return(ExprReturn {
             attrs,
-            return_token,
+            return_token: _,
             expr,
         }) if attrs.is_empty() => {
             let (args, mut code) = match expr {
@@ -804,11 +934,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: Vec::new(),
                 op: EffectOps::Return,
-                pos: if state.is_pos {
-                    Some(from_span_to_position(return_token.span))
-                } else {
-                    None
-                },
+                pos,
             }));
             (None, code)
         }
@@ -817,26 +943,10 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
 
             let mut args = vec![arg.clone().unwrap()];
 
-            let (op, pos, op_type) = match op {
-                UnOp::Deref(x) => (
-                    ValueOps::Id,
-                    if state.is_pos {
-                        Some(from_span_to_position(x.spans[0]))
-                    } else {
-                        None
-                    },
-                    state.get_type_for_ident(&arg.unwrap()),
-                ),
-                UnOp::Not(x) => (
-                    ValueOps::Not,
-                    if state.is_pos {
-                        Some(from_span_to_position(x.spans[0]))
-                    } else {
-                        None
-                    },
-                    Type::Bool,
-                ),
-                UnOp::Neg(x) => {
+            let (op, op_type) = match op {
+                UnOp::Deref(_) => (ValueOps::Id, state.get_type_for_ident(&arg.unwrap())),
+                UnOp::Not(_) => (ValueOps::Not, Type::Bool),
+                UnOp::Neg(_) => {
                     let ty = state.get_type_for_ident(&arg.unwrap());
                     (
                         match ty {
@@ -865,11 +975,6 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                                 ValueOps::Fmul
                             }
                             _ => panic!("can't handle negation of non-int/float"),
-                        },
-                        if state.is_pos {
-                            Some(from_span_to_position(x.spans[0]))
-                        } else {
-                            None
                         },
                         ty,
                     )
@@ -902,7 +1007,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
             let (cond_var, mut cond_code) = from_expr_to_bril(*cond, state);
             let mut code = vec![Code::Label {
                 label: start_label.clone(),
-                pos: None,
+                pos: pos.clone(),
             }];
             code.append(&mut cond_code);
             code.push(Code::Instruction(Instruction::Effect {
@@ -910,11 +1015,11 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: vec![then_label.clone(), end_label.clone()],
                 op: EffectOps::Branch,
-                pos: None,
+                pos: pos.clone(),
             }));
             code.push(Code::Label {
                 label: then_label,
-                pos: None,
+                pos: pos.clone(),
             });
 
             code.append(&mut from_block_to_vec_code(body, state));
@@ -924,12 +1029,12 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 funcs: Vec::new(),
                 labels: vec![start_label],
                 op: EffectOps::Jump,
-                pos: None,
+                pos: pos.clone(),
             }));
 
             code.push(Code::Label {
                 label: end_label,
-                pos: None,
+                pos,
             });
             (None, code)
         }
@@ -945,7 +1050,7 @@ fn from_stmt_to_vec_code(s: Stmt, state: &mut State) -> Vec<Code> {
             let_token,
             pat,
             init,
-            semi_token: _,
+            semi_token,
         }) => {
             assert!(attrs.is_empty(), "can't handle attributes in function body");
             assert!(init.is_some(), "must initialize all assignments");
@@ -968,7 +1073,11 @@ fn from_stmt_to_vec_code(s: Stmt, state: &mut State) -> Vec<Code> {
                         labels: Vec::new(),
                         op: ValueOps::Id,
                         pos: if state.is_pos {
-                            Some(from_span_to_position(let_token.span))
+                            Some(from_span_to_position(
+                                let_token.span,
+                                Some(semi_token.span),
+                                state.src.clone(),
+                            ))
                         } else {
                             None
                         },
@@ -1029,12 +1138,13 @@ pub fn from_file_to_program(
         items,
     }: File,
     is_pos: bool,
+    src: Option<String>,
 ) -> Program {
     assert!(shebang.is_none(), "can't handle shebang items in Rust file");
 
     assert!(attrs.is_empty(), "can't handle attributes in Rust file");
 
-    let mut state = State::new(is_pos);
+    let mut state = State::new(is_pos, src);
 
     // The processing of Functions is separated into two parts to get global information like type signatures for functions before processing function bodies
     let sigs_processed: Vec<(Function, Block)> = items
