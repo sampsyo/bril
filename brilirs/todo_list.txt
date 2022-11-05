@@ -6,8 +6,6 @@
 - Optimize brilirs:
     - replace the naive memory management support with a more optimized version
 - Fuzzing with cargo-fuzz or Property testing with proptest
-- Replace benchmarking scripts with something more extensible like brench or a better python/rust script
 - Equality Saturation using the egg crate for bril-rs?
 - Formalize bril in Coq/Lean?
 - If one ever wanted to release the bril-rs crate, enforce semvar with https://github.com/rust-lang/rust-semverver
-- Build a rust2bril compiler using syn

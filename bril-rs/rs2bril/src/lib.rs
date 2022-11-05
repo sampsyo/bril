@@ -922,13 +922,13 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
             return_token: _,
             expr,
         }) if attrs.is_empty() => {
-            let (args, mut code) = match expr {
-                Some(e) => {
+            let (args, mut code) = expr.map_or_else(
+                || (Vec::new(), Vec::new()),
+                |e| {
                     let (a, c) = from_expr_to_bril(*e, state);
                     (vec![a.unwrap()], c)
-                }
-                None => (Vec::new(), Vec::new()),
-            };
+                },
+            );
             code.push(Code::Instruction(Instruction::Effect {
                 args,
                 funcs: Vec::new(),

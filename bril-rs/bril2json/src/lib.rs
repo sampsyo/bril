@@ -111,10 +111,10 @@ pub fn parse_abstract_program(
     with_end: bool,
     file_name: Option<String>,
 ) -> AbstractProgram {
-    let input: Box<dyn std::io::Read> = match file_name.clone() {
-        Some(f) => Box::new(File::open(f).unwrap()),
-        None => Box::new(std::io::stdin()),
-    };
+    let input = file_name.clone().map_or_else(
+        || -> Box<dyn std::io::Read> { Box::new(std::io::stdin()) },
+        |f| Box::new(File::open(f).unwrap()),
+    );
 
     parse_abstract_program_from_read(input, use_pos, with_end, file_name)
 }

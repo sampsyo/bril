@@ -301,10 +301,7 @@ impl TryFrom<Option<AbstractType>> for Type {
     type Error = ConversionError;
 
     fn try_from(value: Option<AbstractType>) -> Result<Self, Self::Error> {
-        match value {
-            Some(t) => t.try_into(),
-            None => Err(ConversionError::MissingType),
-        }
+        value.map_or(Err(ConversionError::MissingType), TryInto::try_into)
     }
 }
 
