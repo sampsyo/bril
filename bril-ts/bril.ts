@@ -10,7 +10,7 @@ export type Ident = string;
 /**
  * Primitive types.
  */
-export type PrimType = "int" | "bool" | "float";
+export type PrimType = "int" | "bool" | "float" | "char";
 
 /**
  * Parameterized types. (We only have pointers for now.)
@@ -66,7 +66,7 @@ export interface ValueOperation extends Op {
 /**
  * The type of Bril values that may appear in constants.
  */
-export type Value = number | boolean;
+export type Value = number | boolean | String;
 
 /**
  * An instruction that places a literal value into a variable.
