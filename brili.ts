@@ -145,7 +145,7 @@ type Pointer = {
   type: bril.Type;
 }
 
-type Value = boolean | BigInt | Pointer | number;
+type Value = boolean | BigInt | Pointer | number | String;
 type Env = Map<bril.Ident, Value>;
 
 /**
@@ -160,6 +160,8 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
     return typeof val === "number";
   } else if (typeof typ === "object" && typ.hasOwnProperty("ptr")) {
     return val.hasOwnProperty("loc");
+  } else if (typ === "char") {
+    return typeof val === "string";
   }
   throw error(`unknown type ${typ}`);
 }
@@ -168,7 +170,7 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
  * Check whether the types are equal.
  */
 function typeCmp(lhs: bril.Type, rhs: bril.Type): boolean {
-  if (lhs === "int" || lhs == "bool" || lhs == "float") {
+  if (lhs === "int" || lhs == "bool" || lhs == "float" || lhs == "char") {
     return lhs == rhs;
   } else {
     if (typeof rhs === "object" && rhs.hasOwnProperty("ptr")) {
@@ -426,6 +428,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         value = instr.value;
       else
         value = BigInt(Math.floor(instr.value))
+    } else if (typeof instr.value === "string") {
+      if(instr.value.length > 1) throw error(`char must have one character`);
+      value = instr.value;
     } else {
       value = instr.value;
     }
@@ -789,6 +794,15 @@ function evalFunc(func: bril.Function, state: State): Value | null {
   return null;
 }
 
+function parseChar(s: string): string {
+  let c = s;
+  if (c.length == 1) {
+    return c;
+  } else {
+    throw error(`char argument to main must have one character; got ${s}`);
+  }
+}
+
 function parseBool(s: string): boolean {
   if (s === 'true') {
     return true;
@@ -829,6 +843,10 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
       case "bool":
         let b: boolean = parseBool(args[i]);
         newEnv.set(expected[i].name, b as Value);
+        break;
+      case "char":
+        let c: number = parseNumber(args[i]);
+        newEnv.set(expected[i].name, c as Value);
         break;
     }
   }

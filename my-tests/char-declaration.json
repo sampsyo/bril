@@ -1,0 +1,40 @@
+{
+    "functions": [
+      {
+        "instrs": [
+          {
+            "dest": "c0",
+            "op": "const",
+            "type": "char",
+            "value": "a"
+          },
+          {
+            "dest": "c1",
+            "op": "const",
+            "type": "char",
+            "value": "b"
+          },
+          {
+            "dest": "c3",
+            "op": "const",
+            "type": "int",
+            "value": "b"
+          },
+          {
+            "args": [
+              "c1"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c3"
+            ],
+            "op": "print"
+          }
+        ],
+        "name": "main"
+      }
+    ]
+  }
+  
