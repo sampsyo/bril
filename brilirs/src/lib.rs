@@ -4,6 +4,7 @@
 #![allow(clippy::similar_names)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::module_name_repetitions)]
+#![allow(clippy::too_many_arguments)]
 #![doc = include_str!("../README.md")]
 
 use basic_block::BBProgram;
@@ -30,12 +31,13 @@ pub fn run_input<T: std::io::Write, U: std::io::Write>(
   profiling_out: U,
   check: bool,
   text: bool,
+  src_name: Option<String>,
 ) -> Result<(), PositionalInterpError> {
   // It's a little confusing because of the naming conventions.
   //      - bril_rs takes file.json as input
   //      - bril2json takes file.bril as input
   let prog: Program = if text {
-    bril2json::parse_abstract_program_from_read(input, true).try_into()?
+    bril2json::parse_abstract_program_from_read(input, true, true, src_name).try_into()?
   } else {
     bril_rs::load_abstract_program_from_read(input).try_into()?
   };

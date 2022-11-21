@@ -1,0 +1,24 @@
+# Execution speed benchmark.
+[envs.bench]
+command = """
+bril2json < {filename} > {base}.json
+
+hyperfine --warmup 3 --export-json bench_rust.json \
+'brili {args} < {base}.json' \
+'brilirs {args} < {base}.json'
+
+rm -f {base}.json"""
+output."bench_rust.json" = "../bench_rust.json"
+
+# Execution speed benchmark.
+# [envs.bench_cmp]
+# default = false
+# command = """
+# bril2json < {filename} > {base}.json
+# 
+# hyperfine -N --warmup 3 --export-json compare_rust.json \
+# 'brilirs {args} -f {base}.json' \
+# '../brilirs/target/release/brilirs {args} -f {base}.json'
+# 
+# rm -f {base}.json"""
+# output."bench_rust.json" = "../compare_rust.json"

@@ -57,6 +57,9 @@ def summarize(bench_files):
             'speedup': speedup,
         })
 
+    # Filter out modes which don't have data, and thus no speedups.
+    speedups = {k: v for k, v in speedups.items() if v}
+
     for mode, speedup_list in speedups.items():
         print('{}: {:.2f}x'.format(
             mode,

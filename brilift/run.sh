@@ -7,7 +7,12 @@ set -e
 # native platform. For example, to run under Rosetta on macOS with Apple
 # Silicon, use:
 #
-#     export TARGET=x86_64-unknown-darwin-macho
+#
+
+OS=$(uname -m)
+if [[ "$OS" == 'arm64' ]]; then
+    export TARGET=x86_64-unknown-darwin-macho
+fi
 
 HERE=`dirname $0`
 

@@ -43,12 +43,13 @@ fn update_env<'a>(
   dest: &'a str,
   typ: &'a Type,
 ) -> Result<(), InterpError> {
-  match env.get(dest) {
-    Some(current_typ) => check_asmt_type(current_typ, typ),
-    None => {
-      env.insert(dest, typ);
-      Ok(())
-    }
+  // https://github.com/rust-lang/rust-clippy/issues/8346
+  #[allow(clippy::option_if_let_else)]
+  if let Some(current_typ) = env.get(dest) {
+    check_asmt_type(current_typ, typ)
+  } else {
+    env.insert(dest, typ);
+    Ok(())
   }
 }
 
@@ -236,10 +237,11 @@ fn type_check_instruction<'a>(
           check_asmt_type(ty, &expected_arg.arg_type)
         })?;
 
-      match &callee_func.return_type {
-        None => Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone())),
-        Some(t) => check_asmt_type(op_type, t),
-      }?;
+      callee_func.return_type.as_ref().map_or_else(
+        || Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone())),
+        |t| check_asmt_type(op_type, t),
+      )?;
+
       update_env(env, dest, op_type)
     }
     Instruction::Value {
