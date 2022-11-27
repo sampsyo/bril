@@ -1,0 +1,41 @@
+[package]
+name = "brillvm"
+version = "0.1.0"
+authors = ["Patrick LaFontaine <32135464+Pat-Lafon@users.noreply.github.com>"]
+edition = "2021"
+description = "A compiler for Bril into LLVM IR"
+readme = "README.md"
+repository = "https://github.com/sampsyo/bril"
+# license = "MIT"
+license-file = "../../LICENSE"
+categories = ["command-line-utilities", "compilers"]
+keywords = ["compiler", "bril", "parser", "data-structures", "language"]
+default-run = "main"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap         = { version = "4.0", features = ["derive"] }
+# I would like to use the normal way of getting dependencies but I need llvm14-0 (and eventually llvm15-0) but this hasn't been released yet
+inkwell      = { version = "0.1.0-beta.5", features = ["llvm14-0"] }
+libc-print = "0.1.20"
+
+
+[dependencies.bril-rs]
+version = "0.1.0"
+path = ".."
+features = []
+
+[[bin]]
+name = "rt"
+path = "bin/rt.rs"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
