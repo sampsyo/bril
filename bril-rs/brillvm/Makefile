@@ -1,5 +1,5 @@
 TESTS := ../../test/interp/core*/*.bril \
-# ../../test/interp/float/*.bril \
+         ../../test/interp/float/*.bril \
 # ../../test/interp/mem*/*.bril \
 # ../../test/interp/mixed/*.bril \
 # ../../test/interp/ssa*/*.bril \
@@ -10,7 +10,7 @@ rt:
 #   clang -emit-llvm -o rc.bc -c rt.c
 
 example:
-	bril2json < ../../test/interp/core/main-bool-args.bril | cargo run
+	bril2json < ../../test/interp/float/float_special.bril | cargo run
 
 .PHONY: test
 test:

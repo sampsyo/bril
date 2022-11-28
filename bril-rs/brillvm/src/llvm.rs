@@ -6,17 +6,18 @@ use inkwell::{
     context::Context,
     module::Module,
     types::{BasicMetadataTypeEnum, FunctionType},
-    values::{BasicValueEnum, FunctionValue, IntValue, PointerValue},
-    IntPredicate,
+    values::{BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
+    FloatPredicate, IntPredicate,
 };
 
 use bril_rs::{
-    Argument, ConstOps, EffectOps, Function, Instruction, Literal, Program, Type, ValueOps,
+    Argument, Code, ConstOps, EffectOps, Function, Instruction, Literal, Program, Type, ValueOps,
 };
 
+/// Converts a Bril function signature into an LLVM function type
 fn build_functiontype<'a>(
     context: &'a Context,
-    args: &Vec<&Type>,
+    args: &[&Type],
     return_ty: &Option<Type>,
 ) -> FunctionType<'a> {
     let param_types: Vec<BasicMetadataTypeEnum> = args
@@ -24,14 +25,14 @@ fn build_functiontype<'a>(
         .map(|t| match t {
             Type::Int => context.i64_type().into(),
             Type::Bool => context.bool_type().into(),
-            /* Type::Float => context.f64_type().into(), */
+            Type::Float => context.f64_type().into(),
         })
         .collect();
     match return_ty {
         None => context.void_type().fn_type(&param_types, false),
         Some(Type::Int) => context.i64_type().fn_type(&param_types, false),
         Some(Type::Bool) => context.bool_type().fn_type(&param_types, false),
-        /* Some(Type::Float) => context.f64_type().fn_type(&param_types, false), */
+        Some(Type::Float) => context.f64_type().fn_type(&param_types, false),
     }
 }
 
@@ -43,12 +44,13 @@ struct WrappedPointer<'a> {
 }
 
 impl<'a> WrappedPointer<'a> {
-    fn new(builder: &'a Builder, context: &'a Context, name: &String, ty: &Type) -> Self {
+    fn new(builder: &'a Builder, context: &'a Context, name: &str, ty: &Type) -> Self {
         Self {
             ty: ty.clone(),
             ptr: match ty {
                 Type::Int => builder.build_alloca(context.i64_type(), name),
                 Type::Bool => builder.build_alloca(context.bool_type(), name),
+                Type::Float => builder.build_alloca(context.f64_type(), name),
             },
         }
     }
@@ -66,7 +68,7 @@ impl<'a, 'b> Heap<'a, 'b> {
         }
     }
 
-    fn get_or_create(
+    fn add(
         &mut self,
         builder: &'a Builder,
         context: &'a Context,
@@ -118,88 +120,31 @@ impl Default for Fresh {
     }
 }
 
-// For when you know the types of variables(And thus can create them correctly if there is an issue)
-fn build_load_op_store<'a, 'b>(
+// This handles the builder boilerplate of creating loads for the arguments of a function and the the corresponding store of the result.
+fn build_op<'a, 'b>(
     builder: &'a Builder,
-    context: &'a Context,
     heap: &mut Heap<'a, 'b>,
     fresh: &mut Fresh,
     op: impl Fn(Vec<BasicValueEnum<'a>>) -> BasicValueEnum<'a>,
-    mut names: Vec<&'b String>,
-    mut types: Vec<Type>,
+    args: &'b [String],
+    dest: &'b String,
 ) {
     builder.build_store(
-        heap.get_or_create(
-            builder,
-            context,
-            names.pop().unwrap(),
-            &types.pop().unwrap(),
-        )
-        .ptr,
-        op(names
-            .iter()
-            .zip(types.iter())
-            .map(|(n, t)| {
-                builder.build_load(
-                    heap.get_or_create(builder, context, n, t).ptr,
-                    &fresh.fresh_var(),
-                )
-            })
-            .collect()),
-    );
-}
-
-// When you don't statically know all of the types and you don't want to ask questions
-// This is much more falliable than `build_load_op_store` so use that when you can
-fn build_load_op_store_flexible<'a, 'b>(
-    builder: &'a Builder,
-    context: &'a Context,
-    heap: &mut Heap<'a, 'b>,
-    fresh: &mut Fresh,
-    op: impl Fn(Vec<BasicValueEnum<'a>>) -> BasicValueEnum<'a>,
-    mut names: Vec<&'b String>,
-    ty: &Type,
-) {
-    builder.build_store(
-        heap.get_or_create(builder, context, names.pop().unwrap(), ty)
-            .ptr,
-        op(names
+        heap.get(dest).ptr,
+        op(args
             .iter()
             .map(|n| builder.build_load(heap.get(n).ptr, &fresh.fresh_var()))
             .collect()),
     );
 }
 
-// For when you know the types of variables(And thus can create them correctly if there is an issue)
-fn build_load_op_effect<'a, 'b>(
-    builder: &'a Builder,
-    context: &'a Context,
-    heap: &mut Heap<'a, 'b>,
-    fresh: &mut Fresh,
-    op: impl Fn(Vec<BasicValueEnum<'a>>),
-    names: Vec<&'b String>,
-    types: Vec<Type>,
-) {
-    op(names
-        .iter()
-        .zip(types.iter())
-        .map(|(n, t)| {
-            builder.build_load(
-                heap.get_or_create(builder, context, n, t).ptr,
-                &fresh.fresh_var(),
-            )
-        })
-        .collect());
-}
-
-// When you don't statically know all of the types and you don't want to ask questions
-// This is much more falliable than `build_load_op_effect` so use that when you can
-fn build_load_op_effect_flexible<'a, 'b>(
+// Like `build_op` but where there is no return value
+fn build_effect_op<'a, 'b>(
     builder: &'a Builder,
     heap: &mut Heap<'a, 'b>,
     fresh: &mut Fresh,
     op: impl Fn(Vec<BasicValueEnum<'a>>),
-    names: Vec<&'b String>,
+    names: &'b [String],
 ) {
     op(names
         .iter()
@@ -207,18 +152,19 @@ fn build_load_op_effect_flexible<'a, 'b>(
         .collect());
 }
 
-fn block_map_get<'a, 'b>(
+// Handles the map of labels to LLVM Basicblocks and creates a new one when it doesn't exist
+fn block_map_get<'a>(
     context: &'a Context,
     llvm_func: FunctionValue<'a>,
     block_map: &mut HashMap<String, BasicBlock<'a>>,
-    name: &String,
+    name: &str,
 ) -> BasicBlock<'a> {
-    block_map
-        .entry(name.clone())
+    *block_map
+        .entry(name.to_owned())
         .or_insert_with(|| context.append_basic_block(llvm_func, name))
-        .clone()
 }
 
+// The workhorse of converting a Bril Instruction to an LLVM Instruction
 fn build_instruction<'a, 'b>(
     i: &'b Instruction,
     context: &'a Context,
@@ -230,34 +176,48 @@ fn build_instruction<'a, 'b>(
     fresh: &mut Fresh,
 ) {
     match i {
+        // Special case where Bril casts integers to floats
         Instruction::Constant {
             dest,
             op: ConstOps::Const,
-            const_type: Type::Int,
+            const_type: Type::Float,
             value: Literal::Int(i),
         } => {
             builder.build_store(
-                heap.get_or_create(builder, context, dest, &Type::Int).ptr,
+                heap.get(dest).ptr,
+                context.f64_type().const_float(*i as f64),
+            );
+        }
+        Instruction::Constant {
+            dest,
+            op: ConstOps::Const,
+            const_type: _,
+            value: Literal::Int(i),
+        } => {
+            builder.build_store(
+                heap.get(dest).ptr,
                 context.i64_type().const_int(*i as u64, true),
             );
         }
         Instruction::Constant {
             dest,
             op: ConstOps::Const,
-            const_type: Type::Bool,
+            const_type: _,
             value: Literal::Bool(b),
         } => {
             builder.build_store(
-                heap.get_or_create(builder, context, dest, &Type::Bool).ptr,
+                heap.get(dest).ptr,
                 context.bool_type().const_int(*b as u64, false),
             );
         }
         Instruction::Constant {
-            dest: _,
-            op: _,
+            dest,
+            op: ConstOps::Const,
             const_type: _,
-            value: _,
-        } => unimplemented!(),
+            value: Literal::Float(f),
+        } => {
+            builder.build_store(heap.get(dest).ptr, context.f64_type().const_float(*f));
+        }
         Instruction::Value {
             args,
             dest,
@@ -267,9 +227,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -281,8 +240,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Int],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -294,9 +253,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -308,8 +266,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Int],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -321,9 +279,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -335,8 +292,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Int],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -348,9 +305,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -362,8 +318,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Int],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -375,9 +331,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -390,8 +345,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -403,9 +358,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -418,8 +372,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -431,9 +385,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -446,8 +399,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -459,9 +412,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -474,8 +426,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -487,9 +439,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -502,8 +453,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Int, Type::Int, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -515,9 +466,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -525,8 +475,8 @@ fn build_instruction<'a, 'b>(
                         .build_not::<IntValue>(v[0].try_into().unwrap(), &ret_name)
                         .into()
                 },
-                vec![&args[0], dest],
-                vec![Type::Bool, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -538,9 +488,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -552,8 +501,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Bool, Type::Bool, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -565,9 +514,8 @@ fn build_instruction<'a, 'b>(
             op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
-            build_load_op_store(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -579,8 +527,8 @@ fn build_instruction<'a, 'b>(
                         )
                         .into()
                 },
-                vec![&args[0], &args[1], dest],
-                vec![Type::Bool, Type::Bool, Type::Bool],
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -589,13 +537,12 @@ fn build_instruction<'a, 'b>(
             funcs,
             labels: _,
             op: ValueOps::Call,
-            op_type,
+            op_type: _,
         } => {
             let function = module.get_function(&funcs[0]).unwrap();
             let ret_name = fresh.fresh_var();
-            build_load_op_store_flexible(
+            build_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -612,8 +559,8 @@ fn build_instruction<'a, 'b>(
                         .left()
                         .unwrap()
                 },
-                args.iter().chain([dest]).collect(),
-                op_type,
+                args,
+                dest,
             );
         }
         Instruction::Value {
@@ -622,16 +569,247 @@ fn build_instruction<'a, 'b>(
             funcs: _,
             labels: _,
             op: ValueOps::Id,
-            op_type,
-        } => build_load_op_store(
-            builder,
-            context,
-            heap,
-            fresh,
-            |v| v[0],
-            args.iter().chain([dest]).collect(),
-            vec![op_type.clone(), op_type.clone()],
-        ),
+            op_type: _,
+        } => build_op(builder, heap, fresh, |v| v[0], args, dest),
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fadd,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_add::<FloatValue>(
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fsub,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_sub::<FloatValue>(
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fmul,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_mul::<FloatValue>(
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fdiv,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_div::<FloatValue>(
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Feq,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_compare::<FloatValue>(
+                            FloatPredicate::OEQ,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Flt,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_compare::<FloatValue>(
+                            FloatPredicate::OLT,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fgt,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_compare::<FloatValue>(
+                            FloatPredicate::OGT,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fle,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_compare::<FloatValue>(
+                            FloatPredicate::OLE,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fge,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_float_compare::<FloatValue>(
+                            FloatPredicate::OGE,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name,
+                        )
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
         Instruction::Effect {
             args,
             funcs: _,
@@ -639,7 +817,7 @@ fn build_instruction<'a, 'b>(
             op: EffectOps::Return,
         } => {
             if llvm_func.get_name().to_str().unwrap() == "main" {
-                builder.build_return(Some(&context.i64_type().const_int(0 as u64, true)));
+                builder.build_return(Some(&context.i64_type().const_int(0, true)));
             } else if args.is_empty() {
                 builder.build_return(None);
             } else {
@@ -656,7 +834,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let function = module.get_function(&funcs[0]).unwrap();
             let ret_name = fresh.fresh_var();
-            build_load_op_effect_flexible(
+            build_effect_op(
                 builder,
                 heap,
                 fresh,
@@ -670,7 +848,7 @@ fn build_instruction<'a, 'b>(
                         &ret_name,
                     );
                 },
-                args.iter().collect(),
+                args,
             );
         }
         Instruction::Effect {
@@ -687,7 +865,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let print_int = module.get_function("_bril_print_int").unwrap();
             let print_bool = module.get_function("_bril_print_bool").unwrap();
-            /*             let print_float = module.get_function("_bril_print_float").unwrap(); */
+            let print_float = module.get_function("_bril_print_float").unwrap();
             let print_sep = module.get_function("_bril_print_sep").unwrap();
             let print_end = module.get_function("_bril_print_end").unwrap();
             /*            let ret_name = fresh.fresh_var(); */
@@ -701,7 +879,20 @@ fn build_instruction<'a, 'b>(
                         builder.build_call(print_int, &[v.into()], "print_int");
                     }
                     Type::Bool => {
-                        builder.build_call(print_bool, &[v.into()], "print_bool");
+                        builder.build_call(
+                            print_bool,
+                            &[builder
+                                .build_int_cast::<IntValue>(
+                                    v.try_into().unwrap(),
+                                    context.i8_type(),
+                                    "bool_cast",
+                                )
+                                .into()],
+                            "print_bool",
+                        );
+                    }
+                    Type::Float => {
+                        builder.build_call(print_float, &[v.into()], "print_float");
                     }
                 };
                 if i < len - 1 {
@@ -728,9 +919,8 @@ fn build_instruction<'a, 'b>(
         } => {
             let then_block = block_map_get(context, llvm_func, block_map, &labels[0]);
             let else_block = block_map_get(context, llvm_func, block_map, &labels[1]);
-            build_load_op_effect(
+            build_effect_op(
                 builder,
-                context,
                 heap,
                 fresh,
                 |v| {
@@ -740,37 +930,39 @@ fn build_instruction<'a, 'b>(
                         else_block,
                     );
                 },
-                args.iter().collect(),
-                vec![Type::Bool],
+                args,
             )
         }
     }
 }
 
+// Check for instructions that end a block
 fn is_terminating_instr(i: &Option<Instruction>) -> bool {
-    match i {
+    matches!(
+        i,
         Some(Instruction::Effect {
             args: _,
             funcs: _,
             labels: _,
             op: EffectOps::Branch | EffectOps::Jump | EffectOps::Return,
-        }) => true,
-        _ => false,
-    }
+        })
+    )
 }
 
 pub fn create_module_from_program<'a>(
     context: &'a Context,
     Program { functions, .. }: &Program,
-    _module_name: &str,
     runtime_path: &str,
 ) -> Module<'a> {
+    // create a module from the runtime library for functions like printing/allocating
     let module = Module::parse_bitcode_from_path(runtime_path, context).unwrap();
-
-    /* let module = context.create_module(module_name); */
     let builder = context.create_builder();
+
+    // "Global" counter for creating labels/temp variable names
     let mut fresh = Fresh::new();
-    // Add all functions to the module and save the pieces for the next part
+
+    // Add all functions to the module, initialize all variables in the heap, and setup for the second phase
+    #[allow(clippy::needless_collect)]
     let funcs: Vec<_> = functions
         .iter()
         .map(
@@ -780,12 +972,14 @@ pub fn create_module_from_program<'a>(
                  name,
                  return_type,
              }| {
+                // Setup function in module
                 let ty = build_functiontype(
                     context,
                     &args
                         .iter()
                         .map(|Argument { arg_type, .. }| arg_type)
-                        .collect(),
+                        .collect::<Vec<_>>(),
+                    // For main functions, cannot return void, must return 0 for success.
                     if name == "main" {
                         &Some(Type::Int)
                     } else {
@@ -803,34 +997,53 @@ pub fn create_module_from_program<'a>(
                         | inkwell::values::BasicValueEnum::VectorValue(_) => unimplemented!(),
                     },
                 );
-                (llvm_func, args, instrs)
+
+                // For each function, we also need to push all variables onto the stack
+                let mut heap = Heap::new();
+                let block = context.append_basic_block(llvm_func, &fresh.fresh_label());
+                builder.position_at_end(block);
+
+                llvm_func.get_param_iter().enumerate().for_each(|(i, arg)| {
+                    let Argument { name, arg_type } = &args[i];
+                    let ptr = heap.add(&builder, context, name, arg_type).ptr;
+                    builder.build_store(ptr, arg);
+                });
+
+                instrs.iter().for_each(|i| match i {
+                    Code::Label { .. } | Code::Instruction(Instruction::Effect { .. }) => {}
+                    Code::Instruction(Instruction::Constant {
+                        dest, const_type, ..
+                    }) => {
+                        heap.add(&builder, context, dest, const_type);
+                    }
+                    Code::Instruction(Instruction::Value { dest, op_type, .. }) => {
+                        heap.add(&builder, context, dest, op_type);
+                    }
+                });
+
+                (llvm_func, instrs, block, heap)
             },
         )
-        .collect(); // Important to collect, need to add all functions first
+        .collect(); // Important to collect, can't be done lazily because we need all functions to ne loaded in before a call instruction of a function is processed.
 
     // Now actually build each function
-    funcs.into_iter().for_each(|(llvm_func, args, instrs)| {
-        if !instrs.is_empty() {
-            let mut heap = Heap::new();
-            let mut block_map = HashMap::new();
-
-            let mut block = Some(context.append_basic_block(llvm_func, &fresh.fresh_label()));
-
-            builder.position_at_end(block.unwrap());
-
-            llvm_func.get_param_iter().enumerate().for_each(|(i, arg)| {
-                let Argument { name, arg_type } = &args[i];
-                let ptr = heap.get_or_create(&builder, context, name, arg_type).ptr;
-                builder.build_store(ptr, arg);
-            });
-
-            let mut instrs_iter = instrs.iter();
+    funcs
+        .into_iter()
+        .for_each(|(llvm_func, instrs, mut block, mut heap)| {
             let mut last_instr = None;
-            while let Some(i) = instrs_iter.next() {
-                match i {
+
+            // If their are actually instructions, proceed
+            if !instrs.is_empty() {
+                builder.position_at_end(block);
+
+                // Maps labels to llvm blocks for jumps
+                let mut block_map = HashMap::new();
+                instrs.iter().for_each(|i| match i {
                     bril_rs::Code::Label { label, .. } => {
                         let new_block = block_map_get(context, llvm_func, &mut block_map, label);
-                        if block != None && !is_terminating_instr(&last_instr) {
+
+                        // Check if wee need to insert a jump since all llvm blocks must be terminated
+                        if !is_terminating_instr(&last_instr) {
                             builder.build_unconditional_branch(block_map_get(
                                 context,
                                 llvm_func,
@@ -838,20 +1051,16 @@ pub fn create_module_from_program<'a>(
                                 label,
                             ));
                         }
-                        block = Some(new_block);
+
+                        // Start a new block
+                        block = new_block;
+                        builder.position_at_end(block);
                         last_instr = None;
                     }
                     bril_rs::Code::Instruction(i) => {
+                        // Check if we are in a basic block that has already been terminated
+                        // If so, we just keep skipping unreachable instructions until we hit a new block or run out of instructions
                         if !is_terminating_instr(&last_instr) {
-                            if let None = block {
-                                block = Some(block_map_get(
-                                    context,
-                                    llvm_func,
-                                    &mut block_map,
-                                    &fresh.fresh_var(),
-                                ));
-                            }
-                            builder.position_at_end(block.unwrap());
                             build_instruction(
                                 i,
                                 context,
@@ -865,14 +1074,13 @@ pub fn create_module_from_program<'a>(
                             last_instr = Some(i.clone());
                         }
                     }
-                }
+                });
             }
 
             // Make sure every function is terminated with a return if not already
             if !is_terminating_instr(&last_instr) {
-                builder.build_return(Some(&context.i64_type().const_int(0 as u64, true)));
+                builder.build_return(Some(&context.i64_type().const_int(0, true)));
             }
-        }
-    });
+        });
     module
 }

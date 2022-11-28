@@ -1,5 +1,9 @@
 # Brillvm
 
+## Runtime
+
+You must have a linkable runtime library available in the llvm bc format. You can get this from calling `clang -emit-llvm -o rc.bc -c rt.c` on `rt.c` in `brilift`.
+
 ## TroubleShooting
 
 ```shell
