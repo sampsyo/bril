@@ -1,0 +1,124 @@
+{
+    "functions": [
+      {
+        "instrs": [
+          {
+            "dest": "c1",
+            "op": "const",
+            "type": "char",
+            "value": "a"
+          },
+          {
+            "dest": "c2",
+            "op": "const",
+            "type": "int",
+            "value": "b"
+          },
+          {
+            "args": [
+              "c1"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c2"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c1",
+              "c1"
+            ],
+            "dest": "res",
+            "op": "ceq",
+            "type": "bool"
+          },
+          {
+            "args": [
+              "res"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c1",
+              "c2"
+            ],
+            "dest": "res",
+            "op": "ceq",
+            "type": "bool"
+          },
+          {
+            "args": [
+              "res"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c1",
+              "c2"
+            ],
+            "dest": "res",
+            "op": "clt",
+            "type": "bool"
+          },
+          {
+            "args": [
+              "res"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c1",
+              "c2"
+            ],
+            "dest": "res",
+            "op": "cle",
+            "type": "bool"
+          },
+          {
+            "args": [
+              "res"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c1",
+              "c2"
+            ],
+            "dest": "res",
+            "op": "cgt",
+            "type": "bool"
+          },
+          {
+            "args": [
+              "res"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c1",
+              "c2"
+            ],
+            "dest": "res",
+            "op": "cge",
+            "type": "bool"
+          },
+          {
+            "args": [
+              "res"
+            ],
+            "op": "print"
+          }
+        ],
+        "name": "main"
+      }
+    ]
+  }
+  
