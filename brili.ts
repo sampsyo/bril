@@ -138,6 +138,11 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   speculate: 0,
   guard: 1,
   commit: 0,
+  ceq: 2,
+  clt: 2,
+  cle: 2,
+  cgt: 2,
+  cge: 2,
 };
 
 type Pointer = {
@@ -231,7 +236,7 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
   let val = getArgument(instr, env, index);
-  if (typeof val !== 'object' || val instanceof BigInt) {
+  if (typeof val !== 'object' || val instanceof BigInt || val instanceof String) {
     throw `${instr.op} argument ${index} must be a Pointer`;
   }
   return val;
@@ -259,6 +264,10 @@ function getBool(instr: bril.Operation, env: Env, index: number): boolean {
 
 function getFloat(instr: bril.Operation, env: Env, index: number): number {
   return getArgument(instr, env, index, 'float') as number;
+}
+
+function getChar(instr: bril.Operation, env: Env, index: number): string {
+  return getArgument(instr, env, index, 'char') as string;
 }
 
 function getLabel(instr: bril.Operation, index: number): bril.Ident {
@@ -710,6 +719,36 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   // Resolve speculation, making speculative state real.
   case "commit": {
     return {"action": "commit"};
+  }
+
+  case "ceq": {
+    let val = getChar(instr, state.env, 0) === getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "clt": {
+    let val = getChar(instr, state.env, 0) < getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "cle": {
+    let val = getChar(instr, state.env, 0) <= getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "cgt": {
+    let val = getChar(instr, state.env, 0) > getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "cge": {
+    let val = getChar(instr, state.env, 0) >= getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
   }
 
   }

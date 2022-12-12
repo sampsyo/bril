@@ -1,0 +1,58 @@
+{
+    "functions": [
+      {
+        "instrs": [
+          {
+            "dest": "v",
+            "op": "const",
+            "type": "int",
+            "value": 2
+          },
+          {
+            "args": [
+              "v"
+            ],
+            "dest": "cp",
+            "op": "alloc",
+            "type": {
+              "ptr": "char"
+            }
+          },
+          {
+            "dest": "b",
+            "op": "const",
+            "type": "char",
+            "value": "b"
+          },
+          {
+            "args": [
+              "cp",
+              "b"
+            ],
+            "op": "store"
+          },
+          {
+            "args": [
+              "cp"
+            ],
+            "dest": "result",
+            "op": "load",
+            "type": "char"
+          },
+          {
+            "args": [
+              "result"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "cp"
+            ],
+            "op": "free"
+          }
+        ],
+        "name": "main"
+      }
+    ]
+  }

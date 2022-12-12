@@ -58,6 +58,7 @@ export interface ValueOperation extends Op {
       "load" | "ptradd" | "alloc" |
       "fadd" | "fmul" | "fsub" | "fdiv" |
       "feq" | "flt" | "fle" | "fgt" | "fge" |
+      "ceq" | "clt" | "cle" | "cgt" | "cge" |
       "phi";
   dest: Ident;
   type: Type;
