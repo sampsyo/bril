@@ -162,12 +162,12 @@ pub enum Code {
 impl Display for Code {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Code::Label {
+            Self::Label {
                 label,
                 #[cfg(feature = "position")]
                     pos: _,
             } => write!(f, ".{label}:"),
-            Code::Instruction(instr) => write!(f, "  {instr}"),
+            Self::Instruction(instr) => write!(f, "  {instr}"),
         }
     }
 }
@@ -251,7 +251,7 @@ impl Instruction {
 impl Display for Instruction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Instruction::Constant {
+            Self::Constant {
                 op,
                 dest,
                 const_type,
@@ -261,7 +261,7 @@ impl Display for Instruction {
             } => {
                 write!(f, "{dest}: {const_type} = {op} {value};")
             }
-            Instruction::Value {
+            Self::Value {
                 op,
                 dest,
                 op_type,
@@ -283,7 +283,7 @@ impl Display for Instruction {
                 }
                 write!(f, ";")
             }
-            Instruction::Effect {
+            Self::Effect {
                 op,
                 args,
                 funcs,
@@ -548,10 +548,10 @@ pub enum Literal {
 impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Literal::Int(i) => write!(f, "{i}"),
-            Literal::Bool(b) => write!(f, "{b}"),
+            Self::Int(i) => write!(f, "{i}"),
+            Self::Bool(b) => write!(f, "{b}"),
             #[cfg(feature = "float")]
-            Literal::Float(x) => write!(f, "{x}"),
+            Self::Float(x) => write!(f, "{x}"),
         }
     }
 }
@@ -561,10 +561,10 @@ impl Literal {
     #[must_use]
     pub const fn get_type(&self) -> Type {
         match self {
-            Literal::Int(_) => Type::Int,
-            Literal::Bool(_) => Type::Bool,
+            Self::Int(_) => Type::Int,
+            Self::Bool(_) => Type::Bool,
             #[cfg(feature = "float")]
-            Literal::Float(_) => Type::Float,
+            Self::Float(_) => Type::Float,
         }
     }
 }

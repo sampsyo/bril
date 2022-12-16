@@ -120,12 +120,12 @@ pub enum AbstractCode {
 impl Display for AbstractCode {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            AbstractCode::Label {
+            Self::Label {
                 label,
                 #[cfg(feature = "position")]
                     pos: _,
             } => write!(f, ".{label}:"),
-            AbstractCode::Instruction(instr) => write!(f, "  {instr}"),
+            Self::Instruction(instr) => write!(f, "  {instr}"),
         }
     }
 }
@@ -196,7 +196,7 @@ pub enum AbstractInstruction {
 impl Display for AbstractInstruction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            AbstractInstruction::Constant {
+            Self::Constant {
                 op,
                 dest,
                 const_type,
@@ -207,7 +207,7 @@ impl Display for AbstractInstruction {
                 Some(const_type) => write!(f, "{dest}: {const_type} = {op} {value};"),
                 None => write!(f, "{dest} = {op} {value};"),
             },
-            AbstractInstruction::Value {
+            Self::Value {
                 op,
                 dest,
                 op_type,
@@ -232,7 +232,7 @@ impl Display for AbstractInstruction {
                 }
                 write!(f, ";")
             }
-            AbstractInstruction::Effect {
+            Self::Effect {
                 op,
                 args,
                 funcs,
@@ -329,8 +329,8 @@ impl Serialize for AbstractType {
         S: Serializer,
     {
         match self {
-            AbstractType::Primitive(s) => serializer.serialize_str(s),
-            AbstractType::Parameterized(t, at) => {
+            Self::Primitive(s) => serializer.serialize_str(s),
+            Self::Parameterized(t, at) => {
                 let mut map = serializer.serialize_map(Some(1))?;
                 map.serialize_entry(t, at)?;
                 map.end()
@@ -342,9 +342,8 @@ impl Serialize for AbstractType {
 impl Display for AbstractType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            AbstractType::Primitive(t) => write!(f, "{t}"),
-
-            AbstractType::Parameterized(t, at) => write!(f, "{t}<{at}>"),
+            Self::Primitive(t) => write!(f, "{t}"),
+            Self::Parameterized(t, at) => write!(f, "{t}<{at}>"),
         }
     }
 }
