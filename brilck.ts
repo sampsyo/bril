@@ -319,7 +319,7 @@ function checkOp(env: Env, instr: bril.Operation) {
 
 function checkConst(instr: bril.Constant) {
   if (!('type' in instr)) {
-    err(`const missing type`, instr!.pos);
+    err(`const missing type`, instr.pos);
     return;
   }
   if (typeof instr.type !== 'string') {
