@@ -259,9 +259,9 @@ impl Display for AbstractInstruction {
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#type>
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AbstractType {
-    /// For example "bool" => Primitive("bool")
+    /// For example `bool` => `Primitive("bool")`
     Primitive(String),
-    /// For example "ptr<bool>" => Parameterized("ptr", Box::new(Primitive("bool")))
+    /// For example `ptr<bool>` => `Parameterized("ptr", Box::new(Primitive("bool")))`
     Parameterized(String, Box<Self>),
 }
 
