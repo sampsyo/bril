@@ -318,6 +318,11 @@ function checkOp(env: Env, instr: bril.Operation) {
 }
 
 function checkConst(instr: bril.Constant) {
+  if (!(instr as any)) {
+    err(`const missing type`, instr!.pos);
+    return;
+  }
+
   if (typeof instr.type !== 'string') {
     err(`const of non-primitive type ${typeFmt(instr.type)}`, instr.pos);
     return;
