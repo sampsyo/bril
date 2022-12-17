@@ -84,6 +84,9 @@ jobs:
 
   rust-ci:
     runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -D warnings
+      RUSTFLAGS: -D warnings
     strategy:
       matrix:
         path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml", "bril-rs/rs2bril/Cargo.toml"]
@@ -109,7 +112,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --manifest-path ${{ matrix.path }} -- -D warnings
+          args: --manifest-path ${{ matrix.path }}
 
       - uses: actions-rs/cargo@v1
         with:
