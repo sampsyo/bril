@@ -481,7 +481,7 @@ fn execute_effect_op<'a, T: std::io::Write>(
     }
     Branch => {
       let bool_arg0 = get_arg::<bool>(&state.env, 0, args);
-      let exit_idx = if bool_arg0 { 0 } else { 1 };
+      let exit_idx = usize::from(!bool_arg0);
       *next_block_idx = Some(curr_block.exit[exit_idx]);
     }
     Return => {

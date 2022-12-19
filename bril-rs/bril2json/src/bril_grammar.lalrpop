@@ -20,6 +20,7 @@
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::cognitive_complexity)]
 #![allow(clippy::ptr_arg)]
+#![allow(clippy::uninlined_format_args)]
 
 use std::str::FromStr;
 use std::path::PathBuf;

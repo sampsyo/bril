@@ -72,14 +72,14 @@ impl Display for PositionalConversionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             #[cfg(feature = "position")]
-            PositionalConversionError { e, pos: Some(pos) } => {
+            Self { e, pos: Some(pos) } => {
                 write!(f, "Line {}, Column {}: {e}", pos.pos.row, pos.pos.col)
             }
             #[cfg(not(feature = "position"))]
-            PositionalConversionError { e: _, pos: Some(_) } => {
+            Self { e: _, pos: Some(_) } => {
                 unreachable!()
             }
-            PositionalConversionError { e, pos: None } => write!(f, "{e}"),
+            Self { e, pos: None } => write!(f, "{e}"),
         }
     }
 }
