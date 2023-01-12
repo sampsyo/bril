@@ -25,7 +25,7 @@ fn main() {
     );
 
     //println!("{}", prog);
-    //llvm_prog.print_to_file("tmp.ll").unwrap();
+    llvm_prog.print_to_file("tmp.ll").unwrap();
     llvm_prog.verify().unwrap();
     /*     llvm_prog.print_to_stderr(); */
     println!("{}", llvm_prog.to_string());

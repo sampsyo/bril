@@ -7,7 +7,7 @@ use inkwell::{
     module::Module,
     types::{BasicMetadataTypeEnum, FunctionType},
     values::{BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
-    FloatPredicate, IntPredicate,
+    AddressSpace, FloatPredicate, IntPredicate,
 };
 
 use bril_rs::{
@@ -144,9 +144,9 @@ fn build_effect_op<'a, 'b>(
     heap: &mut Heap<'a, 'b>,
     fresh: &mut Fresh,
     op: impl Fn(Vec<BasicValueEnum<'a>>),
-    names: &'b [String],
+    args: &'b [String],
 ) {
-    op(names
+    op(args
         .iter()
         .map(|n| builder.build_load(heap.get(n).ptr, &fresh.fresh_var()))
         .collect());
@@ -539,7 +539,12 @@ fn build_instruction<'a, 'b>(
             op: ValueOps::Call,
             op_type: _,
         } => {
-            let function = module.get_function(&funcs[0]).unwrap();
+            let func_name = if funcs[0] == "main" {
+                "_main"
+            } else {
+                &funcs[0]
+            };
+            let function = module.get_function(func_name).unwrap();
             let ret_name = fresh.fresh_var();
             build_op(
                 builder,
@@ -816,9 +821,7 @@ fn build_instruction<'a, 'b>(
             labels: _,
             op: EffectOps::Return,
         } => {
-            if llvm_func.get_name().to_str().unwrap() == "main" {
-                builder.build_return(Some(&context.i64_type().const_int(0, true)));
-            } else if args.is_empty() {
+            if args.is_empty() {
                 builder.build_return(None);
             } else {
                 builder.build_return(Some(
@@ -832,7 +835,12 @@ fn build_instruction<'a, 'b>(
             labels: _,
             op: EffectOps::Call,
         } => {
-            let function = module.get_function(&funcs[0]).unwrap();
+            let func_name = if funcs[0] == "main" {
+                "_main"
+            } else {
+                &funcs[0]
+            };
+            let function = module.get_function(func_name).unwrap();
             let ret_name = fresh.fresh_var();
             build_effect_op(
                 builder,
@@ -979,14 +987,12 @@ pub fn create_module_from_program<'a>(
                         .iter()
                         .map(|Argument { arg_type, .. }| arg_type)
                         .collect::<Vec<_>>(),
-                    // For main functions, cannot return void, must return 0 for success.
-                    if name == "main" {
-                        &Some(Type::Int)
-                    } else {
-                        return_type
-                    },
+                    return_type,
                 );
-                let llvm_func = module.add_function(name, ty, None);
+
+                let func_name = if name == "main" { "_main" } else { &name };
+
+                let llvm_func = module.add_function(func_name, ty, None);
                 args.iter().zip(llvm_func.get_param_iter()).for_each(
                     |(Argument { name, .. }, bve)| match bve {
                         inkwell::values::BasicValueEnum::IntValue(i) => i.set_name(name),
@@ -1079,8 +1085,81 @@ pub fn create_module_from_program<'a>(
 
             // Make sure every function is terminated with a return if not already
             if !is_terminating_instr(&last_instr) {
-                builder.build_return(Some(&context.i64_type().const_int(0, true)));
+                builder.build_return(None);
             }
         });
+
+    // Add new main function to act as a entry point to the function.
+    // Sets up arguments for a _main call
+    // and always returns zero
+    let entry_func_type = context.i32_type().fn_type(
+        &vec![
+            context.i32_type().into(),
+            context
+                .i8_type()
+                .ptr_type(AddressSpace::Generic)
+                .ptr_type(AddressSpace::Generic)
+                .into(),
+        ],
+        false,
+    );
+    let entry_func = module.add_function("main", entry_func_type, None);
+    entry_func.get_nth_param(0).unwrap().set_name("argc");
+    entry_func.get_nth_param(1).unwrap().set_name("argv");
+
+    let entry_block = context.append_basic_block(entry_func, &fresh.fresh_label());
+    builder.position_at_end(entry_block);
+
+    let mut heap = Heap::new();
+
+    if let Some(function) = module.get_function("_main") {
+        let Function { args, .. } = functions
+            .iter()
+            .find(|Function { name, .. }| name == "main")
+            .unwrap();
+
+        let argv = entry_func.get_nth_param(1).unwrap().into_pointer_value();
+
+        function.get_param_iter().enumerate().for_each(|(i, _)| {
+            let Argument { name, arg_type } = &args[i];
+            let ptr = heap.add(&builder, context, name, arg_type).ptr;
+            println!("{ptr:?}");
+            // todo At the moment, this is using the llvm type of the pointer, not of type I want it to be.
+            // The api changes in the new llvm version
+            let offset = unsafe {
+                builder.build_in_bounds_gep(
+                    argv,
+                    &[context.i64_type().const_int((i + 1) as u64, true)],
+                    "calculate offset",
+                )
+            };
+            println!("{offset:?}");
+            builder.build_store(ptr, builder.build_load(offset, "load arg"));
+        });
+
+        build_effect_op(
+            &builder,
+            &mut heap,
+            &mut fresh,
+            |v| {
+                builder.build_call(
+                    function,
+                    v.iter()
+                        .map(|val| (*val).into())
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                    "call main",
+                );
+            },
+            &args
+                .into_iter()
+                .map(|Argument { name, .. }| name.clone())
+                .collect::<Vec<String>>(),
+        );
+        /*         builder.build_call(function, &[], "call main"); */
+    }
+    builder.build_return(Some(&context.i32_type().const_int(0, true)));
+
+    // Return the module
     module
 }
