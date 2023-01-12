@@ -37,3 +37,6 @@ path         = "../bril-rs/bril2json"
 # codegen-units = 1
 lto = true
 panic = "abort"
+
+[features]
+completions = []

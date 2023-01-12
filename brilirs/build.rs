@@ -1,16 +1,25 @@
 // https://kbknapp.dev/shell-completions/
 
-use clap::CommandFactory;
-use clap_complete::{
-  shells::{Bash, Elvish, Fish, PowerShell, Zsh},
-  Generator,
-};
 use std::io::Error;
-use std::{env, path::PathBuf};
 
+#[cfg(feature = "completions")]
 include!("src/cli.rs");
 
 fn main() -> Result<(), Error> {
+  #[cfg(feature = "completions")]
+  create_cli_completions()?;
+
+  Ok(())
+}
+
+#[cfg(feature = "completions")]
+fn create_cli_completions() -> Result<(), Error> {
+  use clap::CommandFactory;
+  use clap_complete::{
+    shells::{Bash, Elvish, Fish, PowerShell, Zsh},
+    Generator,
+  };
+  use std::{env, path::PathBuf};
   // Waiting on https://github.com/rust-lang/cargo/issues/5457 / https://github.com/rust-lang/cargo/issues/6790 to clean this up
   let out_dir = match env::var_os("OUT_DIR") {
     None => {
