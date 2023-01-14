@@ -101,6 +101,7 @@ impl Display for AbstractArgument {
 
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
 /// Code is a Label or an Instruction
+#[cfg_attr(not(feature = "float"), derive(Eq))]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum AbstractCode {
@@ -131,6 +132,7 @@ impl Display for AbstractCode {
 }
 
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#instruction>
+#[cfg_attr(not(feature = "float"), derive(Eq))]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum AbstractInstruction {

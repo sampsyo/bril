@@ -3,7 +3,8 @@ use std::fmt::{self, Display, Formatter};
 use serde::{Deserialize, Serialize};
 
 /// Equivalent to a file of bril code
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(not(feature = "float"), derive(Eq))]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Program {
     /// A list of functions declared in the program
     pub functions: Vec<Function>,
@@ -28,7 +29,7 @@ impl Display for Program {
 
 /// <https://capra.cs.cornell.edu/bril/lang/import.html#syntax>
 #[cfg(feature = "import")]
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Import {
     /// A list of functions to be imported
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -57,7 +58,7 @@ impl Display for Import {
 
 /// <https://capra.cs.cornell.edu/bril/lang/import.html#syntax>
 #[cfg(feature = "import")]
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ImportedFunction {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// A function can be optionally aliased with a different name for use in the rest of the program
@@ -78,7 +79,8 @@ impl Display for ImportedFunction {
 }
 
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(not(feature = "float"), derive(Eq))]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Function {
     /// Any arguments the function accepts
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -126,7 +128,7 @@ impl Display for Function {
 /// An argument of a function
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
 /// Example: a : int
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Argument {
     /// a
     pub name: String,
@@ -143,6 +145,7 @@ impl Display for Argument {
 
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
 /// Code is a Label or an Instruction
+#[cfg_attr(not(feature = "float"), derive(Eq))]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Code {
@@ -173,6 +176,7 @@ impl Display for Code {
 }
 
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#instruction>
+#[cfg_attr(not(feature = "float"), derive(Eq))]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Instruction {
@@ -533,6 +537,7 @@ impl Display for Type {
 }
 
 /// A JSON number/value
+#[cfg_attr(not(feature = "float"), derive(Eq))]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Literal {
