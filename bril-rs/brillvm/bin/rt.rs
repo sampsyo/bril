@@ -47,21 +47,24 @@ pub extern "C" fn _bril_print_end() {
 }
 
 #[no_mangle]
-pub extern "C" fn _bril_parse_int(arg: *const c_char) -> i64 {
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _bril_parse_int(arg: *const c_char) -> i64 {
     let c_str = unsafe { CStr::from_ptr(arg) };
     let r_str = c_str.to_str().unwrap();
     r_str.parse::<i64>().unwrap()
 }
 
 #[no_mangle]
-pub extern "C" fn _bril_parse_bool(arg: *const c_char) -> bool {
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _bril_parse_bool(arg: *const c_char) -> bool {
     let c_str = unsafe { CStr::from_ptr(arg) };
     let r_str = c_str.to_str().unwrap();
     r_str.parse::<bool>().unwrap()
 }
 
 #[no_mangle]
-pub extern "C" fn _bril_parse_float(arg: *const c_char) -> f64 {
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _bril_parse_float(arg: *const c_char) -> f64 {
     let c_str = unsafe { CStr::from_ptr(arg) };
     let r_str = c_str.to_str().unwrap();
     r_str.parse::<f64>().unwrap()

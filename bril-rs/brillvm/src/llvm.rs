@@ -180,6 +180,7 @@ fn block_map_get<'a>(
 }
 
 // The workhorse of converting a Bril Instruction to an LLVM Instruction
+#[allow(clippy::too_many_arguments)]
 fn build_instruction<'a, 'b>(
     i: &'b Instruction,
     context: &'a Context,
@@ -1032,7 +1033,7 @@ pub fn create_module_from_program<'a>(
                     return_type,
                 );
 
-                let func_name = if name == "main" { "_main" } else { &name };
+                let func_name = if name == "main" { "_main" } else { name };
 
                 let llvm_func = module.add_function(func_name, ty, None);
                 args.iter().zip(llvm_func.get_param_iter()).for_each(
@@ -1135,7 +1136,7 @@ pub fn create_module_from_program<'a>(
     // Sets up arguments for a _main call
     // and always returns zero
     let entry_func_type = context.i32_type().fn_type(
-        &vec![
+        &[
             context.i32_type().into(),
             context
                 .i8_type()
@@ -1217,7 +1218,7 @@ pub fn create_module_from_program<'a>(
                 );
             },
             &args
-                .into_iter()
+                .iter()
                 .map(|Argument { name, .. }| name.clone())
                 .collect::<Vec<String>>(),
         );
