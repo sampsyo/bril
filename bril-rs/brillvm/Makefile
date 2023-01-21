@@ -4,14 +4,27 @@ TESTS := ../../test/interp/core*/*.bril \
 # ../../test/interp/mixed/*.bril \
 # ../../test/interp/ssa*/*.bril \
 
+BENCHMARKS := ../../benchmarks/core/*.bril \
+			  ../../benchmarks/float/*.bril \
+# ../benchmarks/mem/*.bril \
+# ../benchmarks/mixed/*.bril \
+
+clean:
+	cargo clean
+	rm rt.bc
+	rm tmp.ll
+
+.PHONY: rt
 rt:
-#	rustc +1.64 bin/rt.rs --emit=llvm-bc --crate-type lib -L target/release/deps
-#	cargo +1.64 rustc --bin rt --release -- --emit=llvm-ir
-#   clang -emit-llvm -o rc.bc -c rt.c
+	cargo rustc --bin rt --release -- --emit=llvm-bc && mv target/release/deps/rt-*.bc rt.bc
 
 example:
-	bril2json < ../../test/interp/float/float_special.bril | cargo run
+	bril2json < ../../test/interp/core/main-args.bril | cargo run | lli - 1 2
 
 .PHONY: test
 test:
-	turnt -v -e brillvm $(TESTS)
+	turnt -e brillvm $(TESTS)
+
+.PHONY: benchmark
+benchmark:
+	turnt -e brillvm $(BENCHMARKS)

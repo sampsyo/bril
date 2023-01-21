@@ -17,9 +17,8 @@ default-run = "main"
 [dependencies]
 clap         = { version = "4.0", features = ["derive"] }
 # I would like to use the normal way of getting dependencies but I need llvm14-0 (and eventually llvm15-0) but this hasn't been released yet
-inkwell      = { version = "0.1.0-beta.5", features = ["llvm14-0"] }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = ["llvm15-0"] }
 libc-print = "0.1.20"
-
 
 [dependencies.bril-rs]
 version = "0.1.0"
@@ -36,6 +35,8 @@ path = "src/main.rs"
 
 [profile.dev]
 panic = "abort"
+lto = true
 
 [profile.release]
 panic = "abort"
+lto = true

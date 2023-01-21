@@ -36,6 +36,19 @@ fn build_functiontype<'a>(
     }
 }
 
+fn build_load<'a>(
+    context: &'a Context,
+    builder: &'a Builder,
+    ptr: &WrappedPointer<'a>,
+    name: &str,
+) -> BasicValueEnum<'a> {
+    match ptr.ty {
+        Type::Int => builder.build_load(context.i64_type(), ptr.ptr, name),
+        Type::Bool => builder.build_load(context.bool_type(), ptr.ptr, name),
+        Type::Float => builder.build_load(context.f64_type(), ptr.ptr, name),
+    }
+}
+
 // Type information is needed for cases like Bool which is modelled as an int and is as far as I can tell indistinguishable.
 #[derive(Debug, Clone)]
 struct WrappedPointer<'a> {
@@ -122,6 +135,7 @@ impl Default for Fresh {
 
 // This handles the builder boilerplate of creating loads for the arguments of a function and the the corresponding store of the result.
 fn build_op<'a, 'b>(
+    context: &'a Context,
     builder: &'a Builder,
     heap: &mut Heap<'a, 'b>,
     fresh: &mut Fresh,
@@ -133,13 +147,14 @@ fn build_op<'a, 'b>(
         heap.get(dest).ptr,
         op(args
             .iter()
-            .map(|n| builder.build_load(heap.get(n).ptr, &fresh.fresh_var()))
+            .map(|n| build_load(context, builder, &heap.get(n), &fresh.fresh_var()))
             .collect()),
     );
 }
 
 // Like `build_op` but where there is no return value
 fn build_effect_op<'a, 'b>(
+    context: &'a Context,
     builder: &'a Builder,
     heap: &mut Heap<'a, 'b>,
     fresh: &mut Fresh,
@@ -148,7 +163,7 @@ fn build_effect_op<'a, 'b>(
 ) {
     op(args
         .iter()
-        .map(|n| builder.build_load(heap.get(n).ptr, &fresh.fresh_var()))
+        .map(|n| build_load(context, builder, &heap.get(n), &fresh.fresh_var()))
         .collect());
 }
 
@@ -228,6 +243,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -254,6 +270,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -280,6 +297,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -306,6 +324,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -332,6 +351,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -359,6 +379,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -386,6 +407,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -413,6 +435,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -440,6 +463,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -467,6 +491,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -489,6 +514,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -515,6 +541,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -547,6 +574,7 @@ fn build_instruction<'a, 'b>(
             let function = module.get_function(func_name).unwrap();
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -575,7 +603,7 @@ fn build_instruction<'a, 'b>(
             labels: _,
             op: ValueOps::Id,
             op_type: _,
-        } => build_op(builder, heap, fresh, |v| v[0], args, dest),
+        } => build_op(context, builder, heap, fresh, |v| v[0], args, dest),
         Instruction::Value {
             args,
             dest,
@@ -586,6 +614,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -612,6 +641,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -638,6 +668,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -664,6 +695,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -690,6 +722,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -717,6 +750,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -744,6 +778,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -771,6 +806,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -798,6 +834,7 @@ fn build_instruction<'a, 'b>(
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -824,9 +861,12 @@ fn build_instruction<'a, 'b>(
             if args.is_empty() {
                 builder.build_return(None);
             } else {
-                builder.build_return(Some(
-                    &builder.build_load(heap.get(&args[0]).ptr, &fresh.fresh_var()),
-                ));
+                builder.build_return(Some(&build_load(
+                    context,
+                    builder,
+                    &heap.get(&args[0]),
+                    &fresh.fresh_var(),
+                )));
             }
         }
         Instruction::Effect {
@@ -843,6 +883,7 @@ fn build_instruction<'a, 'b>(
             let function = module.get_function(func_name).unwrap();
             let ret_name = fresh.fresh_var();
             build_effect_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -881,7 +922,7 @@ fn build_instruction<'a, 'b>(
 
             args.iter().enumerate().for_each(|(i, a)| {
                 let wrapped_ptr = heap.get(a);
-                let v = builder.build_load(wrapped_ptr.ptr, &fresh.fresh_var());
+                let v = build_load(context, builder, &wrapped_ptr, &fresh.fresh_var());
                 match wrapped_ptr.ty {
                     Type::Int => {
                         builder.build_call(print_int, &[v.into()], "print_int");
@@ -892,7 +933,7 @@ fn build_instruction<'a, 'b>(
                             &[builder
                                 .build_int_cast::<IntValue>(
                                     v.try_into().unwrap(),
-                                    context.i8_type(),
+                                    context.bool_type(),
                                     "bool_cast",
                                 )
                                 .into()],
@@ -928,6 +969,7 @@ fn build_instruction<'a, 'b>(
             let then_block = block_map_get(context, llvm_func, block_map, &labels[0]);
             let else_block = block_map_get(context, llvm_func, block_map, &labels[1]);
             build_effect_op(
+                context,
                 builder,
                 heap,
                 fresh,
@@ -1097,8 +1139,8 @@ pub fn create_module_from_program<'a>(
             context.i32_type().into(),
             context
                 .i8_type()
-                .ptr_type(AddressSpace::Generic)
-                .ptr_type(AddressSpace::Generic)
+                .ptr_type(AddressSpace::default())
+                .ptr_type(AddressSpace::default())
                 .into(),
         ],
         false,
@@ -1120,24 +1162,47 @@ pub fn create_module_from_program<'a>(
 
         let argv = entry_func.get_nth_param(1).unwrap().into_pointer_value();
 
+        let parse_int = module.get_function("_bril_parse_int").unwrap();
+        let parse_bool = module.get_function("_bril_parse_bool").unwrap();
+        let parse_float = module.get_function("_bril_parse_float").unwrap();
+
         function.get_param_iter().enumerate().for_each(|(i, _)| {
             let Argument { name, arg_type } = &args[i];
             let ptr = heap.add(&builder, context, name, arg_type).ptr;
-            println!("{ptr:?}");
-            // todo At the moment, this is using the llvm type of the pointer, not of type I want it to be.
-            // The api changes in the new llvm version
-            let offset = unsafe {
-                builder.build_in_bounds_gep(
-                    argv,
-                    &[context.i64_type().const_int((i + 1) as u64, true)],
-                    "calculate offset",
-                )
+            let arg_str = builder.build_load(
+                context.i8_type().ptr_type(AddressSpace::default()),
+                unsafe {
+                    builder.build_in_bounds_gep(
+                        context
+                            .i8_type()
+                            .ptr_type(AddressSpace::default())
+                            .ptr_type(AddressSpace::default()),
+                        argv,
+                        &[context.i64_type().const_int((i + 1) as u64, true)],
+                        "calculate offset",
+                    )
+                },
+                "load arg",
+            );
+            let arg = match arg_type {
+                Type::Int => builder
+                    .build_call(parse_int, &[arg_str.into()], "parse_int")
+                    .try_as_basic_value()
+                    .unwrap_left(),
+                Type::Bool => builder
+                    .build_call(parse_bool, &[arg_str.into()], "parse_bool")
+                    .try_as_basic_value()
+                    .unwrap_left(),
+                Type::Float => builder
+                    .build_call(parse_float, &[arg_str.into()], "parse_float")
+                    .try_as_basic_value()
+                    .unwrap_left(),
             };
-            println!("{offset:?}");
-            builder.build_store(ptr, builder.build_load(offset, "load arg"));
+            builder.build_store(ptr, arg);
         });
 
         build_effect_op(
+            context,
             &builder,
             &mut heap,
             &mut fresh,
@@ -1156,7 +1221,6 @@ pub fn create_module_from_program<'a>(
                 .map(|Argument { name, .. }| name.clone())
                 .collect::<Vec<String>>(),
         );
-        /*         builder.build_call(function, &[], "call main"); */
     }
     builder.build_return(Some(&context.i32_type().const_int(0, true)));
 

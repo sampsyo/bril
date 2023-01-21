@@ -5,44 +5,68 @@ use std::mem::size_of; */
 #![no_std]
 #![no_main]
 
-use libc_print::{libc_print, libc_println};
+use core::ffi::{c_char, CStr};
+
+use libc_print::std_name::{print, println};
 
 #[no_mangle]
-pub extern "C" fn print_int(i: i64) {
-    libc_print!("{}", i);
+pub extern "C" fn _bril_print_int(i: i64) {
+    print!("{}", i);
 }
 
 #[no_mangle]
-pub extern "C" fn print_bool(b: bool) {
+pub extern "C" fn _bril_print_bool(b: bool) {
     if b {
-        libc_print!("true")
+        print!("true")
     } else {
-        libc_print!("false")
+        print!("false")
     }
 }
 
 #[no_mangle]
-pub extern "C" fn print_float(f: f64) {
+pub extern "C" fn _bril_print_float(f: f64) {
     if f.is_infinite() {
         if f < 0.0 {
-            libc_print!("-Infinity");
+            print!("-Infinity");
         } else {
-            libc_print!("Infinity");
+            print!("Infinity");
         }
     } else {
-        libc_print!("{:.17}", f);
+        print!("{:.17}", f);
     }
 }
 
 #[no_mangle]
-pub extern "C" fn print_sep() {
-    libc_print!(" ");
+pub extern "C" fn _bril_print_sep() {
+    print!(" ");
 }
 
 #[no_mangle]
-pub extern "C" fn print_end() {
-    libc_println!();
+pub extern "C" fn _bril_print_end() {
+    println!();
 }
+
+#[no_mangle]
+pub extern "C" fn _bril_parse_int(arg: *const c_char) -> i64 {
+    let c_str = unsafe { CStr::from_ptr(arg) };
+    let r_str = c_str.to_str().unwrap();
+    r_str.parse::<i64>().unwrap()
+}
+
+#[no_mangle]
+pub extern "C" fn _bril_parse_bool(arg: *const c_char) -> bool {
+    let c_str = unsafe { CStr::from_ptr(arg) };
+    let r_str = c_str.to_str().unwrap();
+    r_str.parse::<bool>().unwrap()
+}
+
+#[no_mangle]
+pub extern "C" fn _bril_parse_float(arg: *const c_char) -> f64 {
+    let c_str = unsafe { CStr::from_ptr(arg) };
+    let r_str = c_str.to_str().unwrap();
+    r_str.parse::<f64>().unwrap()
+}
+
 /*
 const ALIGN: usize = 8;
 const EXTRA_SIZE: usize = size_of::<usize>();
