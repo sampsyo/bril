@@ -30,18 +30,17 @@ use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode,
 grammar(lines : &Lines);
 
 match {
-    r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // label
-    r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // func
+    r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*" => LABEL_TOKEN, // label
+    r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*" => FUNC_TOKEN, // func
     "const", "true", "false", "from", "import", "as"
 } else {
     r"\s*" => { }, /// Whitespace
     r"#[^\n\r]*[\n\r]*" => { }, /// Comments
-    "<", ">", "{", "}", "(", ")", "@", ".", "=", ";", ":", ",",
-    r"(\+|-)?[0-9]+", // int
-    r"(\+|-)?(((([0-9]+\.?[0-9]*)|(\.[0-9]+))(E|e)(\+|-)?[0-9]+)|(([0-9]+\.[0-9]*)|(\.[0-9]+)))", // float
-    r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*", // ident
-} else {
-    r#""[^"]*""#, // string literal for path
+    r"(\+|-)?[0-9]+" => INT_TOKEN, // int
+    r"(\+|-)?(((([0-9]+\.?[0-9]*)|(\.[0-9]+))(E|e)(\+|-)?[0-9]+)|(([0-9]+\.[0-9]*)|(\.[0-9]+)))" => FLOAT_TOKEN, // https://stackoverflow.com/questions/12643009/regular-expression-for-floating-point-numbers
+    r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*" => IDENT_TOKEN,
+    r#""[^"]*""# => STRING_TOKEN,
+    _
 }
 
 pub AbstractProgram : AbstractProgram = {
@@ -167,7 +166,7 @@ AbstractType : AbstractType = {
 
 // We can't match on const because of a reduce-reduce conflict
 Ident: String = {
-    <s : r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => s.to_string(),
+    <s : IDENT_TOKEN> => s.to_string(),
     "true" => "true".to_owned(),
     "false" => "false".to_owned(),
 }
@@ -179,17 +178,17 @@ Args: String = {
 }
 
 pub Func : String = {
-    <i:r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix("@").unwrap().to_owned(),
+    <i:FUNC_TOKEN> => i.strip_prefix("@").unwrap().to_owned(),
 }
 
 Path: PathBuf = {
-    <p:r#""[^"]*""#> => {
+    <p:STRING_TOKEN> => {
         PathBuf::from(p.trim_matches('\"'))
     }
 }
 
 Label: String = {
-    <i:r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*"> => i.strip_prefix(".").unwrap().to_owned(),
+    <i:LABEL_TOKEN> => i.strip_prefix(".").unwrap().to_owned(),
 }
 
 Literal: Literal = {
@@ -198,10 +197,10 @@ Literal: Literal = {
     <f: Float> => Literal::Float(f),
 }
 
-Num: i64 = <s:r"(\+|-)?[0-9]+"> => i64::from_str(s).unwrap();
+Num: i64 = <s:INT_TOKEN> => i64::from_str(s).unwrap();
 Bool: bool = {
     "true" => true,
     "false" => false,
 }
-// https://stackoverflow.com/questions/12643009/regular-expression-for-floating-point-numbers
-Float: f64 = <f:r"(\+|-)?(((([0-9]+\.?[0-9]*)|(\.[0-9]+))(E|e)(\+|-)?[0-9]+)|(([0-9]+\.[0-9]*)|(\.[0-9]+)))"> => f64::from_str(f).unwrap();
+
+Float: f64 = <f:FLOAT_TOKEN> => f64::from_str(f).unwrap();
