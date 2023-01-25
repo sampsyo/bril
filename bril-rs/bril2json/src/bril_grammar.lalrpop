@@ -24,15 +24,13 @@
 
 use std::str::FromStr;
 use std::path::PathBuf;
-use crate::Lines;
+use crate::{Lines, ParsingArgs};
 use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal, Import, ImportedFunction};
 
 grammar(lines : &Lines);
 
 match {
-    r"\.(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*" => LABEL_TOKEN, // label
-    r"@(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*" => FUNC_TOKEN, // func
-    "const", "true", "false", "from", "import", "as"
+    "const", "true", "false", "from", "import", "as" // keywords get special priority
 } else {
     r"\s*" => { }, /// Whitespace
     r"#[^\n\r]*[\n\r]*" => { }, /// Comments
@@ -51,7 +49,7 @@ pub AbstractProgram : AbstractProgram = {
 }
 
 Imports : Import = {
-    "from" <p: Path> "import" <n:(<ImportedFunction> ","?)*> ";" => {
+    "from" <p: Path> "import" <n:Comma<ImportedFunction>> ";" => {
         Import {
             path: p,
             functions: n,
@@ -89,7 +87,7 @@ OutputType : AbstractType = {
 }
 
 Argument_List : Vec<AbstractArgument> = {
-    "(" <a :(<AbstractArgument> ","?)*> ")" => a,
+    "(" <a : Comma<AbstractArgument>> ")" => a,
 }
 
 AbstractArgument : AbstractArgument = {
@@ -117,11 +115,11 @@ AbstractInstruction : AbstractInstruction = {
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
         for x in f {
-            if x.starts_with("@") {
-                f_vec.push(x.strip_prefix("@").unwrap().to_owned());
-            } else if x.starts_with(".") {
-                l_vec.push(x.strip_prefix(".").unwrap().to_owned());
-            } else {a_vec.push(x);}
+            match x {
+                ParsingArgs::Ident(arg_name) => {a_vec.push(arg_name)}
+                ParsingArgs::Func(arg_name) => {f_vec.push(arg_name)}
+                ParsingArgs::Label(arg_name) => {l_vec.push(arg_name)}
+            }
         }
         AbstractInstruction::Value {
             op: v,
@@ -138,11 +136,11 @@ AbstractInstruction : AbstractInstruction = {
         let mut f_vec = Vec::new();
         let mut l_vec = Vec::new();
         for x in f {
-            if x.starts_with("@") {
-                f_vec.push(x.strip_prefix("@").unwrap().to_owned());
-            } else if x.starts_with(".") {
-                l_vec.push(x.strip_prefix(".").unwrap().to_owned());
-            } else {a_vec.push(x);}
+            match x {
+                ParsingArgs::Ident(arg_name) => {a_vec.push(arg_name)}
+                ParsingArgs::Func(arg_name) => {f_vec.push(arg_name)}
+                ParsingArgs::Label(arg_name) => {l_vec.push(arg_name)}
+            }
         }
         AbstractInstruction::Effect {
             op: e,
@@ -171,14 +169,15 @@ Ident: String = {
     "false" => "false".to_owned(),
 }
 
-Args: String = {
-    <f:Func> => format!("@{}", f),
-    <l:Label> => format!(".{}", l),
-    <i:Ident> => i,
+// A little bit of magic because we won't know which strings correspond to which type of argument input otherwise... I guess I could make a special enum just for parsing...
+Args: ParsingArgs = {
+    <f:Func> => ParsingArgs::Func(f),
+    <l:Label> => ParsingArgs::Label(l),
+    <i:Ident> => ParsingArgs::Ident(i),
 }
 
 pub Func : String = {
-    <i:FUNC_TOKEN> => i.strip_prefix("@").unwrap().to_owned(),
+    "@"<i:Ident> => i,
 }
 
 Path: PathBuf = {
@@ -188,7 +187,7 @@ Path: PathBuf = {
 }
 
 Label: String = {
-    <i:LABEL_TOKEN> => i.strip_prefix(".").unwrap().to_owned(),
+    "."<i:Ident> => i,
 }
 
 Literal: Literal = {
@@ -204,3 +203,14 @@ Bool: bool = {
 }
 
 Float: f64 = <f:FLOAT_TOKEN> => f64::from_str(f).unwrap();
+
+// https://lalrpop.github.io/lalrpop/tutorial/006_macros.html
+Comma<T>: Vec<T> = { // (1)
+    <mut v:(<T> ",")*> <e:T?> => match e { // (2)
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+}
