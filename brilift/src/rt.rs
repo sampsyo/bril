@@ -3,12 +3,12 @@ use std::mem::size_of;
 
 #[no_mangle]
 pub extern "C" fn print_int(i: i64) {
-    print!("{}", i);
+    print!("{i}");
 }
 
 #[no_mangle]
 pub extern "C" fn print_bool(b: bool) {
-    print!("{}", b);
+    print!("{b}");
 }
 
 #[no_mangle]
@@ -20,7 +20,7 @@ pub extern "C" fn print_float(f: f64) {
             print!("Infinity");
         }
     } else {
-        print!("{:.17}", f);
+        print!("{f:.17}");
     }
 }
 
