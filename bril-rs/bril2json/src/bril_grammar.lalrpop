@@ -32,11 +32,11 @@ grammar(lines : &Lines);
 match {
     "const", "true", "false", "from", "import", "as" // keywords get special priority
 } else {
-    r"\s*" => { }, /// Whitespace
+    r"[[:space:]]*" => { }, /// Whitespace
     r"#[^\n\r]*[\n\r]*" => { }, /// Comments
     r"(\+|-)?[0-9]+" => INT_TOKEN, // int
     r"(\+|-)?(((([0-9]+\.?[0-9]*)|(\.[0-9]+))(E|e)(\+|-)?[0-9]+)|(([0-9]+\.[0-9]*)|(\.[0-9]+)))" => FLOAT_TOKEN, // https://stackoverflow.com/questions/12643009/regular-expression-for-floating-point-numbers
-    r"(_|%|[A-Za-z])(_|%|\.|[A-Za-z]|[0-9])*" => IDENT_TOKEN,
+    r"(_|%|[[:alpha:]])(_|%|\.|[[:alnum:]])*" => IDENT_TOKEN,
     r#""[^"]*""# => STRING_TOKEN,
     _
 }
@@ -169,7 +169,6 @@ Ident: String = {
     "false" => "false".to_owned(),
 }
 
-// A little bit of magic because we won't know which strings correspond to which type of argument input otherwise... I guess I could make a special enum just for parsing...
 Args: ParsingArgs = {
     <f:Func> => ParsingArgs::Func(f),
     <l:Label> => ParsingArgs::Label(l),
