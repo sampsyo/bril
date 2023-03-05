@@ -39,7 +39,7 @@ jobs:
           - "cd brilift && cargo build --release && make rt.o && make test TURNTARGS=-v"
           - "cd brilift && cargo build --release && make rt.o && make benchmark TURNTARGS=-v"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -54,13 +54,10 @@ jobs:
           # One can use the tool cache if compiling this takes to long. Using prebuilt binaries is a security concern... but I guess so is compiling/running code from the internet.
           #use-tool-cache: true
 
-      - uses: actions/cache@v2
-        with:
-            path: ~/.cache/pip
-            key: ${{ runner.os }}-pip
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
             python-version: '3.10'
+            cache: pip
 
       - name: Install Flit
         run: pip install flit
@@ -69,7 +66,7 @@ jobs:
 
       - name: Install Turnt
         # run: pip install turnt  # Use instead if pip turnt version >= 1.7
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: cucapra/turnt
           path: './turnt'
@@ -91,7 +88,7 @@ jobs:
       matrix:
         path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml", "bril-rs/rs2bril/Cargo.toml"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
