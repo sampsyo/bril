@@ -1,4 +1,7 @@
-use std::fmt::{self, Display, Formatter};
+use std::{
+    fmt::{self, Display, Formatter},
+    hash::Hash,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -537,7 +540,7 @@ impl Display for Type {
 }
 
 /// A JSON number/value
-#[cfg_attr(not(feature = "float"), derive(Eq))]
+#[cfg_attr(not(feature = "float"), derive(Eq, Hash))]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Literal {
