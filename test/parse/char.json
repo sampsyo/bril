@@ -1,0 +1,66 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "c1",
+          "op": "const",
+          "type": "char",
+          "value": "6"
+        },
+        {
+          "dest": "c2",
+          "op": "const",
+          "type": "char",
+          "value": ";"
+        },
+        {
+          "args": [
+            "c1",
+            "c2"
+          ],
+          "dest": "b1",
+          "op": "ceq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "c1",
+            "c2"
+          ],
+          "dest": "b2",
+          "op": "clt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "c1",
+            "c2"
+          ],
+          "dest": "b3",
+          "op": "cle",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "c1",
+            "c2"
+          ],
+          "dest": "b4",
+          "op": "cgt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "c1",
+            "c2"
+          ],
+          "dest": "b5",
+          "op": "cge",
+          "type": "bool"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

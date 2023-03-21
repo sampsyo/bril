@@ -884,7 +884,7 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
         newEnv.set(expected[i].name, b as Value);
         break;
       case "char":
-        let c: number = parseNumber(args[i]);
+        let c: string = parseChar(args[i]);
         newEnv.set(expected[i].name, c as Value);
         break;
     }

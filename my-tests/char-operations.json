@@ -5,14 +5,41 @@
           {
             "dest": "c1",
             "op": "const",
-            "type": "char",
-            "value": "a"
+            "type": "CHAR",
+            "value": "A"
           },
           {
             "dest": "c2",
             "op": "const",
             "type": "int",
-            "value": "b"
+            "value": "B"
+          },
+          {
+            "dest": "c3",
+            "op": "const",
+            "type": "BOOL",
+            "value": true
+          },
+          {
+            "args": [
+              "c3",
+              "c3"
+            ],
+            "op": "and",
+            "dest": "res",
+            "type": "bool"
+          },
+          {
+            "args": [
+              "res"
+            ],
+            "op": "print"
+          },
+          {
+            "args": [
+              "c3"
+            ],
+            "op": "print"
           },
           {
             "args": [

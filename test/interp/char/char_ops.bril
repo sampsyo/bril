@@ -1,0 +1,12 @@
+@main() {
+  c1: char = const 'a';
+  c2: char = const 'b';
+  
+  b1: bool = ceq c1 c2;
+  b2: bool = clt c1 c2;
+  b3: bool = cle c1 c2;
+  b4: bool = cgt c1 c2;
+  b5: bool = cge c1 c2;
+
+  print b1 b2 b3 b4 b5;
+}

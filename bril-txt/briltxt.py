@@ -40,12 +40,14 @@ lit: SIGNED_INT  -> int
   | BOOL         -> bool
   | SIGNED_FLOAT -> float
   | "nullptr"    -> nullptr
+  | CHAR         -> char
 
 type: IDENT "<" type ">"  -> paramtype
     | IDENT               -> primtype
 
 BOOL: "true" | "false"
 STRUCT: "struct"
+CHAR: /'.?'/
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 FUNC: "@" IDENT
 LABEL: "." IDENT
@@ -210,6 +212,9 @@ class JSONTransformer(lark.Transformer):
     def nullptr(self, items):
         return 0
 
+    def char(self, items):
+        return str(items[0])[1:-1] # Strip `'`.
+
 
 def parse_bril(txt, include_pos=False):
     """Parse a Bril program and return a JSON string.
@@ -233,6 +238,13 @@ def type_to_str(type):
         return type
 
 
+def value_to_str(type, value):
+    if not isinstance(type, dict) and type.lower() == "char":
+        return "'{}'".format(value)
+    else:
+        return str(value).lower()
+
+
 def instr_to_string(instr):
     if instr['op'] == 'const':
         tyann = ': {}'.format(type_to_str(instr['type'])) \
@@ -240,7 +252,7 @@ def instr_to_string(instr):
         return '{}{} = const {}'.format(
             instr['dest'],
             tyann,
-            str(instr['value']).lower(),
+            value_to_str(instr['type'], instr['value']),
         )
     else:
         rhs = instr['op']
