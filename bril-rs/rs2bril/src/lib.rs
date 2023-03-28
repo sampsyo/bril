@@ -3,8 +3,6 @@
 #![doc = include_str!("../README.md")]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::cognitive_complexity)]
-// Clap seemingly pulls in two different versions of `bitflags: 1.3.2, 2.0.2`
-#![allow(clippy::multiple_crate_versions)]
 
 #[doc(hidden)]
 pub mod cli;
