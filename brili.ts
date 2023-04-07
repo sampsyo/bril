@@ -833,7 +833,6 @@ function evalFunc(func: bril.Function, state: State): Value | null {
   return null;
 }
 
-//transfor to int?
 function parseChar(s: string): string {
   let c = s;
   if (c.length == 1 || ['\\a', '\\b', '\\f', '\\n', '\\r', '\\t', '\\v', '\\0'].includes(c)) {
