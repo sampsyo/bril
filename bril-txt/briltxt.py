@@ -16,7 +16,7 @@ __version__ = '0.0.1'
 
 # Text format parser.
 
-GRAMMAR = """
+GRAMMAR = r"""
 start: (struct | func)*
 
 struct: STRUCT IDENT "=" "{" mbr* "}"
@@ -47,7 +47,7 @@ type: IDENT "<" type ">"  -> paramtype
 
 BOOL: "true" | "false"
 STRUCT: "struct"
-CHAR: /'.?'/
+CHAR:  /'.'/ | /'\\[abfnrtv0]'/
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 FUNC: "@" IDENT
 LABEL: "." IDENT

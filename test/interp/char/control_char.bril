@@ -1,0 +1,13 @@
+@main() {
+
+  c1: char = const '\a';
+  c2: char = const '\b';
+  c3: char = const '\f';
+  c4: char = const '\n';
+  c5: char = const '\r';
+  c6: char = const '\t';
+  c7: char = const '\v';
+  c8: char = const '\0';
+
+  print c1 c2 c3 c4 c5 c6 c7 c8;
+}
