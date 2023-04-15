@@ -103,6 +103,7 @@ pub fn mem_free(ptr: *mut u8) {
     }
 } */
 
+#[cfg(not(test))]
 #[panic_handler]
 fn my_panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
