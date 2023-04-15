@@ -15,13 +15,11 @@ default-run = "main"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap         = { version = "4.0", features = ["derive"] }
-# I would like to use the normal way of getting dependencies but I need llvm14-0 (and eventually llvm15-0) but this hasn't been released yet
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = ["llvm15-0"] }
-libc-print = "0.1.20"
+clap         = { version = "4.2", features = ["derive"] }
+inkwell      = { version = "0.1.1", features = ["llvm15-0"] }
+libc-print   = "0.1"
 
 [dependencies.bril-rs]
-version = "0.1.0"
 path = ".."
 features = ["float"]
 
@@ -29,10 +27,12 @@ features = ["float"]
 name = "rt"
 path = "bin/rt.rs"
 
+# Need to set a default `main` to build `rt` bin
 [[bin]]
 name = "main"
 path = "src/main.rs"
 
+# To properly set up the rt library for linking with LLVM
 [profile.dev]
 panic = "abort"
 lto = true
