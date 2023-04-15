@@ -6,7 +6,7 @@ use inkwell::{
     context::Context,
     module::Module,
     types::{BasicMetadataTypeEnum, FunctionType},
-    values::{BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
+    values::{BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
     AddressSpace, FloatPredicate, IntPredicate,
 };
 
@@ -105,6 +105,7 @@ impl<'a, 'b> Default for Heap<'a, 'b> {
     }
 }
 
+#[derive(Default)]
 struct Fresh {
     count: u64,
 }
@@ -124,12 +125,6 @@ impl Fresh {
         let v = format!("var{}", self.count);
         self.count += 1;
         v
-    }
-}
-
-impl Default for Fresh {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -984,6 +979,55 @@ fn build_instruction<'a, 'b>(
                 args,
             );
         }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels,
+            op: ValueOps::Phi,
+            op_type,
+        } => {
+            let name = fresh.fresh_var();
+            let blocks = labels
+                .iter()
+                .map(|l| block_map_get(context, llvm_func, block_map, l))
+                .collect::<Vec<_>>();
+
+            let phi =
+                match op_type {
+                    Type::Int => builder
+                        .build_phi(context.i64_type().ptr_type(AddressSpace::default()), &name),
+                    Type::Bool => builder
+                        .build_phi(context.bool_type().ptr_type(AddressSpace::default()), &name),
+                    Type::Float => builder
+                        .build_phi(context.f64_type().ptr_type(AddressSpace::default()), &name),
+                };
+
+            let pointers = args.iter().map(|a| heap.get(a).ptr).collect::<Vec<_>>();
+
+            // The phi node is a little non-standard since we can't load in values from the stack before the phi instruction. Instead, the phi instruction will be over stack locations which will then be loaded into the corresponding output location.
+            phi.add_incoming(
+                pointers
+                    .iter()
+                    .zip(blocks.iter())
+                    .map(|(val, block)| (val as &dyn BasicValue, *block))
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+            );
+
+            builder.build_store(
+                heap.get(dest).ptr,
+                build_load(
+                    context,
+                    builder,
+                    &WrappedPointer {
+                        ty: op_type.clone(),
+                        ptr: phi.as_basic_value().into_pointer_value(),
+                    },
+                    &fresh.fresh_var(),
+                ),
+            );
+        }
     }
 }
 
@@ -1046,7 +1090,7 @@ pub fn create_module_from_program<'a>(
                         inkwell::values::BasicValueEnum::ArrayValue(_)
                         | inkwell::values::BasicValueEnum::PointerValue(_)
                         | inkwell::values::BasicValueEnum::StructValue(_)
-                        | inkwell::values::BasicValueEnum::VectorValue(_) => unimplemented!(),
+                        | inkwell::values::BasicValueEnum::VectorValue(_) => unreachable!(),
                     },
                 );
 

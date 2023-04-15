@@ -21,7 +21,7 @@ libc-print   = "0.1"
 
 [dependencies.bril-rs]
 path = ".."
-features = ["float"]
+features = ["float", "ssa"]
 
 [[bin]]
 name = "rt"

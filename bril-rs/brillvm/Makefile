@@ -1,8 +1,8 @@
 TESTS := ../../test/interp/core*/*.bril \
          ../../test/interp/float/*.bril \
+		 ../../test/interp/ssa*/*.bril \
 # ../../test/interp/mem*/*.bril \
 # ../../test/interp/mixed/*.bril \
-# ../../test/interp/ssa*/*.bril \
 
 BENCHMARKS := ../../benchmarks/core/*.bril \
 			  ../../benchmarks/float/*.bril \
