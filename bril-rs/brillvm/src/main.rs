@@ -1,7 +1,7 @@
 use bril_rs::load_program_from_read;
 use brillvm::{cli::Cli, llvm::create_module_from_program};
 use clap::Parser;
-use inkwell::context::Context;
+use inkwell::{context::Context, module::Module};
 use std::io::Read;
 
 fn main() {
@@ -18,11 +18,10 @@ fn main() {
     let prog = load_program_from_read(src.as_bytes());
 
     let context = Context::create();
-    let llvm_prog = create_module_from_program(
-        &context,
-        &prog,
-        args.runtime.as_ref().map_or("rt.bc", |f| f),
-    );
+    let runtime_path = args.runtime.as_ref().map_or("rt.bc", |f| f);
+    // create a module from the runtime library for functions like printing/allocating
+    let runtime_module = Module::parse_bitcode_from_path(runtime_path, &context).unwrap();
+    let llvm_prog = create_module_from_program(&context, &prog, runtime_module);
 
     //println!("{}", prog);
     //llvm_prog.print_to_file("tmp.ll").unwrap();

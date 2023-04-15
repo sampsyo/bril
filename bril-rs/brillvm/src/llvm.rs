@@ -110,7 +110,7 @@ struct Fresh {
 }
 
 impl Fresh {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self { count: 0 }
     }
 
@@ -223,7 +223,7 @@ fn build_instruction<'a, 'b>(
         } => {
             builder.build_store(
                 heap.get(dest).ptr,
-                context.bool_type().const_int(*b as u64, false),
+                context.bool_type().const_int((*b).into(), false),
             );
         }
         Instruction::Constant {
@@ -982,13 +982,13 @@ fn build_instruction<'a, 'b>(
                     );
                 },
                 args,
-            )
+            );
         }
     }
 }
 
 // Check for instructions that end a block
-fn is_terminating_instr(i: &Option<Instruction>) -> bool {
+const fn is_terminating_instr(i: &Option<Instruction>) -> bool {
     matches!(
         i,
         Some(Instruction::Effect {
@@ -1000,13 +1000,16 @@ fn is_terminating_instr(i: &Option<Instruction>) -> bool {
     )
 }
 
+/// Given a Bril program, create an LLVM module from it
+/// The `runtime_module` is the module containing the runtime library
+/// # Panics
+/// Panics if the program is invalid
+#[must_use]
 pub fn create_module_from_program<'a>(
     context: &'a Context,
     Program { functions, .. }: &Program,
-    runtime_path: &str,
+    runtime_module: Module<'a>,
 ) -> Module<'a> {
-    // create a module from the runtime library for functions like printing/allocating
-    let module = Module::parse_bitcode_from_path(runtime_path, context).unwrap();
     let builder = context.create_builder();
 
     // "Global" counter for creating labels/temp variable names
@@ -1035,7 +1038,7 @@ pub fn create_module_from_program<'a>(
 
                 let func_name = if name == "main" { "_main" } else { name };
 
-                let llvm_func = module.add_function(func_name, ty, None);
+                let llvm_func = runtime_module.add_function(func_name, ty, None);
                 args.iter().zip(llvm_func.get_param_iter()).for_each(
                     |(Argument { name, .. }, bve)| match bve {
                         inkwell::values::BasicValueEnum::IntValue(i) => i.set_name(name),
@@ -1113,7 +1116,7 @@ pub fn create_module_from_program<'a>(
                             build_instruction(
                                 i,
                                 context,
-                                &module,
+                                &runtime_module,
                                 &builder,
                                 &mut heap,
                                 &mut block_map,
@@ -1146,7 +1149,7 @@ pub fn create_module_from_program<'a>(
         ],
         false,
     );
-    let entry_func = module.add_function("main", entry_func_type, None);
+    let entry_func = runtime_module.add_function("main", entry_func_type, None);
     entry_func.get_nth_param(0).unwrap().set_name("argc");
     entry_func.get_nth_param(1).unwrap().set_name("argv");
 
@@ -1155,7 +1158,7 @@ pub fn create_module_from_program<'a>(
 
     let mut heap = Heap::new();
 
-    if let Some(function) = module.get_function("_main") {
+    if let Some(function) = runtime_module.get_function("_main") {
         let Function { args, .. } = functions
             .iter()
             .find(|Function { name, .. }| name == "main")
@@ -1163,9 +1166,9 @@ pub fn create_module_from_program<'a>(
 
         let argv = entry_func.get_nth_param(1).unwrap().into_pointer_value();
 
-        let parse_int = module.get_function("_bril_parse_int").unwrap();
-        let parse_bool = module.get_function("_bril_parse_bool").unwrap();
-        let parse_float = module.get_function("_bril_parse_float").unwrap();
+        let parse_int = runtime_module.get_function("_bril_parse_int").unwrap();
+        let parse_bool = runtime_module.get_function("_bril_parse_bool").unwrap();
+        let parse_float = runtime_module.get_function("_bril_parse_float").unwrap();
 
         function.get_param_iter().enumerate().for_each(|(i, _)| {
             let Argument { name, arg_type } = &args[i];
@@ -1226,5 +1229,5 @@ pub fn create_module_from_program<'a>(
     builder.build_return(Some(&context.i32_type().const_int(0, true)));
 
     // Return the module
-    module
+    runtime_module
 }
