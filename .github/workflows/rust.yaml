@@ -80,7 +80,7 @@ jobs:
       RUSTFLAGS: -D warnings
     strategy:
       matrix:
-        path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml", "bril-rs/rs2bril/Cargo.toml"]
+        path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml", "bril-rs/rs2bril/Cargo.toml", "bril-rs/brillvm/Cargo.toml"]
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@v1
