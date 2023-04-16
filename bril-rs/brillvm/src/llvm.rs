@@ -5,7 +5,7 @@ use inkwell::{
     builder::Builder,
     context::Context,
     module::Module,
-    types::{BasicMetadataTypeEnum, FunctionType},
+    types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, PointerType},
     values::{BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
     AddressSpace, FloatPredicate, IntPredicate,
 };
@@ -13,6 +13,33 @@ use inkwell::{
 use bril_rs::{
     Argument, Code, ConstOps, EffectOps, Function, Instruction, Literal, Program, Type, ValueOps,
 };
+
+/// A helper function for performing operations over LLVM types
+fn llvm_type_map<'ctx, A, F>(context: &'ctx Context, ty: &Type, mut fn_map: F) -> A
+where
+    F: for<'a> FnMut(BasicTypeEnum<'ctx>) -> A,
+{
+    match ty {
+        Type::Int => fn_map(context.i64_type().into()),
+        Type::Bool => fn_map(context.bool_type().into()),
+        Type::Float => fn_map(context.f64_type().into()),
+        Type::Pointer(_) => fn_map(build_pointertype(context, ty).into()),
+    }
+}
+
+fn unwrap_bril_ptrtype(ty: &Type) -> &Type {
+    match ty {
+        Type::Pointer(ty) => ty,
+        _ => unreachable!(),
+    }
+}
+
+/// Converts a Bril Pointer type into an LLVM Pointer type
+fn build_pointertype<'a>(context: &'a Context, ty: &Type) -> PointerType<'a> {
+    llvm_type_map(context, unwrap_bril_ptrtype(ty), |t| {
+        t.ptr_type(AddressSpace::default())
+    })
+}
 
 /// Converts a Bril function signature into an LLVM function type
 fn build_functiontype<'a>(
@@ -22,17 +49,12 @@ fn build_functiontype<'a>(
 ) -> FunctionType<'a> {
     let param_types: Vec<BasicMetadataTypeEnum> = args
         .iter()
-        .map(|t| match t {
-            Type::Int => context.i64_type().into(),
-            Type::Bool => context.bool_type().into(),
-            Type::Float => context.f64_type().into(),
-        })
+        .map(|t| llvm_type_map(context, t, Into::into))
         .collect();
+    #[allow(clippy::option_if_let_else)] // I think this is more readable
     match return_ty {
         None => context.void_type().fn_type(&param_types, false),
-        Some(Type::Int) => context.i64_type().fn_type(&param_types, false),
-        Some(Type::Bool) => context.bool_type().fn_type(&param_types, false),
-        Some(Type::Float) => context.f64_type().fn_type(&param_types, false),
+        Some(t) => llvm_type_map(context, t, |t| t.fn_type(&param_types, false)),
     }
 }
 
@@ -42,11 +64,9 @@ fn build_load<'a>(
     ptr: &WrappedPointer<'a>,
     name: &str,
 ) -> BasicValueEnum<'a> {
-    match ptr.ty {
-        Type::Int => builder.build_load(context.i64_type(), ptr.ptr, name),
-        Type::Bool => builder.build_load(context.bool_type(), ptr.ptr, name),
-        Type::Float => builder.build_load(context.f64_type(), ptr.ptr, name),
-    }
+    llvm_type_map(context, &ptr.ty, |pointee_ty| {
+        builder.build_load(pointee_ty, ptr.ptr, name)
+    })
 }
 
 // Type information is needed for cases like Bool which is modelled as an int and is as far as I can tell indistinguishable.
@@ -60,15 +80,12 @@ impl<'a> WrappedPointer<'a> {
     fn new(builder: &'a Builder, context: &'a Context, name: &str, ty: &Type) -> Self {
         Self {
             ty: ty.clone(),
-            ptr: match ty {
-                Type::Int => builder.build_alloca(context.i64_type(), name),
-                Type::Bool => builder.build_alloca(context.bool_type(), name),
-                Type::Float => builder.build_alloca(context.f64_type(), name),
-            },
+            ptr: llvm_type_map(context, ty, |ty| builder.build_alloca(ty, name)),
         }
     }
 }
 
+#[derive(Default)]
 struct Heap<'a, 'b> {
     // Map variable names in Bril to their type and location on the stack.
     map: HashMap<&'b String, WrappedPointer<'a>>,
@@ -76,9 +93,7 @@ struct Heap<'a, 'b> {
 
 impl<'a, 'b> Heap<'a, 'b> {
     fn new() -> Self {
-        Heap {
-            map: HashMap::new(),
-        }
+        Self::default()
     }
 
     fn add(
@@ -99,20 +114,14 @@ impl<'a, 'b> Heap<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Default for Heap<'a, 'b> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[derive(Default)]
 struct Fresh {
     count: u64,
 }
 
 impl Fresh {
-    const fn new() -> Self {
-        Self { count: 0 }
+    fn new() -> Self {
+        Self::default()
     }
 
     fn fresh_label(&mut self) -> String {
@@ -194,6 +203,7 @@ fn build_instruction<'a, 'b>(
             const_type: Type::Float,
             value: Literal::Int(i),
         } => {
+            #[allow(clippy::cast_precision_loss)]
             builder.build_store(
                 heap.get(dest).ptr,
                 context.f64_type().const_float(*i as f64),
@@ -205,6 +215,7 @@ fn build_instruction<'a, 'b>(
             const_type: _,
             value: Literal::Int(i),
         } => {
+            #[allow(clippy::cast_sign_loss)]
             builder.build_store(
                 heap.get(dest).ptr,
                 context.i64_type().const_int(*i as u64, true),
@@ -939,6 +950,9 @@ fn build_instruction<'a, 'b>(
                     Type::Float => {
                         builder.build_call(print_float, &[v.into()], "print_float");
                     }
+                    Type::Pointer(_) => {
+                        unreachable!()
+                    }
                 };
                 if i < len - 1 {
                     builder.build_call(print_sep, &[], "print_sep");
@@ -993,15 +1007,10 @@ fn build_instruction<'a, 'b>(
                 .map(|l| block_map_get(context, llvm_func, block_map, l))
                 .collect::<Vec<_>>();
 
-            let phi =
-                match op_type {
-                    Type::Int => builder
-                        .build_phi(context.i64_type().ptr_type(AddressSpace::default()), &name),
-                    Type::Bool => builder
-                        .build_phi(context.bool_type().ptr_type(AddressSpace::default()), &name),
-                    Type::Float => builder
-                        .build_phi(context.f64_type().ptr_type(AddressSpace::default()), &name),
-                };
+            let phi = builder.build_phi(
+                build_pointertype(context, &Type::Pointer(Box::new(op_type.clone()))),
+                &name,
+            );
 
             let pointers = args.iter().map(|a| heap.get(a).ptr).collect::<Vec<_>>();
 
@@ -1026,6 +1035,119 @@ fn build_instruction<'a, 'b>(
                     },
                     &fresh.fresh_var(),
                 ),
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Alloc,
+            op_type,
+        } => {
+            let alloc_name = fresh.fresh_var();
+            let ty = unwrap_bril_ptrtype(op_type);
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    llvm_type_map(context, ty, |ty| {
+                        builder
+                            .build_array_malloc(ty, v[0].try_into().unwrap(), &alloc_name)
+                            .unwrap()
+                            .into()
+                    })
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Load,
+            op_type,
+        } => {
+            let name = fresh.fresh_var();
+            llvm_type_map(context, op_type, |pointee_ty| {
+                build_op(
+                    context,
+                    builder,
+                    heap,
+                    fresh,
+                    |v| builder.build_load(pointee_ty, v[0].try_into().unwrap(), &name),
+                    args,
+                    dest,
+                );
+            });
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::PtrAdd,
+            op_type,
+        } => {
+            let name = fresh.fresh_var();
+            let op_type = unwrap_bril_ptrtype(op_type);
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| unsafe {
+                    llvm_type_map(context, op_type, |pointee_ty| {
+                        builder
+                            .build_gep(
+                                pointee_ty,
+                                v[0].try_into().unwrap(),
+                                &[v[1].try_into().unwrap()],
+                                &name,
+                            )
+                            .into()
+                    })
+                },
+                args,
+                dest,
+            );
+        }
+        Instruction::Effect {
+            args,
+            funcs: _,
+            labels: _,
+            op: EffectOps::Store,
+        } => {
+            build_effect_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder.build_store(v[0].try_into().unwrap(), v[1]);
+                },
+                args,
+            );
+        }
+        Instruction::Effect {
+            args,
+            funcs: _,
+            labels: _,
+            op: EffectOps::Free,
+        } => {
+            build_effect_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder.build_free(v[0].try_into().unwrap());
+                },
+                args,
             );
         }
     }
@@ -1087,8 +1209,8 @@ pub fn create_module_from_program<'a>(
                     |(Argument { name, .. }, bve)| match bve {
                         inkwell::values::BasicValueEnum::IntValue(i) => i.set_name(name),
                         inkwell::values::BasicValueEnum::FloatValue(f) => f.set_name(name),
+                        inkwell::values::BasicValueEnum::PointerValue(p) => p.set_name(name),
                         inkwell::values::BasicValueEnum::ArrayValue(_)
-                        | inkwell::values::BasicValueEnum::PointerValue(_)
                         | inkwell::values::BasicValueEnum::StructValue(_)
                         | inkwell::values::BasicValueEnum::VectorValue(_) => unreachable!(),
                     },
@@ -1245,6 +1367,7 @@ pub fn create_module_from_program<'a>(
                     .build_call(parse_float, &[arg_str.into()], "parse_float")
                     .try_as_basic_value()
                     .unwrap_left(),
+                Type::Pointer(_) => unreachable!(),
             };
             builder.build_store(ptr, arg);
         });

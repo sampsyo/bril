@@ -15,4 +15,4 @@ command = "bril2json < {filename} | ../../brilift/target/release/brilift -j -- {
 
 [envs.brillvm]
 default = false
-command = "bril2json < {filename} | cargo run -q --manifest-path ../../bril-rs/brillvm/Cargo.toml -- -r ../../bril-rs/brillvm/rt.bc | lli - {args}"
+command = "bril2json < {filename} | cargo run -q --manifest-path ../../bril-rs/brillvm/Cargo.toml -- -r ../../bril-rs/brillvm/rt.bc -i {args}"

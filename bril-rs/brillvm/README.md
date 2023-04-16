@@ -2,7 +2,7 @@
 
 ## Runtime
 
-You must have a linkable runtime library available in the llvm bc format. You can get this from calling `make rt`
+You must have a linkable runtime library available in the llvm bc format. You can get this by calling `make rt`
 
 ## TroubleShooting
 

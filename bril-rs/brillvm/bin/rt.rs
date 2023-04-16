@@ -26,11 +26,13 @@ pub extern "C" fn _bril_print_bool(b: bool) {
 #[no_mangle]
 pub extern "C" fn _bril_print_float(f: f64) {
     if f.is_infinite() {
-        if f < 0.0 {
+        if f.is_sign_negative() {
             print!("-Infinity");
         } else {
             print!("Infinity");
         }
+    } else if f.is_nan() {
+        print!("NaN");
     } else {
         print!("{:.17}", f);
     }
@@ -69,39 +71,6 @@ pub unsafe extern "C" fn _bril_parse_float(arg: *const c_char) -> f64 {
     let r_str = c_str.to_str().unwrap();
     r_str.parse::<f64>().unwrap()
 }
-
-/*
-const ALIGN: usize = 8;
-const EXTRA_SIZE: usize = size_of::<usize>();
-
-#[no_mangle]
-pub extern "C" fn mem_alloc(count: i64, bytes: i64) -> *mut u8 {
-    // The logical size of the allocation.
-    let payload_size: usize = (count * bytes).try_into().unwrap();
-
-    // Allocate one extra word to store the size.
-    let layout = Layout::from_size_align(payload_size + EXTRA_SIZE, ALIGN).unwrap();
-
-    unsafe {
-        let ptr = alloc(layout);
-        *(ptr as *mut usize) = payload_size;
-        ptr.add(EXTRA_SIZE) // Pointer to the payload.
-    }
-}
-
-#[no_mangle]
-pub fn mem_free(ptr: *mut u8) {
-    // `ptr` points at the payload, which is immediately preceded by the size (which does not
-    // include the size of the size itself).
-    unsafe {
-        let base_ptr = ptr.sub(EXTRA_SIZE);
-        let payload_size = *(base_ptr as *mut usize);
-
-        let layout =
-            Layout::from_size_align(payload_size + EXTRA_SIZE, ALIGN).unwrap();
-        dealloc(base_ptr, layout);
-    }
-} */
 
 #[cfg(not(test))]
 #[panic_handler]
