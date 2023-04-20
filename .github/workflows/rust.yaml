@@ -95,7 +95,7 @@ jobs:
         run: cargo fmt --manifest-path ${{ matrix.path }} --all -- --check
 
       - name: cargo clippy
-        run: cargo clippy --manifest-path ${{ matrix.path }}
+        run: cargo clippy --manifest-path ${{ matrix.path }} --all-targets
 
       - name: cargo doc
-        run: cargo doc --manifest-path ${{ matrix.path }}
+        run: cargo doc --manifest-path ${{ matrix.path }} --all
