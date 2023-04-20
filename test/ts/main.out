@@ -1,0 +1,11 @@
+@main {
+  v: int = call @getThree;
+  v: int = id v;
+  v1: int = id v;
+  print v1;
+  v2: int = const 0;
+}
+@getThree: int {
+  v0: int = const 3;
+  ret v0;
+}
