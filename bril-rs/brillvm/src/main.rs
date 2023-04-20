@@ -1,7 +1,7 @@
 use bril_rs::load_program_from_read;
 use brillvm::{cli::Cli, llvm::create_module_from_program};
 use clap::Parser;
-use inkwell::{context::Context, module::Module};
+use inkwell::{context::Context, execution_engine::ExecutionEngine, module::Module, targets::{Target, InitializationConfig}};
 use std::io::Read;
 
 fn main() {
@@ -24,10 +24,12 @@ fn main() {
     let llvm_prog = create_module_from_program(&context, &prog, runtime_module);
 
     //println!("{}", prog);
-    //llvm_prog.print_to_file("tmp.ll").unwrap();
+    llvm_prog.print_to_file("tmp.ll").unwrap();
     llvm_prog.verify().unwrap();
 
     if args.interpreter {
+        Target::initialize_native(&InitializationConfig::default()).expect("Failed to initialize native target");
+        ExecutionEngine::link_in_interpreter();
         let engine = llvm_prog.create_execution_engine().unwrap();
         let mut args: Vec<&str> = args.args.iter().map(|s| s.as_ref()).collect();
         args.insert(0, "bril_prog");
