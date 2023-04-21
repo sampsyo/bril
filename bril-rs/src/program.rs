@@ -75,7 +75,7 @@ impl Display for ImportedFunction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)?;
         if let Some(a) = self.alias.as_ref() {
-            write!(f, " as {}", a)?;
+            write!(f, " as {a}")?;
         }
         Ok(())
     }
@@ -248,9 +248,9 @@ impl Instruction {
     #[must_use]
     pub fn get_pos(&self) -> Option<Position> {
         match self {
-            Instruction::Constant { pos, .. }
-            | Instruction::Value { pos, .. }
-            | Instruction::Effect { pos, .. } => pos.clone(),
+            Self::Constant { pos, .. } | Self::Value { pos, .. } | Self::Effect { pos, .. } => {
+                pos.clone()
+            }
         }
     }
 }
