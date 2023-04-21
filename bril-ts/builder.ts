@@ -134,4 +134,8 @@ export class Builder {
     this.nextFresh += 1;
     return out;
   }
+
+  setCurrentFunction(func: bril.Function) {
+    this.curFunction = func;
+  }
 }
