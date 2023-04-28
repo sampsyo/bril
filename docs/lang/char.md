@@ -8,6 +8,8 @@ The character extension adds one new base type:
 
     "char"
 
+Characters are UTF-16 code units.
+
 Operations
 ----------
 
