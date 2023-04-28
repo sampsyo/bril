@@ -283,7 +283,7 @@ impl From<&Self> for Value {
 }
 
 // Sets up the Environment for the next function call with the supplied arguments
-fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut Environment) {
+fn make_func_args(callee_func: &BBFunction, args: &[usize], vars: &mut Environment) {
   vars.push_frame(callee_func.num_of_vars);
 
   args
@@ -295,8 +295,8 @@ fn make_func_args<'a>(callee_func: &'a BBFunction, args: &[usize], vars: &mut En
     });
 }
 
-fn execute_value_op<'a, T: std::io::Write>(
-  state: &'a mut State<T>,
+fn execute_value_op<T: std::io::Write>(
+  state: &mut State<T>,
   op: bril_rs::ValueOps,
   dest: usize,
   args: &[usize],
@@ -462,8 +462,8 @@ fn execute_value_op<'a, T: std::io::Write>(
   Ok(())
 }
 
-fn execute_effect_op<'a, T: std::io::Write>(
-  state: &'a mut State<T>,
+fn execute_effect_op<T: std::io::Write>(
+  state: &mut State<T>,
   op: bril_rs::EffectOps,
   args: &[usize],
   funcs: &[usize],

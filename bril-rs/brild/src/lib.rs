@@ -27,7 +27,6 @@ fn mangle_name(path: &Path, func_name: &String) -> String {
     parts.next();
 
     let mut p: Vec<_> = parts
-        .into_iter()
         .map(|c| {
             c.as_os_str().to_str().expect(
                 "Panics if the path does not contain valid unicode which I'm not worried about",

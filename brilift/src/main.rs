@@ -390,7 +390,7 @@ impl CompileEnv<'_> {
             bril::ValueOps::Fsub => ir::Opcode::Fsub,
             bril::ValueOps::Fmul => ir::Opcode::Fmul,
             bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
-            _ => panic!("not a translatable opcode: {}", op),
+            _ => panic!("not a translatable opcode: {op}"),
         }
     }
 
@@ -402,7 +402,7 @@ impl CompileEnv<'_> {
             bril::ValueOps::Eq => IntCC::Equal,
             bril::ValueOps::Ge => IntCC::SignedGreaterThanOrEqual,
             bril::ValueOps::Gt => IntCC::SignedGreaterThan,
-            _ => panic!("not a comparison opcode: {}", op),
+            _ => panic!("not a comparison opcode: {op}"),
         }
     }
 
@@ -414,7 +414,7 @@ impl CompileEnv<'_> {
             bril::ValueOps::Feq => FloatCC::Equal,
             bril::ValueOps::Fge => FloatCC::GreaterThanOrEqual,
             bril::ValueOps::Fgt => FloatCC::GreaterThan,
-            _ => panic!("not a comparison opcode: {}", op),
+            _ => panic!("not a comparison opcode: {op}"),
         }
     }
 
@@ -854,7 +854,7 @@ impl<M: Module> Translator<M> {
             returns: vec![],
             call_conv: self.module.isa().default_call_conv(),
         };
-        let wrapped_name = format!("{}_wrapper", name);
+        let wrapped_name = format!("{name}_wrapper");
         let wrapper_id = self
             .module
             .declare_function(&wrapped_name, cranelift_module::Linkage::Export, &sig)

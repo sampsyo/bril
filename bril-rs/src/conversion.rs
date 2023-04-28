@@ -189,7 +189,7 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     .map_err(|e: ConversionError| e.add_pos(pos.clone()))?,
                 value,
                 #[cfg(feature = "position")]
-                pos: pos,
+                pos,
             },
             AbstractInstruction::Value {
                 args,

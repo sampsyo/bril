@@ -12,13 +12,12 @@ use bril_rs::{
     Type, ValueOps,
 };
 
-use syn::punctuated::Punctuated;
 use syn::{
-    BinOp, Block, Expr, ExprArray, ExprAssign, ExprAssignOp, ExprBinary, ExprBlock, ExprCall,
-    ExprCast, ExprIf, ExprIndex, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprParen, ExprPath,
-    ExprReference, ExprRepeat, ExprReturn, ExprUnary, ExprWhile, File, FnArg, Ident, Item, ItemFn,
-    Lit, Local, Macro, Pat, PatIdent, PatType, Path, PathSegment, ReturnType, Signature, Stmt,
-    Type as SType, TypeArray, TypePath, TypeReference, TypeSlice, UnOp,
+    BinOp, Block, Expr, ExprArray, ExprAssign, ExprBinary, ExprBlock, ExprCall, ExprCast, ExprIf,
+    ExprIndex, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprParen, ExprPath, ExprReference,
+    ExprRepeat, ExprReturn, ExprUnary, ExprWhile, File, FnArg, Item, ItemFn, Lit, Local, Macro,
+    Pat, PatIdent, PatType, Path, ReturnType, Signature, Stmt, StmtMacro, Type as SType, TypeArray,
+    TypePath, TypeReference, TypeSlice, UnOp,
 };
 
 use proc_macro2::Span;
@@ -79,6 +78,7 @@ impl State {
     }
 }
 
+// A helper to get the span of any given Rust expression
 fn from_expr_to_span(expr: &Expr) -> Span {
     match expr {
         Expr::Array(ExprArray {
@@ -92,17 +92,11 @@ fn from_expr_to_span(expr: &Expr) -> Span {
             expr: _,
             semi_token: _,
             len: _,
-        }) => bracket_token.span,
+        }) => bracket_token.span.join(),
         Expr::Assign(ExprAssign {
             attrs: _,
             left,
             eq_token: _,
-            right,
-        })
-        | Expr::AssignOp(ExprAssignOp {
-            attrs: _,
-            left,
-            op: _,
             right,
         })
         | Expr::Binary(ExprBinary {
@@ -117,13 +111,15 @@ fn from_expr_to_span(expr: &Expr) -> Span {
             attrs: _,
             label: _,
             block,
-        }) => block.brace_token.span,
+        }) => block.brace_token.span.join(),
         Expr::Call(ExprCall {
             attrs: _,
             func,
             paren_token,
             args: _,
-        }) => from_expr_to_span(func).join(paren_token.span).unwrap(),
+        }) => from_expr_to_span(func)
+            .join(paren_token.span.join())
+            .unwrap(),
         Expr::Cast(ExprCast {
             attrs: _,
             expr,
@@ -133,7 +129,6 @@ fn from_expr_to_span(expr: &Expr) -> Span {
         | Expr::Reference(ExprReference {
             attrs: _,
             and_token: _,
-            raw: _,
             mutability: _,
             expr,
         }) => from_expr_to_span(expr),
@@ -150,13 +145,18 @@ fn from_expr_to_span(expr: &Expr) -> Span {
             cond: _,
             then_branch,
             else_branch: None,
-        }) => if_token.span.join(then_branch.brace_token.span).unwrap(),
+        }) => if_token
+            .span
+            .join(then_branch.brace_token.span.join())
+            .unwrap(),
         Expr::Index(ExprIndex {
             attrs: _,
             expr,
             bracket_token,
             index: _,
-        }) => from_expr_to_span(expr).join(bracket_token.span).unwrap(),
+        }) => from_expr_to_span(expr)
+            .join(bracket_token.span.join())
+            .unwrap(),
         Expr::Let(ExprLet {
             attrs: _,
             let_token,
@@ -170,7 +170,7 @@ fn from_expr_to_span(expr: &Expr) -> Span {
             label: _,
             loop_token,
             body,
-        }) => loop_token.span.join(body.brace_token.span).unwrap(),
+        }) => loop_token.span.join(body.brace_token.span.join()).unwrap(),
         Expr::Macro(ExprMacro {
             attrs: _,
             mac:
@@ -183,16 +183,16 @@ fn from_expr_to_span(expr: &Expr) -> Span {
         }) => bang_token
             .span
             .join(match delimiter {
-                syn::MacroDelimiter::Paren(p) => p.span,
-                syn::MacroDelimiter::Brace(b) => b.span,
-                syn::MacroDelimiter::Bracket(b) => b.span,
+                syn::MacroDelimiter::Paren(p) => p.span.join(),
+                syn::MacroDelimiter::Brace(b) => b.span.join(),
+                syn::MacroDelimiter::Bracket(b) => b.span.join(),
             })
             .unwrap(),
         Expr::Paren(ExprParen {
             attrs: _,
             paren_token,
             expr: _,
-        }) => paren_token.span,
+        }) => paren_token.span.join(),
         Expr::Path(ExprPath {
             attrs: _,
             qself: _,
@@ -221,6 +221,7 @@ fn from_expr_to_span(expr: &Expr) -> Span {
             UnOp::Deref(d) => d.span,
             UnOp::Not(n) => n.span,
             UnOp::Neg(n) => n.span,
+            _ => unimplemented!("Non-exhaustive"),
         }
         .join(from_expr_to_span(expr))
         .unwrap(),
@@ -230,11 +231,12 @@ fn from_expr_to_span(expr: &Expr) -> Span {
             while_token,
             cond: _,
             body,
-        }) => while_token.span.join(body.brace_token.span).unwrap(),
+        }) => while_token.span.join(body.brace_token.span.join()).unwrap(),
         _ => todo!(),
     }
 }
 
+// A helper for converting Syn Span to Bril Position
 fn from_span_to_position(
     starting_span: Span,
     ending_span: Option<Span>,
@@ -278,6 +280,7 @@ fn from_pat_to_string(pat: Pat) -> String {
     }
 }
 
+// A helper for converting Syn Type to Bril Type
 fn from_type_to_type(ty: SType) -> Type {
     match ty {
         SType::Array(TypeArray { elem, .. }) | SType::Slice(TypeSlice { elem, .. }) => {
@@ -296,6 +299,7 @@ fn from_type_to_type(ty: SType) -> Type {
     }
 }
 
+// A helper for converting Syn function arguments to Bril Argument
 fn from_fnarg_to_argument(f: FnArg, state: &mut State) -> Argument {
     match f {
         FnArg::Receiver(_) => panic!("can't handle self in function arguments"),
@@ -376,7 +380,7 @@ fn from_signature_to_function(
         pos: if state.is_pos {
             Some(from_span_to_position(
                 fn_token.span,
-                Some(paren_token.span),
+                Some(paren_token.span.join()),
                 state.src.clone(),
             ))
         } else {
@@ -528,53 +532,6 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 _ => panic!("can't handle left hand assignment: {left:?}"),
             }
         }
-        Expr::AssignOp(ExprAssignOp {
-            attrs,
-            left,
-            op,
-            right,
-        }) if attrs.is_empty() => {
-            let (assign_arg, mut assign_code) = from_expr_to_bril(*left, state);
-            let mut segments = Punctuated::new();
-            segments.push(PathSegment::from(Ident::new(
-                assign_arg.clone().unwrap().as_str(),
-                Span::call_site(), // This probably makes no sense actually. But I'm not sure where to get the span yet
-            )));
-            let (arg, mut code) = from_expr_to_bril(
-                Expr::Binary(ExprBinary {
-                    attrs: Vec::new(),
-                    left: Box::new(Expr::Path(ExprPath {
-                        attrs: Vec::new(),
-                        qself: None,
-                        path: Path {
-                            leading_colon: None,
-                            segments,
-                        },
-                    })),
-                    op: match op {
-                        BinOp::AddEq(x) => BinOp::Add(syn::Token![+](x.spans[0])),
-                        BinOp::SubEq(x) => BinOp::Sub(syn::Token![-](x.spans[0])),
-                        BinOp::MulEq(x) => BinOp::Mul(syn::Token![*](x.spans[0])),
-                        BinOp::DivEq(x) => BinOp::Div(syn::Token![/](x.spans[0])),
-                        _ => panic!("can't handle Assignment Op {op:?}"),
-                    },
-                    right,
-                }),
-                state,
-            );
-            let op_type = state.get_type_for_ident(arg.as_ref().unwrap());
-            assign_code.append(&mut code);
-            assign_code.push(Code::Instruction(Instruction::Value {
-                args: vec![arg.unwrap()],
-                dest: assign_arg.unwrap(),
-                funcs: Vec::new(),
-                labels: Vec::new(),
-                op: ValueOps::Id,
-                pos,
-                op_type,
-            }));
-            (None, assign_code)
-        }
         Expr::Binary(ExprBinary {
             attrs,
             left,
@@ -584,6 +541,8 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
             let (arg1, mut code1) = from_expr_to_bril(*left, state);
             let (arg2, mut code2) = from_expr_to_bril(*right, state);
             code1.append(&mut code2);
+
+            let mut place_expression = None;
 
             let (value_op, op_type) = match (op, state.get_type_for_ident(arg1.as_ref().unwrap())) {
                 (BinOp::Add(_), Type::Int) => (ValueOps::Add, Type::Int),
@@ -606,10 +565,46 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 (BinOp::Ge(_), Type::Float) => (ValueOps::Fge, Type::Bool),
                 (BinOp::Gt(_), Type::Int) => (ValueOps::Gt, Type::Bool),
                 (BinOp::Gt(_), Type::Float) => (ValueOps::Fgt, Type::Bool),
+
+                // For the assignment operations, the left hand side is being mutated and is restricted to being a rust "place expression"
+                // So we need to set a specific destination
+                // https://doc.rust-lang.org/reference/expressions.html#place-expressions-and-value-expressions
+                (BinOp::AddAssign(_), Type::Int) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Add, Type::Int)
+                }
+                (BinOp::AddAssign(_), Type::Float) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Fadd, Type::Float)
+                }
+                (BinOp::SubAssign(_), Type::Int) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Sub, Type::Int)
+                }
+                (BinOp::SubAssign(_), Type::Float) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Fsub, Type::Float)
+                }
+                (BinOp::MulAssign(_), Type::Int) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Mul, Type::Int)
+                }
+                (BinOp::MulAssign(_), Type::Float) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Fmul, Type::Float)
+                }
+                (BinOp::DivAssign(_), Type::Int) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Div, Type::Int)
+                }
+                (BinOp::DivAssign(_), Type::Float) => {
+                    place_expression = arg1.clone();
+                    (ValueOps::Fdiv, Type::Float)
+                }
                 (_, _) => unimplemented!("{op:?}"),
             };
 
-            let dest = state.fresh_var(op_type.clone());
+            let dest = place_expression.unwrap_or_else(|| state.fresh_var(op_type.clone()));
 
             code1.push(Code::Instruction(Instruction::Value {
                 args: vec![arg1.unwrap(), arg2.unwrap()],
@@ -893,7 +888,6 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
         Expr::Reference(ExprReference {
             attrs,
             and_token: _,
-            raw: _,
             mutability: _,
             expr,
         }) if attrs.is_empty() => from_expr_to_bril(*expr, state),
@@ -979,6 +973,7 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                         ty,
                     )
                 }
+                _ => unimplemented!("Non-exhaustive"),
             };
 
             let dest = state.fresh_var(op_type.clone());
@@ -1064,7 +1059,7 @@ fn from_stmt_to_vec_code(s: Stmt, state: &mut State) -> Vec<Code> {
                     let op_type = from_type_to_type(*ty);
                     let dest = from_pat_to_string(*pat);
                     state.add_type_for_ident(dest.clone(), op_type.clone());
-                    let (_, expr) = init.unwrap();
+                    let expr = init.unwrap().expr;
                     let (arg, mut code) = from_expr_to_bril(*expr, state);
                     code.push(Code::Instruction(Instruction::Value {
                         args: vec![arg.unwrap()],
@@ -1092,8 +1087,18 @@ fn from_stmt_to_vec_code(s: Stmt, state: &mut State) -> Vec<Code> {
                 p => panic!("can't handle pattern in let: {p:?}"),
             }
         }
-        Stmt::Expr(e) | Stmt::Semi(e, _) => {
+        Stmt::Expr(e, _) => {
             let (_, code) = from_expr_to_bril(e, state);
+            code
+        }
+        Stmt::Macro(StmtMacro {
+            attrs,
+            mac,
+            semi_token: _,
+        }) => {
+            // Currently the only supported macro is println?
+            // So we just dispatch StmtMacro as an ExprMacro
+            let (_, code) = from_expr_to_bril(Expr::Macro(ExprMacro { attrs, mac }), state);
             code
         }
     }

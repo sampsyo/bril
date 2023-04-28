@@ -39,28 +39,19 @@ jobs:
           - "cd brilift && cargo build --release && make rt.o && make test TURNTARGS=-v"
           - "cd brilift && cargo build --release && make rt.o && make benchmark TURNTARGS=-v"
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
 
-      # This is for checking the powerset of bril-rs features compiles
-      - uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-hack
-          version: latest
-          # One can use the tool cache if compiling this takes to long. Using prebuilt binaries is a security concern... but I guess so is compiling/running code from the internet.
-          #use-tool-cache: true
+      - name: Install cargo-hack for feature-flag checking
+        run: cargo install cargo-hack
 
-      - uses: actions/cache@v2
+      - uses: actions/setup-python@v4
         with:
-            path: ~/.cache/pip
-            key: ${{ runner.os }}-pip
-      - uses: actions/setup-python@v2
-        with:
-            python-version: '3.10'
+            python-version: '3.11'
+            cache: pip
+            cache-dependency-path: bril-txt/pyproject.toml
 
       - name: Install Flit
         run: pip install flit
@@ -69,7 +60,7 @@ jobs:
 
       - name: Install Turnt
         # run: pip install turnt  # Use instead if pip turnt version >= 1.7
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: cucapra/turnt
           path: './turnt'
@@ -91,30 +82,20 @@ jobs:
       matrix:
         path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml", "bril-rs/rs2bril/Cargo.toml"]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
           components: rustfmt, clippy
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --manifest-path ${{ matrix.path }} --all-targets
+      - name: cargo check
+        run: cargo check --manifest-path ${{ matrix.path }} --all-targets
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --manifest-path ${{ matrix.path }} --all -- --check
+      - name: cargo fmt
+        run: cargo fmt --manifest-path ${{ matrix.path }} --all -- --check
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --manifest-path ${{ matrix.path }}
+      - name: cargo clippy
+        run: cargo clippy --manifest-path ${{ matrix.path }} --all-targets
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --manifest-path ${{ matrix.path }}
+      - name: cargo doc
+        run: cargo doc --manifest-path ${{ matrix.path }} --all

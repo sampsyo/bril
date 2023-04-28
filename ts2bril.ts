@@ -48,7 +48,7 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
  */
 function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   let builder = new Builder();
-  builder.buildFunction("main", []);  // Main has no return type.
+  let mainFn = builder.buildFunction("main", []);  // Main has no return type.
 
   function emitExpr(expr: ts.Expression): bril.ValueInstruction {
     switch (expr.kind) {
@@ -278,6 +278,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         if (funcDef.body) {
           emit(funcDef.body);
         }
+        builder.setCurrentFunction(mainFn);
         break;
 
       case ts.SyntaxKind.ReturnStatement: {

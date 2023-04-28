@@ -21,6 +21,13 @@ pub struct Lines {
     src_name: Option<String>,
 }
 
+// For use in the parser
+enum ParsingArgs {
+    Func(String),
+    Ident(String),
+    Label(String),
+}
+
 impl Lines {
     fn new(input: &str, use_pos: bool, with_end: bool, src_name: Option<String>) -> Self {
         Self {
