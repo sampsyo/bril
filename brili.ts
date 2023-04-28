@@ -438,7 +438,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       else
         value = BigInt(Math.floor(instr.value))
     } else if (typeof instr.value === "string") {
-      if(instr.value.length > 1 && !['\\a', '\\b', '\\f', '\\n', '\\r', '\\t', '\\v', '\\0'].includes(instr.value)) throw error(`char must have one character`);
+      if(instr.value.length > 1) throw error(`char must have one character`);
       value = instr.value;
     } else {
       value = instr.value;
@@ -835,7 +835,7 @@ function evalFunc(func: bril.Function, state: State): Value | null {
 
 function parseChar(s: string): string {
   let c = s;
-  if (c.length == 1 || ['\\a', '\\b', '\\f', '\\n', '\\r', '\\t', '\\v', '\\0'].includes(c)) {
+  if (c.length == 1) {
     return c;
   } else {
     throw error(`char argument to main must have one character; got ${s}`);

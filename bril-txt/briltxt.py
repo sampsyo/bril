@@ -47,7 +47,7 @@ type: IDENT "<" type ">"  -> paramtype
 
 BOOL: "true" | "false"
 STRUCT: "struct"
-CHAR:  /'.'/ | /'\\[abfnrtv0]'/
+CHAR:  /'.'/ | /'\\[0abtnvfr]'/
 IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 FUNC: "@" IDENT
 LABEL: "." IDENT
@@ -63,6 +63,16 @@ COMMENT: /#.*/
 %ignore COMMENT
 """.strip()
 
+control_chars= {
+    '\\0': 0,
+    '\\a': 7,
+    '\\b': 8,
+    '\\t': 9,
+    '\\n': 10,
+    '\\v': 11,
+    '\\f': 12,
+    '\\r': 13,
+}
 
 def _pos(token):
     """Generate a position dict from a Lark token."""
@@ -213,7 +223,10 @@ class JSONTransformer(lark.Transformer):
         return 0
 
     def char(self, items):
-        return str(items[0])[1:-1] # Strip `'`.
+        value = str(items[0])[1:-1] # Strip `'`.
+        if value in control_chars.keys():
+            return chr(control_chars[value])
+        return value
 
 
 def parse_bril(txt, include_pos=False):
