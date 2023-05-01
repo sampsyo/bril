@@ -1,4 +1,4 @@
-import * as ts from 'https://esm.sh/typescript@3.4.3';
+import * as ts from 'https://esm.sh/typescript@5.0.4';
 import * as bril from './bril-ts/bril.ts';
 import {Builder} from './bril-ts/builder.ts';
 
@@ -28,8 +28,7 @@ const opTokensFloat = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.EqualsEqualsEqualsToken, ["feq",  "bool"]],
 ]);
 
-function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
-  let tsType = checker.getTypeAtLocation(node);
+function tsTypeToBril(tsType: ts.Type, checker: ts.TypeChecker): bril.Type {
   if (tsType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral)) {
     return "float";
   } else if (tsType.flags &
@@ -38,9 +37,17 @@ function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
   } else if (tsType.flags &
              (ts.TypeFlags.BigInt | ts.TypeFlags.BigIntLiteral)) {
     return "int";
+  } else if (tsType.symbol && tsType.symbol.name === "Pointer") {
+    const params = checker.getTypeArguments(tsType);
+    return { ptr: tsTypeToBril(params[0], checker) };
   } else {
     throw "unimplemented type " + checker.typeToString(tsType);
   }
+}
+
+function brilType(node: ts.Node, checker: ts.TypeChecker): bril.Type {
+  let tsType = checker.getTypeAtLocation(node);
+  return tsTypeToBril(tsType, checker);
 }
 
 /**
@@ -121,17 +128,20 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
     // Support call instructions---but only for printing, for now.
     case ts.SyntaxKind.CallExpression:
       let call = expr as ts.CallExpression;
-      if (call.expression.getText() === "console.log") {
+      let callText = call.expression.getText();
+      if (callText === "console.log") {
         let values = call.arguments.map(emitExpr);
         builder.buildEffect("print", values.map(v => v.dest));
         return builder.buildInt(0);  // Expressions must produce values.
+      } else if (memoryBuiltins[callText]) {
+        return memoryBuiltins[callText](call);
       } else {
         // Recursively translate arguments.
         let values = call.arguments.map(emitExpr);
 
         // Check if effect statement, i.e., a call that is not a subexpression
         if (call.parent.kind === ts.SyntaxKind.ExpressionStatement) {
-          builder.buildCall(call.expression.getText(), 
+          builder.buildCall(callText, 
             values.map(v => v.dest));
           return builder.buildInt(0);  // Expressions must produce values
         } else {
@@ -139,7 +149,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
           let type = brilType(decl, checker);
           let name = (decl.name != undefined) ? decl.name.getText() : undefined;
           return builder.buildCall(
-            call.expression.getText(), 
+            callText, 
             values.map(v => v.dest), 
             type, 
             name,
@@ -261,17 +271,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         // The type checker gives a full function type;
         // we want only the return type.
         if (funcDef.type && funcDef.type.getText() !== 'void') {
-          let retType: bril.Type;
-          if (funcDef.type.getText() === 'number') {
-            retType = "float";
-          } else if (funcDef.type.getText() === 'boolean') {
-            retType = "bool";
-          } else if (funcDef.type.getText() === 'bigint') {
-            retType = "int";
-          } else {
-            throw `unsupported type for function return: ${funcDef.type}`;
-          }
-          builder.buildFunction(name, args, retType);
+          builder.buildFunction(name, args, brilType(funcDef.type, checker));
         } else {
           builder.buildFunction(name, args);
         }
@@ -292,8 +292,43 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         break;
       }
 
+      case ts.SyntaxKind.ImportDeclaration:
+        break;
+  
       default:
-        throw `unhandled TypeScript AST node kind ${node.kind}`;
+        throw `unhandled TypeScript AST node kind ${ts.SyntaxKind[node.kind]}`;
+    }
+  }
+
+  const memoryBuiltins: Record<string, (call: ts.CallExpression) => bril.ValueInstruction> = {
+    "mem.alloc": (call) => {
+      let type = brilType(call, checker);
+      let values = call.arguments.map(emitExpr);
+      return builder.buildValue("alloc", type, values.map(v => v.dest));
+    },
+
+    "mem.store": (call) => {
+      let values = call.arguments.map(emitExpr);
+      builder.buildEffect("store", values.map(v => v.dest));
+      return builder.buildInt(0);  // Expressions must produce values.
+    },
+
+    "mem.load": (call) => {
+      let type = brilType(call, checker);
+      let values = call.arguments.map(emitExpr);
+      return builder.buildValue("load", type, values.map(v => v.dest));
+    },
+
+    "mem.free": (call) => {
+      let values = call.arguments.map(emitExpr);
+      builder.buildEffect("free", values.map(v => v.dest));
+      return builder.buildInt(0);
+    },
+
+    "mem.ptradd": (call) => {
+      let type = brilType(call, checker);
+      let values = call.arguments.map(emitExpr);
+      return builder.buildValue("ptradd", type, values.map(v => v.dest));
     }
   }
 
