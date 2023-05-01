@@ -28,6 +28,10 @@ const opTokensFloat = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
   [ts.SyntaxKind.EqualsEqualsEqualsToken, ["feq",  "bool"]],
 ]);
 
+function isTypeReference(ty: ts.Type): ty is ts.TypeReference {
+  return 'typeArguments' in ty;
+}
+
 function tsTypeToBril(tsType: ts.Type, checker: ts.TypeChecker): bril.Type {
   if (tsType.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral)) {
     return "float";
@@ -37,7 +41,7 @@ function tsTypeToBril(tsType: ts.Type, checker: ts.TypeChecker): bril.Type {
   } else if (tsType.flags &
              (ts.TypeFlags.BigInt | ts.TypeFlags.BigIntLiteral)) {
     return "int";
-  } else if (tsType.symbol && tsType.symbol.name === "Pointer") {
+  } else if (isTypeReference(tsType) && tsType.symbol && tsType.symbol.name === "Pointer") {
     const params = checker.getTypeArguments(tsType);
     return { ptr: tsTypeToBril(params[0], checker) };
   } else {
