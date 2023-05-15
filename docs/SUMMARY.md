@@ -25,3 +25,4 @@
     - [Rust Library](tools/rust.md)
     - [Benchmark Runner](tools/brench.md)
     - [Compiler](tools/brilift.md)
+    - [Web Playground](tools/web-playground.md)

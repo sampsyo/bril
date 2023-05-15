@@ -1,0 +1,56 @@
+@main {
+  v0: int = const 100;
+  size: int = id v0;
+  v1: int = id size;
+  v2: ptr<int> = alloc v1;
+  arr: ptr<int> = id v2;
+  v4: int = const 0;
+  i: int = id v4;
+.for.cond.3:
+  v5: int = id i;
+  v6: int = id size;
+  v7: bool = lt v5 v6;
+  br v7 .for.body.3 .for.end.3;
+.for.body.3:
+  v8: ptr<int> = id arr;
+  v9: int = id i;
+  v10: ptr<int> = ptradd v8 v9;
+  v11: int = id i;
+  store v10 v11;
+  v12: int = const 0;
+  v13: int = id i;
+  v14: int = const 1;
+  v15: int = add v13 v14;
+  i: int = id v15;
+  jmp .for.cond.3;
+.for.end.3:
+  v16: int = const 0;
+  sum: int = id v16;
+  v18: int = const 0;
+  i: int = id v18;
+.for.cond.17:
+  v19: int = id i;
+  v20: int = id size;
+  v21: bool = lt v19 v20;
+  br v21 .for.body.17 .for.end.17;
+.for.body.17:
+  v22: int = id sum;
+  v23: ptr<int> = id arr;
+  v24: int = id i;
+  v25: ptr<int> = ptradd v23 v24;
+  v26: int = load v25;
+  v27: int = add v22 v26;
+  sum: int = id v27;
+  v28: int = id i;
+  v29: int = const 1;
+  v30: int = add v28 v29;
+  i: int = id v30;
+  jmp .for.cond.17;
+.for.end.17:
+  v31: int = id sum;
+  print v31;
+  v32: int = const 0;
+  v33: ptr<int> = id arr;
+  free v33;
+  v34: int = const 0;
+}

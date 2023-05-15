@@ -1,0 +1,23 @@
+@main {
+  v4: int = const 1;
+  v5: ptr<int> = alloc v4;
+  p1: ptr<int> = id v5;
+  v6: ptr<int> = id p1;
+  p2: ptr<int> = call @update v6;
+  p2: ptr<int> = id p2;
+  v7: ptr<int> = id p2;
+  v8: int = load v7;
+  print v8;
+  v9: int = const 0;
+  v10: ptr<int> = id p1;
+  free v10;
+  v11: int = const 0;
+}
+@update(p: ptr<int>): ptr<int> {
+  v0: ptr<int> = id p;
+  v1: int = const 42;
+  store v0 v1;
+  v2: int = const 0;
+  v3: ptr<int> = id p;
+  ret v3;
+}

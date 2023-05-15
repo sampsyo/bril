@@ -1,0 +1,147 @@
+@main {
+  v29: int = const 3;
+  size: int = id v29;
+  v30: int = id size;
+  v31: int = const 1;
+  m: ptr<ptr<int>> = call @allocateMatrix v30 v31;
+  m: ptr<ptr<int>> = id m;
+  v32: ptr<ptr<int>> = id m;
+  v33: int = id size;
+  call @printMatrix v32 v33;
+  v34: int = const 0;
+  v35: ptr<ptr<int>> = id m;
+  v36: int = id size;
+  call @freeMatrix v35 v36;
+  v37: int = const 0;
+}
+@allocateMatrix(size: int, startValue: int): ptr<ptr<int>> {
+  v0: int = id startValue;
+  value: int = id v0;
+  v1: int = id size;
+  v2: ptr<ptr<int>> = alloc v1;
+  matrix: ptr<ptr<int>> = id v2;
+  v4: int = const 0;
+  i: int = id v4;
+.for.cond.3:
+  v5: int = id i;
+  v6: int = id size;
+  v7: bool = lt v5 v6;
+  br v7 .for.body.3 .for.end.3;
+.for.body.3:
+  v8: int = id size;
+  v9: ptr<int> = alloc v8;
+  row: ptr<int> = id v9;
+  v11: int = const 0;
+  j: int = id v11;
+.for.cond.10:
+  v12: int = id j;
+  v13: int = id size;
+  v14: bool = lt v12 v13;
+  br v14 .for.body.10 .for.end.10;
+.for.body.10:
+  v15: ptr<int> = id row;
+  v16: int = id j;
+  v17: ptr<int> = ptradd v15 v16;
+  v18: int = id value;
+  store v17 v18;
+  v19: int = const 0;
+  v20: int = id value;
+  v21: int = const 1;
+  v22: int = add v20 v21;
+  value: int = id v22;
+  v23: int = id j;
+  v24: int = const 1;
+  v25: int = add v23 v24;
+  j: int = id v25;
+  jmp .for.cond.10;
+.for.end.10:
+  v26: ptr<ptr<int>> = id matrix;
+  v27: int = id i;
+  v28: ptr<ptr<int>> = ptradd v26 v27;
+  v29: ptr<int> = id row;
+  store v28 v29;
+  v30: int = const 0;
+  v31: int = id i;
+  v32: int = const 1;
+  v33: int = add v31 v32;
+  i: int = id v33;
+  jmp .for.cond.3;
+.for.end.3:
+  v34: ptr<ptr<int>> = id matrix;
+  ret v34;
+}
+@freeMatrix(matrix: ptr<ptr<int>>, size: int) {
+  v1: int = const 0;
+  i: int = id v1;
+.for.cond.0:
+  v2: int = id i;
+  v3: int = id size;
+  v4: bool = lt v2 v3;
+  br v4 .for.body.0 .for.end.0;
+.for.body.0:
+  v5: ptr<ptr<int>> = id matrix;
+  v6: int = id i;
+  v7: ptr<ptr<int>> = ptradd v5 v6;
+  v8: ptr<int> = load v7;
+  row: ptr<int> = id v8;
+  v9: ptr<int> = id row;
+  free v9;
+  v10: int = const 0;
+  v11: int = id i;
+  v12: int = const 1;
+  v13: int = add v11 v12;
+  i: int = id v13;
+  jmp .for.cond.0;
+.for.end.0:
+  v14: ptr<ptr<int>> = id matrix;
+  free v14;
+  v15: int = const 0;
+}
+@printMatrix(matrix: ptr<ptr<int>>, size: int) {
+  v1: int = const 0;
+  i: int = id v1;
+.for.cond.0:
+  v2: int = id i;
+  v3: int = id size;
+  v4: bool = lt v2 v3;
+  br v4 .for.body.0 .for.end.0;
+.for.body.0:
+  v5: ptr<ptr<int>> = id matrix;
+  v6: int = id i;
+  v7: ptr<ptr<int>> = ptradd v5 v6;
+  v8: ptr<int> = load v7;
+  row: ptr<int> = id v8;
+  v10: int = const 0;
+  j: int = id v10;
+.for.cond.9:
+  v11: int = id j;
+  v12: int = id size;
+  v13: bool = lt v11 v12;
+  br v13 .for.body.9 .for.end.9;
+.for.body.9:
+  v14: ptr<int> = id row;
+  v15: int = id j;
+  v16: ptr<int> = ptradd v14 v15;
+  v17: int = load v16;
+  value: int = id v17;
+  v18: int = id value;
+  print v18;
+  v19: int = const 0;
+  v20: int = id j;
+  v21: int = const 1;
+  v22: int = add v20 v21;
+  j: int = id v22;
+  jmp .for.cond.9;
+.for.end.9:
+  v23: bool = const true;
+  separator: bool = id v23;
+  v24: bool = id separator;
+  print v24;
+  v25: int = const 0;
+  v26: int = id i;
+  v27: int = const 1;
+  v28: int = add v26 v27;
+  i: int = id v28;
+  jmp .for.cond.0;
+.for.end.0:
+}
