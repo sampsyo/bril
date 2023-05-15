@@ -236,7 +236,7 @@ function checkArgs(instr: bril.Operation, count: number) {
 
 function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
   let val = getArgument(instr, env, index);
-  if (typeof val !== 'object' || val instanceof BigInt || val instanceof String) {
+  if (typeof val !== 'object' || val instanceof BigInt) {
     throw `${instr.op} argument ${index} must be a Pointer`;
   }
   return val;

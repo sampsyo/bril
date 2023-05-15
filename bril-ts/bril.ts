@@ -67,7 +67,7 @@ export interface ValueOperation extends Op {
 /**
  * The type of Bril values that may appear in constants.
  */
-export type Value = number | boolean | String;
+export type Value = number | boolean | string;
 
 /**
  * An instruction that places a literal value into a variable.

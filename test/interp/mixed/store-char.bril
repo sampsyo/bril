@@ -21,14 +21,16 @@
   hello: ptr<char> = call @helloBR end;
 
   pos: int = const 1;
-  pos1: ptr<char> = ptradd hello pos;
+  cpos1: ptr<char> = ptradd hello pos;
+  cpos2: ptr<char> = ptradd cpos1 pos;
 
-  c1: bool = load hello;
-  c2: bool = load pos1;
+  c0: bool = load hello;
+  c1: bool = load cpos1;
+  c2: bool = load cpos2;
 
+  print c0;
   print c1;
   print c2;
-  print end;
 
   free hello;
 }
