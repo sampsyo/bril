@@ -100,6 +100,13 @@ export class Builder {
   }
 
   /**
+   * Build a constant character value.
+   */
+  buildChar(value: string, dest?: string) {
+    return this.buildConst(value, "char", dest);
+  }
+
+  /**
    * Add a label to the function at the current position.
    */
   buildLabel(name: string) {

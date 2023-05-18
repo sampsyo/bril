@@ -111,4 +111,11 @@ export const OP_SIGS: {[key: string]: Signature | PolySignature} = {
   'speculate': {args: []},
   'commit': {args: []},
   'guard': {args: ['bool'], labels: 1},
+
+  // Character.
+  'ceq': {args: ['char', 'char'], dest: 'bool'},
+  'clt': {args: ['char', 'char'], dest: 'bool'},
+  'cgt': {args: ['char', 'char'], dest: 'bool'},
+  'cle': {args: ['char', 'char'], dest: 'bool'},
+  'cge': {args: ['char', 'char'], dest: 'bool'},
 };
