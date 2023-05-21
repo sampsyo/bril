@@ -42,7 +42,7 @@ impl RTFunc {
                 call_conv,
             },
             Self::PrintBool => ir::Signature {
-                params: vec![ir::AbiParam::new(ir::types::B1)],
+                params: vec![ir::AbiParam::new(ir::types::I8)],
                 returns: vec![],
                 call_conv,
             },
@@ -132,7 +132,7 @@ impl RTSetupFunc {
                     ir::AbiParam::new(pointer_type),
                     ir::AbiParam::new(ir::types::I64),
                 ],
-                returns: vec![ir::AbiParam::new(ir::types::B1)],
+                returns: vec![ir::AbiParam::new(ir::types::I8)],
                 call_conv,
             },
             Self::ParseFloat => ir::Signature {
@@ -159,20 +159,9 @@ impl RTSetupFunc {
 fn translate_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
-        bril::Type::Bool => ir::types::B1,
+        bril::Type::Bool => ir::types::I8,
         bril::Type::Float => ir::types::F64,
         bril::Type::Pointer(_) => pointer_type,
-    }
-}
-
-/// Get the type used to store the value in *memory*.
-fn translate_mem_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
-    match typ {
-        // b1 values need to be stored as entire bytes.
-        bril::Type::Bool => ir::types::I8,
-
-        // Everything else is stored as-is.
-        _ => translate_type(typ, pointer_type),
     }
 }
 
@@ -227,30 +216,17 @@ fn emit_load(
     typ: &bril::Type,
     ptr: ir::Value,
 ) -> ir::Value {
-    // Most types can be loaded/stored directly, but Boolean values are stored as entire byte, so
-    // we need to load the byte first and then get the b1.
-    let mem_type = translate_mem_type(typ, pointer_type);
-    let val = builder
+    let mem_type = translate_type(typ, pointer_type);
+    builder
         .ins()
-        .load(mem_type, ir::MemFlags::trusted(), ptr, 0);
-    match typ {
-        bril::Type::Bool => builder
-            .ins()
-            .icmp_imm(ir::condcodes::IntCC::NotEqual, val, 0),
-        _ => val,
-    }
+        .load(mem_type, ir::MemFlags::trusted(), ptr, 0)
 }
 
 /// Emit cranelift code to store a Bril value to memory.
 fn emit_store(builder: &mut FunctionBuilder, typ: &bril::Type, ptr: ir::Value, val: ir::Value) {
-    // Convert booleans to bytes for storing in memory.
-    let mem_val = match typ {
-        bril::Type::Bool => builder.ins().bint(ir::types::I8, val),
-        _ => val,
-    };
     builder
         .ins()
-        .store(ir::MemFlags::trusted(), mem_val, ptr, 0);
+        .store(ir::MemFlags::trusted(), val, ptr, 0);
 }
 
 /// An environment for translating Bril into CLIF.
@@ -270,7 +246,7 @@ impl CompileEnv<'_> {
             bril::Type::Pointer(t) => t,
             _ => panic!("alloc for non-pointer type"),
         };
-        translate_mem_type(pointee_type, self.pointer_type).bytes()
+        translate_type(pointee_type, self.pointer_type).bytes()
     }
 
     /// Generate a CLIF icmp instruction.
@@ -363,7 +339,7 @@ impl CompileEnv<'_> {
                     bril::Literal::Bool(b) => *b,
                     _ => panic!("incorrect literal type for bool"),
                 };
-                builder.ins().bconst(ir::types::B1, val)
+                builder.ins().iconst(ir::types::I8, if val { 1 } else { 0 })
             }
             bril::Type::Float => {
                 let val = match lit {
