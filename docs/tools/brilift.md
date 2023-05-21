@@ -73,5 +73,5 @@ These options are only relevant in AOT mode:
 * `-o <FILE>`: Place the output object file in `<FILE>` instead of `bril.o` (the default).
 * `-t <TARGET>`: Specify the target triple, as interpreted by Cranelift. These triples resemble the [target triples][triple] that LLVM also understands, for example. For instance, `x86_64-unknown-darwin-macho` is the triple for macOS on Intel processors.
 
-[opt_level]: https://docs.rs/cranelift-codegen/0.84.0/cranelift_codegen/settings/struct.Flags.html#method.opt_level
+[opt_level]: https://docs.rs/cranelift-codegen/0.95.1/cranelift_codegen/settings/struct.Flags.html#method.opt_level
 [triple]: https://clang.llvm.org/docs/CrossCompilation.html#target-triple
