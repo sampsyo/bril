@@ -420,8 +420,7 @@ impl CompileEnv<'_> {
                     let arg = builder.use_var(self.vars[&args[0]]);
                     let true_block = self.blocks[&labels[0]];
                     let false_block = self.blocks[&labels[1]];
-                    builder.ins().brnz(arg, true_block, &[]);
-                    builder.ins().jump(false_block, &[]);
+                    builder.ins().brif(arg, true_block, &[], false_block, &[]);
                 }
                 bril::EffectOps::Call => {
                     let func_ref = self.func_refs[&funcs[0]];
