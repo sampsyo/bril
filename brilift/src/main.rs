@@ -3,7 +3,6 @@ mod rt;
 use argh::FromArgs;
 use bril_rs as bril;
 use core::mem;
-use std::sync::Arc;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::InstBuilder;
@@ -16,6 +15,7 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use enum_map::{enum_map, Enum, EnumMap};
 use std::collections::HashMap;
 use std::fs;
+use std::sync::Arc;
 
 /// Runtime functions used by ordinary Bril instructions.
 #[derive(Debug, Enum)]
@@ -225,9 +225,7 @@ fn emit_load(
 
 /// Emit cranelift code to store a Bril value to memory.
 fn emit_store(builder: &mut FunctionBuilder, ptr: ir::Value, val: ir::Value) {
-    builder
-        .ins()
-        .store(ir::MemFlags::trusted(), val, ptr, 0);
+    builder.ins().store(ir::MemFlags::trusted(), val, ptr, 0);
 }
 
 /// An environment for translating Bril into CLIF.
