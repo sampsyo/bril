@@ -643,7 +643,7 @@ impl<M: Module> Translator<M> {
     fn enter_func(&mut self, func: &bril::Function, func_id: cranelift_module::FuncId) {
         let sig = translate_sig(func, self.module.isa().pointer_type());
         self.context.func =
-            ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
+            ir::Function::with_name_signature(ir::UserFuncName::user(0, func_id.as_u32()), sig);
     }
 
     fn finish_func(&mut self, func_id: cranelift_module::FuncId, dump: bool) {
@@ -745,7 +745,7 @@ impl<M: Module> Translator<M> {
             .unwrap();
 
         self.context.func =
-            ir::Function::with_name_signature(ir::ExternalName::user(0, main_id.as_u32()), sig);
+            ir::Function::with_name_signature(ir::UserFuncName::user(0, main_id.as_u32()), sig);
 
         // Declare `main`-specific setup runtime functions.
         let call_conv = self.module.isa().default_call_conv();
@@ -836,7 +836,7 @@ impl<M: Module> Translator<M> {
             .unwrap();
 
         self.context.func =
-            ir::Function::with_name_signature(ir::ExternalName::user(0, wrapper_id.as_u32()), sig);
+            ir::Function::with_name_signature(ir::UserFuncName::user(0, wrapper_id.as_u32()), sig);
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
