@@ -3,6 +3,7 @@ mod rt;
 use argh::FromArgs;
 use bril_rs as bril;
 use core::mem;
+use std::sync::Arc;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::InstBuilder;
@@ -907,7 +908,7 @@ impl Translator<ObjectModule> {
         target: Option<String>,
         pic: bool,
         opt_level: &str,
-    ) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+    ) -> Arc<dyn cranelift_codegen::isa::TargetIsa> {
         let mut flag_builder = settings::builder();
         flag_builder
             .set("opt_level", opt_level)
