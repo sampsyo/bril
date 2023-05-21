@@ -224,7 +224,7 @@ fn emit_load(
 }
 
 /// Emit cranelift code to store a Bril value to memory.
-fn emit_store(builder: &mut FunctionBuilder, typ: &bril::Type, ptr: ir::Value, val: ir::Value) {
+fn emit_store(builder: &mut FunctionBuilder, ptr: ir::Value, val: ir::Value) {
     builder
         .ins()
         .store(ir::MemFlags::trusted(), val, ptr, 0);
@@ -443,7 +443,7 @@ impl CompileEnv<'_> {
                 bril::EffectOps::Store => {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
                     let val_arg = builder.use_var(self.vars[&args[1]]);
-                    emit_store(builder, self.var_types[&args[1]], ptr_arg, val_arg);
+                    emit_store(builder, ptr_arg, val_arg);
                 }
                 bril::EffectOps::Free => {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
@@ -998,7 +998,7 @@ impl Translator<JITModule> {
     /// itself (and therefore the `JITModule`) lives.
     fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
         self.module.clear_context(&mut self.context);
-        self.module.finalize_definitions();
+        self.module.finalize_definitions().unwrap();
 
         self.module.get_finalized_function(func_id)
     }
