@@ -473,7 +473,11 @@ impl CompileEnv<'_> {
                 }
                 bril::ValueOps::Not => {
                     let arg = builder.use_var(self.vars[&args[0]]);
-                    let res = builder.ins().bnot(arg);
+
+                    // Logical "not." The IR only has bitwise not.
+                    let zero = builder.ins().iconst(ir::types::I8, 0);
+                    let one = builder.ins().iconst(ir::types::I8, 1);
+                    let res = builder.ins().select(arg, zero, one);
                     builder.def_var(self.vars[dest], res);
                 }
                 bril::ValueOps::Call => {
