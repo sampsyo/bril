@@ -15,6 +15,7 @@ use cranelift_object::{ObjectBuilder, ObjectModule};
 use enum_map::{enum_map, Enum, EnumMap};
 use std::collections::HashMap;
 use std::fs;
+use std::sync::Arc;
 
 /// Runtime functions used by ordinary Bril instructions.
 #[derive(Debug, Enum)]
@@ -42,7 +43,7 @@ impl RTFunc {
                 call_conv,
             },
             Self::PrintBool => ir::Signature {
-                params: vec![ir::AbiParam::new(ir::types::B1)],
+                params: vec![ir::AbiParam::new(ir::types::I8)],
                 returns: vec![],
                 call_conv,
             },
@@ -132,7 +133,7 @@ impl RTSetupFunc {
                     ir::AbiParam::new(pointer_type),
                     ir::AbiParam::new(ir::types::I64),
                 ],
-                returns: vec![ir::AbiParam::new(ir::types::B1)],
+                returns: vec![ir::AbiParam::new(ir::types::I8)],
                 call_conv,
             },
             Self::ParseFloat => ir::Signature {
@@ -159,20 +160,9 @@ impl RTSetupFunc {
 fn translate_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
     match typ {
         bril::Type::Int => ir::types::I64,
-        bril::Type::Bool => ir::types::B1,
+        bril::Type::Bool => ir::types::I8,
         bril::Type::Float => ir::types::F64,
         bril::Type::Pointer(_) => pointer_type,
-    }
-}
-
-/// Get the type used to store the value in *memory*.
-fn translate_mem_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
-    match typ {
-        // b1 values need to be stored as entire bytes.
-        bril::Type::Bool => ir::types::I8,
-
-        // Everything else is stored as-is.
-        _ => translate_type(typ, pointer_type),
     }
 }
 
@@ -227,30 +217,15 @@ fn emit_load(
     typ: &bril::Type,
     ptr: ir::Value,
 ) -> ir::Value {
-    // Most types can be loaded/stored directly, but Boolean values are stored as entire byte, so
-    // we need to load the byte first and then get the b1.
-    let mem_type = translate_mem_type(typ, pointer_type);
-    let val = builder
+    let mem_type = translate_type(typ, pointer_type);
+    builder
         .ins()
-        .load(mem_type, ir::MemFlags::trusted(), ptr, 0);
-    match typ {
-        bril::Type::Bool => builder
-            .ins()
-            .icmp_imm(ir::condcodes::IntCC::NotEqual, val, 0),
-        _ => val,
-    }
+        .load(mem_type, ir::MemFlags::trusted(), ptr, 0)
 }
 
 /// Emit cranelift code to store a Bril value to memory.
-fn emit_store(builder: &mut FunctionBuilder, typ: &bril::Type, ptr: ir::Value, val: ir::Value) {
-    // Convert booleans to bytes for storing in memory.
-    let mem_val = match typ {
-        bril::Type::Bool => builder.ins().bint(ir::types::I8, val),
-        _ => val,
-    };
-    builder
-        .ins()
-        .store(ir::MemFlags::trusted(), mem_val, ptr, 0);
+fn emit_store(builder: &mut FunctionBuilder, ptr: ir::Value, val: ir::Value) {
+    builder.ins().store(ir::MemFlags::trusted(), val, ptr, 0);
 }
 
 /// An environment for translating Bril into CLIF.
@@ -270,7 +245,7 @@ impl CompileEnv<'_> {
             bril::Type::Pointer(t) => t,
             _ => panic!("alloc for non-pointer type"),
         };
-        translate_mem_type(pointee_type, self.pointer_type).bytes()
+        translate_type(pointee_type, self.pointer_type).bytes()
     }
 
     /// Generate a CLIF icmp instruction.
@@ -363,7 +338,7 @@ impl CompileEnv<'_> {
                     bril::Literal::Bool(b) => *b,
                     _ => panic!("incorrect literal type for bool"),
                 };
-                builder.ins().bconst(ir::types::B1, val)
+                builder.ins().iconst(ir::types::I8, if val { 1 } else { 0 })
             }
             bril::Type::Float => {
                 let val = match lit {
@@ -444,8 +419,7 @@ impl CompileEnv<'_> {
                     let arg = builder.use_var(self.vars[&args[0]]);
                     let true_block = self.blocks[&labels[0]];
                     let false_block = self.blocks[&labels[1]];
-                    builder.ins().brnz(arg, true_block, &[]);
-                    builder.ins().jump(false_block, &[]);
+                    builder.ins().brif(arg, true_block, &[], false_block, &[]);
                 }
                 bril::EffectOps::Call => {
                     let func_ref = self.func_refs[&funcs[0]];
@@ -467,7 +441,7 @@ impl CompileEnv<'_> {
                 bril::EffectOps::Store => {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
                     let val_arg = builder.use_var(self.vars[&args[1]]);
-                    emit_store(builder, self.var_types[&args[1]], ptr_arg, val_arg);
+                    emit_store(builder, ptr_arg, val_arg);
                 }
                 bril::EffectOps::Free => {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
@@ -499,7 +473,11 @@ impl CompileEnv<'_> {
                 }
                 bril::ValueOps::Not => {
                     let arg = builder.use_var(self.vars[&args[0]]);
-                    let res = builder.ins().bnot(arg);
+
+                    // Logical "not." The IR only has bitwise not.
+                    let zero = builder.ins().iconst(ir::types::I8, 0);
+                    let one = builder.ins().iconst(ir::types::I8, 1);
+                    let res = builder.ins().select(arg, zero, one);
                     builder.def_var(self.vars[dest], res);
                 }
                 bril::ValueOps::Call => {
@@ -668,7 +646,7 @@ impl<M: Module> Translator<M> {
     fn enter_func(&mut self, func: &bril::Function, func_id: cranelift_module::FuncId) {
         let sig = translate_sig(func, self.module.isa().pointer_type());
         self.context.func =
-            ir::Function::with_name_signature(ir::ExternalName::user(0, func_id.as_u32()), sig);
+            ir::Function::with_name_signature(ir::UserFuncName::user(0, func_id.as_u32()), sig);
     }
 
     fn finish_func(&mut self, func_id: cranelift_module::FuncId, dump: bool) {
@@ -770,7 +748,7 @@ impl<M: Module> Translator<M> {
             .unwrap();
 
         self.context.func =
-            ir::Function::with_name_signature(ir::ExternalName::user(0, main_id.as_u32()), sig);
+            ir::Function::with_name_signature(ir::UserFuncName::user(0, main_id.as_u32()), sig);
 
         // Declare `main`-specific setup runtime functions.
         let call_conv = self.module.isa().default_call_conv();
@@ -861,7 +839,7 @@ impl<M: Module> Translator<M> {
             .unwrap();
 
         self.context.func =
-            ir::Function::with_name_signature(ir::ExternalName::user(0, wrapper_id.as_u32()), sig);
+            ir::Function::with_name_signature(ir::UserFuncName::user(0, wrapper_id.as_u32()), sig);
         let mut fn_builder_ctx = FunctionBuilderContext::new();
         let mut builder = FunctionBuilder::new(&mut self.context.func, &mut fn_builder_ctx);
 
@@ -932,7 +910,7 @@ impl Translator<ObjectModule> {
         target: Option<String>,
         pic: bool,
         opt_level: &str,
-    ) -> Box<dyn cranelift_codegen::isa::TargetIsa> {
+    ) -> Arc<dyn cranelift_codegen::isa::TargetIsa> {
         let mut flag_builder = settings::builder();
         flag_builder
             .set("opt_level", opt_level)
@@ -1022,7 +1000,7 @@ impl Translator<JITModule> {
     /// itself (and therefore the `JITModule`) lives.
     fn get_func_ptr(&mut self, func_id: cranelift_module::FuncId) -> *const u8 {
         self.module.clear_context(&mut self.context);
-        self.module.finalize_definitions();
+        self.module.finalize_definitions().unwrap();
 
         self.module.get_finalized_function(func_id)
     }

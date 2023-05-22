@@ -15,9 +15,6 @@ BENCHMARKS := ../benchmarks/core/*.bril ../benchmarks/float/*.bril ../benchmarks
 CFLAGS := $(if $(TARGET),-target $(TARGET))
 BRILFLAGS := $(if $(TARGET),-t $(TARGET))
 
-foo:
-	echo $(BENCHMARKS)
-
 .PHONY: build
 build:
 	cargo build
