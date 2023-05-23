@@ -26,6 +26,8 @@ This library supports fully compatible Rust implementations of `bril2txt` and `b
 
 This library is used in a Rust compiler called `rs2bril` which supports generating [core], [float], and [memory] Bril from a subset of valid Rust.
 
+This library is used in a Bril-to-LLVM IR compiler called `brillvm` which supports [core], [float], [memory], and [ssa].
+
 For ease of use, these tools can be installed and added to your path by running the following in `bril-rs/`:
 
     $ make install

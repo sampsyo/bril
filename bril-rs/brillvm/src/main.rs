@@ -29,7 +29,7 @@ fn main() {
     let llvm_prog = create_module_from_program(&context, &prog, runtime_module);
 
     //println!("{}", prog);
-    llvm_prog.print_to_file("tmp.ll").unwrap();
+    //llvm_prog.print_to_file("tmp.ll").unwrap();
     llvm_prog.verify().unwrap();
 
     if args.interpreter {
