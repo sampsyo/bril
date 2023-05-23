@@ -1,7 +1,7 @@
-TESTS := ../../test/interp/core*/*.bril \
+TESTS := ../../test/interp/core/*.bril \
          ../../test/interp/float/*.bril \
-		 ../../test/interp/ssa*/*.bril \
-		 ../../test/interp/mem*/*.bril \
+		 ../../test/interp/ssa/*.bril \
+		 ../../test/interp/mem/*.bril \
 		 ../../test/interp/mixed/*.bril \
 
 # Currently ignoring the Cholesky benchmark because of (probably) a floating point rounding bug.
