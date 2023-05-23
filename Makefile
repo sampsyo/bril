@@ -3,7 +3,7 @@ TESTS := test/parse/*.bril \
 	test/ts*/*.ts \
 	test/check/*.bril \
 	test/interp*/core*/*.bril \
-	test/interp*/char/*.bril \
+	test/interp*/char*/*.bril \
 	test/interp*/float/*.bril \
 	test/interp*/mem*/*.bril \
 	test/interp*/mixed/*.bril \

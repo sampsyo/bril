@@ -118,4 +118,6 @@ export const OP_SIGS: {[key: string]: Signature | PolySignature} = {
   'cgt': {args: ['char', 'char'], dest: 'bool'},
   'cle': {args: ['char', 'char'], dest: 'bool'},
   'cge': {args: ['char', 'char'], dest: 'bool'},
+  'char2int': {args: ['char'], dest: 'int'},
+  'int2char': {args: ['int'], dest: 'char'},
 };

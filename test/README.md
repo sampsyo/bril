@@ -9,6 +9,7 @@
 - `test/interp/spec`: Tests for the speculation extension
 - `test/interp/ssa`: Tests for the ssa extension
 - `test/interp-error/core-error`: Tests for errors raised by core Bril
+- `test/interp-error/char-error`: Tests for errors raised by the char extension
 - `test/interp-error/mem-error`: Tests for errors raised by the memory extension
 - `test/interp-error/spec-error`: Tests for errors raised by the speculation extension
 - `test/interp-error/ssa-error`: Tests for errors raised by the ssa extension

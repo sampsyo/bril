@@ -1,0 +1,7 @@
+@main {
+  i: int = const 95000;
+  
+  c: char = int2char i;
+
+  print i;
+}

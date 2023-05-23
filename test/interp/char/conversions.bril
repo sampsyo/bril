@@ -1,0 +1,9 @@
+@main() {
+  c1: char = const 'A';
+  i1: int = const 65;
+  
+  c2: char = int2char i1;
+  i2: int = char2int c1;
+
+  print c2 i2;
+}

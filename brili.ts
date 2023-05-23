@@ -143,6 +143,8 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   cle: 2,
   cgt: 2,
   cge: 2,
+  char2int: 1,
+  int2char: 1,
 };
 
 type Pointer = {
@@ -747,6 +749,23 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   case "cge": {
     let val = getChar(instr, state.env, 0) >= getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "char2int": {
+    let code = getChar(instr, state.env, 0).charCodeAt(0);
+    let val = BigInt.asIntN(64, BigInt(code));
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "int2char": {
+    let i = getInt(instr, state.env, 0)
+    if(i > 65535 || i < 0) {
+      throw error(`value ${i} cannot be converted to char`);
+    }
+    let val = String.fromCharCode(Number(i));
     state.env.set(instr.dest, val);
     return NEXT;
   }
