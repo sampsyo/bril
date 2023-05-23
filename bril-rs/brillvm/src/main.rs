@@ -1,7 +1,12 @@
 use bril_rs::load_program_from_read;
 use brillvm::{cli::Cli, llvm::create_module_from_program};
 use clap::Parser;
-use inkwell::{context::Context, execution_engine::ExecutionEngine, module::Module, targets::{Target, InitializationConfig}};
+use inkwell::{
+    context::Context,
+    execution_engine::ExecutionEngine,
+    module::Module,
+    targets::{InitializationConfig, Target},
+};
 use std::io::Read;
 
 fn main() {
@@ -28,7 +33,8 @@ fn main() {
     llvm_prog.verify().unwrap();
 
     if args.interpreter {
-        Target::initialize_native(&InitializationConfig::default()).expect("Failed to initialize native target");
+        Target::initialize_native(&InitializationConfig::default())
+            .expect("Failed to initialize native target");
         ExecutionEngine::link_in_interpreter();
         let engine = llvm_prog.create_execution_engine().unwrap();
         let mut args: Vec<&str> = args.args.iter().map(|s| s.as_ref()).collect();
