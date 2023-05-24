@@ -9,6 +9,10 @@ command = "cargo run --manifest-path ../brilirs/Cargo.toml --quiet -- --text --f
 output.out = "-"
 output.prof = "2"
 
+[envs.brillvm]
+default = false
+command = "bril2json < {filename} | cargo run -q --manifest-path ../bril-rs/brillvm/Cargo.toml -- -r ../bril-rs/brillvm/rt.bc -i {args}"
+
 [envs.brilift-aot]
 default = false
 command = "bril2json < {filename} | ../brilift/run.sh {args}"
