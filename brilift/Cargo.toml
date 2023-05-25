@@ -5,12 +5,12 @@ edition = "2021"
 
 [dependencies]
 bril-rs = { path = "../bril-rs", features = ["float", "memory"] }
-cranelift-codegen = { version = "0.83.0", features = ["all-arch"] }
-cranelift-frontend = "0.83.0"
-cranelift-object = "0.83.0"
-cranelift-module = "0.83.0"
-cranelift-native = "0.83.0"
-cranelift-jit = "0.83.0"
+cranelift-codegen = { version = "0.95.1", features = ["all-arch"] }
+cranelift-frontend = "0.95.1"
+cranelift-object = "0.95.1"
+cranelift-module = "0.95.1"
+cranelift-native = "0.95.1"
+cranelift-jit = "0.95.1"
 argh = "^0.1.7"
 simplelog = "^0.12.0"
 enum-map = "^2.0.3"
