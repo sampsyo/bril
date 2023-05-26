@@ -63,7 +63,7 @@ COMMENT: /#.*/
 %ignore COMMENT
 """.strip()
 
-control_chars= {
+control_chars = {
     '\\0': 0,
     '\\a': 7,
     '\\b': 8,
@@ -73,6 +73,7 @@ control_chars= {
     '\\f': 12,
     '\\r': 13,
 }
+
 
 def _pos(token):
     """Generate a position dict from a Lark token."""
