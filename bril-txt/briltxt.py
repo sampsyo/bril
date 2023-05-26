@@ -223,8 +223,8 @@ class JSONTransformer(lark.Transformer):
         return 0
 
     def char(self, items):
-        value = str(items[0])[1:-1] # Strip `'`.
-        if value in control_chars.keys():
+        value = str(items[0])[1:-1]  # Strip `'`.
+        if value in control_chars:
             return chr(control_chars[value])
         return value
 
