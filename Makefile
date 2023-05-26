@@ -17,6 +17,7 @@ TESTS := test/parse/*.bril \
 
 CHECKS := test/parse/*.bril \
 	test/interp/core/*.bril \
+	test/interp/char/*.bril \
 	test/interp/float/*.bril \
 	test/interp/mixed/*.bril \
 	test/interp/spec/*.bril \

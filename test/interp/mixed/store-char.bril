@@ -24,9 +24,9 @@
   cpos1: ptr<char> = ptradd hello pos;
   cpos2: ptr<char> = ptradd cpos1 pos;
 
-  c0: bool = load hello;
-  c1: bool = load cpos1;
-  c2: bool = load cpos2;
+  c0: char = load hello;
+  c1: char = load cpos1;
+  c2: char = load cpos2;
 
   print c0;
   print c1;
