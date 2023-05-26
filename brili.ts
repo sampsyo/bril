@@ -138,6 +138,13 @@ const argCounts: {[key in bril.OpCode]: number | null} = {
   speculate: 0,
   guard: 1,
   commit: 0,
+  ceq: 2,
+  clt: 2,
+  cle: 2,
+  cgt: 2,
+  cge: 2,
+  char2int: 1,
+  int2char: 1,
 };
 
 type Pointer = {
@@ -145,7 +152,7 @@ type Pointer = {
   type: bril.Type;
 }
 
-type Value = boolean | BigInt | Pointer | number;
+type Value = boolean | BigInt | Pointer | number | string;
 type Env = Map<bril.Ident, Value>;
 
 /**
@@ -160,6 +167,8 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
     return typeof val === "number";
   } else if (typeof typ === "object" && typ.hasOwnProperty("ptr")) {
     return val.hasOwnProperty("loc");
+  } else if (typ === "char") {
+    return typeof val === "string";
   }
   throw error(`unknown type ${typ}`);
 }
@@ -168,7 +177,7 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
  * Check whether the types are equal.
  */
 function typeCmp(lhs: bril.Type, rhs: bril.Type): boolean {
-  if (lhs === "int" || lhs == "bool" || lhs == "float") {
+  if (lhs === "int" || lhs == "bool" || lhs == "float" || lhs == "char") {
     return lhs == rhs;
   } else {
     if (typeof rhs === "object" && rhs.hasOwnProperty("ptr")) {
@@ -257,6 +266,10 @@ function getBool(instr: bril.Operation, env: Env, index: number): boolean {
 
 function getFloat(instr: bril.Operation, env: Env, index: number): number {
   return getArgument(instr, env, index, 'float') as number;
+}
+
+function getChar(instr: bril.Operation, env: Env, index: number): string {
+  return getArgument(instr, env, index, 'char') as string;
 }
 
 function getLabel(instr: bril.Operation, index: number): bril.Ident {
@@ -426,6 +439,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         value = instr.value;
       else
         value = BigInt(Math.floor(instr.value))
+    } else if (typeof instr.value === "string") {
+      if(instr.value.length > 1) throw error(`char must have one character`);
+      value = instr.value;
     } else {
       value = instr.value;
     }
@@ -707,6 +723,53 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     return {"action": "commit"};
   }
 
+  case "ceq": {
+    let val = getChar(instr, state.env, 0) === getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "clt": {
+    let val = getChar(instr, state.env, 0) < getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "cle": {
+    let val = getChar(instr, state.env, 0) <= getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "cgt": {
+    let val = getChar(instr, state.env, 0) > getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "cge": {
+    let val = getChar(instr, state.env, 0) >= getChar(instr, state.env, 1);
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "char2int": {
+    let code = getChar(instr, state.env, 0).charCodeAt(0);
+    let val = BigInt.asIntN(64, BigInt(code));
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
+  case "int2char": {
+    let i = getInt(instr, state.env, 0)
+    if(i > 65535 || i < 0) {
+      throw error(`value ${i} cannot be converted to char`);
+    }
+    let val = String.fromCharCode(Number(i));
+    state.env.set(instr.dest, val);
+    return NEXT;
+  }
+
   }
   unreachable(instr);
   throw error(`unhandled opcode ${(instr as any).op}`);
@@ -789,6 +852,15 @@ function evalFunc(func: bril.Function, state: State): Value | null {
   return null;
 }
 
+function parseChar(s: string): string {
+  let c = s;
+  if (c.length == 1) {
+    return c;
+  } else {
+    throw error(`char argument to main must have one character; got ${s}`);
+  }
+}
+
 function parseBool(s: string): boolean {
   if (s === 'true') {
     return true;
@@ -829,6 +901,10 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
       case "bool":
         let b: boolean = parseBool(args[i]);
         newEnv.set(expected[i].name, b as Value);
+        break;
+      case "char":
+        let c: string = parseChar(args[i]);
+        newEnv.set(expected[i].name, c as Value);
         break;
     }
   }

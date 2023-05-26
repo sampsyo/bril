@@ -1,0 +1,4 @@
+@main {
+  c1: char = const '7';
+  c2: char = const 'a';
+}

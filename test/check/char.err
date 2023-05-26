@@ -1,0 +1,7 @@
+3:3: c has type char, but arg 0 for id should have type int
+6:3: b1 has type bool, but arg 1 for clt should have type char
+7:3: n has type int, but arg 0 for cle should have type char
+8:3: cgt expects 2 args, not 1
+9:3: result type of cge should be bool, but found char
+11:3: c has type char, but arg 0 for int2char should have type int
+12:3: b1 has type bool, but arg 0 for char2int should have type char

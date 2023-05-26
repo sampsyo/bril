@@ -1,0 +1,13 @@
+@main() {
+  c: char = const 'a';
+  n: int = id c;
+  
+  b1: bool = ceq c c;
+  b2: bool = clt c b1;
+  b3: bool = cle n c;
+  b4: bool = cgt c;
+  b5: char = cge c c;
+  
+  c2: char = int2char c;
+  i2: int = char2int b1;
+}

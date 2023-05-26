@@ -1,0 +1,4 @@
+# ARGS: h e y
+@main(char_one : char, char_two : char, char_three : char) {
+  print char_one char_two char_three;
+}

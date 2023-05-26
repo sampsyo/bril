@@ -1,0 +1,10 @@
+@main() {
+  c1: char = const '6';
+  c2: char = const ';';
+  
+  b1: bool = ceq c1 c2;
+  b2: bool = clt c1 c2;
+  b3: bool = cle c1 c2;
+  b4: bool = cgt c1 c2;
+  b5: bool = cge c1 c2;
+}

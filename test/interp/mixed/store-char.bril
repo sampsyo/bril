@@ -1,0 +1,36 @@
+@helloBR(end: char) : ptr<char> {
+    c1: char = const 'o';
+    c2: char = const 'i';
+
+    tam: int = const 3;
+    pos1: int = const 1;
+    pos2: int = const 2;
+    charvec: ptr<char> = alloc tam;
+    charvec2: ptr<char> = ptradd charvec pos1;
+    charvec3: ptr<char> = ptradd charvec pos2;
+
+    store charvec c1;
+    store charvec2 c2;
+    store charvec3 end;
+
+    ret charvec;
+}
+
+@main() {
+  end: char = const '.';
+  hello: ptr<char> = call @helloBR end;
+
+  pos: int = const 1;
+  cpos1: ptr<char> = ptradd hello pos;
+  cpos2: ptr<char> = ptradd cpos1 pos;
+
+  c0: char = load hello;
+  c1: char = load cpos1;
+  c2: char = load cpos2;
+
+  print c0;
+  print c1;
+  print c2;
+
+  free hello;
+}
