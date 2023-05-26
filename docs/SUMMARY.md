@@ -11,6 +11,7 @@
     - [Floating Point](lang/float.md)
     - [Speculative Execution](lang/spec.md)
     - [Import](lang/import.md)
+    - [Character](lang/char.md)
 - [Tools](tools/README.md)
     - [Interpreter](tools/interp.md)
     - [Text Representation](tools/text.md)
