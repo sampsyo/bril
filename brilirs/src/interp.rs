@@ -698,7 +698,7 @@ fn escape_control_chars(s: &str) -> Result<u16, encode_unicode::error::EmptyStrE
     "\\v" => Ok(11),
     "\\f" => Ok(12),
     "\\r" => Ok(13),
-    _ => Utf16Char::from_str_start(s).map(|c| *c.0.to_array().get(0).unwrap()),
+    _ => Utf16Char::from_str_start(s).map(|c| *c.0.to_array().first().unwrap()),
   }
 }
 
@@ -755,13 +755,14 @@ fn parse_args(
           Ok(())
         }
         bril_rs::Type::Pointer(..) => unreachable!(),
-        bril_rs::Type::Char => match escape_control_chars(inputs.get(index).unwrap().as_ref()) {
-          Ok(c) => {
-            env.set(*arg_as_num, Value::Char(c));
-            Ok(())
-          }
-          Err(_) => Err(InterpError::NotOneChar),
-        },
+        bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
+          .map_or_else(
+            |_| Err(InterpError::NotOneChar),
+            |c| {
+              env.set(*arg_as_num, Value::Char(c));
+              Ok(())
+            },
+          ),
       })?;
     Ok(env)
   }

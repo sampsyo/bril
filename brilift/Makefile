@@ -9,7 +9,7 @@ endif
 
 # Brilift only supports core Bril for now, so we select those tests &
 # benchmarks.
-TESTS := ../test/interp/core/*.bril ../test/interp/float/*.bril ../test/interp/mem/*.bril ../test/interp/mixed/*.bril
+TESTS := ../test/interp/core/*.bril ../test/interp/float/*.bril ../test/interp/mem/*.bril ../test/interp/mixed/store-float.bril
 BENCHMARKS := ../benchmarks/core/*.bril ../benchmarks/float/*.bril ../benchmarks/mem/*.bril ../benchmarks/mixed/*.bril
 
 CFLAGS := $(if $(TARGET),-target $(TARGET))
