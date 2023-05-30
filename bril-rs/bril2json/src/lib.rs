@@ -12,6 +12,20 @@ use std::fs::File;
 
 use bril_rs::{AbstractProgram, ColRow, Position};
 
+fn escape_control_chars(s: &str) -> Option<u16> {
+    match s {
+        "\\0" => Some(0),
+        "\\a" => Some(7),
+        "\\b" => Some(8),
+        "\\t" => Some(9),
+        "\\n" => Some(10),
+        "\\v" => Some(11),
+        "\\f" => Some(12),
+        "\\r" => Some(13),
+        _ => None,
+    }
+}
+
 #[doc(hidden)]
 #[derive(Clone)]
 pub struct Lines {

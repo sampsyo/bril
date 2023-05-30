@@ -1,7 +1,7 @@
 Rust Library
 ============
 
-This is a no-frills interface between Bril's JSON and your [Rust][] code. It supports the [Bril core][core] along with the [SSA][], [memory][], [floating point][float], [speculative execution][spec], and [source positions][pos] extensions.
+This is a no-frills interface between Bril's JSON and your [Rust][] code. It supports the [Bril core][core] along with the [SSA][], [memory][], [floating point][float], [speculative execution][spec], [char][], and [source positions][pos] extensions.
 
 Use
 ---
@@ -55,4 +55,5 @@ make features
 [float]: ../lang/float.md
 [spec]: ../lang/spec.md
 [pos]: ../lang/syntax.md
+[char]: ../lang/char.md
 [import]: ../lang/import.md

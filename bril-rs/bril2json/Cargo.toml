@@ -15,6 +15,7 @@ keywords = ["compiler", "bril", "parser", "data-structures", "language"]
 
 [dependencies]
 clap         = { version = "4.3", features = ["derive"] }
+encode_unicode = "1.0.0"
 lalrpop-util = { version = "0.20", features = ["lexer"] }
 regex = "1.8"
 
@@ -25,4 +26,4 @@ lalrpop = "0.20"
 [dependencies.bril-rs]
 version = "0.1.0"
 path = "../../bril-rs"
-features = ["ssa", "memory", "float", "speculate", "position", "import"]
+features = ["ssa", "memory", "float", "speculate", "position", "import", "char"]

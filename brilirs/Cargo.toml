@@ -22,11 +22,12 @@ clap         = { version = "4.2", features = ["derive"] }
 fxhash       = "0.2"
 mimalloc     = "0.1"
 itoa         = "1.0"
+encode_unicode = "1.0.0"
 
 [dependencies.bril-rs]
 version      = "0.1.0"
 path         = "../bril-rs"
-features     = ["ssa", "memory", "float", "speculate"]
+features     = ["ssa", "memory", "float", "speculate", "char"]
 
 [dependencies.bril2json]
 version      = "0.1.0"

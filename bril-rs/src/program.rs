@@ -451,6 +451,27 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/float.html#operations>
     #[cfg(feature = "float")]
     Fge,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
+    #[cfg(feature = "char")]
+    Ceq,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
+    #[cfg(feature = "char")]
+    Clt,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
+    #[cfg(feature = "char")]
+    Cgt,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
+    #[cfg(feature = "char")]
+    Cle,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
+    #[cfg(feature = "char")]
+    Cge,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
+    #[cfg(feature = "char")]
+    Char2int,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
+    #[cfg(feature = "char")]
+    Int2char,
     /// <https://capra.cs.cornell.edu/bril/lang/memory.html#operations>
     #[cfg(feature = "memory")]
     Alloc,
@@ -499,6 +520,20 @@ impl Display for ValueOps {
             Self::Fle => write!(f, "fle"),
             #[cfg(feature = "float")]
             Self::Fge => write!(f, "fge"),
+            #[cfg(feature = "char")]
+            Self::Ceq => write!(f, "ceq"),
+            #[cfg(feature = "char")]
+            Self::Clt => write!(f, "clt"),
+            #[cfg(feature = "char")]
+            Self::Cgt => write!(f, "cgt"),
+            #[cfg(feature = "char")]
+            Self::Cle => write!(f, "cle"),
+            #[cfg(feature = "char")]
+            Self::Cge => write!(f, "cge"),
+            #[cfg(feature = "char")]
+            Self::Char2int => write!(f, "char2int"),
+            #[cfg(feature = "char")]
+            Self::Int2char => write!(f, "int2char"),
             #[cfg(feature = "memory")]
             Self::Alloc => write!(f, "alloc"),
             #[cfg(feature = "memory")]
@@ -520,6 +555,9 @@ pub enum Type {
     /// <https://capra.cs.cornell.edu/bril/lang/float.html#types>
     #[cfg(feature = "float")]
     Float,
+    /// <https://capra.cs.cornell.edu/bril/lang/char.html#types>
+    #[cfg(feature = "char")]
+    Char,
     /// <https://capra.cs.cornell.edu/bril/lang/memory.html#types>
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
@@ -533,6 +571,8 @@ impl Display for Type {
             Self::Bool => write!(f, "bool"),
             #[cfg(feature = "float")]
             Self::Float => write!(f, "float"),
+            #[cfg(feature = "char")]
+            Self::Char => write!(f, "char"),
             #[cfg(feature = "memory")]
             Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
         }
@@ -551,6 +591,38 @@ pub enum Literal {
     /// Floating Points
     #[cfg(feature = "float")]
     Float(f64),
+    /// UTF-16 Characters
+    #[cfg(feature = "char")]
+    #[serde(deserialize_with = "deserialize_bmp")]
+    #[serde(serialize_with = "serialize_bmp")]
+    Char(u16),
+}
+
+#[cfg(feature = "char")]
+fn deserialize_bmp<'de, D>(deserializer: D) -> Result<u16, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+
+    if s.len() != 1 {
+        return Err(serde::de::Error::custom("invalid UTF-16 character"));
+    }
+
+    let c = encode_unicode::Utf16Char::from_str_start(&s)
+        .map_err(|_| serde::de::Error::custom("invalid UTF-16 character"))
+        .map(|c| c.0.to_tuple().0)?;
+    Ok(c)
+}
+
+#[cfg(feature = "char")]
+#[allow(clippy::trivially_copy_pass_by_ref)] // to match serde's signature
+fn serialize_bmp<S>(c: &u16, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let c = encode_unicode::Utf16Char::from_bmp(*c).unwrap();
+    serializer.serialize_str(&c.to_string())
 }
 
 impl Display for Literal {
@@ -560,6 +632,12 @@ impl Display for Literal {
             Self::Bool(b) => write!(f, "{b}"),
             #[cfg(feature = "float")]
             Self::Float(x) => write!(f, "{x}"),
+            #[cfg(feature = "char")]
+            Self::Char(c) => write!(
+                f,
+                "\'{}\'",
+                encode_unicode::Utf16Char::from_bmp(*c).unwrap()
+            ),
         }
     }
 }
@@ -573,6 +651,8 @@ impl Literal {
             Self::Bool(_) => Type::Bool,
             #[cfg(feature = "float")]
             Self::Float(_) => Type::Float,
+            #[cfg(feature = "char")]
+            Self::Char(_) => Type::Char,
         }
     }
 }
