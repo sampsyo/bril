@@ -12,16 +12,19 @@ use std::fs::File;
 
 use bril_rs::{AbstractProgram, ColRow, Position};
 
-fn escape_control_chars(s: &str) -> Option<u16> {
+/// A helper function for processing the accepted Bril characters from their text representation
+#[must_use]
+pub fn escape_control_chars(s: &str) -> Option<char> {
     match s {
-        "\\0" => Some(0),
-        "\\a" => Some(7),
-        "\\b" => Some(8),
-        "\\t" => Some(9),
-        "\\n" => Some(10),
-        "\\v" => Some(11),
-        "\\f" => Some(12),
-        "\\r" => Some(13),
+        "\\0" => Some('\u{0000}'),
+        "\\a" => Some('\u{0007}'),
+        "\\b" => Some('\u{0008}'),
+        "\\t" => Some('\u{0009}'),
+        "\\n" => Some('\u{000A}'),
+        "\\v" => Some('\u{000B}'),
+        "\\f" => Some('\u{000C}'),
+        "\\r" => Some('\u{000D}'),
+        s if s.len() == 1 => s.chars().next(),
         _ => None,
     }
 }

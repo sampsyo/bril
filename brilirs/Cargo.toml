@@ -13,16 +13,15 @@ keywords = ["compiler", "bril", "interpreter", "data-structures", "language"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [build-dependencies]
-clap         = { version = "4.2", features = ["derive"] }
-clap_complete= { version = "4.2", optional = true }
+clap         = { version = "4.3", features = ["derive"] }
+clap_complete= { version = "4.3", optional = true }
 
 [dependencies]
 thiserror    = "1.0"
-clap         = { version = "4.2", features = ["derive"] }
+clap         = { version = "4.3", features = ["derive"] }
 fxhash       = "0.2"
 mimalloc     = "0.1"
 itoa         = "1.0"
-encode_unicode = "1.0.0"
 
 [dependencies.bril-rs]
 version      = "0.1.0"

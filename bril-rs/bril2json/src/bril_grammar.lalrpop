@@ -201,7 +201,7 @@ Bool: bool = {
 
 Float: f64 = <f:FLOAT_TOKEN> => f64::from_str(f).unwrap();
 
-Char: u16 = <c:CHAR_TOKEN> => {let c = c.trim_matches('\''); escape_control_chars(c).unwrap_or_else(|| encode_unicode::Utf16Char::from_str_start(c).unwrap().0.to_tuple().0)};
+Char: char = <c:CHAR_TOKEN> => {let c = c.trim_matches('\''); escape_control_chars(c).unwrap()};
 
 // https://lalrpop.github.io/lalrpop/tutorial/006_macros.html
 Comma<T>: Vec<T> = { // (1)

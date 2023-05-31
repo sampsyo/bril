@@ -1,8 +1,8 @@
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
+use bril2json::escape_control_chars;
 use bril_rs::Instruction;
 
-use encode_unicode::Utf16Char;
 use fxhash::FxHashMap;
 
 use mimalloc::MiMalloc;
@@ -170,7 +170,7 @@ enum Value {
   Int(i64),
   Bool(bool),
   Float(f64),
-  Char(u16),
+  Char(char),
   Pointer(Pointer),
   #[default]
   Uninitialized,
@@ -199,7 +199,7 @@ impl fmt::Display for Value {
       Self::Float(v) if v.is_infinite() && v.is_sign_positive() => write!(f, "Infinity"),
       Self::Float(v) if v.is_infinite() && v.is_sign_negative() => write!(f, "-Infinity"),
       Self::Float(v) => write!(f, "{v:.17}"),
-      Self::Char(c) => write!(f, "{}", Utf16Char::from_bmp(*c).unwrap()),
+      Self::Char(c) => write!(f, "{c}"),
       Self::Pointer(p) => write!(f, "{p:?}"),
       Self::Uninitialized => unreachable!(),
     }
@@ -209,12 +209,15 @@ impl fmt::Display for Value {
 fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(), std::io::Error> {
   match val {
     Value::Int(i) => out.write_all(itoa::Buffer::new().format(*i).as_bytes()),
-    Value::Bool(b) => out.write_all(b.to_string().as_bytes()),
+    Value::Bool(b) => out.write_all(if *b { b"true" } else { b"false" }),
     Value::Float(f) if f.is_infinite() && f.is_sign_positive() => out.write_all(b"Infinity"),
     Value::Float(f) if f.is_infinite() && f.is_sign_negative() => out.write_all(b"-Infinity"),
     Value::Float(f) if f.is_nan() => out.write_all(b"NaN"),
     Value::Float(f) => out.write_all(format!("{f:.17}").as_bytes()),
-    Value::Char(c) => out.write_all(Utf16Char::from_bmp(*c).unwrap().to_string().as_bytes()),
+    Value::Char(c) => {
+      let buf = &mut [0_u8; 2];
+      out.write_all(c.encode_utf8(buf).as_bytes())
+    }
     Value::Pointer(p) => out.write_all(format!("{p:?}").as_bytes()),
     Value::Uninitialized => unreachable!(),
   }
@@ -272,7 +275,7 @@ impl From<&Value> for f64 {
   }
 }
 
-impl From<&Value> for u16 {
+impl From<&Value> for char {
   fn from(value: &Value) -> Self {
     if let Value::Char(c) = value {
       *c
@@ -437,42 +440,43 @@ fn execute_value_op<T: std::io::Write>(
       state.env.set(dest, Value::Bool(arg0 >= arg1));
     }
     Ceq => {
-      let arg0 = get_arg::<u16>(&state.env, 0, args);
-      let arg1 = get_arg::<u16>(&state.env, 1, args);
+      let arg0 = get_arg::<char>(&state.env, 0, args);
+      let arg1 = get_arg::<char>(&state.env, 1, args);
       state.env.set(dest, Value::Bool(arg0 == arg1));
     }
     Clt => {
-      let arg0 = get_arg::<u16>(&state.env, 0, args);
-      let arg1 = get_arg::<u16>(&state.env, 1, args);
+      let arg0 = get_arg::<char>(&state.env, 0, args);
+      let arg1 = get_arg::<char>(&state.env, 1, args);
       state.env.set(dest, Value::Bool(arg0 < arg1));
     }
     Cgt => {
-      let arg0 = get_arg::<u16>(&state.env, 0, args);
-      let arg1 = get_arg::<u16>(&state.env, 1, args);
+      let arg0 = get_arg::<char>(&state.env, 0, args);
+      let arg1 = get_arg::<char>(&state.env, 1, args);
       state.env.set(dest, Value::Bool(arg0 > arg1));
     }
     Cle => {
-      let arg0 = get_arg::<u16>(&state.env, 0, args);
-      let arg1 = get_arg::<u16>(&state.env, 1, args);
+      let arg0 = get_arg::<char>(&state.env, 0, args);
+      let arg1 = get_arg::<char>(&state.env, 1, args);
       state.env.set(dest, Value::Bool(arg0 <= arg1));
     }
     Cge => {
-      let arg0 = get_arg::<u16>(&state.env, 0, args);
-      let arg1 = get_arg::<u16>(&state.env, 1, args);
+      let arg0 = get_arg::<char>(&state.env, 0, args);
+      let arg1 = get_arg::<char>(&state.env, 1, args);
       state.env.set(dest, Value::Bool(arg0 >= arg1));
     }
     Char2int => {
-      let arg0 = get_arg::<u16>(&state.env, 0, args);
-      state.env.set(dest, Value::Int(i64::from(arg0)));
+      let arg0 = get_arg::<char>(&state.env, 0, args);
+      state.env.set(dest, Value::Int(u32::from(arg0).into()));
     }
     Int2char => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
 
-      let arg0_u16 = u16::try_from(arg0).map_err(|_| InterpError::ToCharError(arg0))?;
+      let arg0_char = u32::try_from(arg0)
+        .ok()
+        .and_then(char::from_u32)
+        .ok_or(InterpError::ToCharError(arg0))?;
 
-      let _arg0_char = Utf16Char::from_bmp(arg0_u16).map_err(|_| InterpError::ToCharError(arg0))?;
-
-      state.env.set(dest, Value::Char(arg0_u16));
+      state.env.set(dest, Value::Char(arg0_char));
     }
     Call => {
       let callee_func = state.prog.get(funcs[0]).unwrap();
@@ -688,20 +692,6 @@ fn execute<'a, T: std::io::Write>(
   }
 }
 
-fn escape_control_chars(s: &str) -> Result<u16, encode_unicode::error::EmptyStrError> {
-  match s {
-    "\\0" => Ok(0),
-    "\\a" => Ok(7),
-    "\\b" => Ok(8),
-    "\\t" => Ok(9),
-    "\\n" => Ok(10),
-    "\\v" => Ok(11),
-    "\\f" => Ok(12),
-    "\\r" => Ok(13),
-    _ => Utf16Char::from_str_start(s).map(|c| *c.0.to_array().first().unwrap()),
-  }
-}
-
 fn parse_args(
   mut env: Environment,
   args: &[bril_rs::Argument],
@@ -757,7 +747,7 @@ fn parse_args(
         bril_rs::Type::Pointer(..) => unreachable!(),
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
           .map_or_else(
-            |_| Err(InterpError::NotOneChar),
+            || Err(InterpError::NotOneChar),
             |c| {
               env.set(*arg_as_num, Value::Char(c));
               Ok(())

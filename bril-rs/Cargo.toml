@@ -17,7 +17,6 @@ keywords = ["compiler", "bril", "parser", "data-structures", "language"]
 thiserror = "1.0"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-encode_unicode = { version = "1.0.0", optional = true}
 
 [features]
 float = []
@@ -26,7 +25,7 @@ ssa = []
 speculate = []
 position = []
 import = []
-char = ["dep:encode_unicode"]
+char = []
 
 [[example]]
 name = "bril2txt"

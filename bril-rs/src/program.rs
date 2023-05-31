@@ -593,36 +593,7 @@ pub enum Literal {
     Float(f64),
     /// UTF-16 Characters
     #[cfg(feature = "char")]
-    #[serde(deserialize_with = "deserialize_bmp")]
-    #[serde(serialize_with = "serialize_bmp")]
-    Char(u16),
-}
-
-#[cfg(feature = "char")]
-fn deserialize_bmp<'de, D>(deserializer: D) -> Result<u16, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-
-    if s.len() != 1 {
-        return Err(serde::de::Error::custom("invalid UTF-16 character"));
-    }
-
-    let c = encode_unicode::Utf16Char::from_str_start(&s)
-        .map_err(|_| serde::de::Error::custom("invalid UTF-16 character"))
-        .map(|c| c.0.to_tuple().0)?;
-    Ok(c)
-}
-
-#[cfg(feature = "char")]
-#[allow(clippy::trivially_copy_pass_by_ref)] // to match serde's signature
-fn serialize_bmp<S>(c: &u16, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    let c = encode_unicode::Utf16Char::from_bmp(*c).unwrap();
-    serializer.serialize_str(&c.to_string())
+    Char(char),
 }
 
 impl Display for Literal {
@@ -633,12 +604,23 @@ impl Display for Literal {
             #[cfg(feature = "float")]
             Self::Float(x) => write!(f, "{x}"),
             #[cfg(feature = "char")]
-            Self::Char(c) => write!(
-                f,
-                "\'{}\'",
-                encode_unicode::Utf16Char::from_bmp(*c).unwrap()
-            ),
+            Self::Char(c) => write!(f, "\'{}\'", escape_char(*c)),
         }
+    }
+}
+
+#[cfg(feature = "char")]
+fn escape_char(c: char) -> String {
+    match c {
+        '\u{0000}' => "\\0".to_string(),
+        '\u{0007}' => "\\a".to_string(),
+        '\u{0008}' => "\\b".to_string(),
+        '\u{0009}' => "\\t".to_string(),
+        '\u{000A}' => "\\n".to_string(),
+        '\u{000B}' => "\\v".to_string(),
+        '\u{000C}' => "\\f".to_string(),
+        '\u{000D}' => "\\r".to_string(),
+        c => c.to_string(),
     }
 }
 
