@@ -26,8 +26,8 @@ Comparison operators, which take two `char` values and produce a `bool`:
 
 Conversion operators:
 
-- `char2int`: One argument: a variable of type `char`. Returns an integer between 0 and 65535 representing the UTF-16 code unit of the given value.
-- `int2char`: One argument: a variable of type `int`. Returns the corresponding UTF-16 code unit. Throws if the value is not between 0 and 65535, inclusive.
+- `char2int`: One argument: a variable of type `char`. Returns an integer representing the UTF-16 code unit of the given value.
+- `int2char`: One argument: a variable of type `int`. Returns the corresponding UTF-16 code unit. Throws if the value does not correspond to a valid character.
 
 Printing
 --------

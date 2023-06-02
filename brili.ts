@@ -762,7 +762,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
   case "int2char": {
     let i = getInt(instr, state.env, 0)
-    if(i > 65535 || i < 0) {
+    if(i > 65535 || i < 0 || (55295 < i && i < 57344)) {
       throw error(`value ${i} cannot be converted to char`);
     }
     let val = String.fromCharCode(Number(i));
