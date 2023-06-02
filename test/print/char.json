@@ -4,7 +4,8 @@
       "name": "main",
       "instrs": [
         { "op": "const", "type": "char", "dest": "c1", "value": "7" },
-        { "op": "const", "type": "char", "dest": "c2", "value": "a" }
+        { "op": "const", "type": "char", "dest": "c2", "value": "a" },
+        { "op": "const", "type": "char", "dest": "c2", "value": "\n" }
       ],
       "args": []
     }
