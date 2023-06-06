@@ -155,17 +155,6 @@ type Pointer = {
 type Value = boolean | BigInt | Pointer | number | string;
 type Env = Map<bril.Ident, Value>;
 
-const controlChars = new Map<string, number>([
-  ["\\0", 0],
-  ["\\a", 7],
-  ["\\b", 8],
-  ["\\t", 9],
-  ["\\n", 10],
-  ["\\v", 11],
-  ["\\f", 12],
-  ["\\r", 13]
-]);
-
 /**
  * Check whether a run-time value matches the given static type.
  */
@@ -865,9 +854,6 @@ function evalFunc(func: bril.Function, state: State): Value | null {
 
 function parseChar(s: string): string {
   let c = s;
-  if (controlChars.has(c)) {
-    c = String.fromCharCode(controlChars.get(c) as number)
-  }
   if (c.length == 1) {
     return c;
   } else {
