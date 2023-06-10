@@ -1,0 +1,6 @@
+@main {
+  a: int = const 1;
+  b: int = const 2;
+.lbl:
+  b: int = add a b;
+}

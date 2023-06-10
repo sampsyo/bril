@@ -90,8 +90,13 @@ def lvn_block(block, lookup, canonicalize, fold):
 
     # The *canonical* variable name holding a given numbered value.
     # There is only one canonical variable per value number (so this is
-    # not the inverse of var2num).
-    num2var = {}
+    # not the inverse of var2num). To make matters even more
+    # complicated, we will also keep a *list* of possible names here,
+    # where the first is the canonical one to use. This is only relevant
+    # when doing copy-propagation, and it helps with situations where a
+    # copy-propagated variable is later "clobbered" so we can fall back
+    # to a different variable holding the same value.
+    num2vars = {}
 
     # Track constant values for values assigned with `const`.
     num2const = {}
@@ -100,13 +105,25 @@ def lvn_block(block, lookup, canonicalize, fold):
     # variables are their own canonical source.
     for var in read_first(block):
         num = var2num.add(var)
-        num2var[num] = var
+        num2vars[num] = [var]
 
     for instr, last_write in zip(block, last_writes(block)):
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
         argvars = instr.get('args', [])
         argnums = tuple(var2num[var] for var in argvars)
+
+        # Update argument variable names to canonical variables.
+        if 'args' in instr:
+            instr['args'] = [num2vars[n][0] for n in argnums]
+
+        # If we write to a variable, we "clobber" any previous value it
+        # may have held. Remove any entries that point to this variable
+        # as the "home" for old values.
+        if 'dest' in instr:
+            for rhs in num2vars.values():
+                if instr['dest'] in rhs:
+                    rhs.remove(instr['dest'])
 
         # Non-call value operations are candidates for replacement. (We
         # could conceivably include calls to pure functions as values,
@@ -133,8 +150,9 @@ def lvn_block(block, lookup, canonicalize, fold):
                 else:  # Value is in a variable.
                     instr.update({
                         'op': 'id',
-                        'args': [num2var[num]],
+                        'args': [num2vars[num][0]],
                     })
+                    num2vars[num].append(instr['dest'])
                 continue
 
         # If this instruction produces a result, give it a number.
@@ -155,7 +173,7 @@ def lvn_block(block, lookup, canonicalize, fold):
                 var = 'lvn.{}'.format(newnum)
 
             # Record the variable name and update the instruction.
-            num2var[newnum] = var
+            num2vars[newnum] = [var]
             instr['dest'] = var
 
             if val is not None:
@@ -173,10 +191,6 @@ def lvn_block(block, lookup, canonicalize, fold):
                 # If not, record the new variable as the canonical
                 # source for the newly computed value.
                 value2num[val] = newnum
-
-        # Update argument variable names to canonical variables.
-        if 'args' in instr:
-            instr['args'] = [num2var[n] for n in argnums]
 
 
 def _lookup(value2num, value):
