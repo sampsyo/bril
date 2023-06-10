@@ -96,12 +96,22 @@ def lvn_block(block, lookup, canonicalize, fold):
     # Track constant values for values assigned with `const`.
     num2const = {}
 
+    external_vars = set()
+
+    new_instrs = []
+
     # Initialize the table with numbers for input variables. These
     # variables are their own canonical source.
     for var in read_first(block):
         num = var2num.add(var)
         num2var[num] = var
+        external_vars.add(var)
 
+    # If a var is defined outsides of the block, and the instruction
+    # is last_write, then we can replace the var with a new canonical
+    # name, so that we can reuse the value later.
+    canonical_name_change = None
+    
     for instr, last_write in zip(block, last_writes(block)):
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
@@ -113,7 +123,21 @@ def lvn_block(block, lookup, canonicalize, fold):
         # but determining purity would require an interprocedural
         # analysis.)
         val = None
+
+        if canonical_name_change:
+            num2var[canonical_name_change[1]] = canonical_name_change[0]
+
         if 'dest' in instr and 'args' in instr and instr['op'] != 'call':
+            if instr['dest'] in external_vars and last_write:
+                var_id = var2num[instr['dest']]
+                new_dest = 'lvn.i.{}'.format(var_id)
+                new_instrs.append({
+                    'op': 'id',
+                    'dest': new_dest,
+                    'args': [instr['dest']]
+                })
+                canonical_name_change = (new_dest, var_id)
+
             # Construct a Value for this computation.
             val = canonicalize(Value(instr['op'], argnums))
 
@@ -135,6 +159,7 @@ def lvn_block(block, lookup, canonicalize, fold):
                         'op': 'id',
                         'args': [num2var[num]],
                     })
+                new_instrs.append(instr)
                 continue
 
         # If this instruction produces a result, give it a number.
@@ -168,6 +193,7 @@ def lvn_block(block, lookup, canonicalize, fold):
                         'value': const,
                     })
                     del instr['args']
+                    new_instrs.append(instr) 
                     continue
 
                 # If not, record the new variable as the canonical
@@ -177,6 +203,12 @@ def lvn_block(block, lookup, canonicalize, fold):
         # Update argument variable names to canonical variables.
         if 'args' in instr:
             instr['args'] = [num2var[n] for n in argnums]
+
+        new_instrs.append(instr)
+
+    block.clear()
+    for instr in new_instrs:
+        block.append(instr)
 
 
 def _lookup(value2num, value):
