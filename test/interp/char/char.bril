@@ -2,5 +2,6 @@
   c1: char = const 'h';
   c2: char = const 'e';
   c3: char = const 'y';
-  print c1 c2 c3;
+  c4: char = const '🐶';
+  print c1 c2 c3 c4;
 }
