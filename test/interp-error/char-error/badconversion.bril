@@ -1,5 +1,5 @@
 @main {
-  i: int = const 1114112;
+  i: int = const 56193;
   
   c: char = int2char i;
 
