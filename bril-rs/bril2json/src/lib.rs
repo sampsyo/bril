@@ -24,7 +24,7 @@ pub fn escape_control_chars(s: &str) -> Option<char> {
         "\\v" => Some('\u{000B}'),
         "\\f" => Some('\u{000C}'),
         "\\r" => Some('\u{000D}'),
-        s if s.len() == 1 => s.chars().next(),
+        s if s.chars().count() == 1 => s.chars().next(),
         _ => None,
     }
 }
