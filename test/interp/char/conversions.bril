@@ -1,9 +1,13 @@
 @main() {
   c1: char = const 'A';
+  c2: char = const '𝛀'; 
   i1: int = const 65;
-  
-  c2: char = int2char i1;
-  i2: int = char2int c1;
+  i2: int = const 120512;
 
-  print c2 i2;
+  c3: char = int2char i1;
+  i3: int = char2int c1;
+  c4: char = int2char i2;
+  i4: int = char2int c2;
+
+  print c3 i3 c4 i4;
 }

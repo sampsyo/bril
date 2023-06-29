@@ -440,7 +440,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       else
         value = BigInt(Math.floor(instr.value))
     } else if (typeof instr.value === "string") {
-      if(instr.value.length > 1) throw error(`char must have one character`);
+      if([...instr.value].length !== 1) throw error(`char must have one character`);
       value = instr.value;
     } else {
       value = instr.value;
@@ -754,18 +754,18 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   }
 
   case "char2int": {
-    let code = getChar(instr, state.env, 0).charCodeAt(0);
-    let val = BigInt.asIntN(64, BigInt(code));
+    let code = getChar(instr, state.env, 0).codePointAt(0);
+    let val = BigInt.asIntN(64, BigInt(code as number));
     state.env.set(instr.dest, val);
     return NEXT;
   }
 
   case "int2char": {
-    let i = getInt(instr, state.env, 0)
-    if(i > 65535 || i < 0) {
+    let i = getInt(instr, state.env, 0);
+    if (i > 1114111 || i < 0 || (55295 < i && i < 57344)) {
       throw error(`value ${i} cannot be converted to char`);
-    }
-    let val = String.fromCharCode(Number(i));
+    } 
+    let val = String.fromCodePoint(Number(i));
     state.env.set(instr.dest, val);
     return NEXT;
   }
@@ -854,7 +854,7 @@ function evalFunc(func: bril.Function, state: State): Value | null {
 
 function parseChar(s: string): string {
   let c = s;
-  if (c.length == 1) {
+  if ([...c].length === 1) {
     return c;
   } else {
     throw error(`char argument to main must have one character; got ${s}`);
