@@ -10,7 +10,7 @@ set -e
 #
 
 OS=$(uname -m)
-if [[ "$OS" == 'arm64' ]]; then
+if [ "$OS" = 'arm64' ]; then
     export TARGET=x86_64-unknown-darwin-macho
 fi
 
