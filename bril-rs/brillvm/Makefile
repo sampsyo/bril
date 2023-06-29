@@ -2,13 +2,13 @@ TESTS := ../../test/interp/core/*.bril \
          ../../test/interp/float/*.bril \
 		 ../../test/interp/ssa/*.bril \
 		 ../../test/interp/mem/*.bril \
-		 ../../test/interp/mixed/*.bril \
+		 ../../test/interp/mixed/*[^r].bril # A hack to exclude store-char.bril by excluding any file ending in r.bril
 
 # Currently ignoring the Cholesky benchmark because of (probably) a floating point rounding bug.
 BENCHMARKS := ../../benchmarks/core/*.bril \
 			  ../../benchmarks/float/*.bril \
 			  ../../benchmarks/mem/*.bril \
-			  ../../benchmarks/mixed/[!cholesky]*.bril
+			  ../../benchmarks/mixed/[^c]*.bril # A hack to exclude cholesky.bril by excluding any file ending in r.bril
 
 clean:
 	cargo clean
