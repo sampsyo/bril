@@ -8,7 +8,7 @@ TESTS := ../../test/interp/core/*.bril \
 BENCHMARKS := ../../benchmarks/core/*.bril \
 			  ../../benchmarks/float/*.bril \
 			  ../../benchmarks/mem/*.bril \
-			  ../../benchmarks/mixed/[^c]*.bril # A hack to exclude cholesky.bril by excluding any file ending in r.bril
+			  ../../benchmarks/mixed/[^c]*.bril # A hack to exclude cholesky.bril by excluding any file starting in c.
 
 clean:
 	cargo clean
