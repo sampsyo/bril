@@ -20,7 +20,7 @@
 
 use std::str::FromStr;
 use std::path::PathBuf;
-use crate::{Lines, ParsingArgs};
+use crate::{Lines, ParsingArgs, escape_control_chars};
 use bril_rs::{AbstractProgram, AbstractFunction, AbstractArgument, AbstractCode, AbstractInstruction, ConstOps, AbstractType, Literal, Import, ImportedFunction};
 
 grammar(lines : &Lines);
@@ -33,6 +33,7 @@ match {
     r"(\+|-)?[0-9]+" => INT_TOKEN, // int
     r"(\+|-)?(((([0-9]+\.?[0-9]*)|(\.[0-9]+))(E|e)(\+|-)?[0-9]+)|(([0-9]+\.[0-9]*)|(\.[0-9]+)))" => FLOAT_TOKEN, // https://stackoverflow.com/questions/12643009/regular-expression-for-floating-point-numbers
     r"(_|%|[[:alpha:]])(_|%|\.|[[:alnum:]])*" => IDENT_TOKEN,
+    r"('.')|('\\[0abtnvfr]')" => CHAR_TOKEN,
     r#""[^"]*""# => STRING_TOKEN,
     _
 }
@@ -189,6 +190,7 @@ Literal: Literal = {
     <n: Num> => Literal::Int(n),
     <b: Bool> => Literal::Bool(b),
     <f: Float> => Literal::Float(f),
+    <c: Char> => Literal::Char(c),
 }
 
 Num: i64 = <s:INT_TOKEN> => i64::from_str(s).unwrap();
@@ -198,6 +200,8 @@ Bool: bool = {
 }
 
 Float: f64 = <f:FLOAT_TOKEN> => f64::from_str(f).unwrap();
+
+Char: char = <c:CHAR_TOKEN> => {let c = c.trim_matches('\''); escape_control_chars(c).unwrap()};
 
 // https://lalrpop.github.io/lalrpop/tutorial/006_macros.html
 Comma<T>: Vec<T> = { // (1)

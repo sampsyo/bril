@@ -211,6 +211,55 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value {
+      op: ValueOps::Ceq | ValueOps::Cge | ValueOps::Clt | ValueOps::Cgt | ValueOps::Cle,
+      args,
+      dest,
+      funcs,
+      labels,
+      pos: _,
+      op_type,
+    } => {
+      check_num_args(2, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      check_asmt_type(&Type::Char, get_type(env, 0, args)?)?;
+      check_asmt_type(&Type::Char, get_type(env, 1, args)?)?;
+      check_asmt_type(&Type::Bool, op_type)?;
+      update_env(env, dest, op_type)
+    }
+    Instruction::Value {
+      op: ValueOps::Char2int,
+      args,
+      dest,
+      funcs,
+      labels,
+      pos: _,
+      op_type,
+    } => {
+      check_num_args(1, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      check_asmt_type(&Type::Char, get_type(env, 0, args)?)?;
+      check_asmt_type(&Type::Int, op_type)?;
+      update_env(env, dest, op_type)
+    }
+    Instruction::Value {
+      op: ValueOps::Int2char,
+      args,
+      dest,
+      funcs,
+      labels,
+      pos: _,
+      op_type,
+    } => {
+      check_num_args(1, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      check_asmt_type(&Type::Int, get_type(env, 0, args)?)?;
+      check_asmt_type(&Type::Char, op_type)?;
+      update_env(env, dest, op_type)
+    }
+    Instruction::Value {
       op: ValueOps::Call,
       dest,
       op_type,

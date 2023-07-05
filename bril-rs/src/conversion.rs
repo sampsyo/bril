@@ -245,6 +245,20 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "fle" => ValueOps::Fle,
                     #[cfg(feature = "float")]
                     "fge" => ValueOps::Fge,
+                    #[cfg(feature = "char")]
+                    "ceq" => ValueOps::Ceq,
+                    #[cfg(feature = "char")]
+                    "clt" => ValueOps::Clt,
+                    #[cfg(feature = "char")]
+                    "cgt" => ValueOps::Cgt,
+                    #[cfg(feature = "char")]
+                    "cle" => ValueOps::Cle,
+                    #[cfg(feature = "char")]
+                    "cge" => ValueOps::Cge,
+                    #[cfg(feature = "char")]
+                    "char2int" => ValueOps::Char2int,
+                    #[cfg(feature = "char")]
+                    "int2char" => ValueOps::Int2char,
                     #[cfg(feature = "memory")]
                     "alloc" => ValueOps::Alloc,
                     #[cfg(feature = "memory")]
@@ -313,6 +327,8 @@ impl TryFrom<AbstractType> for Type {
             AbstractType::Primitive(t) if t == "bool" => Self::Bool,
             #[cfg(feature = "float")]
             AbstractType::Primitive(t) if t == "float" => Self::Float,
+            #[cfg(feature = "char")]
+            AbstractType::Primitive(t) if t == "char" => Self::Char,
             AbstractType::Primitive(t) => return Err(ConversionError::InvalidPrimitive(t)),
             #[cfg(feature = "memory")]
             AbstractType::Parameterized(t, ty) if t == "ptr" => {

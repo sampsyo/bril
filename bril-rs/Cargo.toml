@@ -25,6 +25,7 @@ ssa = []
 speculate = []
 position = []
 import = []
+char = []
 
 [[example]]
 name = "bril2txt"
@@ -33,10 +34,10 @@ path = "examples/bril2txt.rs"
 # However this currently does not work as expected and is being hashed out in https://github.com/rust-lang/rfcs/pull/3020 and https://github.com/rust-lang/rfcs/pull/2887
 # Until a solution is reached, I'm using `required-features` so that these features must be passed by flag. This is less ergonomic at the moment, however the user will get a nicer error that they need a feature flag instead of an Result::unwrap() error.
 # Note: See dev-dependencies for a hack to not need the user to pass that feature flag.
-required-features = ["memory", "float", "ssa", "speculate", "position", "import"]
+required-features = ["memory", "float", "ssa", "speculate", "position", "import", "char"]
 
 [dev-dependencies]
 # trick to enable all features in test
 # This is actually really hacky because it is used in all tests/examples/benchmarks but since we currently only have one example this works for enabling the following feature flags for our users.
 # If the above rfcs every get resolved, then dev-dependencies will no longer be needed.
-bril-rs = { path = ".", features = ["memory", "float", "ssa", "speculate", "position", "import"] }
+bril-rs = { path = ".", features = ["memory", "float", "ssa", "speculate", "position", "import", "char"] }

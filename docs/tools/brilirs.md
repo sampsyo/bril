@@ -3,7 +3,7 @@ Fast Interpreter in Rust
 
 The `brilirs` directory contains a fast Bril interpreter written in [Rust][].
 It is a drop-in replacement for the [reference interpreter](interp.md) that prioritizes speed over completeness and hackability.
-It implements [core Bril](../lang/core.md) along with the [SSA][], [memory][], and [floating point][float] extensions.
+It implements [core Bril](../lang/core.md) along with the [SSA][], [memory][], [char][], and [floating point][float] extensions.
 
 Read [more about the implementation][blog], which is originally by Wil Thomason and Daniel Glus.
 
@@ -36,4 +36,5 @@ To see all of the supported flags, run:
 [ssa]: ../lang/ssa.md
 [memory]: ../lang/memory.md
 [float]: ../lang/float.md
+[char]: ../lang/char.md
 [blog]: https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/faster-interpreter/
