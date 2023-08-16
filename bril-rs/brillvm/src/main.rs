@@ -3,7 +3,6 @@ use brillvm::{cli::Cli, llvm::create_module_from_program};
 use clap::Parser;
 use inkwell::{
     context::Context,
-    execution_engine::ExecutionEngine,
     module::Module,
     targets::{InitializationConfig, Target},
 };
@@ -35,8 +34,11 @@ fn main() {
     if args.interpreter {
         Target::initialize_native(&InitializationConfig::default())
             .expect("Failed to initialize native target");
-        ExecutionEngine::link_in_interpreter();
-        let engine = llvm_prog.create_execution_engine().unwrap();
+
+        let engine = llvm_prog
+            .create_jit_execution_engine(inkwell::OptimizationLevel::None)
+            .unwrap();
+
         let mut args: Vec<&str> = args.args.iter().map(|s| s.as_ref()).collect();
         args.insert(0, "bril_prog");
         unsafe {

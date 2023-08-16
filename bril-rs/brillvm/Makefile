@@ -4,11 +4,10 @@ TESTS := ../../test/interp/core/*.bril \
 		 ../../test/interp/mem/*.bril \
 		 ../../test/interp/mixed/*[^r].bril # A hack to exclude store-char.bril by excluding any file ending in r.bril
 
-# Currently ignoring the Cholesky benchmark because of (probably) a floating point rounding bug.
 BENCHMARKS := ../../benchmarks/core/*.bril \
 			  ../../benchmarks/float/*.bril \
 			  ../../benchmarks/mem/*.bril \
-			  ../../benchmarks/mixed/[^c]*.bril # A hack to exclude cholesky.bril by excluding any file starting in c.
+			  ../../benchmarks/mixed/*.bril
 
 clean:
 	cargo clean
@@ -20,7 +19,7 @@ rt:
 	cargo rustc --bin rt --release -- --emit=llvm-bc && mv target/release/deps/rt-*.bc rt.bc
 
 example:
-	bril2json < ../../benchmarks/mem/sieve.bril | cargo run -- -i 100
+# bril2json < ../../benchmarks/mem/sieve.bril | cargo run -- -i 100
 	bril2json < ../../benchmarks/mixed/cholesky.bril | cargo run -- -i
 
 .PHONY: test
