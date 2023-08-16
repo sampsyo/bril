@@ -15,9 +15,9 @@ default-run = "main"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap         = { version = "4.3", features = ["derive"] }
-inkwell      = { version = "0.2", features = ["llvm15-0"] }
-libc-print   = "0.1"
+clap = { version = "4.3", features = ["derive"] }
+inkwell = { version = "0.2", features = ["llvm16-0"] }
+libc-print = "0.1"
 
 # For overriding parking_lot_core to latest version from 0.9.7
 # To pull in the removal of `window-sys` which was causing duplicate dependencies
