@@ -1242,7 +1242,7 @@ pub fn create_module_from_program<'a>(
                 (llvm_func, instrs, block, heap)
             },
         )
-        .collect(); // Important to collect, can't be done lazily because we need all functions to ne loaded in before a call instruction of a function is processed.
+        .collect(); // Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed.
 
     // Now actually build each function
     funcs
