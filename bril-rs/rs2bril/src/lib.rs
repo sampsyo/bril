@@ -405,7 +405,7 @@ fn array_init_helper(
         op: ConstOps::Const,
         pos: None,
         const_type: Type::Int,
-        value: Literal::Int(vars.len() as i64),
+        value: Literal::Int(i64::try_from(vars.len()).unwrap()),
     }));
     code.push(Code::Instruction(Instruction::Value {
         args: vec![size],
@@ -423,7 +423,7 @@ fn array_init_helper(
             op: ConstOps::Const,
             pos: None,
             const_type: Type::Int,
-            value: Literal::Int(i as i64),
+            value: Literal::Int(i64::try_from(i).unwrap()),
         }));
         let index_pointer = state.fresh_var(op_type.clone());
         code.push(Code::Instruction(Instruction::Value {

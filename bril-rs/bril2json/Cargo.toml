@@ -16,7 +16,7 @@ keywords = ["compiler", "bril", "parser", "data-structures", "language"]
 [dependencies]
 clap         = { version = "4.3", features = ["derive"] }
 lalrpop-util = { version = "0.20", features = ["lexer"] }
-regex = "1.8"
+regex = "1.9"
 
 # Add a build-time dependency on the lalrpop library:
 [build-dependencies]

@@ -2,8 +2,6 @@
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 #![allow(clippy::module_name_repetitions)]
-// todo until multiple versions of some really far down dependency are fixed
-#![allow(clippy::multiple_crate_versions)]
 
 #[doc(hidden)]
 pub mod cli;

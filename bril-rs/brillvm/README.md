@@ -21,7 +21,7 @@ Valid Bril programs are assumed as input with no attempt at error handling. Each
 
 ### Floating Point values
 
-There is a known issue where some floating point values are off by a small epsilon.
+Be careful which execution engine you are using which may enable some kind of fast math mode behind your back. This can cause some floating point values to be off by a small epsilon.
 
 ### Missing LLVM
 

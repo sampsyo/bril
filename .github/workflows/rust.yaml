@@ -86,13 +86,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-          components: rustfmt, clippy
 
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         if: matrix.path == 'bril-rs/brillvm/Cargo.toml'
         with:
-          version: "15.0"
+          version: "16.0"
 
       - name: cargo check
         run: cargo check --manifest-path ${{ matrix.path }} --all-targets
