@@ -28,6 +28,7 @@ The current benchmarks are:
 * `function_call`: For benchmarking the overhead of simple function calls.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `loopfact`: Compute *n!* imperatively using a loop.
+* `mandelbrot`: Generates a really low resolution, ascii, [mandelbrot set][mandelbrot].
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `max-subarray`: solution to the classic Maximum Subarray problem.
@@ -75,3 +76,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
+[mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
