@@ -7,7 +7,7 @@ on:
      - 'docs/**'
 
 jobs:
-  docs:
+  docs_build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -17,27 +17,39 @@ jobs:
           mdbook-version: 'latest'
       - name: mdbook
         run: mdbook build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: book
+          path: book
+  docs_deploy:
+    needs: docs_build
+    runs-on: ubuntu-latest
+    if: ${{github.event_name=='push' && github.ref=='refs/heads/main'}}
+    steps:
+      - name: Setup Tailscale
+        uses: tailscale/github-action@main
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: book
+          path: book
+      - run: ls -R
       - name: rsync
-        if: ${{github.event_name=='push' && github.ref=='refs/heads/main' && github.repository_owner == 'sampsyo'}}
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: courses.cit.cornell.edu
+          DEPLOY_USER: als485
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_SRC: ./book/
-          DEPLOY_DEST: sync/bril-book
-          DEPLOY_2_HOST: courses
-          DEPLOY_2_DEST: coursewww/capra.cs.cornell.edu/htdocs/bril
+          DEPLOY_DEST: coursewww/capra.cs.cornell.edu/htdocs/bril
         run: |
           echo "$DEPLOY_KEY" > pk
           echo "$DEPLOY_KNOWN_HOSTS" > kh
           chmod 600 pk
           rsync --compress --recursive --checksum --itemize-changes --delete \
-            -e "ssh -p \"$DEPLOY_PORT\" -i pk -o 'UserKnownHostsFile kh'" \
+            --perms --chmod=Du=rwx,Dgo=rx,Fu=rw,Fog=r \
+            -e "ssh -i pk -o 'UserKnownHostsFile kh'" \
             $DEPLOY_SRC $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DEST
-          ssh -p $DEPLOY_PORT -i pk -o 'UserKnownHostsFile kh' \
-            $DEPLOY_USER@$DEPLOY_HOST \
-            rsync --compress --recursive --checksum --itemize-changes \
-            --delete -e ssh --perms --chmod=Du=rwx,Dgo=rx,Fu=rw,Fog=r \
-            $DEPLOY_DEST/ $DEPLOY_2_HOST:$DEPLOY_2_DEST
