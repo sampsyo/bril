@@ -27,7 +27,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: ${{github.event_name=='push' && github.ref=='refs/heads/main'}}
+    if: ${{github.event_name=='push' && github.ref=='refs/heads/main' && github.repository_owner == 'sampsyo'}}
     steps:
       - name: Tailscale
         uses: tailscale/github-action@v2
