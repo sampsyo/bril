@@ -9,7 +9,7 @@ on:
      - 'docs/**'
 
 jobs:
-  docs_build:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,8 +24,8 @@ jobs:
         with:
           name: book
           path: book
-  docs_deploy:
-    needs: docs_build
+  deploy:
+    needs: build
     runs-on: ubuntu-latest
     if: ${{github.event_name=='push' && github.ref=='refs/heads/main'}}
     steps:
