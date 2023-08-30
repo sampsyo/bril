@@ -1,6 +1,5 @@
-
-@main{
-  input: int = const 123;
+# ARGS: 123
+@main (input: int){
   n: int = id input;
   v0: int = const 0;
   v1: int = const 10;
