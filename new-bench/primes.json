@@ -1,0 +1,1512 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "quotient",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "quotient"
+          ],
+          "dest": "guess",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "guess"
+          ],
+          "dest": "rem",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "rem"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "rem",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "m",
+          "type": "int"
+        },
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "n",
+            "m"
+          ],
+          "dest": "quotient",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "m",
+            "quotient"
+          ],
+          "dest": "guess",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "guess"
+          ],
+          "dest": "rem",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "rem",
+            "zero"
+          ],
+          "dest": "res",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "divides",
+      "type": "bool"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "ns",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "name": "l",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "l",
+            "one"
+          ],
+          "dest": "new",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "new"
+          ],
+          "dest": "out",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "out",
+            "n"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "ns"
+          ],
+          "dest": "curr",
+          "op": "id",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "out",
+            "one"
+          ],
+          "dest": "curr2",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "label": "repeat"
+        },
+        {
+          "args": [
+            "i",
+            "l"
+          ],
+          "dest": "stop",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "stop"
+          ],
+          "labels": [
+            "next",
+            "exit"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "next"
+        },
+        {
+          "args": [
+            "curr"
+          ],
+          "dest": "tmp",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "curr2",
+            "tmp"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "curr",
+            "one"
+          ],
+          "dest": "curr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "curr2",
+            "one"
+          ],
+          "dest": "curr2",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "labels": [
+            "repeat"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "exit"
+        },
+        {
+          "args": [
+            "ns"
+          ],
+          "op": "free"
+        },
+        {
+          "args": [
+            "out"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "prepend",
+      "type": {
+        "ptr": "int"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "guess",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "inc",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "continue"
+        },
+        {
+          "args": [
+            "guess",
+            "guess"
+          ],
+          "dest": "square",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "square",
+            "n"
+          ],
+          "dest": "continue",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "guess",
+            "n"
+          ],
+          "dest": "works",
+          "funcs": [
+            "divides"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "works"
+          ],
+          "labels": [
+            "yay",
+            "inc"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "yay"
+        },
+        {
+          "args": [
+            "guess"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "inc"
+        },
+        {
+          "args": [
+            "guess",
+            "inc"
+          ],
+          "dest": "guess",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "continue"
+          ],
+          "labels": [
+            "continue",
+            "giveup"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "giveup"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "prime_factor",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "num_factors",
+          "type": {
+            "ptr": "int"
+          }
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "count",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "count"
+          ],
+          "dest": "ans",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "ans",
+            "zero"
+          ],
+          "op": "store"
+        },
+        {
+          "label": "continue"
+        },
+        {
+          "args": [
+            "n",
+            "one"
+          ],
+          "dest": "exit",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "exit"
+          ],
+          "labels": [
+            "exit",
+            "next"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "next"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "prime",
+          "funcs": [
+            "prime_factor"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "label": "repeat"
+        },
+        {
+          "args": [
+            "n",
+            "prime"
+          ],
+          "dest": "n",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "prime",
+            "n"
+          ],
+          "dest": "divides",
+          "funcs": [
+            "divides"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "divides"
+          ],
+          "labels": [
+            "repeat",
+            "divided"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "divided"
+        },
+        {
+          "args": [
+            "count",
+            "one"
+          ],
+          "dest": "tmp",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "prime",
+            "ans",
+            "count"
+          ],
+          "dest": "ans",
+          "funcs": [
+            "prepend"
+          ],
+          "op": "call",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "count",
+            "one"
+          ],
+          "dest": "count",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "continue"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "exit"
+        },
+        {
+          "args": [
+            "num_factors",
+            "count"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "prime_factors",
+      "type": {
+        "ptr": "int"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "k",
+          "type": "int"
+        },
+        {
+          "name": "m",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "a",
+            "m"
+          ],
+          "dest": "a",
+          "funcs": [
+            "rem"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero",
+            "k"
+          ],
+          "dest": "eq_zero",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eq_zero"
+          ],
+          "labels": [
+            "exp_zero",
+            "not_zero"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "exp_zero"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "not_zero"
+        },
+        {
+          "args": [
+            "one",
+            "k"
+          ],
+          "dest": "eq_one",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eq_one"
+          ],
+          "labels": [
+            "exp_one",
+            "not_one"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "exp_one"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "not_one"
+        },
+        {
+          "args": [
+            "k",
+            "two"
+          ],
+          "dest": "rem_two",
+          "funcs": [
+            "rem"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "rem_two",
+            "one"
+          ],
+          "dest": "post_mul",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "k",
+            "two"
+          ],
+          "dest": "half_exp",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "half_exp",
+            "m"
+          ],
+          "dest": "sqrt",
+          "funcs": [
+            "modexp"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sqrt",
+            "sqrt"
+          ],
+          "dest": "res",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res",
+            "m"
+          ],
+          "dest": "res",
+          "funcs": [
+            "rem"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "post_mul"
+          ],
+          "labels": [
+            "post_multiply",
+            "no_post"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "post_multiply"
+        },
+        {
+          "args": [
+            "res",
+            "a"
+          ],
+          "dest": "res",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res",
+            "m"
+          ],
+          "dest": "res",
+          "funcs": [
+            "rem"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "label": "no_post"
+        },
+        {
+          "label": "exit"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "modexp",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "p",
+          "type": "int"
+        },
+        {
+          "name": "phi_p",
+          "type": "int"
+        },
+        {
+          "name": "factors",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "name": "guess",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "count",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "factors"
+          ],
+          "dest": "ptr",
+          "op": "id",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "label": "check_power"
+        },
+        {
+          "args": [
+            "ptr"
+          ],
+          "dest": "factor",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "factor",
+            "zero"
+          ],
+          "dest": "stop",
+          "op": "eq"
+        },
+        {
+          "args": [
+            "stop"
+          ],
+          "labels": [
+            "ret_true",
+            "next1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "next1"
+        },
+        {
+          "args": [
+            "phi_p",
+            "factor"
+          ],
+          "dest": "power",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "guess",
+            "power",
+            "p"
+          ],
+          "dest": "exp",
+          "funcs": [
+            "modexp"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "exp",
+            "one"
+          ],
+          "dest": "is_one",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_one"
+          ],
+          "labels": [
+            "ret_false",
+            "next2"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "next2"
+        },
+        {
+          "args": [
+            "ptr",
+            "one"
+          ],
+          "dest": "ptr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "count",
+            "one"
+          ],
+          "dest": "count",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "check_power"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "ret_true"
+        },
+        {
+          "dest": "t",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "args": [
+            "t"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "ret_false"
+        },
+        {
+          "dest": "t",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "t"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "check_ord",
+      "type": "bool"
+    },
+    {
+      "args": [
+        {
+          "name": "p",
+          "type": "int"
+        },
+        {
+          "name": "phi_p",
+          "type": "int"
+        },
+        {
+          "name": "factors",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "name": "start",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "fallback",
+          "op": "const",
+          "type": "int",
+          "value": -999
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "start"
+          ],
+          "dest": "guess",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "eval"
+        },
+        {
+          "args": [
+            "guess",
+            "p"
+          ],
+          "dest": "too_big",
+          "op": "ge",
+          "type": "int"
+        },
+        {
+          "args": [
+            "too_big"
+          ],
+          "labels": [
+            "done_guess",
+            "keep_trying"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "keep_trying"
+        },
+        {
+          "args": [
+            "p",
+            "phi_p",
+            "factors",
+            "guess"
+          ],
+          "dest": "works",
+          "funcs": [
+            "check_ord"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "works"
+          ],
+          "labels": [
+            "ret",
+            "inc"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "ret"
+        },
+        {
+          "args": [
+            "guess"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "inc"
+        },
+        {
+          "args": [
+            "guess",
+            "one"
+          ],
+          "dest": "guess",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "eval"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "done_guess"
+        },
+        {
+          "args": [
+            "fallback"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "search_primitive",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "p",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "p",
+            "one"
+          ],
+          "dest": "q",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "q"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "phi",
+      "type": "int"
+    },
+    {
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "zero",
+            "one"
+          ],
+          "dest": "mone",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "dest": "x",
+          "op": "const",
+          "type": "int",
+          "value": 12
+        },
+        {
+          "dest": "y",
+          "op": "const",
+          "type": "int",
+          "value": 23
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "arr",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "arr",
+            "y"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "x",
+            "arr",
+            "one"
+          ],
+          "dest": "arr",
+          "funcs": [
+            "prepend"
+          ],
+          "op": "call",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "arr"
+          ],
+          "dest": "tmp1",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "arr",
+            "one"
+          ],
+          "dest": "arr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "arr"
+          ],
+          "dest": "tmp2",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "arr",
+            "mone"
+          ],
+          "dest": "arr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "tmp1"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "tmp2"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "arr"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main_test_prepend"
+    },
+    {
+      "instrs": [
+        {
+          "dest": "x",
+          "op": "const",
+          "type": "int",
+          "value": 23
+        },
+        {
+          "dest": "y",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "dest": "n",
+          "op": "const",
+          "type": "int",
+          "value": 50
+        },
+        {
+          "args": [
+            "x",
+            "y",
+            "n"
+          ],
+          "dest": "res",
+          "funcs": [
+            "modexp"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main2"
+    },
+    {
+      "instrs": [
+        {
+          "dest": "p",
+          "op": "const",
+          "type": "int",
+          "value": 1151
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "p"
+          ],
+          "dest": "phi_p",
+          "funcs": [
+            "phi"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "count_result",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "phi_p",
+            "count_result"
+          ],
+          "dest": "prime_factors",
+          "funcs": [
+            "prime_factors"
+          ],
+          "op": "call",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "count_result"
+          ],
+          "dest": "num_factors",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "dest": "guess",
+          "op": "const",
+          "type": "int",
+          "value": 121
+        },
+        {
+          "args": [
+            "p",
+            "phi_p",
+            "prime_factors",
+            "guess"
+          ],
+          "dest": "res",
+          "funcs": [
+            "check_ord"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "count_result"
+          ],
+          "op": "free"
+        },
+        {
+          "args": [
+            "prime_factors"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main_test"
+    },
+    {
+      "instrs": [
+        {
+          "dest": "p",
+          "op": "const",
+          "type": "int",
+          "value": 1151
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "p"
+          ],
+          "dest": "phi_p",
+          "funcs": [
+            "phi"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "count_result",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "phi_p",
+            "count_result"
+          ],
+          "dest": "prime_factors",
+          "funcs": [
+            "prime_factors"
+          ],
+          "op": "call",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "count_result"
+          ],
+          "dest": "num_factors",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "p",
+            "phi_p",
+            "prime_factors",
+            "one"
+          ],
+          "dest": "res",
+          "funcs": [
+            "search_primitive"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "count_result"
+          ],
+          "op": "free"
+        },
+        {
+          "args": [
+            "prime_factors"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
