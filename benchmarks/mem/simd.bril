@@ -1,0 +1,56 @@
+@rand(seq: ptr<int>, max: int) : int {
+  a: int = const 25214903917;
+  c: int = const 11;
+  m: int = const 281474976710656;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  next: int = mul next m;
+  next: int = sub axpc next;
+  store seq next;
+  val: int = div next max;
+  val: int = mul val max;
+  val: int = sub next val;
+  ret val;
+}
+
+# Generates a random array of length `size`
+@randarray(size: int, rng: ptr<int>) : ptr<int> {
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  max: int = const 1000;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  val: int = call @rand rng max;
+  loc: ptr<int> = ptradd arr i;
+  store loc val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# ARGS: 4096 2023
+@main(size: int, seed: int) {
+  two: int = const 2;
+  rng: ptr<int> = alloc seed; 
+  store rng seed;
+  arr: ptr<int> = call @randarray size rng; 
+  i: int = const 0; 
+  .loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+  .body: 
+    loc: ptr<int> = ptradd arr i;
+    val: int = load loc;
+    val: int = mul val two;
+    store loc val;
+  .done:
+  free arr;
+  free rng;
+}
