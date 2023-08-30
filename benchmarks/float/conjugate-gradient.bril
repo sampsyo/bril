@@ -1,8 +1,8 @@
 # Conjugate gradient method to solve Ax=b. Currently A is a 3x3 diagonal with 
 # incrementing values, but any arbitrary spd A can be used
 
-@main() {
-	n :int = const 3;
+# ARGS: 3
+@main(n: int) {
 	one: int = const 1;
 	fone: float = const 1;
 	a :ptr<float> = call @get_sym n;
@@ -16,8 +16,8 @@
 	br cond .for.set.body .for.set.end;
 
 .for.set.body:
-	idx_b: ptr<int> = ptradd b i;
-	idx_x0: ptr<int> = ptradd x0 i;
+	idx_b: ptr<float> = ptradd b i;
+	idx_x0: ptr<float> = ptradd x0 i;
 
 	store idx_b v;
 	store idx_x0 fone;
