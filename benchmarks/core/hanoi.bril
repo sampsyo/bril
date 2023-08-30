@@ -1,15 +1,16 @@
-# Three-disk Tower of Hanoi puzzle.
+# Tower of Hanoi puzzle.
 #
-# Moves are printed in order, one on each line, where a move `src dst` indicates
-# that the top disk from rod `src` should be moved to rod `dst`.
+# Input:  Number of disks.
+# Output: Each move in order, one on each line, where a move `src dst` indicates
+#         that the top disk from rod `src` should be moved to rod `dst`.
 
-@hanoi (disk: int, src: int, dst: int, spare: int) {
+@hanoi (disks: int, src: int, dst: int, spare: int) {
   zero: int = const 0;
-  nonneg: bool = ge disk zero;
-  br nonneg .then .else;
+  pos: bool = gt disks zero;
+  br pos .then .else;
 .then:
   one: int = const 1;
-  above: int = sub disk one;
+  above: int = sub disks one;
   call @hanoi above src spare dst;
   print src dst;
   call @hanoi above spare dst src;
@@ -17,10 +18,10 @@
   ret;
 }
 
-@main {
-  disk: int = const 2;
+# ARGS: 3
+@main (disks: int) {
   src: int = const 0;
   dst: int = const 2;
   spare: int = const 1;
-  call @hanoi disk src dst spare;
+  call @hanoi disks src dst spare;
 }
