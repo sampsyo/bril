@@ -29,6 +29,7 @@ The current benchmarks are:
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `function_call`: For benchmarking the overhead of simple function calls.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
+* `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `loopfact`: Compute *n!* imperatively using a loop.
 * `mandelbrot`: Generates a really low resolution, ascii, [mandelbrot set][mandelbrot].
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
@@ -79,4 +80,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
+[hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
