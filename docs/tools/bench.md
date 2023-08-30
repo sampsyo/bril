@@ -36,6 +36,7 @@ The current benchmarks are:
 * `n_root`: Calculate nth root of a float using newton's method.
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `pascals-row`: Computes a row in Pascal's Triangle.
+* `palindrome`: Outputs a 0-1 value indicating whether the input is a [palindrome][palindrome] number.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `primes-between`: Print the primes in the interval `[a, b]`.
@@ -77,3 +78,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
+[palindrome]: https://en.wikipedia.org/wiki/Palindrome
