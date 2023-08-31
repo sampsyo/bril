@@ -1,11 +1,11 @@
-# Benchmarks an implementation of quicksort with a median of three pivot
-# scheme. We then generate several arrays with pseudorandom elements, sort them,
-# and check that they are indeed in nondecreasing order by printing out "true"
-# if the array is sorted correctly. This is based on my C implementation of 
-# quicksort from ECE 4750, which is in turn based off the classic CS 2110 
-# quicksort loop invariants. I attempted to optimize the median of three 
-# procedure to use the fewest number of swaps possible, which I believe I 
-# referenced from Wikipedia in my original C implementation.
+# Benchmarks an implementation of quicksort with Hoare partitioning and median 
+# of three pivot selection. We then generate several arrays with pseudorandom 
+# elements, sort them, and check that they are indeed in nondecreasing order by 
+# printing out "true" if the array is sorted correctly. This is based on my C 
+# implementation of  quicksort from ECE 4750, which is in turn based off the 
+# classic CS 2110 quicksort loop invariants. I attempted to optimize the median
+# of three procedure to use the fewest number of swaps possible, which I believe
+# I referenced from Wikipedia in my original C implementation.
 
 # Swaps the data at two indices in an array
 @swap(arr: ptr<int>, i: int, j: int) {

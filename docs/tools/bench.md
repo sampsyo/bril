@@ -52,7 +52,7 @@ The current benchmarks are:
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
-* `quicksort-median-of-three`: Quicksort using median of three pivot selection.
+* `quicksort-hoare`: Quicksort using [Hoare partioning][qsort-hoare] and median of three pivot selection.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
@@ -99,5 +99,6 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
 [euclidean]: https://en.wikipedia.org/wiki/Norm_(mathematics)
 [qsort]: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
+[qsort-hoare]: https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
 [modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
 [totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
