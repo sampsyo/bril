@@ -18,15 +18,21 @@ The current benchmarks are:
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
 * `cholesky`: Perform Cholesky decomposition of a Hermitian and positive definite matrix. The result is validated by comparing with Python's `scipy.linalg.cholesky`.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
+* `conjugate-gradient`: Uses conjugate gradients to solve `Ax=b` for any arbitrary positive semidefinite `A`.
+* `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `digial-root`: Computes the digital root of the input number.
 * `eight-queens`: Counts the number of solutions for *n* queens problem, a generalization of [Eight queens puzzle][eight_queens].
 * `euclid`: Calculates the greatest common divisor between two large numbers using the [Euclidean Algorithm][euclid] with a helper function for the modulo operator.
+* `euler`: Approximates [Euler's number][euler] using the Taylor series.
+* `fact`: Prints the factorial of *n*, computing it recursively.
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `function_call`: For benchmarking the overhead of simple function calls.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
+* `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `loopfact`: Compute *n!* imperatively using a loop.
+* `mandelbrot`: Generates a really low resolution, ascii, [mandelbrot set][mandelbrot].
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `max-subarray`: solution to the classic Maximum Subarray problem.
@@ -50,6 +56,8 @@ The current benchmarks are:
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
+* `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
+* `reverse`: Compute number with reversed digits (e.g. 123 -> 321).
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -76,3 +84,6 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
 [primitive_root]: https://en.wikipedia.org/wiki/Primitive_root_modulo_n
+[mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
+[hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
+[euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)

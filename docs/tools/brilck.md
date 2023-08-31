@@ -28,3 +28,7 @@ It will print any problems it finds to standard error.
 
 You can optionally provide a filename as a (sole) command-line argument.
 This filename will appear in any error messages for easier parsing when many files are involved.
+
+Consider supplying the `-p` flag to [the `bril2json` parser][text] to get source positions in the error messages.
+
+[text]: ./text.md

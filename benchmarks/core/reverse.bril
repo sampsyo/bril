@@ -1,0 +1,30 @@
+# ARGS: 123
+@main (input: int){
+  n: int = id input;
+  v0: int = const 0;
+  v1: int = const 10;
+  result: int = id v0;
+  v2: bool = const true;
+  notdone: bool = id v2;
+.for.cond.3:
+  v4: bool = id notdone;
+  br v4 .for.body.3 .for.end.3;
+.for.body.3:
+  v5: int = id n;
+  a: int = div v5 v1;
+  floor: int = mul a v1;
+  remainder: int = sub v5 floor;
+  result: int = mul result v1;
+  result: int = add result remainder;
+  n: int = id a;
+  comp1: bool = eq n v0;
+  br comp1 .if.body .for.incre;
+ .if.body:
+  notdone: bool = const false;
+  jmp .for.cond.3;
+.for.incre:
+  jmp .for.cond.3;
+.for.end.3:
+  print result;
+}
+

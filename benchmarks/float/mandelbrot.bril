@@ -1,0 +1,165 @@
+@main {
+  v12: int = const 1;
+  space: int = id v12;
+  v13: int = const 8;
+  value: int = id v13;
+  v14: float = const 0;
+  v15: float = const 1;
+  v16: float = fsub v14 v15;
+  neg_1: float = id v16;
+  v17: float = const 0;
+  v18: float = const 2;
+  v19: float = fsub v17 v18;
+  neg_2: float = id v19;
+  v21: float = const 1;
+  j: float = id v21;
+.for.cond.20:
+  v22: float = id j;
+  v23: float = id neg_1;
+  v24: bool = fge v22 v23;
+  br v24 .for.body.20 .for.end.20;
+.for.body.20:
+  v25: int = const 0;
+  num: int = id v25;
+  v26: int = const 0;
+  cnt: int = id v26;
+  v28: float = id neg_2;
+  i: float = id v28;
+.for.cond.27:
+  v29: float = id i;
+  v30: float = const 0.5;
+  v31: bool = fle v29 v30;
+  br v31 .for.body.27 .for.end.27;
+.for.body.27:
+  v32: float = id i;
+  v33: float = id j;
+  v34: float = const 0;
+  v35: float = const 0;
+  v36: int = const 0;
+  x: int = call @f v32 v33 v34 v35 v36;
+  x: int = id x;
+  v38: int = id x;
+  v39: int = const 50;
+  v40: bool = lt v38 v39;
+  br v40 .then.37 .else.37;
+.then.37:
+  v41: int = id space;
+  v42: int = id cnt;
+  v: int = call @pow10 v41 v42;
+  v: int = id v;
+  v43: int = id num;
+  v44: int = id v;
+  v45: int = add v43 v44;
+  num: int = id v45;
+  jmp .endif.37;
+.else.37:
+  v46: int = id value;
+  v47: int = id cnt;
+  v: int = call @pow10 v46 v47;
+  v: int = id v;
+  v48: int = id num;
+  v49: int = id v;
+  v50: int = add v48 v49;
+  num: int = id v50;
+.endif.37:
+  v51: int = id cnt;
+  v52: int = const 1;
+  v53: int = add v51 v52;
+  cnt: int = id v53;
+  v54: float = id i;
+  v55: float = const 0.225;
+  v56: float = fadd v54 v55;
+  i: float = id v56;
+  jmp .for.cond.27;
+.for.end.27:
+  v57: int = id num;
+  print v57;
+  v58: int = const 0;
+  v59: float = id j;
+  v60: float = const 0.015;
+  v61: float = fsub v59 v60;
+  j: float = id v61;
+  jmp .for.cond.20;
+.for.end.20:
+}
+@f(X: float, Y: float, x: float, y: float, n: int): int {
+  v0: float = id x;
+  v1: float = id x;
+  v2: float = fmul v0 v1;
+  v3: float = id y;
+  v4: float = id y;
+  v5: float = fmul v3 v4;
+  v6: float = fadd v2 v5;
+  r: float = id v6;
+  v8: float = id r;
+  v9: float = const 4;
+  v10: bool = flt v8 v9;
+  br v10 .then.7 .else.7;
+.then.7:
+  v12: int = id n;
+  v13: int = const 100;
+  v14: bool = lt v12 v13;
+  br v14 .then.11 .else.11;
+.then.11:
+  v15: float = id x;
+  v16: float = id x;
+  v17: float = fmul v15 v16;
+  v18: float = id y;
+  v19: float = id y;
+  v20: float = fmul v18 v19;
+  v21: float = fsub v17 v20;
+  v22: float = id X;
+  v23: float = fadd v21 v22;
+  x2: float = id v23;
+  v24: float = const 2;
+  v25: float = id x;
+  v26: float = fmul v24 v25;
+  v27: float = id y;
+  v28: float = fmul v26 v27;
+  v29: float = id Y;
+  v30: float = fadd v28 v29;
+  y2: float = id v30;
+  v31: int = const 1;
+  v32: float = id X;
+  v33: float = id Y;
+  v34: float = id x2;
+  v35: float = id y2;
+  v36: int = id n;
+  v37: int = const 1;
+  v38: int = add v36 v37;
+  v39: int = call @f v32 v33 v34 v35 v38;
+  v40: int = add v31 v39;
+  fv: int = id v40;
+  v41: int = id fv;
+  ret v41;
+  jmp .endif.11;
+.else.11:
+.endif.11:
+  jmp .endif.7;
+.else.7:
+.endif.7:
+  v42: int = const 0;
+  ret v42;
+}
+@pow10(n: int, e: int): int {
+  v1: int = id e;
+  i: int = id v1;
+.for.cond.0:
+  v2: int = id i;
+  v3: int = const 0;
+  v4: bool = gt v2 v3;
+  br v4 .for.body.0 .for.end.0;
+.for.body.0:
+  v5: int = id n;
+  v6: int = const 10;
+  v7: int = mul v5 v6;
+  n: int = id v7;
+  v8: int = id i;
+  v9: int = const 1;
+  v10: int = sub v8 v9;
+  i: int = id v10;
+  jmp .for.cond.0;
+.for.end.0:
+  v11: int = id n;
+  ret v11;
+}

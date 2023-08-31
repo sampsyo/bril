@@ -17,7 +17,7 @@ opam pin add -k path bril path/to/brill/bril-ocaml
 opam install bril
 ```
 
-Thats it! Now, you can then include it in your [Dune][] files as `bril`, like any other OCaml library!
+That's it! You can include it in your [Dune][] files as `bril`, like any other OCaml library.
 
 Use
 ---

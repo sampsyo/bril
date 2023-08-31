@@ -1,0 +1,267 @@
+# ARGS: 1.0472
+@main(theta: float) {
+  v0: float = id theta;
+  x: float = call @cordic v0;
+  x: float = id x;
+  v1: float = id x;
+  print v1;
+  v2: int = const 0;
+}
+@cordic(theta: float): float {
+  v0: float = const 0.7853981633974483;
+  cstab0: float = id v0;
+  v1: float = const 0.4636476090008061;
+  cstab1: float = id v1;
+  v2: float = const 0.24497866312686414;
+  cstab2: float = id v2;
+  v3: float = const 0.12435499454676144;
+  cstab3: float = id v3;
+  v4: float = const 0.06241880999595735;
+  cstab4: float = id v4;
+  v5: float = const 0.031239833430268277;
+  cstab5: float = id v5;
+  v6: float = const 0.015623728620476831;
+  cstab6: float = id v6;
+  v7: float = const 0.007812341060101111;
+  cstab7: float = id v7;
+  v8: float = const 0;
+  gamma: float = id v8;
+  v9: float = const 0;
+  lsin: float = id v9;
+  v10: float = const 0.6072529350088812;
+  lcos: float = id v10;
+  v11: float = const 1;
+  divisor: float = id v11;
+  v13: int = const 0;
+  i: int = id v13;
+.for.cond.12:
+  v14: int = id i;
+  v15: int = const 8;
+  v16: bool = lt v14 v15;
+  br v16 .for.body.12 .for.end.12;
+.for.body.12:
+  v17: float = id theta;
+  v18: float = id gamma;
+  v19: float = fsub v17 v18;
+  v20: float = const 0;
+  v21: bool = fgt v19 v20;
+  clockwise: bool = id v21;
+  v22: float = id lsin;
+  v23: float = id divisor;
+  v24: float = fdiv v22 v23;
+  sine_shifted: float = id v24;
+  v25: float = id lcos;
+  v26: float = id divisor;
+  v27: float = fdiv v25 v26;
+  cosine_shifted: float = id v27;
+  v28: float = id divisor;
+  v29: float = const 2;
+  v30: float = fmul v28 v29;
+  divisor: float = id v30;
+  v32: bool = id clockwise;
+  br v32 .then.31 .else.31;
+.then.31:
+  v33: float = id lsin;
+  v34: float = id cosine_shifted;
+  v35: float = fadd v33 v34;
+  lsin: float = id v35;
+  v36: float = id lcos;
+  v37: float = id sine_shifted;
+  v38: float = fsub v36 v37;
+  lcos: float = id v38;
+  v40: int = id i;
+  v41: int = const 0;
+  v42: bool = eq v40 v41;
+  br v42 .then.39 .else.39;
+.then.39:
+  v43: float = id gamma;
+  v44: float = id cstab0;
+  v45: float = fadd v43 v44;
+  gamma: float = id v45;
+  jmp .endif.39;
+.else.39:
+  v47: int = id i;
+  v48: int = const 1;
+  v49: bool = eq v47 v48;
+  br v49 .then.46 .else.46;
+.then.46:
+  v50: float = id gamma;
+  v51: float = id cstab1;
+  v52: float = fadd v50 v51;
+  gamma: float = id v52;
+  jmp .endif.46;
+.else.46:
+  v54: int = id i;
+  v55: int = const 2;
+  v56: bool = eq v54 v55;
+  br v56 .then.53 .else.53;
+.then.53:
+  v57: float = id gamma;
+  v58: float = id cstab2;
+  v59: float = fadd v57 v58;
+  gamma: float = id v59;
+  jmp .endif.53;
+.else.53:
+  v61: int = id i;
+  v62: int = const 3;
+  v63: bool = eq v61 v62;
+  br v63 .then.60 .else.60;
+.then.60:
+  v64: float = id gamma;
+  v65: float = id cstab3;
+  v66: float = fadd v64 v65;
+  gamma: float = id v66;
+  jmp .endif.60;
+.else.60:
+  v68: int = id i;
+  v69: int = const 4;
+  v70: bool = eq v68 v69;
+  br v70 .then.67 .else.67;
+.then.67:
+  v71: float = id gamma;
+  v72: float = id cstab4;
+  v73: float = fadd v71 v72;
+  gamma: float = id v73;
+  jmp .endif.67;
+.else.67:
+  v75: int = id i;
+  v76: int = const 5;
+  v77: bool = eq v75 v76;
+  br v77 .then.74 .else.74;
+.then.74:
+  v78: float = id gamma;
+  v79: float = id cstab5;
+  v80: float = fadd v78 v79;
+  gamma: float = id v80;
+  jmp .endif.74;
+.else.74:
+  v82: int = id i;
+  v83: int = const 6;
+  v84: bool = eq v82 v83;
+  br v84 .then.81 .else.81;
+.then.81:
+  v85: float = id gamma;
+  v86: float = id cstab6;
+  v87: float = fadd v85 v86;
+  gamma: float = id v87;
+  jmp .endif.81;
+.else.81:
+  v88: float = id gamma;
+  v89: float = id cstab7;
+  v90: float = fadd v88 v89;
+  gamma: float = id v90;
+.endif.81:
+.endif.74:
+.endif.67:
+.endif.60:
+.endif.53:
+.endif.46:
+.endif.39:
+  jmp .endif.31;
+.else.31:
+  v91: float = id lsin;
+  v92: float = id cosine_shifted;
+  v93: float = fsub v91 v92;
+  lsin: float = id v93;
+  v94: float = id lcos;
+  v95: float = id sine_shifted;
+  v96: float = fadd v94 v95;
+  lcos: float = id v96;
+  v98: int = id i;
+  v99: int = const 0;
+  v100: bool = eq v98 v99;
+  br v100 .then.97 .else.97;
+.then.97:
+  v101: float = id gamma;
+  v102: float = id cstab0;
+  v103: float = fsub v101 v102;
+  gamma: float = id v103;
+  jmp .endif.97;
+.else.97:
+  v105: int = id i;
+  v106: int = const 1;
+  v107: bool = eq v105 v106;
+  br v107 .then.104 .else.104;
+.then.104:
+  v108: float = id gamma;
+  v109: float = id cstab1;
+  v110: float = fsub v108 v109;
+  gamma: float = id v110;
+  jmp .endif.104;
+.else.104:
+  v112: int = id i;
+  v113: int = const 2;
+  v114: bool = eq v112 v113;
+  br v114 .then.111 .else.111;
+.then.111:
+  v115: float = id gamma;
+  v116: float = id cstab2;
+  v117: float = fsub v115 v116;
+  gamma: float = id v117;
+  jmp .endif.111;
+.else.111:
+  v119: int = id i;
+  v120: int = const 3;
+  v121: bool = eq v119 v120;
+  br v121 .then.118 .else.118;
+.then.118:
+  v122: float = id gamma;
+  v123: float = id cstab3;
+  v124: float = fsub v122 v123;
+  gamma: float = id v124;
+  jmp .endif.118;
+.else.118:
+  v126: int = id i;
+  v127: int = const 4;
+  v128: bool = eq v126 v127;
+  br v128 .then.125 .else.125;
+.then.125:
+  v129: float = id gamma;
+  v130: float = id cstab4;
+  v131: float = fsub v129 v130;
+  gamma: float = id v131;
+  jmp .endif.125;
+.else.125:
+  v133: int = id i;
+  v134: int = const 5;
+  v135: bool = eq v133 v134;
+  br v135 .then.132 .else.132;
+.then.132:
+  v136: float = id gamma;
+  v137: float = id cstab5;
+  v138: float = fsub v136 v137;
+  gamma: float = id v138;
+  jmp .endif.132;
+.else.132:
+  v140: int = id i;
+  v141: int = const 6;
+  v142: bool = eq v140 v141;
+  br v142 .then.139 .else.139;
+.then.139:
+  v143: float = id gamma;
+  v144: float = id cstab6;
+  v145: float = fsub v143 v144;
+  gamma: float = id v145;
+  jmp .endif.139;
+.else.139:
+  v146: float = id gamma;
+  v147: float = id cstab7;
+  v148: float = fsub v146 v147;
+  gamma: float = id v148;
+.endif.139:
+.endif.132:
+.endif.125:
+.endif.118:
+.endif.111:
+.endif.104:
+.endif.97:
+.endif.31:
+  v149: int = id i;
+  v150: int = const 1;
+  v151: int = add v149 v150;
+  i: int = id v151;
+  jmp .for.cond.12;
+.for.end.12:
+  v152: float = id lsin;
+  ret v152;
+}

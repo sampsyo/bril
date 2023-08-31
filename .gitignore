@@ -10,3 +10,7 @@ __pycache__
 
 **/*.o
 .DS_Store
+
+# vim swap files
+*.swp
+*.swo
