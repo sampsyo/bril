@@ -137,7 +137,7 @@
   
   .check_power:
     factor : int = load ptr;
-    stop = eq factor zero;
+    stop : bool = eq factor zero;
     br stop .ret_true .next1;
     
   .next1:
@@ -168,7 +168,7 @@
   guess : int = id start;
 
   .eval:
-    too_big : int = ge guess p;
+    too_big : bool = ge guess p;
     br too_big .done_guess .keep_trying;
   
   .keep_trying:
