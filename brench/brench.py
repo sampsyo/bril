@@ -10,7 +10,6 @@ import sys
 import os
 from concurrent import futures
 import glob
-from itertools import zip_longest
 
 __version__ = '1.0.0'
 
@@ -45,15 +44,6 @@ def run_pipe(cmds, input, timeout):
     finally:
         for proc in procs:
             proc.kill()
-
-
-def compare_output(o1, o2, ε=0.0):
-    def cmp(x, y):
-        try:
-            return abs(float(x) - float(y)) <= ε
-        except (ValueError, TypeError):
-            return x == y
-    return all(cmp(x, y) for x, y in zip_longest(o1.split(), o2.split()))
 
 
 def run_bench(pipeline, fn, timeout):
