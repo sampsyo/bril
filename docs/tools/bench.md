@@ -21,6 +21,7 @@ The current benchmarks are:
 * `conjugate-gradient`: Uses conjugate gradients to solve `Ax=b` for any arbitrary positive semidefinite `A`.
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `digial-root`: Computes the digital root of the input number.
+* `dot-product`: Computes the dot product of two vectors.
 * `eight-queens`: Counts the number of solutions for *n* queens problem, a generalization of [Eight queens puzzle][eight_queens].
 * `euclid`: Calculates the greatest common divisor between two large numbers using the [Euclidean Algorithm][euclid] with a helper function for the modulo operator.
 * `euler`: Approximates [Euler's number][euler] using the Taylor series.
