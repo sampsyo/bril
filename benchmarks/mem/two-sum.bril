@@ -1,0 +1,127 @@
+# ARGS: 9
+@main(target: int) {
+  arr: ptr<int> = call @initArr;
+  arr: ptr<int> = id arr;
+  v45: ptr<int> = id arr;
+  v46: int = const 4;
+  result: ptr<int> = call @twoSum v45 v46 target;
+  result: ptr<int> = id result;
+  v47: ptr<int> = id arr;
+  free v47;
+  v48: int = const 0;
+  v49: ptr<int> = id result;
+  v50: int = const 0;
+  v51: ptr<int> = ptradd v49 v50;
+  v52: int = load v51;
+  print v52;
+  v53: int = const 0;
+  v54: ptr<int> = id result;
+  v55: int = const 1;
+  v56: ptr<int> = ptradd v54 v55;
+  v57: int = load v56;
+  print v57;
+  v58: int = const 0;
+  v59: ptr<int> = id result;
+  free v59;
+  v60: int = const 0;
+}
+@initArr: ptr<int> {
+  v0: int = const 4;
+  v1: ptr<int> = alloc v0;
+  arr: ptr<int> = id v1;
+  v2: ptr<int> = id arr;
+  v3: int = const 0;
+  v4: ptr<int> = ptradd v2 v3;
+  v5: int = const 2;
+  store v4 v5;
+  v6: int = const 0;
+  v7: ptr<int> = id arr;
+  v8: int = const 1;
+  v9: ptr<int> = ptradd v7 v8;
+  v10: int = const 7;
+  store v9 v10;
+  v11: int = const 0;
+  v12: ptr<int> = id arr;
+  v13: int = const 2;
+  v14: ptr<int> = ptradd v12 v13;
+  v15: int = const 11;
+  store v14 v15;
+  v16: int = const 0;
+  v17: ptr<int> = id arr;
+  v18: int = const 3;
+  v19: ptr<int> = ptradd v17 v18;
+  v20: int = const 15;
+  store v19 v20;
+  v21: int = const 0;
+  v22: ptr<int> = id arr;
+  ret v22;
+}
+@twoSum(nums: ptr<int>, size: int, target: int): ptr<int> {
+  v0: int = const 2;
+  v1: ptr<int> = alloc v0;
+  res: ptr<int> = id v1;
+  v3: int = const 0;
+  i: int = id v3;
+.for.cond.2:
+  v4: int = id i;
+  v5: int = id size;
+  v6: bool = lt v4 v5;
+  br v6 .for.body.2 .for.end.2;
+.for.body.2:
+  v8: int = id i;
+  v9: int = const 1;
+  v10: int = add v8 v9;
+  j: int = id v10;
+.for.cond.7:
+  v11: int = id j;
+  v12: int = id size;
+  v13: bool = lt v11 v12;
+  br v13 .for.body.7 .for.end.7;
+.for.body.7:
+  v14: ptr<int> = id nums;
+  v15: int = id i;
+  v16: ptr<int> = ptradd v14 v15;
+  v17: int = load v16;
+  v18: ptr<int> = id nums;
+  v19: int = id j;
+  v20: ptr<int> = ptradd v18 v19;
+  v21: int = load v20;
+  v22: int = add v17 v21;
+  sum: int = id v22;
+  v24: int = id sum;
+  v25: int = id target;
+  v26: bool = eq v24 v25;
+  br v26 .then.23 .else.23;
+.then.23:
+  v27: ptr<int> = id res;
+  v28: int = const 0;
+  v29: ptr<int> = ptradd v27 v28;
+  v30: int = id i;
+  store v29 v30;
+  v31: int = const 0;
+  v32: ptr<int> = id res;
+  v33: int = const 1;
+  v34: ptr<int> = ptradd v32 v33;
+  v35: int = id j;
+  store v34 v35;
+  v36: int = const 0;
+  v37: ptr<int> = id res;
+  ret v37;
+  jmp .endif.23;
+.else.23:
+.endif.23:
+  v38: int = id j;
+  v39: int = const 1;
+  v40: int = add v38 v39;
+  j: int = id v40;
+  jmp .for.cond.7;
+.for.end.7:
+  v41: int = id i;
+  v42: int = const 1;
+  v43: int = add v41 v42;
+  i: int = id v43;
+  jmp .for.cond.2;
+.for.end.2:
+  v44: ptr<int> = id res;
+  ret v44;
+}

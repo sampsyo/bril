@@ -1,0 +1,114 @@
+@pow(x:float, k:int):float
+{
+    xx: float = const 1.0;
+    one: int = const 1;
+    i: int = const 0;
+  .while:
+    b: bool = lt i k;
+    br b .continue .endwhile;
+  .continue:
+    xx: float = fmul xx x;
+    i: int = add i one;
+    jmp .while;
+  .endwhile:
+    ret xx;
+}
+
+@n_root(x:float, n:int):float
+{
+    one: int = const 1;
+    two_f: float = const 2.0;
+    xxx: float = fdiv x two_f;
+    n_minus_one: int = sub n one;
+    i: int = const 0;
+    num_iter: int = const 20;
+  .while:
+    b: bool = lt i num_iter;
+    br b .continue .endwhile;
+  .continue:
+    pow_n_minus_one: float = call @pow xxx n_minus_one;
+    pow_n: float = fmul pow_n_minus_one xxx;
+    numerator: float = fsub pow_n x;
+    denominator: float = fmul x pow_n_minus_one;
+    frac: float = fdiv numerator denominator;
+    xxx: float = fsub xxx frac;
+    i: int = add i one;
+    jmp .while;
+  .endwhile:
+    ret xxx;
+}
+
+# Modified @pack to handle floats
+@pack(size: int, n1: float, n2: float, n3: float, n4: float, n5: float): ptr<float> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<float> = alloc size;
+    loc: ptr<float> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<float> = ptradd array i;
+    store loc n2;
+    i: int = add i one;
+    loc: ptr<float> = ptradd array i;
+    store loc n3;
+    i: int = add i one;
+    loc: ptr<float> = ptradd array i;
+    store loc n4;
+    i: int = add i one;
+    loc: ptr<float> = ptradd array i;
+    store loc n5;
+    ret array;
+}
+
+# Borrowed from benchmark suite on GitHub
+@print_array(array: ptr<float>, size: int) {
+    i: int = const 0;
+    one: int = const 1;
+  .loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+  .body:
+    loc: ptr<float> = ptradd array i;
+    val: float = load loc;
+    print val;
+  .loop_end:
+    i: int = add i one;
+    jmp .loop;
+  .done:
+    ret;
+}
+
+@euclidean_norm(array: ptr<float>, size: int): float {
+    i: int = const 0;
+    sum: float = const 0.0;
+    one: int = const 1;
+  .loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+  .body:
+    loc: ptr<float> = ptradd array i;
+    val: float = load loc;
+    square: float = fmul val val;
+    sum: float = fadd sum square;
+  .loop_end:
+    i: int = add i one;
+    jmp .loop;
+  .done:
+    two: int = const 2;
+    norm: float = call @n_root sum two;
+    ret norm;
+}
+
+@main()
+{
+    size: int = const 5;
+    n1: float = const 3;
+    n2: float = const 10; 
+    n3: float = const 1;
+    n4: float = const 9; 
+    n5: float = const 7;
+    array: ptr<float> = call @pack size n1 n2 n3 n4 n5;
+    norm: float = call @euclidean_norm array size;
+    print norm;
+    free array;
+}

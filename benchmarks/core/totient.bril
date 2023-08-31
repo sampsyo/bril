@@ -1,0 +1,66 @@
+# ARGS: 2023
+@main (n: int) {
+  print n;
+  tot: int = call @totient n;
+  print tot;
+}
+
+@totient (n: int): int {
+  result: int = id n;
+  p: int = const 2;
+  one: int = const 1;
+  zero: int = const 0;
+
+.for.set.cond:
+  pp: int = mul p p;
+  cond: bool = le pp n;
+  br cond .for.set.body .for.set.end;
+  
+.for.set.body:
+
+  npmod: int = call @mod n p;
+  if_cond: bool = eq npmod zero;
+  br if_cond .if_lbl .else_lbl;
+.if_lbl:
+
+.while.set.cond:
+
+  npmod: int = call @mod n p;
+  while_cond: bool = eq npmod zero;
+  br while_cond .while.body .while.end;
+
+.while.body:
+  npdiv: int = div n p;
+  n: int = id npdiv;
+  jmp .while.set.cond;
+
+.while.end:
+
+  resdiv: int = div result p;
+  result: int = sub result resdiv;
+
+.else_lbl:
+
+  p: int = add p one;
+  jmp .for.set.cond;
+
+.for.set.end:
+
+  final_if_cond: bool = gt n one;
+  br final_if_cond .final_if_label .final_else_label;
+
+.final_if_label:
+  resdiv: int = div result n;
+  result: int = sub result resdiv;
+
+.final_else_label:
+
+  ret result;
+}
+
+@mod (a: int, b: int): int {
+  ad: int = div a b;
+  mad: int = mul b ad;
+  ans: int = sub a mad;
+  ret ans;
+}
