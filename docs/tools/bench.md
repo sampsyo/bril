@@ -37,6 +37,7 @@ The current benchmarks are:
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `max-subarray`: solution to the classic Maximum Subarray problem.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
+* `norm`: Calculate the [euclidean norm][euclidean] of a vector 
 * `n_root`: Calculate nth root of a float using newton's method.
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `pascals-row`: Computes a row in Pascal's Triangle.
@@ -85,3 +86,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
 [hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
+[euclidean]: https://en.wikipedia.org/wiki/Norm_(mathematics)
