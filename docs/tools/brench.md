@@ -79,10 +79,4 @@ The latter is the value extracted from the run's standard output and standard er
 
 To check that a run's output is "correct," Brench compares its standard output
 to that of the first run (`baseline` in the above example, but it's whichever run
-configuration comes first). The comparison is mostly an exact string match, but
-Brench also supports an `epsilon` option which can be set for numerical values,
-in which case it will check for absolute difference being less than ε. This is
-primarily to deal with inconsistencies in printing floats, but can be used to
-test for "approximate correctness" with floating point optimizations. Be careful
-that setting the ε value might cause Brench to miss some unsound transformations
-that only slightly affect floating-point accuracy.
+configuration comes first). The comparison is an exact string match.
