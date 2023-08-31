@@ -1,0 +1,211 @@
+@rem(a: int, b: int): int {
+  quotient : int = div a b;
+  guess : int = mul b quotient;
+  rem : int = sub a guess;
+  ret rem;
+}
+
+# returns m | n
+@divides(m: int, n: int): bool {
+  zero : int = const 0;
+  quotient : int = div n m;
+  guess : int = mul m quotient;
+  rem : int = sub n guess;
+  res : bool = eq rem zero;
+  ret res;
+}
+
+# prepends n to ns, assuming that ns is an array of length l
+@prepend(n : int, ns: ptr<int>, l : int) : ptr<int> {
+  one: int = const 1;
+  new : int = add l one;
+  out : ptr<int> = alloc new;
+
+  i : int = const 0;
+  store out n;
+  curr : ptr<int> = id ns;
+  curr2 : ptr<int> = ptradd out one;
+  .repeat:
+    stop : bool = lt i l;
+    br stop .next .exit;
+    .next:
+    tmp : int = load curr;
+    store curr2 tmp;
+    i : int = add i one;
+    curr : ptr<int> = ptradd curr one;
+    curr2 : ptr<int> = ptradd curr2 one;
+    jmp .repeat;
+  .exit:
+  free ns;
+  ret out;
+}
+
+# returns the smallest prime factor of n. requires n > 1.
+@prime_factor(n: int): int {
+  guess : int = const 2;
+  inc : int = const 1;
+  
+  .continue:
+    square: int = mul guess guess;
+    continue : bool = lt square n;
+    works : bool = call @divides guess n;
+    br works .yay .inc;
+  .yay:
+    ret guess;
+  .inc:
+    guess : int = add guess inc;
+    br continue .continue .giveup;
+
+  .giveup:
+    ret n;
+}
+
+# stores the number of prime factors in num_factors and returns an array of them
+# ans is padded by 0 due to alloc difficulties
+@prime_factors(n: int, num_factors: ptr<int>): ptr<int> {
+  count : int = const 1;
+  zero : int = const 0;
+  one : int = const 1;
+  ans : ptr<int> = alloc count;
+  store ans zero;
+
+  .continue:
+    exit : bool = eq n one;
+    br exit .exit .next;
+  .next: 
+    prime : int = call @prime_factor n;
+    .repeat:
+      n : int = div n prime;
+      divides : bool = call @divides prime n;
+      br divides .repeat .divided;
+    .divided:
+    tmp : int = sub count one;
+    ans : ptr<int> = call @prepend prime ans count;
+    count : int = add count one;
+    jmp .continue;
+  .exit:
+  store num_factors count;
+  ret ans;
+    
+}
+
+@modexp(a : int, k : int, m : int) : int {
+  zero : int = const 0;
+  one : int = const 1;
+  two : int = const 2;
+  a : int = call @rem a m;
+
+
+  eq_zero : bool = eq zero k;
+  br eq_zero .exp_zero .not_zero;
+  
+  .exp_zero:
+    ret one;
+  
+  .not_zero:
+    eq_one : bool = eq one k;
+    br eq_one .exp_one .not_one;
+  
+  .exp_one:
+    ret a;
+
+  .not_one:
+    rem_two : int = call @rem k two;
+    post_mul : bool = eq rem_two one;
+    
+    half_exp : int = div k two;
+    sqrt : int = call @modexp a half_exp m;
+    res : int = mul sqrt sqrt;
+    res : int = call @rem res m;
+
+    br post_mul .post_multiply .no_post;
+  
+  .post_multiply:
+    res : int = mul res a;
+    res : int = call @rem res m;
+  .no_post:
+
+  .exit:
+    ret res;
+}
+
+@check_ord(p : int, phi_p : int, factors : ptr<int>, guess : int) : bool {
+  count : int = const 0;
+  zero : int = const 0;
+  one : int = const 1;
+  ptr : ptr<int> = id factors;
+  
+  .check_power:
+    factor : int = load ptr;
+    stop : bool = eq factor zero;
+    br stop .ret_true .next1;
+    
+  .next1:
+    power : int = div phi_p factor;
+    exp : int = call @modexp guess power p;
+    is_one : bool = eq exp one;
+    br is_one .ret_false .next2;
+    
+  .next2:
+    ptr : ptr<int> = ptradd ptr one;
+    count : int = add count one;
+    jmp .check_power;
+
+  .ret_true:
+    t : bool = const true;
+    ret t;
+
+  .ret_false:
+    t : bool = const false;
+    ret t;
+}
+
+
+@search_primitive(p : int, phi_p : int, factors : ptr<int>, start : int) : int {
+  fallback : int = const -999;
+  one : int = const 1;
+
+  guess : int = id start;
+
+  .eval:
+    too_big : bool = ge guess p;
+    br too_big .done_guess .keep_trying;
+  
+  .keep_trying:
+    works : bool = call @check_ord p phi_p factors guess;
+    br works .ret .inc;
+    
+  .ret:
+    ret guess;
+  
+  .inc:
+    guess : int = add guess one;
+    jmp .eval;
+    
+
+  .done_guess:
+    ret fallback;
+}
+
+
+@phi(p : int) : int {
+    one : int = const 1;
+    q : int = sub p one;
+    ret q;
+}
+
+# ARGS: 1151
+@main(p : int) {
+  zero : int = const 0;
+  one : int = const 1;
+  phi_p : int = call @phi p;
+  count_result : ptr<int> = alloc one;
+  prime_factors : ptr<int> = call @prime_factors phi_p count_result;
+  num_factors : int = load count_result;
+
+  res : int = call @search_primitive p phi_p prime_factors one;
+  print res;
+
+  free count_result;
+  free prime_factors;
+}
