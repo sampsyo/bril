@@ -1,0 +1,80 @@
+# ARGS: 12321
+@main(in: int) {
+#in: int = const 2343553432;
+ten: int = const 10;
+zero: int = const 0;
+one: int = const 1;
+index: int = const 1;
+not_finished: bool = const true;
+.for.cond:
+ br not_finished .for.body .for.end;
+.for.body:
+ power: int = call @pow ten index;
+ d: int = div in power;
+ check: bool = eq d zero;
+ br check .if.true .if.false;
+ .if.true:
+  not_finished: bool = const false;
+  jmp .for.cond;
+ .if.false:
+  index: int = add index one;
+  jmp .for.cond;
+.for.end:
+ exp: int = sub index one;
+ is_palindrome: bool = call @palindrome in exp;
+ print is_palindrome;
+}
+
+@pow(base: int, exp: int): int {
+res: int = const 1;
+zero: int = const 0;
+one: int = const 1;
+not_finished: bool = const true;
+.for.cond.pow:
+ br not_finished .for.body.pow .for.end.pow;
+.for.body.pow:
+ finished: bool = eq exp zero;
+ br finished .if.true.pow .if.false.pow;
+ .if.true.pow:
+  not_finished: bool = const false;
+  jmp .for.cond.pow;
+ .if.false.pow:
+  res: int = mul res base;
+  exp: int = sub exp one;
+  jmp .for.cond.pow;
+.for.end.pow:
+ ret res;
+}
+
+@palindrome(in: int, len: int): bool {
+ is_palindrome: bool = const false;
+ zero: int = const 0;
+ two: int = const 2;
+ ten: int = const 10;
+ check: bool = le len zero;
+ br check .if.true.palindrome .if.false.palindrome;
+ .if.true.palindrome:
+  is_palindrome: bool = const true;
+  jmp .if.end.palindrome;
+ .if.false.palindrome:
+  power: int = call @pow ten len;
+  left: int = div in power;
+  v1: int = div in ten;
+  v2: int = mul v1 ten;
+  right: int = sub in v2;
+  is_equal: bool = eq left right;
+  br is_equal .if.true.mirror .if.false.mirror;
+  .if.true.mirror:
+   temp: int = mul power left;
+   temp: int = sub in temp;
+   temp: int = sub temp right;
+   next_in: int = div temp ten;
+   next_len: int = sub len two;
+   is_palindrome: bool = call @palindrome next_in next_len;
+   jmp .if.end.palindrome;
+  .if.false.mirror:
+   is_palindrome: bool = const false;
+   jmp .if.end.palindrome;
+ .if.end.palindrome:
+  ret is_palindrome;
+}

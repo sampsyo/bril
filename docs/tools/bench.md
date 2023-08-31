@@ -21,6 +21,7 @@ The current benchmarks are:
 * `conjugate-gradient`: Uses conjugate gradients to solve `Ax=b` for any arbitrary positive semidefinite `A`.
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `digial-root`: Computes the digital root of the input number.
+* `dot-product`: Computes the dot product of two vectors.
 * `eight-queens`: Counts the number of solutions for *n* queens problem, a generalization of [Eight queens puzzle][eight_queens].
 * `euclid`: Calculates the greatest common divisor between two large numbers using the [Euclidean Algorithm][euclid] with a helper function for the modulo operator.
 * `euler`: Approximates [Euler's number][euler] using the Taylor series.
@@ -36,13 +37,16 @@ The current benchmarks are:
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `max-subarray`: solution to the classic Maximum Subarray problem.
+* `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `n_root`: Calculate nth root of a float using newton's method.
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `pascals-row`: Computes a row in Pascal's Triangle.
+* `palindrome`: Outputs a 0-1 value indicating whether the input is a [palindrome][palindrome] number.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `primes-between`: Print the primes in the interval `[a, b]`.
+* `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
@@ -55,6 +59,7 @@ The current benchmarks are:
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
 * `reverse`: Compute number with reversed digits (e.g. 123 -> 321).
@@ -83,7 +88,11 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
+[primitive_root]: https://en.wikipedia.org/wiki/Primitive_root_modulo_n
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
+[palindrome]: https://en.wikipedia.org/wiki/Palindrome
 [hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
 [qsort]: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
+[modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
+[totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
