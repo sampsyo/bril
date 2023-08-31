@@ -40,6 +40,7 @@ The current benchmarks are:
 * `max-subarray`: solution to the classic Maximum Subarray problem.
 * `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
+* `nilakantha`: Calculate the value of pi using the [nilakantha infinite series][nilakantha]
 * `norm`: Calculate the [euclidean norm][euclidean] of a vector 
 * `n_root`: Calculate nth root of a float using newton's method.
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
@@ -100,3 +101,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [qsort]: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
 [modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
 [totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
+[nilakantha]: https://en.wikipedia.org/wiki/List_of_formulae_involving_%CF%80
