@@ -1,0 +1,73 @@
+# Return the majority element (appears more than floor(n/2) times) of an array, assuming that the majority element is guaranteed to exist.
+# Inputs: an array of size 3 (fixed);
+# Output: the majority element of the array.
+# Not a big example in terms of the array size and the total dynamic instructions; but I found Boyer-Moore voting algorithm very interesting!
+# Acknowledgement: brought idea from the pack function in Pat-Lafon's binary-search.bril to my create_arr.
+@main() {
+  arr_size: int = const 3;
+  e1: int = const 3;
+  e2: int = const 2;
+  e3: int = const 3;
+  nums: ptr<int> = call @create_arr arr_size e1 e2 e3;
+
+  zero: int = const 0;
+  one: int = const 1;
+  first_elm_ptr: ptr<int> = ptradd nums zero;
+  major_elm: int = load first_elm_ptr;
+  count: int = const 1;
+
+  i: int = const 1;
+  .check_bound:
+    end_cond: bool = ge i arr_size;
+    br end_cond .end .body;
+  
+  .body:
+    cur_ptr: ptr<int> = ptradd nums i;
+    cur_val: int = load cur_ptr;
+    cur_major_cond: bool = eq cur_val major_elm;
+    br cur_major_cond .incr_count .body.else;
+  
+  .incr_count:
+    count: int = add count one;
+    i: int = add i one;
+    jmp .check_bound;
+  
+  .body.else:
+    cnt_eq_0: bool = eq count zero;
+    br cnt_eq_0 .eq_zero_if .eq_zero_else;
+  
+  .eq_zero_if:
+    cur_ptr: ptr<int> = ptradd nums i;
+    major_elm: int = load cur_ptr;
+    count: int = add count one;
+    i: int = add i one;
+    jmp .check_bound;
+  
+  .eq_zero_else:
+    count: int = sub count one;
+    i: int = add i one;
+    jmp .check_bound;
+
+  .end:
+    free nums;
+    print major_elm;
+}
+
+@create_arr(size: int, e1: int, e2: int, e3: int): ptr<int> {
+  one: int = const 1;
+  i: int = const 0;
+  array: ptr<int> = alloc size;
+
+  loc: ptr<int> = ptradd array i;
+  store loc e1;
+
+  i: int = add i one;
+  loc: ptr<int> = ptradd array i;
+  store loc e2;
+
+  i: int = add i one;
+  loc: ptr<int> = ptradd array i;
+  store loc e3;
+
+  ret array;
+}
