@@ -45,8 +45,6 @@
   guess : int = const 2;
   inc : int = const 1;
   
-  # max : int = const 100;
-  
   .continue:
     square: int = mul guess guess;
     continue : bool = lt square n;
