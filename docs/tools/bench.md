@@ -45,6 +45,7 @@ The current benchmarks are:
 * `primes-between`: Print the primes in the interval `[a, b]`.
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
+* `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
@@ -85,3 +86,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
 [hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
+[qsort]: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
