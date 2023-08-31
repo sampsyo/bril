@@ -101,7 +101,6 @@ def brench(config_path, files, jobs):
         files = glob.glob(config['benchmarks'])
 
     timeout = config.get('timeout', 5)
-    ε = config.get('epsilon', 0.0)
 
     with futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         # Submit jobs.
@@ -128,7 +127,7 @@ def brench(config_path, files, jobs):
                 # Check correctness.
                 if first_out is None:
                     first_out = stdout
-                elif not compare_output(stdout, first_out, ε) and not status:
+                elif stdout != first_out and not status:
                     status = 'incorrect'
 
                 # Extract the figure of merit.
