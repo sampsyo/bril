@@ -1,0 +1,309 @@
+# Conjugate gradient method to solve Ax=b. Currently A is a 3x3 diagonal with 
+# incrementing values, but any arbitrary spd A can be used
+
+# ARGS: 3
+@main(n: int) {
+	one: int = const 1;
+	fone: float = const 1;
+	a :ptr<float> = call @get_sym n;
+	x0 :ptr<float> = alloc n;
+	b :ptr<float> = alloc n;
+
+	i: int = const 0;
+	v: float = const 5;
+.for.set.cond:
+	cond: bool = lt i n;
+	br cond .for.set.body .for.set.end;
+
+.for.set.body:
+	idx_b: ptr<float> = ptradd b i;
+	idx_x0: ptr<float> = ptradd x0 i;
+
+	store idx_b v;
+	store idx_x0 fone;
+
+	i: int = add i one;
+	v: float = fadd v fone;
+	jmp .for.set.cond;
+.for.set.end:
+
+	x_sol: ptr<float> = call @cg n a x0 b;
+	call @disp_vec n x_sol;
+
+	free x_sol;
+	free x0;
+	free b;
+	free a;
+}
+
+# returns the scalar-vector product cv
+@vec_mul(size: int, c: float, v: ptr<float>): ptr<float> {
+	v_copy: ptr<float> = alloc size;
+
+	one: int = const 1;
+	i: int = const 0;
+.for.cond:
+	cond: bool = lt i size;
+	br cond .for.body .for.end;
+
+.for.body:
+	v_ptr: ptr<float> = ptradd v i;
+	v_copy_ptr: ptr<float> = ptradd v_copy i;
+	v_val: float = load v_ptr;
+	cv_val: float = fmul c v_val;
+	store v_copy_ptr cv_val;
+
+	i: int = add i one;
+	jmp .for.cond;
+
+.for.end:
+	ret v_copy;
+}
+
+# returns a copy of the vector v
+@vec_copy(size: int, v: ptr<float>): ptr<float> {
+	fone: float = const 1;
+	v_copy: ptr<float> = call @vec_mul size fone v;
+	ret v_copy;
+}
+
+# compute the dot-product between two [size] vectors u, v
+@dot_p(size: int, u: ptr<float>, v: ptr<float>) : float {
+	one: int = const 1;
+	i: int = const 0;
+	acc: float = const 0;
+
+.for.cond:
+	cond: bool = lt i size;
+	br cond .for.body .for.end;
+
+.for.body:
+	u_ptr: ptr<float> = ptradd u i;
+	v_ptr: ptr<float> = ptradd v i;
+	u_val: float = load u_ptr;
+	v_val: float = load v_ptr;
+	uv: float = fmul u_val v_val;
+
+	acc: float = fadd uv acc;
+
+	i: int = add i one;
+	jmp .for.cond;
+
+.for.end:
+
+	ret acc;
+}
+
+# compute the difference between two [size] vectors (u - v)
+@vec_sub(size: int, u: ptr<float>, v: ptr<float>) : ptr<float> {
+	fnegone: float = const -1;
+	minus_v: ptr<float> = call @vec_mul size fnegone v;
+	diff: ptr<float> = call @vec_add size u minus_v;
+	free minus_v;
+	ret diff;
+}
+
+# compute the sum between two [size] vectors (u + v)
+@vec_add(size: int, u: ptr<float>, v: ptr<float>) : ptr<float> {
+	sum: ptr<float> = alloc size;
+	one: int = const 1;
+	i: int = const 0;
+
+.for.cond:
+	cond: bool = lt i size;
+	br cond .for.body .for.end;
+
+.for.body:
+	u_ptr: ptr<float> = ptradd u i;
+	v_ptr: ptr<float> = ptradd v i;
+	sum_ptr: ptr<float> = ptradd sum i;
+
+	u_val: float = load u_ptr;
+	v_val: float = load v_ptr;
+	u_add_v: float = fadd u_val v_val;
+	store sum_ptr u_add_v;
+
+	i: int = add i one;
+	jmp .for.cond;
+
+.for.end:
+
+	ret sum;
+}
+
+# compute the sum between two [size] vectors (u + v), freeing old value of u
+@vec_add_inp(size: int, u: ptr<float>, v: ptr<float>) : ptr<float> {
+	sum: ptr<float> = call @vec_add size u v;
+	free u;
+	ret sum;
+}
+
+# compute the difference between two [size] vectors (u - v), freeing old value of u
+@vec_sub_inp(size: int, u: ptr<float>, v: ptr<float>) : ptr<float> {
+	diff: ptr<float> = call @vec_sub size u v;
+	free u;
+	ret diff;
+}
+
+# compute the matrix-vector product between square [size x size] matrix A and
+# [size] vector v
+@mat_vec(size: int, a: ptr<float>, v: ptr<float>) : ptr<float> {
+	prod: ptr<float> = alloc size;	
+	row: int = const 0;
+	one: int = const 1;
+
+.for.row.cond:
+	cond_row: bool = lt row size;
+	br cond_row .for.row.body .for.row.end;
+
+.for.row.body:
+	col: int = const 0;
+	acc: float = const 0;
+
+.for.col.cond:
+	cond_col: bool = lt col size;
+	br cond_col .for.col.body .for.col.end;
+
+.for.col.body:
+	a_row_idx: int = mul size row;
+	a_col_idx: int = id col;
+	a_idx: int = add a_row_idx a_col_idx;
+	a_val_ptr: ptr<float> = ptradd a a_idx;
+	a_val: float = load a_val_ptr;
+
+	v_idx:int = id col;
+	v_val_ptr: ptr<float> = ptradd v v_idx;
+	v_val: float = load v_val_ptr;
+
+	p: float = fmul a_val v_val;
+
+	acc: float = fadd p acc;
+	col: int = add col one;
+	jmp .for.col.cond;
+	
+.for.col.end:
+	prod_ptr: ptr<float> = ptradd prod row;
+	store prod_ptr acc;
+	row: int = add row one;
+	jmp .for.row.cond;
+
+.for.row.end:
+	ret prod;
+}
+
+# alloc and return a symmetric positive-definite matrix A
+# for simplicity, A is diagonal with increasing entries (e.g., for size=3)
+# [[1,0,0], [0,2,0], [0,0,3]]
+@get_sym(size: int) : ptr<float> {
+	nnz :int = mul size size;
+	a :ptr<float> = alloc nnz;
+	one: int = const 1;
+	fone: float = const 1;
+	fzero: float = const 0;
+
+	i: int = const 0;
+.for.zero.cond:
+	cond: bool = lt i nnz;
+	br cond .for.zero.body .for.zero.end;
+
+.for.zero.body:
+	idx: ptr<float> = ptradd a i;
+	store idx fzero;
+	i: int = add i one;
+	jmp .for.zero.cond;
+
+.for.zero.end:
+
+	i: int = const 0;
+	val: float = const 1;
+	loop_end: int = sub size one;
+.for.cond:
+	cond: bool = le i loop_end;
+	br cond .for.body .for.end;
+.for.body:
+	row_offset: int = mul i size;
+	col_offset: int = id i;
+	offset: int = add row_offset col_offset;
+	idx: ptr<float> = ptradd a offset;
+	store idx val;
+
+	val: float = fadd val fone;
+	i: int = add i one;
+	jmp .for.cond;
+.for.end:
+	ret a;
+}
+
+
+@disp_vec(size: int, v: ptr<float>) {
+	i: int = const 0;
+	one: int = const 1;
+.for.cond:
+	cond: bool = lt i size;
+	br cond .for.body .for.end;
+.for.body:
+	ptr: ptr<float> = ptradd v i;
+	val: float = load ptr;
+	print val;
+
+	i: int = add i one;
+	jmp .for.cond;
+.for.end:
+	ret;
+}
+
+# conjugate gradient method for solving Ax=b (within 1/[inv_tol] tolerance)
+@cg(size: int, a: ptr<float>, x0: ptr<float>, b: ptr<float>) : ptr<float> {
+	max_iter: int = const 1000;
+	inv_tol: float = const 100;
+	fone: float = const 1;
+	tol: float = fdiv fone inv_tol;
+
+	x: ptr<float> = call @vec_copy size x0;
+	a_dot_x: ptr<float> = call @mat_vec size a x;
+	r: ptr<float> = call @vec_sub size b a_dot_x;
+	p: ptr<float> = call @vec_copy size r;
+	rs_old: float = call @dot_p size r r;
+
+	i: int = const 0;
+	one: int = const 1;
+.for.cond:
+	cond: bool = lt i max_iter;
+	br cond .for.body .for.end;
+.for.body:
+	a_p: ptr<float> = call @mat_vec size a p;
+	p_ap: float = call @dot_p size p a_p;
+	alpha: float = fdiv rs_old p_ap;
+	alpha_p: ptr<float> = call @vec_mul size alpha p;
+	alpha_ap: ptr<float> = call @vec_mul size alpha a_p;
+
+	x: ptr<float> = call @vec_add_inp size x alpha_p;
+	r: ptr<float> = call @vec_sub_inp size r alpha_ap;
+
+	free a_p;
+	free alpha_p;
+	free alpha_ap;
+
+	rs_new: float = call @dot_p size r r;
+	tol_cond: bool = flt rs_new tol;
+	br tol_cond .for.end .cont;
+
+.cont:
+	r_new_old: float = fdiv rs_new rs_old;
+	r_p: ptr<float> = call @vec_mul size r_new_old p;
+
+	free p;
+	p: ptr<float> = call @vec_add size r r_p;
+	rs_old: float = id rs_new;
+	free r_p;
+
+	i: int = add i one;
+	jmp .for.cond;
+
+.for.end:
+	free a_dot_x;
+	free r;
+	free p;
+
+	ret x;
+}
