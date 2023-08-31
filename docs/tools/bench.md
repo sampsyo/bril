@@ -55,6 +55,7 @@ The current benchmarks are:
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
 * `reverse`: Compute number with reversed digits (e.g. 123 -> 321).
@@ -87,3 +88,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [palindrome]: https://en.wikipedia.org/wiki/Palindrome
 [hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
+[totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
