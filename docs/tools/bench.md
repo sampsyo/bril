@@ -45,6 +45,7 @@ The current benchmarks are:
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `primes-between`: Print the primes in the interval `[a, b]`.
+* `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `recfact`: Compute *n!* using recursive function calls.
@@ -85,6 +86,7 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
+[primitive_root]: https://en.wikipedia.org/wiki/Primitive_root_modulo_n
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
 [palindrome]: https://en.wikipedia.org/wiki/Palindrome
 [hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
