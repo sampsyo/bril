@@ -196,9 +196,9 @@
     ret q;
 }
 
-# 
-@main() {
-  p : int = const 1151;
+# ARGS: 1151
+@main(p : int) {
+  zero : int = const 0;
   one : int = const 1;
   phi_p : int = call @phi p;
   count_result : ptr<int> = alloc one;
