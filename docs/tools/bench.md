@@ -36,6 +36,7 @@ The current benchmarks are:
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `max-subarray`: solution to the classic Maximum Subarray problem.
+* `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `n_root`: Calculate nth root of a float using newton's method.
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
@@ -88,4 +89,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [palindrome]: https://en.wikipedia.org/wiki/Palindrome
 [hanoi]: https://en.wikipedia.org/wiki/Tower_of_Hanoi
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
+[modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
 [totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
