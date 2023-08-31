@@ -13,6 +13,7 @@ The current benchmarks are:
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
 * `bitwise-ops`: Computes the OR, AND, or XOR between two 64-bit integers. (Three modes: 0 = AND, 1 = OR, 2 = XOR)
+* `bitshift`: Computes the LEFTSHIFT and RIGHTSHIFT for any integer, also implements an efficient pow function for integers
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order.
 * `catalan`: Print the *n*th term in the [Catalan][catalan] sequence, compute using recursive function calls.
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
