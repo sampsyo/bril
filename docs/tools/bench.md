@@ -52,6 +52,7 @@ The current benchmarks are:
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
+* `quicksort-median-of-three`: Quicksort using median of three pivot selection.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
