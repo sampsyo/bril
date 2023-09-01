@@ -1,0 +1,365 @@
+
+@main {
+  
+  a11_0: float = const 8;
+  a12_0: float = const 3;
+  a21_0: float = const 2;
+  a22_0: float = const 4;
+  b11_0: float = const 2;
+  b12_0: float = const 7;
+  b21_0: float = const 4;
+  b22_0: float = const 5;
+
+  c11_0_part1: float = fmul a11_0 b11_0;
+  c11_0_part2: float = fmul a12_0 b21_0;
+  c11_0: float = fadd c11_0_part1 c11_0_part2;
+
+  c12_0_part1: float = fmul a11_0 b12_0;
+  c12_0_part2: float = fmul a12_0 b22_0;
+  c12_0: float = fadd c12_0_part1 c12_0_part2;
+
+  c21_0_part1: float = fmul a21_0 b11_0;
+  c21_0_part2: float = fmul a22_0 b21_0;
+  c21_0: float = fadd c21_0_part1 c21_0_part2;
+
+  c22_0_part1: float = fmul a21_0 b12_0;
+  c22_0_part2: float = fmul a22_0 b22_0;
+  c22_0: float = fadd c22_0_part1 c22_0_part2;
+
+  print c11_0;
+  print c12_0;
+  print c21_0;
+  print c22_0;
+  
+  a11_1: float = const 0;
+  a12_1: float = const 1;
+  a21_1: float = const 2;
+  a22_1: float = const 3;
+  b11_1: float = const 0;
+  b12_1: float = const 1;
+  b21_1: float = const 2;
+  b22_1: float = const 3;
+
+  c11_1_part1: float = fmul a11_1 b11_1;
+  c11_1_part2: float = fmul a12_1 b21_1;
+  c11_1: float = fadd c11_1_part1 c11_1_part2;
+
+  c12_1_part1: float = fmul a11_1 b12_1;
+  c12_1_part2: float = fmul a12_1 b22_1;
+  c12_1: float = fadd c12_1_part1 c12_1_part2;
+
+  c21_1_part1: float = fmul a21_1 b11_1;
+  c21_1_part2: float = fmul a22_1 b21_1;
+  c21_1: float = fadd c21_1_part1 c21_1_part2;
+
+  c22_1_part1: float = fmul a21_1 b12_1;
+  c22_1_part2: float = fmul a22_1 b22_1;
+  c22_1: float = fadd c22_1_part1 c22_1_part2;
+
+  print c11_1;
+  print c12_1;
+  print c21_1;
+  print c22_1;
+  
+  a11_2: float = const 1;
+  a12_2: float = const 2;
+  a21_2: float = const 3;
+  a22_2: float = const 4;
+  b11_2: float = const 5;
+  b12_2: float = const 6;
+  b21_2: float = const 7;
+  b22_2: float = const 8;
+
+  c11_2_part1: float = fmul a11_2 b11_2;
+  c11_2_part2: float = fmul a12_2 b21_2;
+  c11_2: float = fadd c11_2_part1 c11_2_part2;
+
+  c12_2_part1: float = fmul a11_2 b12_2;
+  c12_2_part2: float = fmul a12_2 b22_2;
+  c12_2: float = fadd c12_2_part1 c12_2_part2;
+
+  c21_2_part1: float = fmul a21_2 b11_2;
+  c21_2_part2: float = fmul a22_2 b21_2;
+  c21_2: float = fadd c21_2_part1 c21_2_part2;
+
+  c22_2_part1: float = fmul a21_2 b12_2;
+  c22_2_part2: float = fmul a22_2 b22_2;
+  c22_2: float = fadd c22_2_part1 c22_2_part2;
+
+  print c11_2;
+  print c12_2;
+  print c21_2;
+  print c22_2;
+  
+  a11_3: float = const 9;
+  a12_3: float = const 10;
+  a21_3: float = const 11;
+  a22_3: float = const 12;
+  b11_3: float = const 13;
+  b12_3: float = const 14;
+  b21_3: float = const 15;
+  b22_3: float = const 16;
+
+  c11_3_part1: float = fmul a11_3 b11_3;
+  c11_3_part2: float = fmul a12_3 b21_3;
+  c11_3: float = fadd c11_3_part1 c11_3_part2;
+
+  c12_3_part1: float = fmul a11_3 b12_3;
+  c12_3_part2: float = fmul a12_3 b22_3;
+  c12_3: float = fadd c12_3_part1 c12_3_part2;
+
+  c21_3_part1: float = fmul a21_3 b11_3;
+  c21_3_part2: float = fmul a22_3 b21_3;
+  c21_3: float = fadd c21_3_part1 c21_3_part2;
+
+  c22_3_part1: float = fmul a21_3 b12_3;
+  c22_3_part2: float = fmul a22_3 b22_3;
+  c22_3: float = fadd c22_3_part1 c22_3_part2;
+
+  print c11_3;
+  print c12_3;
+  print c21_3;
+  print c22_3;
+  
+  a11_4: float = const 17;
+  a12_4: float = const 18;
+  a21_4: float = const 19;
+  a22_4: float = const 20;
+  b11_4: float = const 21;
+  b12_4: float = const 22;
+  b21_4: float = const 23;
+  b22_4: float = const 24;
+
+  c11_4_part1: float = fmul a11_4 b11_4;
+  c11_4_part2: float = fmul a12_4 b21_4;
+  c11_4: float = fadd c11_4_part1 c11_4_part2;
+
+  c12_4_part1: float = fmul a11_4 b12_4;
+  c12_4_part2: float = fmul a12_4 b22_4;
+  c12_4: float = fadd c12_4_part1 c12_4_part2;
+
+  c21_4_part1: float = fmul a21_4 b11_4;
+  c21_4_part2: float = fmul a22_4 b21_4;
+  c21_4: float = fadd c21_4_part1 c21_4_part2;
+
+  c22_4_part1: float = fmul a21_4 b12_4;
+  c22_4_part2: float = fmul a22_4 b22_4;
+  c22_4: float = fadd c22_4_part1 c22_4_part2;
+
+  print c11_4;
+  print c12_4;
+  print c21_4;
+  print c22_4;
+  
+  a11_5: float = const 25;
+  a12_5: float = const 26;
+  a21_5: float = const 27;
+  a22_5: float = const 28;
+  b11_5: float = const 29;
+  b12_5: float = const 30;
+  b21_5: float = const 31;
+  b22_5: float = const 32;
+
+  c11_5_part1: float = fmul a11_5 b11_5;
+  c11_5_part2: float = fmul a12_5 b21_5;
+  c11_5: float = fadd c11_5_part1 c11_5_part2;
+
+  c12_5_part1: float = fmul a11_5 b12_5;
+  c12_5_part2: float = fmul a12_5 b22_5;
+  c12_5: float = fadd c12_5_part1 c12_5_part2;
+
+  c21_5_part1: float = fmul a21_5 b11_5;
+  c21_5_part2: float = fmul a22_5 b21_5;
+  c21_5: float = fadd c21_5_part1 c21_5_part2;
+
+  c22_5_part1: float = fmul a21_5 b12_5;
+  c22_5_part2: float = fmul a22_5 b22_5;
+  c22_5: float = fadd c22_5_part1 c22_5_part2;
+
+  print c11_5;
+  print c12_5;
+  print c21_5;
+  print c22_5;
+  
+  a11_6: float = const 33;
+  a12_6: float = const 34;
+  a21_6: float = const 35;
+  a22_6: float = const 36;
+  b11_6: float = const 37;
+  b12_6: float = const 38;
+  b21_6: float = const 39;
+  b22_6: float = const 40;
+
+  c11_6_part1: float = fmul a11_6 b11_6;
+  c11_6_part2: float = fmul a12_6 b21_6;
+  c11_6: float = fadd c11_6_part1 c11_6_part2;
+
+  c12_6_part1: float = fmul a11_6 b12_6;
+  c12_6_part2: float = fmul a12_6 b22_6;
+  c12_6: float = fadd c12_6_part1 c12_6_part2;
+
+  c21_6_part1: float = fmul a21_6 b11_6;
+  c21_6_part2: float = fmul a22_6 b21_6;
+  c21_6: float = fadd c21_6_part1 c21_6_part2;
+
+  c22_6_part1: float = fmul a21_6 b12_6;
+  c22_6_part2: float = fmul a22_6 b22_6;
+  c22_6: float = fadd c22_6_part1 c22_6_part2;
+
+  print c11_6;
+  print c12_6;
+  print c21_6;
+  print c22_6;
+  
+  a11_7: float = const 41;
+  a12_7: float = const 42;
+  a21_7: float = const 43;
+  a22_7: float = const 44;
+  b11_7: float = const 45;
+  b12_7: float = const 46;
+  b21_7: float = const 47;
+  b22_7: float = const 48;
+
+  c11_7_part1: float = fmul a11_7 b11_7;
+  c11_7_part2: float = fmul a12_7 b21_7;
+  c11_7: float = fadd c11_7_part1 c11_7_part2;
+
+  c12_7_part1: float = fmul a11_7 b12_7;
+  c12_7_part2: float = fmul a12_7 b22_7;
+  c12_7: float = fadd c12_7_part1 c12_7_part2;
+
+  c21_7_part1: float = fmul a21_7 b11_7;
+  c21_7_part2: float = fmul a22_7 b21_7;
+  c21_7: float = fadd c21_7_part1 c21_7_part2;
+
+  c22_7_part1: float = fmul a21_7 b12_7;
+  c22_7_part2: float = fmul a22_7 b22_7;
+  c22_7: float = fadd c22_7_part1 c22_7_part2;
+
+  print c11_7;
+  print c12_7;
+  print c21_7;
+  print c22_7;
+  
+  a11_8: float = const 49;
+  a12_8: float = const 50;
+  a21_8: float = const 51;
+  a22_8: float = const 52;
+  b11_8: float = const 53;
+  b12_8: float = const 54;
+  b21_8: float = const 55;
+  b22_8: float = const 56;
+
+  c11_8_part1: float = fmul a11_8 b11_8;
+  c11_8_part2: float = fmul a12_8 b21_8;
+  c11_8: float = fadd c11_8_part1 c11_8_part2;
+
+  c12_8_part1: float = fmul a11_8 b12_8;
+  c12_8_part2: float = fmul a12_8 b22_8;
+  c12_8: float = fadd c12_8_part1 c12_8_part2;
+
+  c21_8_part1: float = fmul a21_8 b11_8;
+  c21_8_part2: float = fmul a22_8 b21_8;
+  c21_8: float = fadd c21_8_part1 c21_8_part2;
+
+  c22_8_part1: float = fmul a21_8 b12_8;
+  c22_8_part2: float = fmul a22_8 b22_8;
+  c22_8: float = fadd c22_8_part1 c22_8_part2;
+
+  print c11_8;
+  print c12_8;
+  print c21_8;
+  print c22_8;
+  
+  a11_9: float = const 57;
+  a12_9: float = const 58;
+  a21_9: float = const 59;
+  a22_9: float = const 60;
+  b11_9: float = const 61;
+  b12_9: float = const 62;
+  b21_9: float = const 63;
+  b22_9: float = const 64;
+
+  c11_9_part1: float = fmul a11_9 b11_9;
+  c11_9_part2: float = fmul a12_9 b21_9;
+  c11_9: float = fadd c11_9_part1 c11_9_part2;
+
+  c12_9_part1: float = fmul a11_9 b12_9;
+  c12_9_part2: float = fmul a12_9 b22_9;
+  c12_9: float = fadd c12_9_part1 c12_9_part2;
+
+  c21_9_part1: float = fmul a21_9 b11_9;
+  c21_9_part2: float = fmul a22_9 b21_9;
+  c21_9: float = fadd c21_9_part1 c21_9_part2;
+
+  c22_9_part1: float = fmul a21_9 b12_9;
+  c22_9_part2: float = fmul a22_9 b22_9;
+  c22_9: float = fadd c22_9_part1 c22_9_part2;
+
+  print c11_9;
+  print c12_9;
+  print c21_9;
+  print c22_9;
+  
+  a11_10: float = const 65;
+  a12_10: float = const 66;
+  a21_10: float = const 67;
+  a22_10: float = const 68;
+  b11_10: float = const 69;
+  b12_10: float = const 70;
+  b21_10: float = const 71;
+  b22_10: float = const 72;
+
+  c11_10_part1: float = fmul a11_10 b11_10;
+  c11_10_part2: float = fmul a12_10 b21_10;
+  c11_10: float = fadd c11_10_part1 c11_10_part2;
+
+  c12_10_part1: float = fmul a11_10 b12_10;
+  c12_10_part2: float = fmul a12_10 b22_10;
+  c12_10: float = fadd c12_10_part1 c12_10_part2;
+
+  c21_10_part1: float = fmul a21_10 b11_10;
+  c21_10_part2: float = fmul a22_10 b21_10;
+  c21_10: float = fadd c21_10_part1 c21_10_part2;
+
+  c22_10_part1: float = fmul a21_10 b12_10;
+  c22_10_part2: float = fmul a22_10 b22_10;
+  c22_10: float = fadd c22_10_part1 c22_10_part2;
+
+  print c11_10;
+  print c12_10;
+  print c21_10;
+  print c22_10;
+  
+  a11_11: float = const 73;
+  a12_11: float = const 74;
+  a21_11: float = const 75;
+  a22_11: float = const 76;
+  b11_11: float = const 77;
+  b12_11: float = const 78;
+  b21_11: float = const 79;
+  b22_11: float = const 80;
+
+  c11_11_part1: float = fmul a11_11 b11_11;
+  c11_11_part2: float = fmul a12_11 b21_11;
+  c11_11: float = fadd c11_11_part1 c11_11_part2;
+
+  c12_11_part1: float = fmul a11_11 b12_11;
+  c12_11_part2: float = fmul a12_11 b22_11;
+  c12_11: float = fadd c12_11_part1 c12_11_part2;
+
+  c21_11_part1: float = fmul a21_11 b11_11;
+  c21_11_part2: float = fmul a22_11 b21_11;
+  c21_11: float = fadd c21_11_part1 c21_11_part2;
+
+  c22_11_part1: float = fmul a21_11 b12_11;
+  c22_11_part2: float = fmul a22_11 b22_11;
+  c22_11: float = fadd c22_11_part1 c22_11_part2;
+
+  print c11_11;
+  print c12_11;
+  print c21_11;
+  print c22_11;
+  
+  ret;
+}
