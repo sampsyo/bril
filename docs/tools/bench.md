@@ -51,6 +51,7 @@ The current benchmarks are:
 * `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
+* `quickselect`: Find the kth smallest element in an array using the quickselect algorithm.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
