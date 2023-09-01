@@ -1,4 +1,3 @@
-command = "python gen.py ; bril2json < {filename} | brili > {base}.out ; cp {base}.out {base}.ref"
-output.out = "{base}.out"
-output.ref = "{base}.ref"
+command = "python gen.py ; bril2json < {filename} | brili > {base}.out ; diff {base}.out {base}.ref"
+output.refdiff = "-"
 

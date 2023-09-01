@@ -80,12 +80,9 @@ with open("matmulti2x2.ref", "w") as ref_file:
         mat1 = np.array(matrices[2*i])
         mat2 = np.array(matrices[2*i + 1])
         result = np.matmul(mat1, mat2)
-        #ref_file.write(f"Reference result for pair {i}:\n")
-        #ref_file.write(str(result) + "\n")
         for row in result:
             for element in row:
-                #ref_file.write(str(element) + "\n")
-                ref_file.write(f"{element:.20f}\n")
+                ref_file.write(f"{element:.17f}\n")
 
 # Create a Jinja2 template and render it
 template = Template(template_str)
