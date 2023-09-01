@@ -12,6 +12,7 @@ The current benchmarks are:
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
+* `birthday`: Simulation of the [birthday][birthday] paradox with an input of `n` people in a given room.
 * `bitwise-ops`: Computes the OR, AND, or XOR between two 64-bit integers. (Three modes: 0 = AND, 1 = OR, 2 = XOR)
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order.
 * `catalan`: Print the *n*th term in the [Catalan][catalan] sequence, compute using recursive function calls.
@@ -54,6 +55,7 @@ The current benchmarks are:
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
+[birthday]: https://en.wikipedia.org/wiki/Birthday_problem
 [cgroup]: https://en.wikipedia.org/wiki/Cyclic_group#Cyclically_ordered_groups
 [fizzbuzz]: https://wiki.c2.com/?FizzBuzzTest
 [qf]: https://en.wikipedia.org/wiki/Quadratic_formula
