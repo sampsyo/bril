@@ -39,7 +39,7 @@ jobs:
           - "cd brilift && cargo build --release && make rt.o && make test TURNTARGS=-v"
           - "cd brilift && cargo build --release && make rt.o && make benchmark TURNTARGS=-v"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -60,7 +60,7 @@ jobs:
 
       - name: Install Turnt
         # run: pip install turnt  # Use instead if pip turnt version >= 1.7
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: cucapra/turnt
           path: './turnt'
@@ -82,7 +82,7 @@ jobs:
       matrix:
         path: ["brilirs/Cargo.toml", "bril-rs/Cargo.toml", "bril-rs/bril2json/Cargo.toml", "bril-rs/brild/Cargo.toml", "brilift/Cargo.toml", "bril-rs/rs2bril/Cargo.toml", "bril-rs/brillvm/Cargo.toml"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
