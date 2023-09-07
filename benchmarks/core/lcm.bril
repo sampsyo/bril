@@ -1,0 +1,34 @@
+#ARGS: 64 24
+@main(x: int, y: int) {
+  greater: int = id y;
+  v4: bool = gt x y;
+  br v4 .then.1 .else.1;
+.then.1:
+  greater: int = id x;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+.foreverloop:
+  modX : int = call @getMod greater x;
+  modY : int = call @getMod greater y;
+  zero: int = const 0;
+  xZero : bool = eq modX zero;
+  yZero : bool = eq modY zero;
+  bothZero : bool = and xZero yZero;
+  br bothZero .then.2 .else.2;
+.then.2:
+  print greater;
+  jmp .loopend;
+.else.2:
+  one: int = const 1;
+  greater:int = add greater one;
+  jmp .foreverloop;
+.loopend:
+}
+
+@getMod(val: int, mod: int): int{
+  divisor: int = div val mod;
+  multiple: int = mul divisor mod;
+  rem: int = sub val multiple;
+  ret rem;
+}
