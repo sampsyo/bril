@@ -1,0 +1,123 @@
+# Quick select algorithm
+# Inputs: An unordered array of 6 elements and a number k
+# Output: kth smallest number in the array
+# Adopted pack and print_array code from bubblesort by Jiajie Li
+
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int, n6: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;
+# Pack data into array manually. Cannot use loop because of the different var name.
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n6;
+    ret array;
+}
+
+@print_array(array: ptr<int>, size: int) {
+    i: int = const 0;
+    one: int = const 1;
+.loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+.body:
+    loc: ptr<int> = ptradd array i;
+    val: int = load loc;
+    print val;
+.loop_end:
+    i: int = add i one;
+    jmp .loop;
+.done:
+    ret;
+}
+
+
+@partition(array: ptr<int>, l: int, r: int): int {
+  one: int = const 1;
+  pivotloc: ptr<int> = ptradd array r;
+  pivot: int = load pivotloc;
+  i: int = id l;
+  j: int = id l;
+.loop:
+  cond: bool = lt j r;
+  br cond .body .done;
+.body:
+  curloc: ptr<int> = ptradd array j;
+  cur: int = load curloc;
+  swap: bool = le cur pivot;
+  br swap .swap_j .loop_end;
+.swap_j:
+  iloc: ptr<int> = ptradd array i;
+  ival: int = load iloc;
+  store curloc ival;
+  store iloc cur;
+  i: int = add i one;
+.loop_end:
+  j: int = add j one;
+  jmp .loop;
+.done:
+  iloc: ptr<int> = ptradd array i;
+  ival: int = load iloc;
+  store iloc pivot;
+  store pivotloc ival;
+  ret i;
+}
+
+@quickselect(array: ptr<int>, l: int, r: int, k: int): int {
+  one: int = const 1;
+  index: int = call @partition array l r;
+  ipos: int = sub index l;
+  kpos: int = sub k one;
+  ieqk: bool = eq ipos kpos;
+  br ieqk .found .not_found;
+.found:
+  iloc: ptr<int> = ptradd array index;
+  i: int = load iloc;
+  ret i;
+.not_found:
+  igtk: bool = gt ipos kpos;
+  br igtk .greater .less;
+.greater:
+  newr: int = sub index one;
+  i: int = call @quickselect array l newr k;
+  ret i;
+.less:
+  newl: int = add index one;
+  newk: int = sub k index;
+  newk: int = add newk l;
+  newk: int = sub newk one;
+  i: int = call @quickselect array newl r newk;
+  ret i;
+}
+
+@main() {
+  k: int = const 4;
+  n1: int = const 97;
+  n2: int = const 108;
+  n3: int = const 98;
+  n4: int = const 101;
+  n5: int = const 114;
+  n6: int = const 116;
+
+  zero: int = const 0;
+  five: int = const 5;
+  size: int = const 6;
+  array: ptr<int> = call @pack size n1 n2 n3 n4 n5 n6;
+  output: int = call @quickselect array zero five k;
+  print output;
+  free array;
+}
