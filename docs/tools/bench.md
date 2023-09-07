@@ -54,6 +54,7 @@ The current benchmarks are:
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
+* `fitsinside`: Output whether or not a rectangle fits inside of another rectangle given the width and height lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].

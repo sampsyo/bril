@@ -1,0 +1,16 @@
+# ARGS: 12 4 5 13
+@main (width1:int, height1:int, width2:int, height2:int){
+  output: bool = call @fitsInside width1 height1 width2 height2;
+  print output;
+}
+
+@fitsInside(w1: int, h1: int, w2: int, h2: int) : bool {
+  width_check: bool = le w1 w2; 
+  height_check: bool = le h1 h2;
+  first_check: bool = and width_check height_check;
+  widthheight_check: bool = le w1 h2;
+  heightwidth_check: bool = le h1 w2; 
+  second_check: bool = and widthheight_check heightwidth_check;
+  ret_val: bool = or first_check second_check;
+  ret ret_val;
+}
