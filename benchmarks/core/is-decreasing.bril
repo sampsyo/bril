@@ -1,4 +1,4 @@
-# Input: an array of length 6
+# Input: an integer
 # Output: if an number contains digits in strictly decreasing order
 # ARGS: 954320
 @main(x: int) {
