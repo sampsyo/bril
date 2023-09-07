@@ -1,0 +1,47 @@
+# ARGS: 23
+@main(n: float) {
+  v0: float = id n;
+  c: float = call @probability v0;
+  c: float = id c;
+  v1: float = id c;
+  print v1;
+  v2: int = const 0;
+}
+@probability(n: float): float {
+  v0: float = const 1;
+  prob: float = id v0;
+  v2: float = const 1;
+  i: float = id v2;
+.for.cond.1:
+  v3: float = id i;
+  v4: float = id n;
+  v5: bool = flt v3 v4;
+  br v5 .for.body.1 .for.end.1;
+.for.body.1:
+  v6: float = const 365;
+  v7: float = id i;
+  v8: float = fsub v6 v7;
+  log: float = id v8;
+  v9: float = id log;
+  v10: float = const 365;
+  v11: float = fdiv v9 v10;
+  logUpdated: float = id v11;
+  v12: float = id prob;
+  v13: float = id logUpdated;
+  v14: float = fmul v12 v13;
+  prob: float = id v14;
+  v15: float = id i;
+  v16: float = const 1;
+  v17: float = fadd v15 v16;
+  i: float = id v17;
+  jmp .for.cond.1;
+.for.end.1:
+  v18: float = const 1;
+  v19: float = id prob;
+  v20: float = const 100;
+  v21: float = fmul v19 v20;
+  v22: float = const 100;
+  v23: float = fdiv v21 v22;
+  v24: float = fsub v18 v23;
+  ret v24;
+}

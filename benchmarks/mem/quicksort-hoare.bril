@@ -1,0 +1,214 @@
+# Benchmarks an implementation of quicksort with Hoare partitioning and median 
+# of three pivot selection. We then generate several arrays with pseudorandom 
+# elements, sort them, and check that they are indeed in nondecreasing order by 
+# printing out "true" if the array is sorted correctly. This is based on my C 
+# implementation of  quicksort from ECE 4750, which is in turn based off the 
+# classic CS 2110 quicksort loop invariants. I attempted to optimize the median
+# of three procedure to use the fewest number of swaps possible, which I believe
+# I referenced from Wikipedia in my original C implementation.
+
+# Swaps the data at two indices in an array
+@swap(arr: ptr<int>, i: int, j: int) {
+  i_ptr: ptr<int> = ptradd arr i;
+  j_ptr: ptr<int> = ptradd arr j;
+  i_value: int = load i_ptr;
+  j_value: int = load j_ptr;
+  store j_ptr i_value;
+  store i_ptr j_value;
+}
+
+# Precondition: i, j are valid indices in arr
+# Postcondition: arr[j] <= arr[i] <= arr[(i + j) / 2]
+@median_of_three(arr: ptr<int>, i: int, j: int) {
+  twice_mid: int = add i j;
+  two: int = const 2;
+  mid: int = div twice_mid two;
+  i_ptr: ptr<int> = ptradd arr i;
+  mid_ptr: ptr<int> = ptradd arr mid;
+  j_ptr: ptr<int> = ptradd arr j;
+  i_value: int = load i_ptr;
+  mid_value: int = load mid_ptr;
+  j_value: int = load j_ptr;
+  
+  # Swap mid, j if arr[mid] < arr[j] so that arr[j] < arr[mid]
+  should_swap_mid_j: bool = lt mid_value j_value;
+  br should_swap_mid_j .swap_mid_j .no_swap_mid_j;
+
+.swap_mid_j:
+  call @swap arr mid j;
+.no_swap_mid_j:
+  # So, we know that arr[j] <= arr[mid]
+  # If arr[mid] < arr[i], then we have arr[j] <= arr[mid] < arr[i]
+  # So, swap mid, i so that arr[j] <= arr[i] <= arr[mid] as desired
+  should_swap_mid_i: bool = lt mid_value i_value;
+  br should_swap_mid_i .swap_mid_i .no_swap_mid_i;
+.swap_mid_i:
+  call @swap arr mid i;
+  ret;
+.no_swap_mid_i:
+  # Otherwise, if arr[i] < arr[j], we have arr[i] < arr[j] <= arr[mid]
+  # So, swap i, j so that arr[j] < arr[i] <= arr[mid] as desired
+  should_swap_i_j: bool = lt i_value j_value;
+  br should_swap_i_j .swap_i_j .no_swap_i_j;
+.swap_i_j:
+  call @swap arr i j;
+.no_swap_i_j:
+  # nothing to do
+}
+
+# Return an index j where input array arr has been modified in place so that
+# arr[h..j-1] <= arr[j] <= arr[j+1..k]
+@partition(arr: ptr<int>, h: int, k: int): int {
+  call @median_of_three arr h k;
+  pivot_ptr: ptr<int> = ptradd arr h;
+  pivot: int = load pivot_ptr;
+  # invariant: b[h..t-1] <= pivot, b[j+1..k] >= pivot
+  # initially, we know that b[h] <= pivot because b[h] = pivot
+  one: int = const 1;
+  t: int = add h one;
+  # arr[k+1..k] is empty, arr[k+1..k] >= pivot
+  j: int = id k;
+  curr_ptr: ptr<int> = ptradd arr t;
+.while.header:
+  # When t > j, we have processed every element
+  cond: bool = le t j;
+  br cond .while.body .while.exit;
+.while.body:
+  curr_elt: int = load curr_ptr;
+  had_inversion: bool = gt curr_elt pivot;
+  br had_inversion .while.body.inversion .while.body.no_inversion;
+.while.body.inversion:
+  call @swap arr t j;
+  j: int = sub j one;
+  jmp .while.header;
+.while.body.no_inversion:
+  t: int = add t one;
+  curr_ptr: ptr<int> = ptradd curr_ptr one;
+  jmp .while.header;
+
+.while.exit:
+  # move pivot back to middle of array
+  call @swap arr h j;
+  # return index of pivot
+  ret j;
+}
+
+# Sort input array arr[h..k] in place using quicksort with a median of 3
+# partitioning scheme
+@qsort(arr: ptr<int>, h: int, k: int) {
+  done: bool = ge h k;
+  br done .base .recurse;
+.recurse:
+  # The index of the pivot
+  j: int = call @partition arr h k;
+  one: int = const 1;
+  # The greatest index of the left subarray
+  left_end: int = sub j one;
+  # The least index of the right subarray
+  right_begin: int = add j one;
+  # Sort left subarray
+  call @qsort arr h left_end;
+  # Sort right subarray
+  call @qsort arr right_begin k;
+.base:
+}
+
+# Returns true iff input array arr with length len is sorted in nondecreasing
+# order
+@is_nondecreasing(arr: ptr<int>, len: int): bool {
+  # The current iteration of the loop, starting at 1
+  iter: int = const 1;
+  curr_ptr: ptr<int> = id arr;
+  one: int = const 1;
+.loop.header:
+  done: bool = ge iter len;
+  br done .loop.exit .loop.body;
+.loop.body:
+  iter: int = add iter one;
+  curr_value: int = load curr_ptr;
+  curr_ptr: ptr<int> = ptradd curr_ptr one;
+  next_value: int = load curr_ptr;
+  has_inversion: bool = gt curr_value next_value;
+  br has_inversion .inversion .no_inversion;
+.inversion:
+  fls: bool = const false;
+  ret fls;
+.no_inversion:
+  jmp .loop.header;
+.loop.exit:
+  tru: bool = const true;
+  ret tru;
+}
+
+################################################################################
+#
+# The following 2 functions @rand and @randarray are taken from the matrix 
+# multiplication benchmark here:
+#
+# https://github.com/sampsyo/bril/blob/main/benchmarks/mem/mat-mul.bril
+#
+# I also referred to this benchmark when seeding the rng in @main.
+#
+################################################################################
+
+# Use a linear congruential generator to generate random numbers.
+# `seq` is the state of the random number generator.
+# Returns a value between 0 and max
+@rand(seq: ptr<int>, max: int): int {
+  a: int = const 25214903917;
+  c: int = const 11;
+  m: int = const 281474976710656;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  next: int = mul next m;
+  next: int = sub axpc next;
+  store seq next;
+  val: int = div next max;
+  val: int = mul val max;
+  val: int = sub next val;
+  ret val;
+}
+
+# Generates a random array of length `size`
+@randarray(size: int, rng: ptr<int>): ptr<int> {
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  max: int = const 1000;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  val: int = call @rand rng max;
+  loc: ptr<int> = ptradd arr i;
+  store loc val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# ARGS: 5 50 109658
+@main(narrays: int, len: int, seed: int) {
+  one: int = const 1;
+  rng: ptr<int> = alloc one;
+  store rng seed;
+  zero: int = const 0;
+  last_index: int = sub len one;
+.loop.header:
+  done: bool = eq narrays zero;
+  br done .loop.exit .loop.body;
+.loop.body:
+  arr: ptr<int> = call @randarray len rng;
+  call @qsort arr zero last_index;
+  success: bool = call @is_nondecreasing arr len;
+  print success;
+  free arr;
+  narrays: int = sub narrays one;
+  jmp .loop.header;
+.loop.exit:
+  free rng;
+}
