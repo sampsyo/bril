@@ -64,6 +64,7 @@ The current benchmarks are:
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
+* `sum-check`: Compute the sum of [1, n] by both loop and formula, and check if the result is the same.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
