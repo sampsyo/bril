@@ -236,7 +236,7 @@
 
 # main function
 # ARGS: 50 50 5
-@main(rows: int, cols: int, degree: int): int {
+@main(rows: int, cols: int, degree: int){
     one: int = const 1;
     rptr_len: int = add rows one;
     nnz: int = mul rows degree;
@@ -262,7 +262,4 @@
     free csr_values;
     free vec;
     free res;
-
-    good: int = const 0;
-    ret good;
 }
