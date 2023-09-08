@@ -15,9 +15,6 @@ It has one key:
 
 * `functions`, a list of Function objects.
 
-There should be at least one function with the name `main`.
-When execution starts, this function will be invoked.
-
 Type
 ----
 
@@ -47,6 +44,10 @@ There are four fields:
 * `instrs`, a list of Label and Instruction objects.
 
 When a function runs, it creates an activation record and transfers control to the first instruction in the sequence.
+
+A Bril program is executable if it contains a function named `main`.
+When execution starts, this function will be invoked.
+The `main` function can have arguments (which implementations may supply using command-line arguments) but must not have a return `type`.
 
 Label
 -----
