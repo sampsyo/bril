@@ -16,7 +16,6 @@
 .then.0:
   v4: int = const 1;
   ret v4;
-  jmp .endif.0;
 .else.0:
   v5: int = id a;
   v6: int = id a;
@@ -25,5 +24,4 @@
   v9: int = call @fact v8;
   v10: int = mul v5 v9;
   ret v10;
-.endif.0:
 }
