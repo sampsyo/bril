@@ -1,4 +1,4 @@
-# ARGS: 46, 10007
+# ARGS: 46 10007
 @main(n: int, p: int) {
   v0: int = const 2;
   two: int = id v0;
@@ -81,10 +81,8 @@
 #   }
 #   console.log(ans);
 # }
-# 
+#
 # function mod(n: bigint, p: bigint): bigint {
 #   return n - n / p * p;
 # }
 #
-
-
