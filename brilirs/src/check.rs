@@ -508,6 +508,11 @@ fn type_check_instruction<'a>(
 }
 
 fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
+  if bbfunc.name == "main" && bbfunc.return_type.is_some() {
+    return Err(InterpError::NonEmptyRetForFunc(bbfunc.name.clone()))
+      .map_err(|e| e.add_pos(bbfunc.pos.clone()));
+  }
+
   let mut env: FxHashMap<&str, &Type> =
     FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default());
   bbfunc.args.iter().for_each(|a| {
