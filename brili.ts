@@ -764,7 +764,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     let i = getInt(instr, state.env, 0);
     if (i > 1114111 || i < 0 || (55295 < i && i < 57344)) {
       throw error(`value ${i} cannot be converted to char`);
-    } 
+    }
     let val = String.fromCodePoint(Number(i));
     state.env.set(instr.dest, val);
     return NEXT;
@@ -873,7 +873,12 @@ function parseBool(s: string): boolean {
 
 function parseNumber(s: string): number {
   let f = parseFloat(s);
-  if (!isNaN(f)) {
+  // parseFloat and Number have subtly different behaviors for parsing strings
+    // parseFloat ignores all random garbage after any valid number
+    // Number accepts empty/whitespace only strings and rejects numbers with seperators
+  // Use both and only accept the intersection of the results?
+  let f2 = Number(s);
+  if (!isNaN(f) && f === f2) {
     return f;
   } else {
     throw error(`float argument to main must not be 'NaN'; got ${s}`);
@@ -891,7 +896,8 @@ function parseMainArguments(expected: bril.Argument[], args: string[]) : Env {
     let type = expected[i].type;
     switch (type) {
       case "int":
-        let n: bigint = BigInt(parseInt(args[i]));
+        // https://dev.to/darkmavis1980/you-should-stop-using-parseint-nbf
+        let n: bigint = BigInt(Number(args[i]));
         newEnv.set(expected[i].name, n as Value);
         break;
       case "float":
