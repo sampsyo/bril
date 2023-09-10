@@ -215,7 +215,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         // Statement chunks.
         builder.buildLabel(thenLab);
         emit(if_.thenStatement);
-        const then_branch_terminated = builder.isLastEmittedEffectOp("ret");
+        const then_branch_terminated = builder.getLastInstr()?.op === "ret";
         if (!then_branch_terminated) {
           builder.buildEffect("jmp", [], undefined, [endLab]);
         }

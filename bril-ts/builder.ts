@@ -128,26 +128,26 @@ export class Builder {
    * Checks whether the last emitted instruction in the current function is the specified op code.
    * Useful for checking for terminating instructions.
    */
-  isLastEmittedEffectOp(op: bril.EffectOpCode): boolean {
+  getLastInstr(): bril.Instruction | undefined {
     if (!this.curFunction) {
-      return false
+      return undefined
     }
 
     if (!this.curFunction.instrs) {
-      return false
+      return undefined
     }
 
     if (this.curFunction.instrs.length === 0) {
-      return false
+      return undefined
     }
 
     const last_instr : bril.Instruction | bril.Label = this.curFunction.instrs[this.curFunction.instrs.length - 1];
 
     if ('label' in last_instr) {
-      return false
+      return undefined
     }
 
-    return last_instr.op === op
+    return last_instr
   }
 
   /**
