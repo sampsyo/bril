@@ -82,17 +82,22 @@ impl Lines {
                 self.new_lines
                     .iter()
                     .enumerate()
+                    //(i+1) because line numbers start at 1
                     .map(|(i, j)| (i + 1, j))
                     .fold(
                         ColRow {
-                            col: index as u64,
+                            // (index + 1) because column numbers start at 1
+                            col: (index + 1) as u64,
+                            // Hard code the first row to be 1
                             row: 1,
                         },
                         |current, (line_num, idx)| {
                             if *idx < index {
                                 ColRow {
+                                    // (line_num + 1) because line numbers start at 1
                                     row: (line_num + 1) as u64,
-                                    col: (index - idx) as u64,
+                                    // column values are kept relative to the previous index
+                                    col: ((index) - idx) as u64,
                                 }
                             } else {
                                 current

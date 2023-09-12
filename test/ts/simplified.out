@@ -1,0 +1,13 @@
+@main {
+  v0: int = const 1;
+  call @erronious v0;
+  v1: int = const 0;
+}
+@erronious(x: int): int {
+  v1: bool = const true;
+  br v1 .then.0 .else.0;
+.then.0:
+  v2: int = id x;
+  ret v2;
+.else.0:
+}

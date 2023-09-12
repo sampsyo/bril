@@ -145,7 +145,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
         // Check if effect statement, i.e., a call that is not a subexpression
         if (call.parent.kind === ts.SyntaxKind.ExpressionStatement) {
-          builder.buildCall(callText, 
+          builder.buildCall(callText,
             values.map(v => v.dest));
           return builder.buildInt(0);  // Expressions must produce values
         } else {
@@ -153,12 +153,12 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
           let type = brilType(decl, checker);
           let name = (decl.name != undefined) ? decl.name.getText() : undefined;
           return builder.buildCall(
-            callText, 
-            values.map(v => v.dest), 
-            type, 
+            callText,
+            values.map(v => v.dest),
+            type,
             name,
           );
-        } 
+        }
       }
     default:
       throw `unsupported expression kind: ${expr.getText()}`;
@@ -215,12 +215,18 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         // Statement chunks.
         builder.buildLabel(thenLab);
         emit(if_.thenStatement);
-        builder.buildEffect("jmp", [], undefined, [endLab]);
+        const then_branch_terminated = builder.getLastInstr()?.op === "ret";
+        if (!then_branch_terminated) {
+          builder.buildEffect("jmp", [], undefined, [endLab]);
+        }
         builder.buildLabel(elseLab);
         if (if_.elseStatement) {
           emit(if_.elseStatement);
         }
-        builder.buildLabel(endLab);
+        // The else branch otherwise just falls through without needing a target label
+        if (!then_branch_terminated) {
+          builder.buildLabel(endLab);
+        }
 
         break;
       }
@@ -258,7 +264,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         break;
       }
 
-      case ts.SyntaxKind.FunctionDeclaration: 
+      case ts.SyntaxKind.FunctionDeclaration:
         let funcDef = node as ts.FunctionDeclaration;
         if (funcDef.name === undefined) {
           throw `no anonymous functions!`;
@@ -298,7 +304,7 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
 
       case ts.SyntaxKind.ImportDeclaration:
         break;
-  
+
       default:
         throw `unhandled TypeScript AST node kind ${ts.SyntaxKind[node.kind]}`;
     }
