@@ -289,28 +289,28 @@ impl BBFunction {
     }
     let last_idx = self.blocks.len() - 1;
     for (i, block) in self.blocks.iter_mut().enumerate() {
-      // If we're before the last block
-      if i < last_idx {
-        // Get the last instruction
-        let last_instr = block.instrs.last().cloned();
-        if let Some(bril_rs::Instruction::Effect {
-          op: bril_rs::EffectOps::Jump | bril_rs::EffectOps::Branch,
-          labels,
-          ..
-        }) = last_instr
-        {
-          for l in labels {
-            block
-              .exit
-              .push(*label_map.get(&l).ok_or(InterpError::MissingLabel(l))?);
-          }
-        } else if let Some(bril_rs::Instruction::Effect {
-          op: bril_rs::EffectOps::Return,
-          ..
-        }) = last_instr
-        {
-          // We are done, there is no exit from this block
-        } else {
+      // Get the last instruction
+      let last_instr = block.instrs.last().cloned();
+      if let Some(bril_rs::Instruction::Effect {
+        op: bril_rs::EffectOps::Jump | bril_rs::EffectOps::Branch,
+        labels,
+        ..
+      }) = last_instr
+      {
+        for l in labels {
+          block
+            .exit
+            .push(*label_map.get(&l).ok_or(InterpError::MissingLabel(l))?);
+        }
+      } else if let Some(bril_rs::Instruction::Effect {
+        op: bril_rs::EffectOps::Return,
+        ..
+      }) = last_instr
+      {
+        // We are done, there is no exit from this block
+      } else {
+        // If we're before the last block
+        if i < last_idx {
           block.exit.push(i + 1);
         }
       }
