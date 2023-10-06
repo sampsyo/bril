@@ -16,6 +16,7 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::match_same_arms)]
 #![allow(clippy::option_if_let_else)]
+#![allow(clippy::extra_unused_lifetimes)]
 
 use std::str::FromStr;
 use std::path::PathBuf;
