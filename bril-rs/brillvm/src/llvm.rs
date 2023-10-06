@@ -141,7 +141,7 @@ impl Fresh {
 fn build_op<'a, 'b>(
     context: &'a Context,
     builder: &'a Builder,
-    heap: &mut Heap<'a, 'b>,
+    heap: &Heap<'a, 'b>,
     fresh: &mut Fresh,
     op: impl Fn(Vec<BasicValueEnum<'a>>) -> BasicValueEnum<'a>,
     args: &'b [String],
@@ -160,7 +160,7 @@ fn build_op<'a, 'b>(
 fn build_effect_op<'a, 'b>(
     context: &'a Context,
     builder: &'a Builder,
-    heap: &mut Heap<'a, 'b>,
+    heap: &Heap<'a, 'b>,
     fresh: &mut Fresh,
     op: impl Fn(Vec<BasicValueEnum<'a>>),
     args: &'b [String],
@@ -190,7 +190,7 @@ fn build_instruction<'a, 'b>(
     context: &'a Context,
     module: &'a Module,
     builder: &'a Builder,
-    heap: &mut Heap<'a, 'b>,
+    heap: &Heap<'a, 'b>,
     block_map: &mut HashMap<String, BasicBlock<'a>>,
     llvm_func: FunctionValue<'a>,
     fresh: &mut Fresh,
@@ -1247,7 +1247,7 @@ pub fn create_module_from_program<'a>(
     // Now actually build each function
     funcs
         .into_iter()
-        .for_each(|(llvm_func, instrs, mut block, mut heap)| {
+        .for_each(|(llvm_func, instrs, mut block, heap)| {
             let mut last_instr = None;
 
             // If their are actually instructions, proceed
@@ -1284,7 +1284,7 @@ pub fn create_module_from_program<'a>(
                                 context,
                                 &runtime_module,
                                 &builder,
-                                &mut heap,
+                                &heap,
                                 &mut block_map,
                                 llvm_func,
                                 &mut fresh,
@@ -1375,7 +1375,7 @@ pub fn create_module_from_program<'a>(
         build_effect_op(
             context,
             &builder,
-            &mut heap,
+            &heap,
             &mut fresh,
             |v| {
                 builder.build_call(
