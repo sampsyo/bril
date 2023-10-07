@@ -14,4 +14,4 @@ bench.csv: $(wildcard **/*.bench.json)
 	python3 summarize.py $^ > $@
 
 %.svg: %.vl.json bench.csv
-	npx -p vega -p vega-lite vl2svg $*.vl.json > $@
+	npx --yes -p vega -p vega-lite vl2svg $*.vl.json > $@
