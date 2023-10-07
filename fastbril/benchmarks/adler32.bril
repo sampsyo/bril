@@ -1,0 +1,84 @@
+@main {
+  size: int = const 512;
+  arr: ptr<int> = alloc size;
+  call @fill_array arr size;
+  checksum: int = call @adler32 arr size;
+  print checksum;
+  free arr;
+}
+
+# Calculate the modulo of the two numbers using arithmetic
+@mod(r: int, s: int): int {
+  x: int = div r s;
+  y: int = mul x s;
+  result: int = sub r y;
+  ret result;
+}
+
+# Fills the array with values 0, 1. 2, ...
+@fill_array(arr: ptr<int>, size:int) {
+  one: int = const 1;
+  curr: int = const 0;
+  loc: ptr<int> = id arr;
+.loop:
+  store loc curr;
+  loc: ptr<int> = ptradd loc one;
+  curr: int = add curr one;
+  continue: bool = lt curr size;
+  br continue .loop .exit;
+.exit:
+  nop;
+}
+
+# Calculate the bitwise OR of two numbers using arithmetic
+@bitwise_or(x: int, y: int): int {
+  one: int = const 1;
+  two: int = const 2;
+  val: int = const 1;
+  zero: int = const 0;
+  result: int = const 0;
+.loop:
+  xmod2: int = call @mod x two;
+  ymod2: int = call @mod y two;
+  xodd: bool = eq xmod2 one;
+  yodd: bool = eq ymod2 one;
+  cond: bool = or xodd yodd;
+  br cond .true .false;
+.true:
+  result: int = add result val;
+.false:
+  x: int = div x two;
+  y: int = div y two;
+  xpos: bool = gt x zero;
+  ypos: bool = gt y zero;
+  val: int = mul val two;
+  continue: bool = or xpos ypos;
+  br continue .loop .exit;
+.exit:
+  ret result;
+}
+
+# Function that calculates the Adler-32 checksum of an array
+@adler32(arr: ptr<int>, size:int): int {
+  a: int = const 1;
+  b: int = const 0;
+  one: int = const 1;
+  curr: int = const 0;
+  loc: ptr<int> = id arr;
+  adler: int = const 65521;
+  two_raised_to_16: int = const 65536;
+.loop:
+  val: int = load loc;
+  a: int = add a val;
+  b: int = add b a;
+  loc: ptr<int> = ptradd loc one;
+  curr: int = add curr one;
+  continue: bool = lt curr size;
+  br continue .loop .exit;
+.exit:
+  a: int = call @mod a adler;
+  b: int = call @mod b adler;
+  b: int = mul b two_raised_to_16;
+  result: int = call @bitwise_or b a;
+  ret result;
+}

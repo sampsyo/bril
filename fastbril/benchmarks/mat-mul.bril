@@ -1,0 +1,127 @@
+# Use a linear congruential generator to generate random numbers.
+# `seq` is the state of the random number generator.
+# Returns a value between 0 and max
+@rand(seq: ptr<int>, max: int) : int {
+  a: int = const 25214903917;
+  c: int = const 11;
+  m: int = const 281474976710656;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  next: int = mul next m;
+  next: int = sub axpc next;
+  store seq next;
+  val: int = div next max;
+  val: int = mul val max;
+  val: int = sub next val;
+  ret val;
+}
+
+# Generates a random array of length `size`
+@randarray(size: int, rng: ptr<int>) : ptr<int> {
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  max: int = const 1000;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  val: int = call @rand rng max;
+  loc: ptr<int> = ptradd arr i;
+  store loc val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# Prints an array
+@printarray(size: int, arr: ptr<int>) {
+  i: int = const 0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<int> = ptradd arr i;
+  val: int = load loc;
+  print val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}
+
+# Naive matrix muliplication algorithm
+# `arr1`, `arr2`, and `dest` are `size` x `size` matrices
+# `dest` will contain `arr1` x `arr2`
+@matmul(size: int, arr1: ptr<int>, arr2: ptr<int>, dest: ptr<int>) {
+  one: int = const 1;
+  row: int = const 0;
+.row.loop:
+  cond: bool = lt row size;
+  br cond .row.body .row.done;
+.row.body:
+  col: int = const 0;
+.col.loop:
+  cond: bool = lt col size;
+  br cond .col.body .col.done;
+.col.body:
+  sum: int = const 0;
+  i: int = const 0;
+.sum.loop:
+  cond: bool = lt i size;
+  br cond .sum.body .sum.done;
+.sum.body:
+  lidx: int = mul row size;
+  lidx: int = add lidx i;
+  ridx: int = mul i size;
+  ridx: int = add ridx col;
+  lvalloc: ptr<int> = ptradd arr1 lidx;
+  lval: int = load lvalloc;
+  rvalloc: ptr<int> = ptradd arr2 ridx;
+  rval: int = load rvalloc;
+  prod: int = mul lval rval;
+  sum: int = add sum prod;
+.sum.loop_end:
+  i: int = add i one;
+  jmp .sum.loop;
+.sum.done:
+  idx: int = mul row size;
+  idx: int = add idx col;
+  loc: ptr<int> = ptradd dest idx;
+  store loc sum;
+.col.loop_end:
+  col: int = add col one;
+  jmp .col.loop;
+.col.done:
+.row.loop_end:
+  row: int = add row one;
+  jmp .row.loop;
+.row.done:
+  ret;
+}
+
+# ARGS: 50 109658
+@main(size: int, seed: int) {
+  one: int = const 1;
+  rng: ptr<int> = alloc one;
+  store rng seed;
+  sqsize: int = mul size size;
+  arr1: ptr<int> = call @randarray sqsize rng;
+  arr2: ptr<int> = call @randarray sqsize rng;
+  dest: ptr<int> = call @randarray sqsize rng;
+  call @matmul size arr1 arr2 dest;
+  call @printarray sqsize arr1;
+  call @printarray sqsize arr2;
+  call @printarray sqsize dest;
+  free arr1;
+  free arr2;
+  free dest;
+  free rng;
+  ret;
+}

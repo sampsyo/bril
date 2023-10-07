@@ -1,0 +1,36 @@
+# ARGS: 2 3 3
+
+@main(n: int, arrows: int, repeats: int) {
+  ans: int = call @up_arrow n arrows repeats;
+  print ans;
+}
+
+@up_arrow(num: int, arrows: int, repeats: int): int {
+  one: int = const 1;
+
+  ans: int = id num;  
+  i: int = const 1;
+
+.loopstart:
+  keepgoing: bool = lt i repeats;
+  br keepgoing .loopbody .endloop;
+
+.loopbody:
+  base_case: bool = le arrows one;
+  br base_case .base .arrowsgreaterthan1;
+
+.base:
+  ans: int = mul ans num;
+  jmp .finally;
+
+.arrowsgreaterthan1:
+  new_arrows: int = sub arrows one;
+  ans: int = call @up_arrow num new_arrows ans;
+
+.finally:
+  i: int = add i one;
+  jmp .loopstart;
+
+.endloop:
+  ret ans;
+}

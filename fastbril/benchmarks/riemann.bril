@@ -1,0 +1,89 @@
+# riemann sums from wikipedia article on riemann sums
+
+@main {
+    a: float = const 2.0;
+    b: float = const 10.0;
+    n: float = const 8.0;
+    left : float = call @left_riemann a b n;
+    print left;
+    midpoint: float = call @midpoint_riemann a b n;
+    print midpoint;
+    right : float = call @right_riemann a b n;
+    print right;
+}
+
+@square_function(x: float): float {
+    square : float = fmul x x;
+    ret square;
+}
+
+@left_riemann(a: float, b:float, n:float): float {
+    zero : float = const 0.0;
+    one : float = const 1.0;
+    negative_one : float = fsub zero one;
+    diff : float = fsub b a;
+    delta : float = fdiv diff n;
+    i : float = fsub n one;
+    sum : float = const 0.0;
+    .while.header:
+    cond : bool = feq i negative_one;
+    br cond .while.end .while.body;
+    .while.body:
+    offset : float = fmul delta i; 
+    x : float = fadd a offset; 
+    f_x : float = call @square_function x;
+    sum : float = fadd sum f_x;
+    i : float = fsub i one;
+    jmp .while.header;
+    .while.end:
+    sum : float = fmul sum delta;
+    ret sum;
+}
+
+@right_riemann(a: float, b:float, n:float): float {
+    zero : float = const 0.0;
+    one : float = const 1.0;
+    diff : float = fsub b a;
+    delta : float = fdiv diff n;
+    i : float = id n;
+    sum : float = const 0.0;
+    .while.header:
+    cond : bool = feq i zero;
+    br cond .while.end .while.body;
+    .while.body:
+    offset : float = fmul delta i; 
+    x : float = fadd a offset; 
+    f_x : float = call @square_function x;
+    sum : float = fadd sum f_x;
+    i : float = fsub i one;
+    jmp .while.header;
+    .while.end:
+    sum : float = fmul sum delta;
+    ret sum;
+}
+
+@midpoint_riemann(a: float, b:float, n:float): float {
+    zero : float = const 0.0;
+    one : float = const 1.0;
+    negative_one : float = fsub zero one;
+    two : float = const 2.0;
+    diff : float = fsub b a;
+    delta : float = fdiv diff n;
+    i : float = fsub n one;
+    sum : float = const 0.0;
+    .while.header:
+    cond : bool = feq i negative_one;
+    br cond .while.end .while.body;
+    .while.body:
+    offset : float = fmul delta i; 
+    half_delta : float = fdiv delta two;
+    offset : float = fadd offset half_delta;
+    x : float = fadd a offset; 
+    f_x : float = call @square_function x;
+    sum : float = fadd sum f_x;
+    i : float = fsub i one;
+    jmp .while.header;
+    .while.end:
+    sum : float = fmul sum delta;
+    ret sum;
+}

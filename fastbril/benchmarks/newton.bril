@@ -1,0 +1,41 @@
+@main() {
+  n: float = const 99999;
+  two: float = const 2;
+  x: float = fdiv n two; # fist approximation
+  prev_x: float = id n;
+  target: float = const 0.00001;
+.for.cond.1:
+  d: float = call @diff prev_x x;
+  v6: bool = fgt d target;
+  br v6 .for.body.1 .for.end.1;
+.for.body.1:
+  prev_x: float = id x;
+  x: float = call @sqrt x n;
+  jmp .for.cond.1;
+.for.end.1:
+  print x;
+}
+
+# one iteration of the newton method:
+# sqrt(x, n) = x - (x^2 - n) / (2*x)
+@sqrt(x: float, n: float): float {
+  two: float = const 2;
+  v0: float = fmul x x;
+  v1: float = fsub v0 n;
+  v2: float = fmul two x;
+  v3: float = fdiv v1 v2;
+  v4: float = fsub x v3;
+  ret v4;
+}
+
+# returns a postivie difference between a and b
+@diff(a: float, b: float): float {
+  c: bool = fgt a b;
+  br c .then.1 .else.1;
+.then.1:
+  v5: float = fsub a b;
+  ret v5;
+.else.1:
+  v5: float = fsub b a;
+  ret v5;
+}

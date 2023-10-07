@@ -1,0 +1,77 @@
+# ARGS: 50
+@main(n: int) {
+  v2: int = const 1;
+  i: int = id v2;
+.for.cond.1:
+  v3: int = id i;
+  v4: int = id n;
+  v5: bool = lt v3 v4;
+  br v5 .for.body.1 .for.end.1;
+.for.body.1:
+  v6: int = id i;
+  isPrime: bool = call @checkPrime v6;
+  isPrime: bool = id isPrime;
+  v8: bool = id isPrime;
+  br v8 .then.7 .else.7;
+.then.7:
+  v9: int = const 1;
+  print v9;
+  v10: int = const 0;
+  jmp .endif.7;
+.else.7:
+  v11: int = const 0;
+  print v11;
+  v12: int = const 0;
+.endif.7:
+  v13: int = id i;
+  v14: int = const 1;
+  v15: int = add v13 v14;
+  i: int = id v15;
+  jmp .for.cond.1;
+.for.end.1:
+}
+
+@checkPrime(x: int): bool {
+  v1: int = id x;
+  v2: int = const 1;
+  v3: bool = le v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: bool = const false;
+  ret v4;
+.else.0:
+.endif.0:
+  v6: int = const 2;
+  i: int = id v6;
+.for.cond.5:
+  v7: int = id i;
+  v8: int = id x;
+  v9: bool = lt v7 v8;
+  br v9 .for.body.5 .for.end.5;
+.for.body.5:
+  v10: int = id x;
+  v11: int = id i;
+  v12: int = div v10 v11;
+  div: int = id v12;
+  v13: int = id div;
+  v14: int = id i;
+  v15: int = mul v13 v14;
+  v16: int = id x;
+  v17: bool = eq v15 v16;
+  isDivisible: bool = id v17;
+  v19: bool = id isDivisible;
+  br v19 .then.18 .else.18;
+.then.18:
+  v20: bool = const false;
+  ret v20;
+.else.18:
+.endif.18:
+  v21: int = id i;
+  v22: int = const 1;
+  v23: int = add v21 v22;
+  i: int = id v23;
+  jmp .for.cond.5;
+.for.end.5:
+  v24: bool = const true;
+  ret v24;
+}

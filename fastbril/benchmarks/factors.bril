@@ -1,0 +1,35 @@
+# Prints out the integer factors of the input
+# Trial division algorithm: https://en.wikipedia.org/wiki/Trial_division
+
+# input: a positive integer
+# output: the integer's factors
+
+# ARGS: 60
+@main (num: int) {
+  zer: int = const 0;
+  one: int = const 1;
+  fac: int = const 2;
+
+.loopcheck:
+  ispos: bool = lt one num;
+  br ispos .loopbody .loopend;
+  
+.loopbody:
+  quo: int = div num fac;
+  tmp: int = mul quo fac;
+  mod: int = sub num tmp;     # num % fac
+  iszero: bool = eq mod zer;
+  br iszero .ifyes .ifno;
+
+.ifyes:
+  print fac;
+  num: int = div num fac;
+  jmp .loopcheck;
+
+.ifno:
+  fac: int = add fac one; 
+  jmp .loopcheck;
+
+.loopend:
+  # nothing, just drop out to EoF
+}

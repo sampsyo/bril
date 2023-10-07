@@ -1,0 +1,77 @@
+# ARGS: -5 8 21
+@main(a: int, b: int, c: int) {
+  call @quadratic a b c;
+}
+
+@sqrt(x: int): int {
+  v1: int = const 1;
+  i: int = id v1;
+.for.cond.0:
+  v2: int = id i;
+  v3: int = id x;
+  v4: int = const 1;
+  v5: int = sub v3 v4;
+  v6: bool = lt v2 v5;
+  br v6 .for.body.0 .for.end.0;
+.for.body.0:
+  v8: int = id i;
+  v9: int = id i;
+  v10: int = mul v8 v9;
+  v11: int = id x;
+  v12: bool = ge v10 v11;
+  br v12 .then.7 .else.7;
+.then.7:
+  v13: int = id i;
+  ret v13;
+.else.7:
+.endif.7:
+  v14: int = id i;
+  v15: int = const 1;
+  v16: int = add v14 v15;
+  i: int = id v16;
+  jmp .for.cond.0;
+.for.end.0:
+  v17: int = const 0;
+  ret v17;
+}
+
+@quadratic(a: int, b: int, c: int) {
+  v0: int = id b;
+  v1: int = id b;
+  v2: int = mul v0 v1;
+  v3: int = const 4;
+  v4: int = id a;
+  v5: int = mul v3 v4;
+  v6: int = id c;
+  v7: int = mul v5 v6;
+  v8: int = sub v2 v7;
+  s: int = id v8;
+  v9: int = const 2;
+  v10: int = id a;
+  v11: int = mul v9 v10;
+  d: int = id v11;
+  v12: int = const 0;
+  v13: int = id b;
+  v14: int = sub v12 v13;
+  v15: int = id s;
+  v16: int = call @sqrt v15;
+  v17: int = add v14 v16;
+  r1: int = id v17;
+  v18: int = const 0;
+  v19: int = id b;
+  v20: int = sub v18 v19;
+  v21: int = id s;
+  v22: int = call @sqrt v21;
+  v23: int = sub v20 v22;
+  r2: int = id v23;
+  v24: int = id r1;
+  v25: int = id d;
+  v26: int = div v24 v25;
+  print v26;
+  v27: int = const 0;
+  v28: int = id r2;
+  v29: int = id d;
+  v30: int = div v28 v29;
+  print v30;
+  v31: int = const 0;
+}

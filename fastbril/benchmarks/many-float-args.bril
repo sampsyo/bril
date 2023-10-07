@@ -1,0 +1,24 @@
+@foo(a0 :float, a1 :float, a2 :float, a3 :float, a4 :float, a5 :float, a6 :float,
+a7 :float, a8 :float, a9 :float, a10 :float, a11 :float)
+{
+   tmp :float = id a8;
+   tmp2 :float = id a9;
+   print tmp tmp2 a10 a11;
+}
+
+@main
+{
+   x0 :float = const 0.0;
+   x1 :float = const 1.0;
+   x2 :float = const 2.0;
+   x3 :float = const 3.0;
+   x4 :float = const 4.0;
+   x5 :float = const 5.0;
+   x6 :float = const 6.0;
+   x7 :float = const 7.0;
+   x8 :float = const 8.0;
+   x9 :float = const 9.0;
+   x10 :float = const 10.0;
+   x11 :float = const 11.0;
+   call @foo x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11;
+}

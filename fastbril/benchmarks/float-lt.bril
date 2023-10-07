@@ -1,0 +1,13 @@
+@main
+{
+   x :float = const 1;
+   y :float = const 0;
+   cond :bool = flt y x;
+   br cond .ltrue .lfalse;
+.ltrue:
+   print x;
+   jmp .end;
+.lfalse:
+   print y;
+.end:
+}

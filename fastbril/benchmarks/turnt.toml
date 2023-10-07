@@ -1,0 +1,4 @@
+# command = "bril2json < {filename} | ../build/fastbrili -p {args}"
+command = "bril2json < {filename} | ../build/fastbrili -ni -bo byte-out ; cat byte-out | ../build/fastbrili -b {args}"
+output.out = "-"
+# output.prof = "2"

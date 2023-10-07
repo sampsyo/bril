@@ -1,0 +1,170 @@
+## let's try to invert a 3x3 matrix lmao
+## We'll keep an array of 9 integers
+## so the first order of business is making a helper to index into it:
+## basically just r * 3 + col
+@matget(matrix :ptr<float>, r :int, c :int) :float
+{
+  three :int = const 3;
+  trip_r :int = mul three r;
+  index :int = add c trip_r;
+  ptr :ptr<float> = ptradd matrix index;
+  res :float = load ptr;
+  ret res;
+}
+
+## ok now we would like to take a determinant, but we're gonna need a
+## "mod" operator
+@mod(a :int, b :int) :int
+{
+  acc :int = div a b;
+  acc :int = mul b acc;
+  acc :int = sub a acc;
+  ret acc;
+}
+
+##with that out of the way, let's give determinant a go:
+@determinant(matrix :ptr<float>) :float
+{
+  two :int = const 2;
+  one :int = const 1;
+  zero :int = const 0;
+  det :float = const 0;
+  i :int = const 0;
+  three :int = const 3;
+
+.loop:
+  to_add :float = call @matget matrix zero i;
+  to_sub :float = id to_add; ## mat[0][i]
+  col :int = add i one;
+  col :int = call @mod col three; ## (i + 1) % 3
+  tmp :float = call @matget matrix one col;
+  to_add :float = fmul to_add tmp;
+  tmp :float = call @matget matrix two col;
+  to_sub :float = fmul to_sub tmp;
+
+  col :int = add i two;
+  col :int = call @mod col three; ## (i + 2) % 3;
+  tmp :float = call @matget matrix two col;
+  to_add :float = fmul to_add tmp;
+  tmp :float = call @matget matrix one col;
+  to_sub :float = fmul to_sub tmp;
+  det :float = fadd det to_add;
+  det :float = fsub det to_sub;
+  i :int = add i one;
+  i_lt_three: bool = lt i three;
+  br i_lt_three .loop .done;
+.done:
+  ret det;
+}
+
+## invert the thing. Do all the adjoint and transpose stuff at once
+## returns a new matrix
+@inverse(matrix :ptr<float>) :ptr<float>
+{
+  det :float = call @determinant matrix;
+  nine :int = const 9;
+  result :ptr<float> = alloc nine;
+  zero :int = const 0;
+  one :int = const 1;
+  two :int = const 2;
+  three :int = const 3;
+  i:int = id zero;
+.outer:
+  j:int = id zero;
+.inner:
+  jp1 :int = add j one;
+  jp1 :int = call @mod jp1 three;
+  jp2 :int = add j two;
+  jp2 :int = call @mod jp2 three;
+  ip1 :int = add i one;
+  ip1 :int = call @mod ip1 three;
+  ip2 :int = add i two;
+  ip2 :int = call @mod ip2 three;
+  val :float = call @matget matrix jp1 ip1;
+  tmp :float = call @matget matrix jp2 ip2;
+  val :float = fmul val tmp;
+  tmp :float = call @matget matrix jp1 ip2;
+  temp :float = call @matget matrix jp2 ip1;
+  tmp :float = fmul tmp temp;
+  val :float = fsub val tmp;
+  val :float = fdiv val det;
+  index :int = mul three i;
+  index :int = add index j;
+  ptr :ptr<float> = ptradd result index;
+  store ptr val;
+  j :int = add j one;
+  j_lt_three :bool = lt j three;
+  br j_lt_three .inner .continue;
+.continue:
+  i :int = add i one;
+  i_lt_three :bool = lt i three;
+  br i_lt_three .outer .finished;
+.finished:
+  ret result;
+}
+
+
+## [0 1 7]
+## [4 3 5]
+## [7 4 5]
+
+##inverse:
+## [.25 -1.15 .8]
+## [-.75 2.45 -1.4]
+## [.25 -.35 .2]
+@main
+{
+  nine :int = const 9;
+  one :int = const 1;
+  matrix :ptr<float> = alloc nine;
+  zero :float = const 0;
+  onef :float = const 1;
+  three :float = const 3;
+  four :float = const 4;
+  five :float = const 5;
+  seven :float = const 7;
+  store matrix zero;
+  ptr :ptr<float> = ptradd matrix one;
+  store ptr onef;
+  ptr :ptr<float> = ptradd ptr one;
+  store ptr seven;
+  ptr :ptr<float> = ptradd ptr one;
+  store ptr four;
+  ptr :ptr<float> = ptradd ptr one;
+  store ptr three;
+  ptr :ptr<float> = ptradd ptr one;
+  store ptr five;
+  ptr :ptr<float> = ptradd ptr one;
+  store ptr seven;
+  ptr :ptr<float> = ptradd ptr one;
+  store ptr four;
+  ptr :ptr<float> = ptradd ptr one;
+  store ptr five;
+
+  det :float = call @determinant matrix;
+  print det;
+  inv :ptr<float> = call @inverse matrix;
+  call @printarray nine inv;
+  free inv;
+  free matrix;
+}
+
+
+# Prints an array
+## borrowed with slight modification from mat-mul.bril
+@printarray(size: int, arr: ptr<float>) {
+  i: int = const 0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<float> = ptradd arr i;
+  val: float = load loc;
+  print val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}

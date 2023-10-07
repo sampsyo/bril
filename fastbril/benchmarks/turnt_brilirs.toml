@@ -1,0 +1,3 @@
+command = "cargo run --manifest-path ../brilirs/Cargo.toml --quiet -- --text --file {filename} -p {args}"
+output.out = "-"
+output.prof = "2"

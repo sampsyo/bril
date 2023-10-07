@@ -1,0 +1,34 @@
+# ARGS: 10
+@main(input: int) {
+  zero: int = const 0;
+  one: int = const 1;
+  neg_one: int = const -1;
+  vals: ptr<int> = alloc input;
+  store vals zero;
+  vals_i: ptr<int> = ptradd vals one;
+  store vals_i one;
+  i: int = const 2;
+  i_minus_one: int = add i neg_one;
+  i_minus_two: int = add i_minus_one neg_one;
+.loop:
+  cond: bool = lt i input;
+  br cond .body .done;
+.body:
+  vals_i: ptr<int> = ptradd vals i;
+  vals_i_minus_one: ptr<int> = ptradd vals i_minus_one;
+  vals_i_minus_two: ptr<int> = ptradd vals i_minus_two;
+  tmp: int = load vals_i_minus_one;
+  tmp2: int = load vals_i_minus_two;
+  tmp: int = add tmp tmp2;
+  store vals_i tmp;
+  i: int = add i one;
+  i_minus_one: int = add i_minus_one one;
+  i_minus_two: int = add i_minus_two one;
+  jmp .loop;
+.done:
+  last: ptr<int> = ptradd vals i_minus_one;
+  tmp: int = load last;
+  print tmp;
+  free vals;
+  ret;
+}

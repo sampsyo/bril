@@ -1,0 +1,9 @@
+FADD   28
+FMUL   29
+FSUB   30
+FDIV   31
+FEQ    32
+FLT    33
+FLE    34
+FGT    35
+FGE    36

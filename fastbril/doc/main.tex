@@ -1,0 +1,239 @@
+
+\documentclass{article}
+
+\usepackage[toc,page]{appendix}
+\usepackage{hyperref}
+\usepackage[margin=3cm]{geometry}
+
+\newcommand{\bril}{\href{https://capra.cs.cornell.edu/bril/}{bril}}
+\newcommand{\Bril}{\href{https://capra.cs.cornell.edu/bril/}{Bril}}
+\newcommand{\refint}{\href{https://capra.cs.cornell.edu/bril/tools/interp.html}
+  {reference interpreter}}
+
+\title{BRB Specification \\
+\Large{Big Red Bytecode}}
+\author{Susan Garry, Charles Sherk}
+
+
+\begin{document}
+\maketitle
+\section{Overview}
+We provide a description of a bytecode for \bril{}. We support the standard
+extensions, and make it relatively easy to extend the bytecode to support new
+extensions as well. We also provide a reference for the opcodes that we have
+chosen in appendix \ref{app:opcodes}. The general encoding is that each
+instruction is 64 bits, but some instructions require more information. These
+instructions encode in some multiple of 64 bits which can be determined by
+reading the first 64 bits.
+\section{Base Instructions}
+Temporaries (stack variables) are represented by a number in the range
+$[0, 2^{16})$. This does technically impose a limit over the original \bril{}
+implementation, but we don't believe that it will be relevant for any
+programs. Since all data types take up 8 bytes in our implementation, this comes
+out to half a megabyte of space maximum for each stack frame. In java, the
+maximum stack size is 1 megabyte, so this seems like a reasonable limitation.
+
+% TODO alternate encoding for this?
+We also limit the number of instructions to $2^{16}$ per function so that labels
+can be represented in 16 bits as instruction indices. This allows us to use the
+following general instruction format:\\
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|c|}
+    \cline{2-6}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{dest} & \texttt{arg1}
+    & \texttt{arg2} \\ \cline{2-6}
+    Size (bits): & 1 & 15 & 16 & 16 & 16 \\ \cline{2-6}
+  \end{tabular}
+\end{center}
+The \texttt{labelled} bit marks if an instruction has a label immediately preceding
+it, that is, it can be a jump target. This is important for faithful execution
+of the $\phi$ instruction, as it needs to keep track of the most recent label.
+
+The \texttt{opcode} is 15 bits, which is far bigger than we need, but it makes
+sense to keep everything in 16 bit increments. There is space for another couple
+bits of tagging extensions after the label bit since we don't use many opcode
+bits, but there is no need for them yet.
+
+Next is the \texttt{dest} temporary. This is where the result of this
+instruction will be put. \texttt{arg1} and \texttt{arg2} are the two
+arguments. This works for all instructions of the form
+\[
+  \texttt{dest} := \texttt{arg1}\ op\ \texttt{arg2}
+\]
+There are however other formats.\footnote{Not EVERY instruction uses the second
+  argument, such as the \texttt{not} instruction, so in this case the second
+  argument is undefined.}
+\section{Types}
+\label{sec:types}
+We can represent the \bril{} types \texttt{int}, \texttt{float}, \texttt{bool},
+\texttt{void}, and arbitrarily nested pointers to these. The 2 bit encodings for
+base types are in appendix \ref{app:types}.
+\begin{center}
+  \begin{tabular}{r|c|c|}
+    \cline{2-3}
+    & \texttt{ptr depth} & \texttt{base type}\\ \cline{2-3}
+    Size(bits) & 14 & 2
+  \end{tabular}
+\end{center}
+This means something like \texttt{ptr<ptr<ptr<bool>>>} would be represented as
+\texttt{0b1101}. The right two bits are the base type, and the rest to the left
+is how many \texttt{ptr} there are.
+
+\section{ID instruction}
+The \texttt{ID} instruction only has one argument and a destination, leaving us
+16 bits unused. However, in order to facilitate translation back to the original
+\bril{} code, we need to be able to write down types, and \texttt{ID} is a
+polymorphic instruction, so we hold the type in this last slot, giving this
+layout:
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|c|}
+    \cline{2-6}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{dest} & \texttt{arg}
+    & \texttt{type} \\ \cline{2-6}
+    Size (bits): & 1 & 15 & 16 & 16 & 16 \\ \cline{2-6}
+  \end{tabular}
+\end{center}
+
+\section{Branch Instructions}
+Branches are the simplest instructions that don't fit into the ``base'' format,
+and are laid out as follows:\\
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|c|}
+    \cline{2-6}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{test} & \texttt{ltrue}
+    & \texttt{lfalse} \\ \cline{2-6}
+    Size (bits): & 1 & 15 & 16 & 16 & 16 \\ \cline{2-6}
+  \end{tabular}
+\end{center}
+The \texttt{labelled} and \texttt{opcode} sections work the same way as base
+instructions (the opcode will always be the branch opcode, but we still need it
+to be able to decode easily). \texttt{test} is a temporary which if it is 1 will
+transfer control flow to \texttt{ltrue}, and if it is 0 will transfer to
+\texttt{lfalse}. Other values result in undefined behavior, as we only allow
+booleans to be 0 or 1.
+\section{Constant Instruction}
+Constants present a bit of an issue: \bril{} supports constants up to 64 bits,
+but that would be the whole instruction. We also observe that usually constants
+are much smaller, so we provide two encodings. First of all is the ``standard''
+encoding:\\ 
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|}
+    \cline{2-5}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{dest} & \texttt{value}\\
+    \cline{2-5}
+    Size (bits): & 1 & 15 & 16 & 32 \\ \cline{2-5}
+  \end{tabular}
+\end{center}
+This works for integers which can be represented in 32 bits as well as booleans,
+but for larger integers and floats, there is a loss of precision. We also
+provide a ``long constant'' format as follows:
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|c|c|}
+    \cline{2-7}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{dest} & \texttt{type}
+    & \texttt{unused}
+    & \texttt{value} \\ \cline{2-7}
+    Size (bits): & 1 & 15 & 16 & 16 & 48 & 64 \\ \cline{2-5}
+  \end{tabular}
+\end{center}
+This is 128 bits instead of 64, as we use \texttt{labelled}, \texttt{opcode},
+and \texttt{dest}
+the same way.
+We also include the type since we have the space, and this is necessary to
+translate back to \bril{}.
+The next 64 bits are the constant. This opcode is distinct
+from the opcode for the ``standard'' constant instruction encoding, so it allows
+distinction.
+\section{Function Call Instruction}
+\Bril{} supports function calls in a single instruction with an unlimited number
+of arguments, which is obviously a problem for a 64 bit encoding. We provide an
+initial encoding as follows:
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|c|}
+    \cline{2-6}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{dest} & \texttt{num\_args}
+    & \texttt{target} \\ \cline{2-6}
+    Size (bits): & 1 & 15 & 16 & 16 & 16 \\ \cline{2-6}
+  \end{tabular}
+\end{center}
+\texttt{labelled}, \texttt{opcode}, and \texttt{dest} work as in the standard
+encoding. \texttt{num\_args} tells us the number of arguments to the function, so
+we know how many of the following 64 bit chunks contain them, and
+\texttt{target} is the function to call. Functions are represented as their
+indices in order they appear in the source, which makes linking multiple sources
+together impossible at the bytecode stage. For this reason, the outputted file
+includes the name of the function, so that it is possible to reparse and link
+multiple files.
+
+We then have a sequence of 64 bit words that are split into 4 arguments, not all
+of which are used. These are represented as temps.
+
+\section{Print Instruction}
+\Bril{} also includes a fairly high level \texttt{print} instruction, which
+deals with it's arguments differently depending on their types. In order to
+encode this, we need to have an encoding for the types supported by \bril{},
+which we provide in section \ref{sec:types}. The first word of a \texttt{print}
+is encoded as follows:
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|c|}
+    \cline{2-6}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{num\_prints} & \texttt{type1}
+    & \texttt{arg1} \\ \cline{2-6}
+    Size (bits): & 1 & 15 & 16 & 16 & 16 \\ \cline{2-6}
+  \end{tabular}
+\end{center}
+As usual, \texttt{labelled} and \texttt{opcode} work as
+above. \texttt{num\_prints} is the number of arguments to the \texttt{print}
+instruction, as \bril{} supports an arbitrary amount. \texttt{type1} is the type
+of the first argument, and \texttt{arg1} is the encoding of the
+temporary. Subsequent arguments come in a sequence of 64 bit chunks which hold
+up to two arguments each, alternating the type and then the temp.
+\section{$\Phi$ Instruction}
+In order to properly mimic the behavior of the \refint, we need to be able to
+faithfully execute the $\Phi$ instruction on SSA programs. This is the reason we
+have the bit to keep track of which instructions were labelled in the
+source. The $\Phi$ instruction also supports an arbitrary number of arguments,
+so we use multiple 64 bit words to encode it. The first is as follows:
+\begin{center}
+  \begin{tabular}{r|c|c|c|c|c|}
+    \cline{2-6}
+    & \texttt{labelled} & \texttt{opcode} & \texttt{dest} & \texttt{num\_choices}
+    & \texttt{unused} \\ \cline{2-6}
+    Size (bits): & 1 & 15 & 16 & 16 & 16 \\ \cline{2-6}
+  \end{tabular}
+\end{center}
+\texttt{labelled}, \texttt{opcode}, and \texttt{dest} work the same as a standard
+instruction, and \texttt{num\_choices} is the number of places we might come
+from into the $\Phi$ instruction. Following this instruction are a sufficient
+number of 64 bit words to hold all the choices, which are represented as the
+encoding of a label followed by the value, which is a temp. Remember labels are
+indices into the instruction list.
+\begin{appendices}
+\section{Opcodes}
+\label{app:opcodes}
+\begin{tabular}{cccc}
+  \begin{minipage}{.25\linewidth}
+    \include{base.tex}
+  \end{minipage}
+  &
+    \begin{minipage}{.25\linewidth}
+      \include{ssa.tex}
+    \end{minipage}
+  &
+    \begin{minipage}{.25\linewidth}
+      \include{mem.tex}
+    \end{minipage}
+  &
+    \begin{minipage}{.25\linewidth}
+      \include{float.tex}
+    \end{minipage}
+\end{tabular}
+  \begin{minipage}{\linewidth}
+    \section{Types}
+    \label{app:types}
+    \begin{center}
+      \include{types.tex}
+    \end{center}
+  \end{minipage}
+\end{appendices}
+\end{document}

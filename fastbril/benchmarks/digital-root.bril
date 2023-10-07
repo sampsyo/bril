@@ -1,0 +1,50 @@
+# ARGS: 645634654
+
+# Computes the digital root of the given argument. This is done by iteratively
+# adding each digit together until the result is a single number.
+# This is equivalent to the input mod 9 except if that value would be zero
+# in which case the digital root is nine.
+
+@main(input: int) {
+    zero: int = const 0;
+    ten: int = const 10;
+    result: int = const 0;
+ .begin:
+    digit: int = call @peel_last_digit input;
+    input: int = div input ten;
+    result: int = add result digit;
+
+ .check_result:
+    print result;
+    processed: bool = call @is_single_digit result;
+    br processed .check_done .process_result;
+ .process_result:
+    r0: int = call @peel_last_digit result;
+    result: int = div result ten;
+    result: int = add result r0;
+    jmp .check_result;
+
+ .check_done:
+    done: bool = eq input zero;
+    br done .done .begin;
+
+ .done:
+    print result;
+}
+
+@is_single_digit(input: int): bool {
+    ten: int = const 10;
+    zero: int = const 0;
+    divided: int = div input ten;
+    mul_by_ten: int = mul divided ten;
+    result: bool = eq mul_by_ten zero;
+    ret result;
+}
+
+@peel_last_digit(input: int): int {
+    ten: int = const 10;
+    div_by_ten: int = div input ten;
+    mul_by_ten: int = mul div_by_ten ten;
+    last_digit: int = sub input mul_by_ten;
+    ret last_digit;
+}

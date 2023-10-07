@@ -1,0 +1,27 @@
+# ARGS: 8
+@main(input: int) {
+  value: int = id input;
+  v1: int = const 1;
+  result: int = id v1;
+  v3: int = id value;
+  i: int = id v3;
+.for.cond.2:
+  v4: int = id i;
+  v5: int = const 0;
+  v6: bool = gt v4 v5;
+  br v6 .for.body.2 .for.end.2;
+.for.body.2:
+  v7: int = id result;
+  v8: int = id i;
+  v9: int = mul v7 v8;
+  result: int = id v9;
+  v10: int = id i;
+  v11: int = const 1;
+  v12: int = sub v10 v11;
+  i: int = id v12;
+  jmp .for.cond.2;
+.for.end.2:
+  v13: int = id result;
+  print v13;
+  v14: int = const 0;
+}

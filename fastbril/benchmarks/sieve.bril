@@ -1,0 +1,108 @@
+# Print the indexes of values in `table` that are not
+# marked, i.e. `false`.
+@printUnmarked(table: ptr<bool>, tableSize: int) {
+  idx: int = const 0;
+  zero: int = const 0;
+  one: int = const 1;
+.print.unmarked.for.cond:
+  continue: bool = lt idx tableSize;
+  br continue .print.unmarked.for.body .print.unmarked.for.end;
+.print.unmarked.for.body:
+  offsetTable: ptr<bool> = ptradd table idx;
+  marked: bool = load offsetTable;
+  br marked .print.unmarked.skip.print .print.unmarked.print;
+.print.unmarked.print:
+  print idx;
+.print.unmarked.skip.print:
+  one: int = const 1;
+  idx: int = add idx one;
+  jmp .print.unmarked.for.cond;
+.print.unmarked.for.end:
+  ret;
+}
+
+# Find the next value `p` in `table` that's greater than
+# `currentP`, and is not marked. If there are no numbers
+# in the table left that meet those criteria, return 0.
+@findNextP(table: ptr<bool>, tableSize: int, currentP: int) : int {
+  zero: int = const 0;
+  one: int = const 1;
+  p: int = id currentP;
+.find.next.p.continue:
+  p: int = add p one;
+  inBounds: bool = lt p tableSize;
+  br inBounds .find.next.p.in.bounds .find.next.p.not.in.bounds;
+.find.next.p.in.bounds:
+  offsetTable: ptr<bool> = ptradd table p;
+  marked: bool = load offsetTable;
+  br marked .find.next.p.continue .find.next.p.done;
+.find.next.p.done:
+  ret p;
+.find.next.p.not.in.bounds:
+  ret zero;
+}
+
+# Mark the numbers in `table` that are multiples of `p`.
+# Marking a number means turning it to `true`.
+@markMultiples(table: ptr<bool>, tableSize: int, p: int) {
+  zero: int = const 0;
+  one: int = const 1;
+  t: bool = const true;
+  m: int = const 1;
+.mark.multiples.continue:
+  m: int = add m one;
+  mTimesP: int = mul m p;
+  offsetTable: ptr<bool> = ptradd table mTimesP;
+  finished: bool = ge mTimesP tableSize;
+  br finished .mark.multiples.done .mark.multiples.store;
+.mark.multiples.store:
+  store offsetTable t;
+  jmp .mark.multiples.continue;
+.mark.multiples.done:
+  ret;
+}
+
+# Populate `table` with `false`s, except for the slots
+# for `0` and `1`, which are not primes, and are marked.
+@populateTable(table: ptr<bool>, tableSize: int) {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  f: bool = const false;
+  t: bool = const true;
+  store table t;
+  offsetTable: ptr<bool> = ptradd table one;
+  store offsetTable t;
+  idx: int = id two;
+.populate.table.for.cond:
+  continue: bool = lt idx tableSize;
+  br continue .populate.table.for.body .populate.table.for.end;
+.populate.table.for.body:
+  offsetTable: ptr<bool> = ptradd table idx;
+  store offsetTable f;
+  idx: int = add idx one;
+  jmp .populate.table.for.cond;
+.populate.table.for.end:
+  ret;
+}
+
+@printPrimesUpTo(n: int) {
+  zero: int = const 0;
+  two: int = const 2;
+  table: ptr<bool> = alloc n;
+  call @populateTable table n;
+  p: int = id two;
+.print.primes.up.to.continue:
+  call @markMultiples table n p;
+  p: int = call @findNextP table n p;
+  finished: bool = eq p zero;
+  br finished .print.primes.up.to.done .print.primes.up.to.continue;
+.print.primes.up.to.done:
+  call @printUnmarked table n;
+  free table;
+}
+
+# ARGS: 100
+@main(input: int) {
+  call @printPrimesUpTo input;
+}
