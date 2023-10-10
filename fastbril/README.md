@@ -9,6 +9,7 @@ be like the typescript or rust implementation, but faster.
   the binary will be `./build/fastbrili`
 + doc: you need to have LaTeX installed. run `make doc`
   the doc will be `./doc/brb.pdf`
+  there is a prebuilt pdf in case this is difficult
 
 
 
