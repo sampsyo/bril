@@ -4,6 +4,7 @@ BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
 CONGIG_DiR ?= ./config
 DOC_DIR ?= ./doc
+SHELL = /bin/sh
 
 CONFIGS := $(shell find ./config/ -name "*.cf")
 GEN_HEAD := $(shell for FILE in $(CONFIGS); do echo $$FILE | awk -F'[/.]' '{printf "src/%s.h\n", $$4}'; done)
