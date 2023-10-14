@@ -149,6 +149,8 @@ char *opcode_to_string(uint16_t);
 uint16_t ptr_depth(briltp);
 uint16_t base_type(briltp);
 
+briltp *get_main_types(program_t *prog);
+
 extern char type_to_char[];
 
 
