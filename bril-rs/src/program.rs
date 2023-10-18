@@ -131,7 +131,7 @@ impl Display for Function {
 /// An argument of a function
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#function>
 /// Example: a : int
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Argument {
     /// a
     pub name: String,
@@ -545,7 +545,7 @@ impl Display for ValueOps {
 }
 
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#type>
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
 pub enum Type {
     /// <https://capra.cs.cornell.edu/bril/lang/core.html#types>
