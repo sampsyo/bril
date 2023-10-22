@@ -7,7 +7,6 @@
 .then.0:
   v4: int = id x;
   ret v4;
-  jmp .endif.0;
 .else.0:
   v5: int = id x;
   v6: int = id n;
@@ -37,7 +36,6 @@
 .endif.12:
   v22: int = id ans;
   ret v22;
-.endif.0:
 }
 @mod(a: int, b: int): int {
   v0: int = id a;

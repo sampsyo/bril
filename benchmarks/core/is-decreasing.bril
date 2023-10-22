@@ -1,0 +1,47 @@
+# Input: an integer
+# Output: if an number contains digits in strictly decreasing order
+# ARGS: 954320
+@main(x: int) {
+  tmp0: bool = call @is_decreasing x;
+  tmp: bool = id tmp0;
+  print tmp;
+}
+@is_decreasing(x: int): bool {
+  tmp: int = id x;
+  tmp1: int = const 1;
+  tmp2: int = const -1;
+  tmp3: int = mul tmp1 tmp2;
+  prev: int = id tmp3;
+.label4:
+  tmp7: int = const 0;
+  tmp8: bool = gt tmp tmp7;
+  br tmp8 .label5 .label6;
+.label5:
+  tmp9: int = call @last_digit tmp;
+  digit: int = id tmp9;
+  tmp10: bool = lt digit prev;
+  br tmp10 .label11 .label12;
+.label11:
+  tmp14: bool = const false;
+  ret tmp14;
+  jmp .label13;
+.label12:
+  jmp .label13;
+.label13:
+  prev: int = id digit;
+  tmp15: int = const 10;
+  tmp16: int = div tmp tmp15;
+  tmp: int = id tmp16;
+  jmp .label4;
+.label6:
+  tmp17: bool = const true;
+  ret tmp17;
+}
+@last_digit(x: int): int {
+  tmp18: int = const 10;
+  tmp19: int = div x tmp18;
+  tmp20: int = const 10;
+  tmp21: int = mul tmp19 tmp20;
+  tmp22: int = sub x tmp21;
+  ret tmp22;
+}

@@ -12,7 +12,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: denoland/setup-deno@v1
         with:
@@ -37,7 +37,7 @@ jobs:
 
       - name: Install Turnt
         # run: pip install turnt  # Use instead if pip turnt version >= 1.7
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: cucapra/turnt
           path: './turnt'
@@ -53,7 +53,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: denoland/setup-deno@v1
         with:
@@ -81,7 +81,7 @@ jobs:
   style:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: TrueBrain/actions-flake8@master
         with:
           path: bril-txt

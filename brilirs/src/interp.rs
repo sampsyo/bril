@@ -796,11 +796,6 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
     .map(|i| prog.get(i).unwrap())
     .ok_or(InterpError::NoMainFunction)?;
 
-  if main_func.return_type.is_some() {
-    return Err(InterpError::NonEmptyRetForFunc(main_func.name.clone()))
-      .map_err(|e| e.add_pos(main_func.pos.clone()));
-  }
-
   let mut env = Environment::new(main_func.num_of_vars);
   let heap = Heap::default();
 
@@ -821,7 +816,7 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
     writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
       // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
       // Otherwise we would expect this flush to be a nop.
-      .and_then(|_| profiling_out.flush())
+      .and_then(|()| profiling_out.flush())
       .map_err(InterpError::IoError)?;
   }
 

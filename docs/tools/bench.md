@@ -12,6 +12,7 @@ The current benchmarks are:
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
+* `birthday`: Simulation of the [birthday][birthday] paradox with an input of `n` people in a given room.
 * `bitwise-ops`: Computes the OR, AND, or XOR between two 64-bit integers. (Three modes: 0 = AND, 1 = OR, 2 = XOR)
 * `bitshift`: Computes the LEFTSHIFT and RIGHTSHIFT for any integer, also implements an efficient pow function for integers
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order.
@@ -21,6 +22,7 @@ The current benchmarks are:
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `conjugate-gradient`: Uses conjugate gradients to solve `Ax=b` for any arbitrary positive semidefinite `A`.
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
+* `csrmv`: Multiply a sparse matrix in the [Compressed Sparse Row (CSR)][csr] format with a dense vector. The matrix and input vector are generated using a [Linear Feedback Shift Register](https://en.wikipedia.org/wiki/Linear-feedback_shift_register) random number generator.
 * `digial-root`: Computes the digital root of the input number.
 * `dot-product`: Computes the dot product of two vectors.
 * `eight-queens`: Counts the number of solutions for *n* queens problem, a generalization of [Eight queens puzzle][eight_queens].
@@ -33,7 +35,10 @@ The current benchmarks are:
 * `function_call`: For benchmarking the overhead of simple function calls.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
+* `is-decreasing`: Print if a number contains strictly decreasing digits.
+* `lcm`: Compute LCM for two numbers using a very inefficient loop.
 * `loopfact`: Compute *n!* imperatively using a loop.
+* `major-elm`: Find the majority element in an array using [a linear time voting algorithm](https://www.cs.utexas.edu/~moore/best-ideas/mjrty/).
 * `mandelbrot`: Generates a really low resolution, ascii, [mandelbrot set][mandelbrot].
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
@@ -52,14 +57,18 @@ The current benchmarks are:
 * `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
+* `quickselect`: Find the kth smallest element in an array using the quickselect algorithm.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
+* `quicksort-hoare`: Quicksort using [Hoare partioning][qsort-hoare] and median of three pivot selection.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
+* `fitsinside`: Output whether or not a rectangle fits inside of another rectangle given the width and height lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
+* `sum-check`: Compute the sum of [1, n] by both loop and formula, and check if the result is the same.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
@@ -70,6 +79,7 @@ The current benchmarks are:
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
+[birthday]: https://en.wikipedia.org/wiki/Birthday_problem
 [cgroup]: https://en.wikipedia.org/wiki/Cyclic_group#Cyclically_ordered_groups
 [fizzbuzz]: https://wiki.c2.com/?FizzBuzzTest
 [qf]: https://en.wikipedia.org/wiki/Quadratic_formula
@@ -99,6 +109,7 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [euler]: https://en.wikipedia.org/wiki/E_(mathematical_constant)
 [euclidean]: https://en.wikipedia.org/wiki/Norm_(mathematics)
 [qsort]: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
+[qsort-hoare]: https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
 [modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
 [totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
 [nilakantha]: https://en.wikipedia.org/wiki/List_of_formulae_involving_%CF%80

@@ -67,7 +67,7 @@ export class Builder {
       return this.buildEffect("call", args, [func], undefined);
     }
   }
-  
+
   /**
    * Build a constant instruction. As above, the destination name is optional.
    */
@@ -122,6 +122,32 @@ export class Builder {
       throw "cannot build instruction/label without a function";
     }
     this.curFunction.instrs.push(instr);
+  }
+
+  /**
+   * Checks whether the last emitted instruction in the current function is the specified op code.
+   * Useful for checking for terminating instructions.
+   */
+  getLastInstr(): bril.Instruction | undefined {
+    if (!this.curFunction) {
+      return undefined
+    }
+
+    if (!this.curFunction.instrs) {
+      return undefined
+    }
+
+    if (this.curFunction.instrs.length === 0) {
+      return undefined
+    }
+
+    const last_instr : bril.Instruction | bril.Label = this.curFunction.instrs[this.curFunction.instrs.length - 1];
+
+    if ('label' in last_instr) {
+      return undefined
+    }
+
+    return last_instr
   }
 
   /**

@@ -65,4 +65,4 @@ plot: plot.svg
 # This is primarily used for running examples and debuging a bril program
 .PHONY: example
 example:
-	bril2json < ../benchmarks/sqrt.bril | cargo run
+	bril2json < ../benchmarks/float/sqrt.bril | cargo run

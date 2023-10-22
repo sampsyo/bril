@@ -1,0 +1,265 @@
+# This benchmark multiplies a sparse matrix in Compressed Sparse Rows (CSR) format
+# with a dense vector.
+# The input matrix and vector are randomly generated.
+
+# Exclusive or (xor) used by LFSR
+@xor(x: bool, y: bool): bool {
+    xn: bool = not x;
+    yn: bool = not y;
+    xyn: bool = and x yn;
+    xny: bool = and xn y;
+    res: bool = or xyn xny;
+    ret res;
+}
+
+# Get a bit from an integer.
+# Return true if the bit is 1, false if 0
+# position starts at 0
+@getbit(x: int, position: int): bool {
+    one: int = const 1;
+    two: int = const 2;
+    # remove bits lower than position
+    i: int = const 0;
+.loop_cond:
+    cond: bool = lt i position;
+    br cond .loop_body .loop_exit;
+.loop_body:
+    x: int = div x two;
+    i: int = add i one;
+    jmp .loop_cond;
+.loop_exit:
+    # at this moment, if x == (x/2)*2, the bit is 0
+    halfx: int = div x two;
+    twohalfx: int = mul halfx two;
+    iszero: bool = eq twohalfx x;
+    res: bool = not iszero;
+    ret res;
+}
+
+# A Linear Feedback Shift Register (LFSR) random number generator
+# this function only update the state
+@rand(state: ptr<int>) {
+    s: int = load state;
+    two: int = const 2;
+    one: int = const 1;
+    head0_pos: int = const 11;
+    head1_pos: int = const 13;
+    head2_pos: int = const 14;
+    head3_pos: int = const 16;
+    head0: bool = call @getbit s head0_pos;
+    head1: bool = call @getbit s head1_pos;
+    head2: bool = call @getbit s head2_pos;
+    head3: bool = call @getbit s head3_pos;
+    fb: bool = call @xor head0 head1;
+    fb: bool = call @xor fb head2;
+    fb: bool = call @xor fb head3;
+    s: int = mul s two;
+    br fb .add_one .end;
+.add_one:
+    s: int = add s one;
+.end:
+    store state s;
+}
+
+# Modulo operation to limit the range of rand
+@mod(x: int, m: int): int {
+    one: int = const 1;
+    q: int = div x m;
+    multiple: int = mul q m;
+    r: int = sub x multiple;
+    ret r;
+}
+
+# Generate a CSR matrix with uniform distribution
+# rows and cols are the logical size of the matrix
+# degree is the number of non-zeros per row.
+# Non-zero values are random integers between -9 ~ 9
+# This DOES NOT allocate memory for the CSR data structure!
+# Please allocate memory before calling it!
+@gen_uniform_csr(rows: int, cols: int, degree: int, csr_rowptr: ptr<int>, csr_colidx: ptr<int>, csr_values: ptr<int>) {
+    one: int = const 1;
+    zero: int = const 0;
+    nnz: int = mul degree rows;
+
+    # generate row pointer array
+    i: int = const 1;
+    store csr_rowptr zero;
+.loop_gen_rptr_cond:
+    cond: bool = le i rows;
+    br cond .loop_gen_rptr_body .loop_gen_rptr_exit;
+.loop_gen_rptr_body:
+    p: ptr<int> = ptradd csr_rowptr i;
+    v: int = mul degree i;
+    store p v;
+    i: int = add i one;
+    jmp .loop_gen_rptr_cond;
+.loop_gen_rptr_exit:
+
+    # generate column index array
+    # the 0th row starts at colidx 0, the 1st row starts at colidx 1
+    # the degree-th row rolls back to colidx 0
+    i: int = const 0;
+    colidx_incr: int = div cols degree;
+.loop_gen_cidx_cond:
+    cond:bool = lt i nnz;
+    br cond .loop_gen_cidx_body .loop_gen_cidx_exit;
+.loop_gen_cidx_body:
+    rid: int = div i degree;
+    v: int = mul i colidx_incr;
+    v: int = add v rid;
+    cid: int = call @mod v cols;
+    p: ptr<int> = ptradd csr_colidx i;
+    store p cid;
+    i: int = add i one;
+    jmp .loop_gen_cidx_cond;
+.loop_gen_cidx_exit:
+
+    # generate value array
+    i: int = const 0;
+    rng: ptr<int> = alloc one;
+    seed: int = const 72160722;
+    store rng seed;
+    ten: int = const 10;
+.loop_gen_vals_cond:
+    cond:bool = lt i nnz;
+    br cond .loop_gen_vals_body .loop_gen_vals_exit;
+.loop_gen_vals_body:
+    call @rand rng;
+    v: int = load rng;
+    v: int = call @mod v ten;
+    p: ptr<int> = ptradd csr_values i;
+    store p v;
+    i: int = add i one;
+    jmp .loop_gen_vals_cond;
+.loop_gen_vals_exit:
+    free rng;
+    ret;
+}
+
+# Generate a dense vector
+# This DOES NOT allocate memory for the vector structure!
+# Please allocate memory before calling it!
+@gen_vec(len: int, data: ptr<int>) {
+    one: int = const 1;
+    i: int = const 0;
+    rng: ptr<int> = alloc one;
+    seed: int = const 85817256;
+    store rng seed;
+    ten: int = const 10;
+.loop_cond:
+    cond:bool = lt i len;
+    br cond .loop_body .loop_exit;
+.loop_body:
+    call @rand rng;
+    v: int = load rng;
+    v: int = call @mod v ten;
+    p: ptr<int> = ptradd data i;
+    store p v;
+    i: int = add i one;
+    jmp .loop_cond;
+.loop_exit:
+    free rng;
+    ret;
+}
+
+# sparse matrix dense vector multiplication
+# This DOES NOT allocate memory for the result!
+# Please allocate memory before calling it!
+@csr_spmv(rows: int, cols: int, csr_rowptr: ptr<int>, csr_colidx: ptr<int>, csr_values: ptr<int>, vec: ptr<int>, res: ptr<int>) {
+    one: int = const 1;
+    zero: int = const 0;
+    # initialize result vector
+    i: int = const 0;
+.loop_init_cond:
+    cond: bool = lt i rows;
+    br cond .loop_init_body .loop_init_exit;
+.loop_init_body:
+    p: ptr<int> = ptradd res i;
+    store p zero;
+    i: int = add i one;
+    jmp .loop_init_cond;
+.loop_init_exit:
+
+    # loop over all rows
+    rid: int = const 0;
+.loop_rows_cond:
+    cond: bool = lt rid rows;
+    br cond .loop_rows_body .loop_rows_exit;
+.loop_rows_body:
+    p: ptr<int> = ptradd csr_rowptr rid;
+    start: int = load p;
+    p: ptr<int> = ptradd p one;
+    end: int = load p;
+
+    # loop over non-zeros in a row
+    j: int = add start zero;
+    .loop_nnzs_cond:
+        cond: bool = lt j end;
+        br cond .loop_nnzs_body .loop_nnzs_exit;
+    .loop_nnzs_body:
+        p: ptr<int> = ptradd csr_colidx j;
+        cid: int = load p;
+        p: ptr<int> = ptradd csr_values j;
+        mat_val: int = load p;
+        p: ptr<int> = ptradd vec cid;
+        vec_val: int = load p;
+        p: ptr<int> = ptradd res rid;
+        acc: int = load p;
+        incr: int = mul mat_val vec_val;
+        acc: int = add acc incr;
+        store p acc;
+        j: int = add j one;
+        jmp .loop_nnzs_cond;
+    .loop_nnzs_exit:
+
+    rid: int = add rid one;
+    jmp .loop_rows_cond;
+.loop_rows_exit:
+    ret;
+}
+
+@print_arr(arr: ptr<int>, size: int) {
+    one: int = const 1;
+    i: int = const 0;
+.loop_cond:
+    cond: bool = lt i size;
+    br cond .loop_body .loop_exit;
+.loop_body:
+    p: ptr<int> = ptradd arr i;
+    v: int = load p;
+    print v;
+    i: int = add i one;
+    jmp .loop_cond;
+.loop_exit:
+    ret;
+}
+
+# main function
+# ARGS: 50 50 5
+@main(rows: int, cols: int, degree: int){
+    one: int = const 1;
+    rptr_len: int = add rows one;
+    nnz: int = mul rows degree;
+    csr_rowptr: ptr<int> = alloc rptr_len;
+    csr_colidx: ptr<int> = alloc nnz;
+    csr_values: ptr<int> = alloc nnz;
+
+    call @gen_uniform_csr rows cols degree csr_rowptr csr_colidx csr_values;
+    call @print_arr csr_rowptr rptr_len;
+    call @print_arr csr_colidx nnz;
+    call @print_arr csr_values nnz;
+
+    vec: ptr<int> = alloc cols;
+    call @gen_vec cols vec;
+    call @print_arr vec cols;
+
+    res: ptr<int> = alloc rows;
+    call @csr_spmv rows cols csr_rowptr csr_colidx csr_values vec res;
+    call @print_arr res rows;
+
+    free csr_rowptr;
+    free csr_colidx;
+    free csr_values;
+    free vec;
+    free res;
+}

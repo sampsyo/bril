@@ -394,6 +394,14 @@ function checkProg(prog: bril.Program) {
   // Check each function.
   for (let func of prog.functions) {
     checkFunc(funcEnv, func);
+
+    // The @main function must not return anything.
+    if (func.name === 'main') {
+      if (func.type) {
+        err(`@main must have no return type; found ${typeFmt(func.type)}`,
+            func.pos);
+      }
+    }
   }
 }
 
