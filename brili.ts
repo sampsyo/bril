@@ -251,6 +251,7 @@ function decrementRefCount(variable: Value | undefined, state: State) {
   if (!variable || typeof variable !== "object" || variable instanceof BigInt) {
     return;
   }
+  // e.g. arr[2] counts as a reference to arr
   let base = variable.loc.base;
   let refCount = state.refcount.get(base);
 
@@ -471,7 +472,8 @@ function evalCall(instr: bril.Operation, state: State): Action {
     incrementRefCount(retVal, state);
     //decrement the refcount of the thing that dest used to point to
     decrementRefCount(state.env.get(instr.dest), state);
-    clearEnvRefs(newState);
+    // decrement everything allocated during this call 
+    decrementEnvRefs(newState);
     state.env.set(instr.dest, retVal);
   }
   return NEXT;
@@ -481,7 +483,7 @@ function evalCall(instr: bril.Operation, state: State): Action {
  * decrement the ref count of all the references in this current environment
  * @param state t
  */
-function clearEnvRefs(state: State) {
+function decrementEnvRefs(state: State) {
   for (const [key, value] of state.env) {
     decrementRefCount(value, state);
   }
@@ -735,6 +737,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         throw error(`cannot allocate non-pointer type ${instr.type}`);
       }
       let ptr = alloc(typ, Number(amt), state.heap);
+
       incrementRefCount(ptr, state);
       decrementRefCount(state.env.get(instr.dest), state);
       state.env.set(instr.dest, ptr);
@@ -1059,7 +1062,8 @@ function evalProg(prog: bril.Program) {
   };
   evalFunc(main, state);
   console.log(state.refcount);
-  clearEnvRefs(state);
+  // decrementing references created in main
+  decrementEnvRefs(state);
 
   console.log(state.refcount);
   if (!heap.isEmpty()) {
