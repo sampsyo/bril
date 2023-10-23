@@ -104,6 +104,14 @@ export class Heap<X> {
       );
     }
   }
+
+  contains(key: Key): boolean {
+    let data = this.storage.get(key.base);
+    if (data) {
+      return true;
+    }
+    return false;
+  }
 }
 
 const argCounts: { [key in bril.OpCode]: number | null } = {
@@ -261,6 +269,9 @@ function decrementRefCount(variable: Value | undefined, state: State) {
       // free memory
       console.log("freeing " + variable.loc.base);
       let baseKey = new Key(base, 0);
+      if (state.heap.contains(baseKey)) {
+        decrementRefCount(state.heap.read(baseKey),state)
+      }
       state.heap.free(baseKey);
       state.refcount.delete(base);
     } else {
@@ -1079,7 +1090,8 @@ function evalProg(prog: bril.Program) {
 
 async function main() {
   try {
-    let prog = JSON.parse(await readStdin()) as bril.Program;
+    // let prog = JSON.parse(await readStdin()) as bril.Program;
+    let prog = JSON.parse('/Users/arjunshah/CS6120/bril/benchmarks/mem/adler32.json') as bril.Program;
     evalProg(prog);
   } catch (e) {
     if (e instanceof BriliError) {
