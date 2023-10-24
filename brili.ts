@@ -1,4 +1,3 @@
-// deno-lint-ignore-file prefer-const no-explicit-any no-case-declarations no-prototype-builtins no-unused-vars no-inferrable-types require-await ban-types ban-unused-ignore
 import * as bril from "./bril-ts/bril.ts";
 import { readStdin, unreachable } from "./bril-ts/util.ts";
 
@@ -106,9 +105,17 @@ export class Heap<X> {
     }
   }
 
+  isValidAddress(key: Key): boolean {
+    let data = this.storage.get(key.base);
+    if (data && data.length > key.offset && key.offset >= 0) {
+      return false;
+    } 
+    return true;
+  }
+
   contains(key: Key): boolean {
     let data = this.storage.get(key.base);
-    if (data) {
+    if (data && this.isValidAddress(key)) {
       return true;
     }
     return false;
@@ -269,8 +276,8 @@ function decrementRefCount(variable: Value | undefined, state: State) {
       // free memory
       console.log("freeing " + variable.loc.base);
       let baseKey = new Key(base, 0);
-      if (state.refcount.has(base)) {
-          // console.log("recursing")
+      if (state.heap.contains(baseKey)) {
+          console.log("recursing")
           decrementRefCount(state.heap.read(baseKey),state)
       }
       state.heap.free(baseKey);
@@ -789,13 +796,12 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     case "ptradd": {
       let ptr = getPtr(instr, state.env, 0);
       let val = getInt(instr, state.env, 1);
-      // TODO: for some reason the ref count doesn't get decremented properly
       incrementRefCount(ptr, state);
+      decrementRefCount(state.env.get(instr.dest), state);
       state.env.set(instr.dest, {
         loc: ptr.loc.add(Number(val)),
         type: ptr.type,
       });
-      decrementRefCount(state.env.get(instr.dest), state);
       return NEXT;
     }
 
