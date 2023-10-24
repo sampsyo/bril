@@ -1,3 +1,4 @@
+// deno-lint-ignore-file prefer-const no-explicit-any no-case-declarations no-prototype-builtins no-unused-vars no-inferrable-types require-await ban-types ban-unused-ignore
 import * as bril from "./bril-ts/bril.ts";
 import { readStdin, unreachable } from "./bril-ts/util.ts";
 
@@ -262,15 +263,15 @@ function decrementRefCount(variable: Value | undefined, state: State) {
   // e.g. arr[2] counts as a reference to arr
   let base = variable.loc.base;
   let refCount = state.refcount.get(base);
-
   if (refCount) {
     refCount--;
     if (refCount == 0) {
       // free memory
       console.log("freeing " + variable.loc.base);
       let baseKey = new Key(base, 0);
-      if (state.heap.contains(baseKey)) {
-        decrementRefCount(state.heap.read(baseKey),state)
+      if (state.refcount.has(base)) {
+          // console.log("recursing")
+          decrementRefCount(state.heap.read(baseKey),state)
       }
       state.heap.free(baseKey);
       state.refcount.delete(base);
@@ -480,13 +481,14 @@ function evalCall(instr: bril.Operation, state: State): Action {
       );
     }
 
+    // if retVal is a pointer, we want to track the assignment
     incrementRefCount(retVal, state);
     //decrement the refcount of the thing that dest used to point to
     decrementRefCount(state.env.get(instr.dest), state);
-    // decrement everything allocated during this call 
-    decrementEnvRefs(newState);
     state.env.set(instr.dest, retVal);
   }
+  // decrement everything allocated during this call 
+  decrementEnvRefs(newState);
   return NEXT;
 }
 
@@ -789,11 +791,11 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       let val = getInt(instr, state.env, 1);
       // TODO: for some reason the ref count doesn't get decremented properly
       incrementRefCount(ptr, state);
-      decrementRefCount(state.env.get(instr.dest), state);
       state.env.set(instr.dest, {
         loc: ptr.loc.add(Number(val)),
         type: ptr.type,
       });
+      decrementRefCount(state.env.get(instr.dest), state);
       return NEXT;
     }
 
@@ -1072,10 +1074,10 @@ function evalProg(prog: bril.Program) {
     refcount: new Map(),
   };
   evalFunc(main, state);
-  console.log(state.refcount);
+  // console.log(state.refcount);
   // decrementing references created in main
   decrementEnvRefs(state);
-
+  console.log("Reference graph at program exit: ")
   console.log(state.refcount);
   if (!heap.isEmpty()) {
     throw error(
@@ -1090,8 +1092,7 @@ function evalProg(prog: bril.Program) {
 
 async function main() {
   try {
-    // let prog = JSON.parse(await readStdin()) as bril.Program;
-    let prog = JSON.parse('/Users/arjunshah/CS6120/bril/benchmarks/mem/adler32.json') as bril.Program;
+    let prog = JSON.parse(await readStdin()) as bril.Program;
     evalProg(prog);
   } catch (e) {
     if (e instanceof BriliError) {
