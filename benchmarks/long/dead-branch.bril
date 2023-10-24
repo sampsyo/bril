@@ -1,0 +1,32 @@
+@main {
+  v1: int = const 1;
+  v2: int = const 0;
+  counter: int = const 0;
+
+.loop_start:
+  v7: int = id counter;
+  v8: int = const 99;
+  v9: bool = lt v7 v8;
+  br v9 .loop_body .loop_end;
+
+.loop_body:
+  v3: bool = eq v1 v2;  # Always false
+  br v3 .then .else;  # .then is a dead branch - this br instruction can be optimized out by a smart compiler
+
+.then:
+  v4: int = const 100;
+  print v4;
+
+.else:
+  v4: int = const 50;
+
+  v10: int = id counter;
+  v11: int = const 1;
+  v12: int = add v10 v11;
+  counter: int = id v12;
+
+  jmp .loop_start;
+
+.loop_end:
+  print v4;
+}
