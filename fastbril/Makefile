@@ -2,15 +2,14 @@ TARGET_EXEC ?= fastbrili
 
 BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
-CONGIG_DiR ?= ./config
 DOC_DIR ?= ./doc
 SHELL = /bin/sh
 
-CONFIGS := $(shell find ./config/ -name "*.cf")
-GEN_HEAD := $(shell for FILE in $(CONFIGS); do echo $$FILE | awk -F'[/.]' '{printf "src/%s.h\n", $$4}'; done)
-GEN_TEX := $(shell for FILE in $(CONFIGS); do echo $$FILE | awk -F'[/.]' '{printf "doc/%s.tex\n", $$4}'; done)
+CONFIGS := $(wildcard config/*.cf)
+GEN_HEAD := $(CONFIGS:config/%.cf=src/%.h)
+GEN_TEX := $(CONFIGS:config/%.cf=doc/%.tex)
 
-SRCS := $(shell find $(SRC_DIRS) -name *.c)
+SRCS := $(wildcard $(SRC_DIRS)/*.c $(SRC_DIRS)/**/*.c)
 
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
