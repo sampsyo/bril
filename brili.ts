@@ -1,3 +1,5 @@
+// deno-lint-ignore-file
+// deno-lint-ignore-file no-prototype-builtins prefer-const no-explicit-any no-case-declarations no-inferrable-types
 import * as bril from "./bril-ts/bril.ts";
 import { readStdin, unreachable } from "./bril-ts/util.ts";
 
@@ -108,9 +110,9 @@ export class Heap<X> {
   isValidAddress(key: Key): boolean {
     let data = this.storage.get(key.base);
     if (data && data.length > key.offset && key.offset >= 0) {
-      return false;
+      return true;
     } 
-    return true;
+    return false;
   }
 
   contains(key: Key): boolean {
