@@ -55,8 +55,8 @@ $(BUILD_DIR)/%.c.o: %.c | $(GEN_HEAD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # configured header files
-$(GEN_HEAD): $(CONFIGS) srcgen.sh srcgen.awk
-	./srcgen.sh $@
+src/%.h: config/%.cf srcgen.awk
+	./srcgen.awk < $< > $@
 
 brb.pdf: $(GEN_TEX) $(DOC_DIR)/main.tex
 	cd $(DOC_DIR) && latex -output-format=pdf main.tex && mv main.pdf brb.pdf
