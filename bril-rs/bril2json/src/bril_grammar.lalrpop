@@ -17,6 +17,7 @@
 #![allow(clippy::match_same_arms)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::extra_unused_lifetimes)]
+#![allow(clippy::needless_raw_string_hashes)]
 
 use std::str::FromStr;
 use std::path::PathBuf;
