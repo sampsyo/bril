@@ -74,7 +74,7 @@ $(GEN_TEX): $(configs) docgen.sh docgen.awk
 
 clean:
 	find . -name "*.aux" -o -name "*.log" -o -name "*.pdf" -o -name  "*~" -o \
-	-name "*.gcda" -o -name "*.gcno" | xargs rm || true
+	-name "*.gcda" -o -name "*.gcno" -o -name "*.o" | xargs rm || true
 	$(RM) $(GEN_HEAD)
 	$(RM) $(GEN_TEX)
 	$(RM) -r $(BUILD_DIR)

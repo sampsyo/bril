@@ -1,9 +1,0 @@
-#define FADD 28
-#define FMUL 29
-#define FSUB 30
-#define FDIV 31
-#define FEQ 32
-#define FLT 33
-#define FLE 34
-#define FGT 35
-#define FGE 36
