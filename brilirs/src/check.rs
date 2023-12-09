@@ -80,6 +80,7 @@ fn type_check_instruction<'a>(
   func: &BBFunction,
   prog: &BBProgram,
   env: &mut FxHashMap<&'a str, &'a Type>,
+  promise: &Option<Type>,
 ) -> Result<(), InterpError> {
   match instr {
     Instruction::Constant {
@@ -400,7 +401,11 @@ fn type_check_instruction<'a>(
         Some(t) => {
           check_num_args(1, args)?;
           let ty0 = get_type(env, 0, args)?;
-          check_asmt_type(t, ty0)
+          if let Some(promise_t) = promise {
+            check_asmt_type(&promise_t, ty0)
+          } else {
+            check_asmt_type(t, ty0)
+          }
         }
         None => {
           if args.is_empty() {
@@ -513,6 +518,11 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Positi
       .map_err(|e| e.add_pos(bbfunc.pos.clone()));
   }
 
+  let promise_t = match &bbfunc.return_type {
+    Some(Type::Promise(t)) => Some((**t).clone()),
+    _ => None,
+  };
+
   let mut env: FxHashMap<&str, &Type> =
     FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default());
   bbfunc.args.iter().for_each(|a| {
@@ -529,7 +539,7 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Positi
       .iter()
       .zip(block.numified_instrs.iter())
       .try_for_each(|(i, num_i)| {
-        type_check_instruction(i, num_i, bbfunc, bbprog, &mut env)
+        type_check_instruction(i, num_i, bbfunc, bbprog, &mut env, &promise_t)
           .map_err(|e| e.add_pos(i.get_pos()))
       })?;
     done_list.push(b);
