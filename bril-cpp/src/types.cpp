@@ -3,6 +3,7 @@
 #include <memory>
 
 namespace bril {
+/*
 std::vector<const Instr*> Func::allInstrs() const {
   std::vector<const Instr*> res;
   for (auto& bb : bbs) {
@@ -19,6 +20,7 @@ void Func::populateBBsV() {
   auto bbsvit = &bbsv[0];
   for (auto& bb : bbs) *(bbsvit++) = &bb;
 }
+*/
 
 void Func::deleteBBsV() { bbsv.reset(); }
 };  // namespace bril

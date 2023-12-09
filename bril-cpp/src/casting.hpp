@@ -1,3 +1,6 @@
+#ifndef CASTING_HPP
+#define CASTING_HPP
+
 //===- llvm/Support/Casting.h - Allow flexible, checked, casts --*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -10,8 +13,6 @@
 // cast_if_present<X>(), and dyn_cast_if_present<X>() templates.
 //
 //===----------------------------------------------------------------------===//
-
-#pragma once
 
 #include <cassert>
 #include <memory>
@@ -919,3 +920,5 @@ template <class X, class Y>
 }
 
 }  // namespace bril
+
+#endif  // CASTING_HPP

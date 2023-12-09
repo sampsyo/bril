@@ -3,6 +3,7 @@ add_library(core)
 target_sources(core 
                 PUBLIC 
                     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
+                    ${CMAKE_CURRENT_SOURCE_DIR}/edit.cpp
 )
 target_link_libraries(core PUBLIC Boost::boost)
 target_include_directories(core PUBLIC ${CMAKE_SOURCE_DIR}/src)

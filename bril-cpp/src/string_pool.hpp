@@ -1,4 +1,5 @@
-#pragma once
+#ifndef STRING_POOL_HPP
+#define STRING_POOL_HPP
 
 #include <cassert>
 #include <climits>
@@ -18,8 +19,9 @@ class StringPool {
   std::vector<std::pair<unsigned int, unsigned int>> ref_to_str_;
   std::vector<char> pool_;
 
-public:
-  template <typename Str> StringRef canonicalize(Str &&s);
+ public:
+  template <typename Str>
+  StringRef canonicalize(Str&& s);
 
   std::string_view get(StringRef ref) const;
 };
@@ -31,14 +33,14 @@ auto constexpr const kTempRefMax = UINT_MAX;
 class VarPool {
   std::unordered_map<StringRef, VarRef> name_to_id_;
   std::vector<StringRef> id_to_name_;
-  StringPool *sp_;
+  StringPool* sp_;
   // maps from a ref to its representative (without the suffix)
   std::vector<VarRef> ref_to_rep_;
   // maps from a ref to the number of its latest
   std::vector<size_t> ref_to_suffix_;
 
-public:
-  VarPool(StringPool &sp) : sp_(&sp) {}
+ public:
+  VarPool(StringPool& sp) : sp_(&sp) {}
 
   // returns the next numbered temp
   VarRef nextVarOf(VarRef tmp);
@@ -48,22 +50,23 @@ public:
 
   VarRef freshVar();
   VarRef varRefOf(StringRef name);
-  template <typename Str> VarRef varRefOf(Str &&name);
+  template <typename Str>
+  VarRef varRefOf(Str&& name);
   VarRef origRefOf(VarRef name);
 
   size_t nvars() const { return id_to_name_.size(); }
 };
 
-} // namespace bril
+}  // namespace bril
 
 // implementations
 namespace bril {
 
-template <typename Str> StringRef StringPool::canonicalize(Str &&s_) {
-  auto s = std::string(std::forward<Str &&>(s_));
+template <typename Str>
+StringRef StringPool::canonicalize(Str&& s_) {
+  auto s = std::string(std::forward<Str&&>(s_));
   auto it = str_to_ref_.find(s);
-  if (it != str_to_ref_.end())
-    return it->second;
+  if (it != str_to_ref_.end()) return it->second;
 
   auto ref = ref_to_str_.size();
   ref_to_str_.emplace_back(pool_.size(), s.size());
@@ -74,7 +77,7 @@ template <typename Str> StringRef StringPool::canonicalize(Str &&s_) {
 }
 
 inline std::string_view StringPool::get(StringRef ref) const {
-  auto &si = ref_to_str_[ref];
+  auto& si = ref_to_str_[ref];
   return std::string_view(&pool_[si.first], si.second);
 }
 
@@ -103,8 +106,7 @@ inline StringRef VarPool::strRefOf(VarRef tmp_id) const {
 
 inline VarRef VarPool::varRefOf(StringRef name) {
   auto it = name_to_id_.find(name);
-  if (it != name_to_id_.end())
-    return it->second;
+  if (it != name_to_id_.end()) return it->second;
 
   auto id = id_to_name_.size();
   id_to_name_.emplace_back(name);
@@ -114,7 +116,8 @@ inline VarRef VarPool::varRefOf(StringRef name) {
   return static_cast<VarRef>(id);
 }
 
-template <typename Str> VarRef VarPool::varRefOf(Str &&name) {
+template <typename Str>
+VarRef VarPool::varRefOf(Str&& name) {
   return varRefOf(sp_->canonicalize(std::forward<Str>(name)));
 }
 
@@ -132,4 +135,6 @@ inline VarRef VarPool::origRefOf(VarRef name) {
   return ref_to_rep_[static_cast<unsigned>(name)];
 }
 
-} // namespace bril
+}  // namespace bril
+
+#endif  // STRING_POOL_HPP
