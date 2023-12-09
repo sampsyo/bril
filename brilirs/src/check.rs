@@ -295,12 +295,10 @@ fn type_check_instruction<'a>(
         })?;
 
       // print to console
-      println!("callee_func: {:?}", callee_func);
       callee_func.return_type.as_ref().map_or_else(
         || Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone())),
         |t| check_asmt_type(op_type, t),
       )?;
-      println!("does it fail....");
 
       update_env(env, dest, op_type)
     }
