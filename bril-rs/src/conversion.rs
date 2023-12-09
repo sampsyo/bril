@@ -265,6 +265,8 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "load" => ValueOps::Load,
                     #[cfg(feature = "memory")]
                     "ptradd" => ValueOps::PtrAdd,
+                    #[cfg(feature = "async")]
+                    "resolve" => ValueOps::Resolve,
                     v => {
                         return Err(ConversionError::InvalidValueOps(v.to_string()))
                             .map_err(|e| e.add_pos(pos))

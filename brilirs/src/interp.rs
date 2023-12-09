@@ -344,7 +344,8 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
+    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Resolve,
+    Sub,
   };
   match op {
     Add => {
@@ -543,6 +544,11 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_arg::<i64>(&state.env, 1, args);
       let res = Value::Pointer(arg0.add(arg1));
+      state.env.set(dest, res);
+    }
+    Resolve => {
+      //let arg0 = get_arg::<&Promise>(&state.env, 0, args);
+      let res = Value::Int(6969696969);
       state.env.set(dest, res);
     }
   }
