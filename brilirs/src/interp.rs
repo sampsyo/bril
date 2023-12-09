@@ -4,6 +4,7 @@ use bril2json::escape_control_chars;
 use bril_rs::Instruction;
 use fxhash::FxHashMap;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
@@ -179,7 +180,6 @@ enum Value {
   #[default]
   Uninitialized,
 }
-
 #[derive(Debug, Clone, PartialEq, Copy)]
 struct Pointer {
   base: usize,
@@ -326,8 +326,9 @@ fn execute_thread<T: std::io::Write + Sync + Send + 'static>(
   mut state: State,
   func: usize,
   out: Arc<Mutex<T>>,
+  stop_flag: Arc<AtomicBool>,
 ) -> Option<Value> {
-  return execute(&mut state, func, out).unwrap();
+  return execute(&mut state, func, out, Some(stop_flag)).unwrap();
 }
 
 fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
@@ -338,8 +339,9 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
   labels: &[String],
   funcs: &[usize],
   last_label: Option<&String>,
-  handlers: &mut HashMap<usize, JoinHandle<Option<Value>>>,
+  handlers: &mut HashMap<usize, (JoinHandle<Option<Value>>, Arc<AtomicBool>)>,
   out: Arc<Mutex<T>>,
+  stop_flag: Option<Arc<AtomicBool>>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
@@ -500,22 +502,33 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
     Call => {
       let callee_func = state.prog.get(funcs[0]).unwrap();
 
-      make_func_args(callee_func, args, &mut state.env);
-
       if callee_func.is_promise() {
-        let cloned = state.clone();
+        let mut cloned = state.clone();
+        make_func_args(callee_func, args, &mut cloned.env);
+
         let callee_func = funcs[0];
         let out = out.clone();
 
+        let thread_stop_flag = Arc::new(AtomicBool::new(false));
+        let cloned_stop_flag = thread_stop_flag.clone();
         handlers.insert(
           dest,
-          thread::spawn(move || execute_thread(cloned, callee_func, out)),
+          (
+            thread::spawn(move || execute_thread(cloned, callee_func, out, cloned_stop_flag)),
+            thread_stop_flag,
+          ),
         );
-        state.env.pop_frame();
       } else {
-        let result = execute(state, funcs[0].clone(), out)?.unwrap();
+        make_func_args(callee_func, args, &mut state.env);
+
+        let result = execute(state, funcs[0].clone(), out, stop_flag)?;
+
+        let val = match result {
+          Some(val) => val,
+          None => Value::Uninitialized,
+        };
         state.env.pop_frame();
-        state.env.set(dest, result);
+        state.env.set(dest, val);
       }
     }
     Phi => match last_label {
@@ -547,8 +560,12 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
     }
     Resolve => {
       //let arg0 = get_arg::<&Promise>(&state.env, 0, args);
-      let res = Value::Int(6969696969);
-      state.env.set(dest, res);
+      let res = match handlers.remove(&args[0]) {
+        Some(handle) => handle.0.join().unwrap(),
+        None => panic!("Unexpected execution error"),
+      };
+
+      state.env.set(dest, res.unwrap());
     }
   }
   Ok(())
@@ -564,6 +581,7 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
   next_block_idx: &mut Option<usize>,
   result: &mut Option<Value>,
   out: Arc<Mutex<T>>,
+  stop_flag: Option<Arc<AtomicBool>>,
 ) -> Result<(), InterpError> {
   use bril_rs::EffectOps::{
     Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store,
@@ -611,7 +629,7 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
 
       make_func_args(callee_func, args, &mut state.env);
 
-      execute(state, funcs[0].clone(), out)?;
+      execute(state, funcs[0].clone(), out, stop_flag)?;
       state.env.pop_frame();
     }
     Store => {
@@ -634,10 +652,18 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
 //   return thread::spawn(|| execute(state, func));
 // }
 
+fn cleanup_handlers(handlers: HashMap<usize, (JoinHandle<Option<Value>>, Arc<AtomicBool>)>) {
+  for (_, (handle, stop_flag)) in handlers {
+    stop_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+    let _ = handle.join();
+  }
+}
+
 fn execute<T: std::io::Write + Sync + Send + 'static>(
   state: &mut State,
   func: usize,
   out: Arc<Mutex<T>>,
+  stop_flag: Option<Arc<AtomicBool>>,
 ) -> Result<Option<Value>, PositionalInterpError> {
   let func = state.prog.get(func).unwrap().clone();
   let mut last_label;
@@ -649,11 +675,21 @@ fn execute<T: std::io::Write + Sync + Send + 'static>(
   let mut handlers = HashMap::new();
 
   loop {
+    //checks if the thread should be terminated
+    if let Some(stop_flag) = &stop_flag {
+      if stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
+        cleanup_handlers(handlers);
+        panic!("Terminating thread executing function {}", func.name);
+      }
+    };
     let curr_block = &func.blocks[curr_block_idx];
     let curr_instrs = &curr_block.instrs;
     let curr_numified_instrs = &curr_block.numified_instrs;
     // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
-    state.instruction_count += curr_instrs.len();
+    //state.instruction_count += curr_instrs.len();
+    state
+      .instruction_count
+      .fetch_add(curr_instrs.len(), std::sync::atomic::Ordering::Relaxed);
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
@@ -708,6 +744,7 @@ fn execute<T: std::io::Write + Sync + Send + 'static>(
             last_label,
             &mut handlers,
             out.clone(),
+            stop_flag.clone(),
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -727,6 +764,7 @@ fn execute<T: std::io::Write + Sync + Send + 'static>(
             &mut next_block_idx,
             &mut result,
             out.clone(),
+            stop_flag.clone(),
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -739,6 +777,7 @@ fn execute<T: std::io::Write + Sync + Send + 'static>(
     } else if curr_block.exit.len() == 1 {
       curr_block_idx = curr_block.exit[0];
     } else {
+      cleanup_handlers(handlers);
       return Ok(result);
     }
   }
@@ -817,7 +856,7 @@ struct State {
   prog: Arc<BBProgram>,
   env: Environment,
   heap: Heap,
-  instruction_count: usize,
+  instruction_count: Arc<AtomicUsize>,
 }
 
 impl State {
@@ -826,7 +865,7 @@ impl State {
       prog: Arc::new(prog),
       env,
       heap,
-      instruction_count: 0,
+      instruction_count: Arc::new(AtomicUsize::new(0)),
     }
   }
 }
@@ -859,7 +898,7 @@ pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write
   let mut state = State::new(prog, env, heap);
 
   let out = Arc::new(out);
-  execute(&mut state, main_func_idx, out.clone())?;
+  execute(&mut state, main_func_idx, out.clone(), None)?;
 
   if !state.heap.is_empty() {
     return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func_pos));
@@ -871,11 +910,17 @@ pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write
   }
 
   if profiling {
-    writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
-      // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
-      // Otherwise we would expect this flush to be a nop.
-      .and_then(|()| profiling_out.flush())
-      .map_err(InterpError::IoError)?;
+    writeln!(
+      profiling_out,
+      "total_dyn_inst: {}",
+      state
+        .instruction_count
+        .load(std::sync::atomic::Ordering::Relaxed)
+    )
+    // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
+    // Otherwise we would expect this flush to be a nop.
+    .and_then(|()| profiling_out.flush())
+    .map_err(InterpError::IoError)?;
   }
 
   Ok(())
