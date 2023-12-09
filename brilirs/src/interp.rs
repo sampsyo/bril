@@ -325,7 +325,8 @@ fn execute_value_op<T: std::io::Write>(
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
+    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Resolve,
+    Sub,
   };
   match op {
     Add => {
@@ -514,6 +515,11 @@ fn execute_value_op<T: std::io::Write>(
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_arg::<i64>(&state.env, 1, args);
       let res = Value::Pointer(arg0.add(arg1));
+      state.env.set(dest, res);
+    }
+    Resolve => {
+      //let arg0 = get_arg::<&Promise>(&state.env, 0, args);
+      let res = Value::Int(6969696969);
       state.env.set(dest, res);
     }
   }
@@ -745,6 +751,7 @@ fn parse_args(
           Ok(())
         }
         bril_rs::Type::Pointer(..) => unreachable!(),
+        bril_rs::Type::Promise(..) => unreachable!(), //
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
           .map_or_else(
             || Err(InterpError::NotOneChar),

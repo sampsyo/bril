@@ -481,6 +481,8 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/memory.html#operations>
     #[cfg(feature = "memory")]
     PtrAdd,
+    #[cfg(feature = "async")]
+    Resolve,
 }
 
 impl Display for ValueOps {
@@ -540,6 +542,8 @@ impl Display for ValueOps {
             Self::Load => write!(f, "load"),
             #[cfg(feature = "memory")]
             Self::PtrAdd => write!(f, "ptradd"),
+            #[cfg(feature = "async")]
+            Self::Resolve => write!(f, "resolve"),
         }
     }
 }
@@ -563,7 +567,7 @@ pub enum Type {
     #[serde(rename = "ptr")]
     Pointer(Box<Self>),
     #[cfg(feature = "async")]
-    #[serde(rename = "promise") ]
+    #[serde(rename = "promise")]
     Promise(Box<Self>),
 }
 

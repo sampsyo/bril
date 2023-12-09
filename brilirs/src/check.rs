@@ -74,6 +74,13 @@ fn get_ptr_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
   }
 }
 
+fn get_promise_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
+  match typ {
+    bril_rs::Type::Promise(promise_type) => Ok(promise_type),
+    _ => Err(InterpError::ExpectedPromiseType(typ.clone())),
+  }
+}
+
 fn type_check_instruction<'a>(
   instr: &'a Instruction,
   num_instr: &NumifiedInstruction,
@@ -286,10 +293,13 @@ fn type_check_instruction<'a>(
           check_asmt_type(ty, &expected_arg.arg_type)
         })?;
 
+      // print to console
+      println!("callee_func: {:?}", callee_func);
       callee_func.return_type.as_ref().map_or_else(
         || Err(InterpError::NonEmptyRetForFunc(callee_func.name.clone())),
         |t| check_asmt_type(op_type, t),
       )?;
+      println!("does it fail....");
 
       update_env(env, dest, op_type)
     }
@@ -362,6 +372,25 @@ fn type_check_instruction<'a>(
       check_asmt_type(ty0, op_type)?;
       update_env(env, dest, op_type)
     }
+    Instruction::Value {
+      op: ValueOps::Resolve,
+      dest,
+      op_type,
+      args,
+      funcs,
+      labels,
+      pos: _,
+    } => {
+      check_num_args(1, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+
+      let ty0 = get_type(env, 0, args)?;
+      let prom_type = get_promise_type(ty0)?;
+      check_asmt_type(prom_type, op_type)?;
+      update_env(env, dest, op_type)
+    }
+
     Instruction::Effect {
       op: EffectOps::Jump,
       args,
@@ -495,6 +524,7 @@ fn type_check_instruction<'a>(
       get_ptr_type(get_type(env, 0, args)?)?;
       Ok(())
     }
+
     Instruction::Effect {
       op: EffectOps::Speculate | EffectOps::Guard | EffectOps::Commit,
       args: _,
