@@ -4,6 +4,7 @@ use bril2json::escape_control_chars;
 use bril_rs::Instruction;
 use fxhash::FxHashMap;
 use std::collections::HashMap;
+use std::sync::atomic::AtomicUsize;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
@@ -647,7 +648,10 @@ fn execute<T: std::io::Write + Sync + Send + 'static>(
     let curr_instrs = &curr_block.instrs;
     let curr_numified_instrs = &curr_block.numified_instrs;
     // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
-    state.instruction_count += curr_instrs.len();
+    //state.instruction_count += curr_instrs.len();
+    state
+      .instruction_count
+      .fetch_add(curr_instrs.len(), std::sync::atomic::Ordering::Relaxed);
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
@@ -811,7 +815,7 @@ struct State {
   prog: Arc<BBProgram>,
   env: Environment,
   heap: Heap,
-  instruction_count: usize,
+  instruction_count: Arc<AtomicUsize>,
 }
 
 impl State {
@@ -820,7 +824,7 @@ impl State {
       prog: Arc::new(prog),
       env,
       heap,
-      instruction_count: 0,
+      instruction_count: Arc::new(AtomicUsize::new(0)),
     }
   }
 }
@@ -865,11 +869,17 @@ pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write
   }
 
   if profiling {
-    writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
-      // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
-      // Otherwise we would expect this flush to be a nop.
-      .and_then(|()| profiling_out.flush())
-      .map_err(InterpError::IoError)?;
+    writeln!(
+      profiling_out,
+      "total_dyn_inst: {}",
+      state
+        .instruction_count
+        .load(std::sync::atomic::Ordering::Relaxed)
+    )
+    // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
+    // Otherwise we would expect this flush to be a nop.
+    .and_then(|()| profiling_out.flush())
+    .map_err(InterpError::IoError)?;
   }
 
   Ok(())
