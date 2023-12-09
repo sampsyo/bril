@@ -1,0 +1,49 @@
+@main {
+  arg1 : int = const 1013;
+  arg2 : int = const 3894;
+  arg3 : int = const 3895;
+
+  gcd1 : promise<int> = call @gcd arg1 arg2; 
+  gcd2 : promise<int> = call @gcd arg1 arg3; 
+
+  res1 : int = resolve gcd1;
+  res2 : int = resolve gcd2;
+
+  print res1;
+  print res2;
+}
+
+@gcd (op1: int, op2: int) : promise<int> {
+  # const
+  vc0: int = const 0;
+  # take two input ops, first iteration
+  v0: int = id op1;
+  v1: int = id op2;
+.cmp.val:
+  v2: bool = lt v0 v1;
+  br v2 .if.1 .else.1;
+.if.1:
+  v3: int = sub v1 v0;
+  jmp .loop.bound;
+.else.1:
+  v3: int = sub v0 v1;
+  jmp .loop.bound;
+  # check results
+.loop.bound:
+  v4: bool = eq v3 vc0;
+  br v4 .program.end .update.val;
+.update.val:
+  br v2 .if.2 .else.2;
+  # update v1
+.if.2:
+  v1: int = id v3;
+  jmp .cmp.val;
+  # update v0
+.else.2:
+  v0: int = id v3;
+  jmp .cmp.val;
+  # print out the results
+.program.end:
+  print v1;
+  ret v1;
+}

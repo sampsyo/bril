@@ -1,0 +1,138 @@
+# An implementation of Quicksort using the Lomuto partition scheme, adapted from the pseudocode on Wikipedia
+# Adapted from Alice Sze's  Quicksort benchmark
+
+@main {
+    zero: int = const 0;
+    one : int = const 1;
+    two : int = const 2; 
+    three : int = const 3;
+    four : int = const 4;
+    five : int = const 5;
+    six : int = const 6;
+
+    size: int = const 6;
+    array1: ptr<int> = call @pack size one zero two five three four;
+    array2: ptr<int> = call @pack size six five four three two one;
+
+    size_minus_one: int = sub size one;
+
+    array1_done : promise<ptr<int>> = call @qsort array1 zero size_minus_one;
+    array2_done : promise<ptr<int>> = call @qsort array2 zero size_minus_one;
+
+    # Print array
+    array1_ptr : ptr<int> = resolve array1_done;
+    array2_ptr : ptr<int> = resolve array2_done;
+
+    call @print_array array1 size;
+    call @print_array array2 size;
+
+    free array1;
+    free array2;
+}
+
+@qsort(array : ptr<int>, l: int, r:int) : promise<ptr<int>> {
+    # if l >= r or r < 0, return
+    l_ge_r: bool = ge l r;
+    zero: int = const 0;
+    neg_r: bool = lt r zero;
+    ret_cond: bool = or l_ge_r neg_r;
+
+    br ret_cond .done .continue; 
+
+    .continue:
+        p: int = call @partition array l r;
+        one: int = const 1;
+        p_minus_one: int = sub p one;
+        p_plus_one: int = add p one;
+
+        call @qsort array l p_minus_one;
+        call @qsort array p_plus_one r;
+
+    .done:
+        size : int = const 6;
+        call @print_array array size
+        ret array;
+}
+
+@partition(array : ptr<int>, l: int, r:int) : int {
+    # choose the last element as the pivot
+    pivot_loc: ptr<int> = ptradd array r;
+    pivot: int = load pivot_loc;
+    one: int = const 1;
+    i:int = sub l one;
+    j:int = id i;
+
+    .loop.init:
+        j:int = add j one;
+        cond: bool = lt j r;
+        br cond .body .post.loop;
+
+    .body:
+        j_loc: ptr<int> = ptradd array j;
+        a_j: int = load j_loc;
+        swap_cond: bool = le a_j pivot;
+        br swap_cond .swap .loop.init;
+
+    .swap:
+        # increment i by 1
+        i: int = add i one;
+
+        # swap the current element with the element at the temporary pivot index i
+        i_loc: ptr<int> = ptradd array i;
+        a_i: int = load i_loc;
+        store j_loc a_i;
+        store i_loc a_j;
+        jmp .loop.init;
+
+    .post.loop:
+        i:int = add i one;
+        i_loc: ptr<int> = ptradd array i;
+        a_i: int = load i_loc;
+        store i_loc pivot;
+        store pivot_loc a_i;
+        ret i;
+}
+
+# allocate an array of the given size and pack the input values into the array
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int, n6: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;
+# Pack data into array manually. Cannot use loop because of the different var name.     
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n6;
+
+    ret array;
+}
+
+@print_array(array: ptr<int>, size: int) {
+    i: int = const 0;
+    one: int = const 1;
+.loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+.body:
+    loc: ptr<int> = ptradd array i;
+    val: int = load loc;
+    print val;
+.loop_end:
+    i: int = add i one;
+    jmp .loop;
+.done:
+    ret;
+}
