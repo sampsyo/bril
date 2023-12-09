@@ -562,6 +562,9 @@ pub enum Type {
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
     Pointer(Box<Self>),
+    #[cfg(feature = "async")]
+    #[serde(rename = "promise") ]
+    Promise(Box<Self>),
 }
 
 impl Display for Type {
@@ -575,6 +578,8 @@ impl Display for Type {
             Self::Char => write!(f, "char"),
             #[cfg(feature = "memory")]
             Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
+            #[cfg(feature = "async")]
+            Self::Promise(tpe) => write!(f, "promise<{tpe}>"),
         }
     }
 }

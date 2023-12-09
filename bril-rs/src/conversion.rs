@@ -24,7 +24,7 @@ pub enum ConversionError {
     InvalidPrimitive(String),
 
     /// Expected a parameterized type like ptr, found {0}<{1}>
-    #[error("Expected a parameterized type like ptr, found {0}<{1}>")]
+    #[error("Expected a parameterized type like ptr or promise, found {0}<{1}>")]
     InvalidParameterized(String, String),
 
     /// Expected an value operation, found {0}
@@ -333,6 +333,10 @@ impl TryFrom<AbstractType> for Type {
             #[cfg(feature = "memory")]
             AbstractType::Parameterized(t, ty) if t == "ptr" => {
                 Self::Pointer(Box::new((*ty).try_into()?))
+            }
+            #[cfg(feature = "async")]
+            AbstractType::Parameterized(t, ty) if t == "promise" => {
+                Self::Promise(Box::new((*ty).try_into()?))
             }
             AbstractType::Parameterized(t, ty) => {
                 return Err(ConversionError::InvalidParameterized(t, ty.to_string()))

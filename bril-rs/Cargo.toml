@@ -26,6 +26,7 @@ speculate = []
 position = []
 import = []
 char = []
+async = []
 
 [[example]]
 name = "bril2txt"
@@ -40,4 +41,4 @@ required-features = ["memory", "float", "ssa", "speculate", "position", "import"
 # trick to enable all features in test
 # This is actually really hacky because it is used in all tests/examples/benchmarks but since we currently only have one example this works for enabling the following feature flags for our users.
 # If the above rfcs every get resolved, then dev-dependencies will no longer be needed.
-bril-rs = { path = ".", features = ["memory", "float", "ssa", "speculate", "position", "import", "char"] }
+bril-rs = { path = ".", features = ["memory", "float", "ssa", "speculate", "position", "import", "char", "async"] }
