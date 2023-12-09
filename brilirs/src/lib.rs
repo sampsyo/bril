@@ -7,6 +7,8 @@
 #![allow(clippy::too_many_arguments)]
 #![doc = include_str!("../README.md")]
 
+use std::sync::Mutex;
+
 use basic_block::BBProgram;
 use bril_rs::Program;
 use error::PositionalInterpError;
@@ -23,7 +25,7 @@ pub mod error;
 pub mod interp;
 
 #[doc(hidden)]
-pub fn run_input<T: std::io::Write, U: std::io::Write>(
+pub fn run_input<T: std::io::Write + Sync + Send + 'static, U: std::io::Write>(
   input: impl std::io::Read,
   out: T,
   input_args: &[String],
@@ -43,9 +45,9 @@ pub fn run_input<T: std::io::Write, U: std::io::Write>(
   };
   let bbprog: BBProgram = prog.try_into()?;
   check::type_check(&bbprog)?;
-
+  let out = Mutex::new(out);
   if !check {
-    interp::execute_main(&bbprog, out, input_args, profiling, profiling_out)?;
+    interp::execute_main(bbprog, out, input_args, profiling, profiling_out)?;
   }
 
   Ok(())

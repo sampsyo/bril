@@ -60,7 +60,7 @@ impl BBProgram {
 }
 
 #[doc(hidden)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BasicBlock {
   pub label: Option<String>,
   // These two vecs work in parallel
@@ -83,7 +83,7 @@ impl BasicBlock {
 }
 
 #[doc(hidden)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NumifiedInstruction {
   pub dest: Option<usize>,
   pub args: Vec<usize>,
@@ -170,7 +170,7 @@ impl NumifiedInstruction {
 }
 
 #[doc(hidden)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BBFunction {
   pub name: String,
   pub args: Vec<bril_rs::Argument>,
@@ -191,6 +191,13 @@ impl BBFunction {
     Ok(func)
   }
 
+  pub fn is_promise(&self) -> bool {
+    match self.return_type {
+      Some(bril_rs::Type::Promise(_)) => true,
+      _ => false,
+    }
+  }
+  
   fn find_basic_blocks(
     func: bril_rs::Function,
     func_map: &FxHashMap<String, usize>,

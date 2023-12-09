@@ -2,8 +2,10 @@ use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
 use bril2json::escape_control_chars;
 use bril_rs::Instruction;
-
 use fxhash::FxHashMap;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
 
 use mimalloc::MiMalloc;
 
@@ -23,6 +25,7 @@ use std::fmt;
 //  |        Call "foo" pointer(frame size 2)
 //  |        |
 // [a, b, c, a, b]
+#[derive(Clone)]
 struct Environment {
   // Pointer into env for the start of the current frame
   current_pointer: usize,
@@ -87,6 +90,7 @@ impl Environment {
   }
 }
 
+#[derive(Clone)]
 // todo: This is basically a copy of the heap implement in brili and we could probably do something smarter. This currently isn't that worth it to optimize because most benchmarks do not use the memory extension nor do they run for very long. You (the reader in the future) may be working with bril programs that you would like to speed up that extensively use the bril memory extension. In that case, it would be worth seeing how to implement Heap without a map based memory. Maybe try to re-implement malloc for a large Vec<Value>?
 struct Heap {
   memory: FxHashMap<usize, Vec<Value>>,
@@ -206,7 +210,11 @@ impl fmt::Display for Value {
   }
 }
 
-fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(), std::io::Error> {
+fn optimized_val_output<T: std::io::Write>(
+  out: &Mutex<T>,
+  val: &Value,
+) -> Result<(), std::io::Error> {
+  let mut out = out.lock().unwrap();
   match val {
     Value::Int(i) => out.write_all(itoa::Buffer::new().format(*i).as_bytes()),
     Value::Bool(b) => out.write_all(if *b { b"true" } else { b"false" }),
@@ -314,14 +322,24 @@ fn make_func_args(callee_func: &BBFunction, args: &[usize], vars: &mut Environme
     });
 }
 
-fn execute_value_op<T: std::io::Write>(
-  state: &mut State<T>,
+fn execute_thread<T: std::io::Write + Sync + Send + 'static>(
+  mut state: State,
+  func: usize,
+  out: Arc<Mutex<T>>,
+) -> Option<Value> {
+  return execute(&mut state, func, out).unwrap();
+}
+
+fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
+  state: &mut State,
   op: bril_rs::ValueOps,
   dest: usize,
   args: &[usize],
   labels: &[String],
   funcs: &[usize],
   last_label: Option<&String>,
+  handlers: &mut HashMap<usize, JoinHandle<Option<Value>>>,
+  out: Arc<Mutex<T>>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
@@ -484,11 +502,21 @@ fn execute_value_op<T: std::io::Write>(
 
       make_func_args(callee_func, args, &mut state.env);
 
-      let result = execute(state, callee_func)?.unwrap();
+      if callee_func.is_promise() {
+        let cloned = state.clone();
+        let callee_func = funcs[0];
+        let out = out.clone();
 
-      state.env.pop_frame();
-
-      state.env.set(dest, result);
+        handlers.insert(
+          dest,
+          thread::spawn(move || execute_thread(cloned, callee_func, out)),
+        );
+        state.env.pop_frame();
+      } else {
+        let result = execute(state, funcs[0].clone(), out)?.unwrap();
+        state.env.pop_frame();
+        state.env.set(dest, result);
+      }
     }
     Phi => match last_label {
       None => return Err(InterpError::NoLastLabel),
@@ -526,8 +554,8 @@ fn execute_value_op<T: std::io::Write>(
   Ok(())
 }
 
-fn execute_effect_op<T: std::io::Write>(
-  state: &mut State<T>,
+fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
+  state: &mut State,
   op: bril_rs::EffectOps,
   args: &[usize],
   funcs: &[usize],
@@ -535,6 +563,7 @@ fn execute_effect_op<T: std::io::Write>(
   // There are two output variables where values are stored to effect the loop execution.
   next_block_idx: &mut Option<usize>,
   result: &mut Option<Value>,
+  out: Arc<Mutex<T>>,
 ) -> Result<(), InterpError> {
   use bril_rs::EffectOps::{
     Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store,
@@ -556,20 +585,24 @@ fn execute_effect_op<T: std::io::Write>(
     Print => {
       // In the typical case, users only print out one value at a time
       // So we can usually avoid extra allocations by providing that string directly
-      if args.len() == 1 {
-        optimized_val_output(&mut state.out, state.env.get(*args.first().unwrap()))?;
-        // Add new line
-        state.out.write_all(&[b'\n'])?;
-      } else {
-        writeln!(
-          state.out,
-          "{}",
-          args
-            .iter()
-            .map(|a| state.env.get(*a).to_string())
-            .collect::<Vec<String>>()
-            .join(" ")
-        )?;
+      {
+        if args.len() == 1 {
+          optimized_val_output(&out, state.env.get(*args.first().unwrap()))?;
+          // Add new line
+          let mut out = out.lock().unwrap();
+          out.write_all(&[b'\n'])?;
+        } else {
+          let mut out = out.lock().unwrap();
+          writeln!(
+            out,
+            "{}",
+            args
+              .iter()
+              .map(|a| state.env.get(*a).to_string())
+              .collect::<Vec<String>>()
+              .join(" ")
+          )?;
+        }
       }
     }
     Nop => {}
@@ -578,7 +611,7 @@ fn execute_effect_op<T: std::io::Write>(
 
       make_func_args(callee_func, args, &mut state.env);
 
-      execute(state, callee_func)?;
+      execute(state, funcs[0].clone(), out)?;
       state.env.pop_frame();
     }
     Store => {
@@ -594,16 +627,26 @@ fn execute_effect_op<T: std::io::Write>(
   }
   Ok(())
 }
+// fn execute_thread<'a, T: std::io::Write>(
+//   state: &mut State<'a, T>,
+//   func: &'a BBFunction,
+// ) -> Result<Option<Value>, PositionalInterpError> {
+//   return thread::spawn(|| execute(state, func));
+// }
 
-fn execute<'a, T: std::io::Write>(
-  state: &mut State<'a, T>,
-  func: &'a BBFunction,
+fn execute<T: std::io::Write + Sync + Send + 'static>(
+  state: &mut State,
+  func: usize,
+  out: Arc<Mutex<T>>,
 ) -> Result<Option<Value>, PositionalInterpError> {
+  let func = state.prog.get(func).unwrap().clone();
   let mut last_label;
   let mut current_label = None;
   let mut curr_block_idx = 0;
   // A possible return value
   let mut result = None;
+
+  let mut handlers = HashMap::new();
 
   loop {
     let curr_block = &func.blocks[curr_block_idx];
@@ -663,6 +706,8 @@ fn execute<'a, T: std::io::Write>(
             labels,
             &numified_code.funcs,
             last_label,
+            &mut handlers,
+            out.clone(),
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -681,6 +726,7 @@ fn execute<'a, T: std::io::Write>(
             curr_block,
             &mut next_block_idx,
             &mut result,
+            out.clone(),
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -751,7 +797,7 @@ fn parse_args(
           Ok(())
         }
         bril_rs::Type::Pointer(..) => unreachable!(),
-        bril_rs::Type::Promise(..) => unreachable!(), //
+        bril_rs::Type::Promise(..) => unreachable!("line 748"),
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
           .map_or_else(
             || Err(InterpError::NotOneChar),
@@ -765,22 +811,21 @@ fn parse_args(
   }
 }
 
+#[derive(Clone)]
 // State captures the parts of the interpreter that are used across function boundaries
-struct State<'a, T: std::io::Write> {
-  prog: &'a BBProgram,
+struct State {
+  prog: Arc<BBProgram>,
   env: Environment,
   heap: Heap,
-  out: T,
   instruction_count: usize,
 }
 
-impl<'a, T: std::io::Write> State<'a, T> {
-  const fn new(prog: &'a BBProgram, env: Environment, heap: Heap, out: T) -> Self {
+impl State {
+  fn new(prog: BBProgram, env: Environment, heap: Heap) -> Self {
     Self {
-      prog,
+      prog: Arc::new(prog),
       env,
       heap,
-      out,
       instruction_count: 0,
     }
   }
@@ -791,33 +836,39 @@ impl<'a, T: std::io::Write> State<'a, T> {
 /// This should not panic with normal use except if there is a bug or if you are using an unimplemented feature
 /// # Errors
 /// Will error on malformed `BBProgram`, like if the original Bril program was not well-formed
-pub fn execute_main<T: std::io::Write, U: std::io::Write>(
-  prog: &BBProgram,
-  out: T,
+pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write>(
+  prog: BBProgram,
+  out: Mutex<T>,
   input_args: &[String],
   profiling: bool,
   mut profiling_out: U,
 ) -> Result<(), PositionalInterpError> {
-  let main_func = prog
-    .index_of_main
-    .map(|i| prog.get(i).unwrap())
-    .ok_or(InterpError::NoMainFunction)?;
+  let main_func_idx = match prog.index_of_main {
+    Some(i) => i,
+    None => return Err(InterpError::NoMainFunction.into()),
+  };
 
+  let main_func = prog.get(main_func_idx).unwrap();
   let mut env = Environment::new(main_func.num_of_vars);
   let heap = Heap::default();
+  let main_func_pos = main_func.pos.clone();
 
   env = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
     .map_err(|e| e.add_pos(main_func.pos.clone()))?;
 
-  let mut state = State::new(prog, env, heap, out);
+  let mut state = State::new(prog, env, heap);
 
-  execute(&mut state, main_func)?;
+  let out = Arc::new(out);
+  execute(&mut state, main_func_idx, out.clone())?;
 
   if !state.heap.is_empty() {
-    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos.clone()));
+    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func_pos));
   }
 
-  state.out.flush().map_err(InterpError::IoError)?;
+  {
+    let mut writer = out.lock().unwrap();
+    writer.flush().map_err(InterpError::IoError)?;
+  }
 
   if profiling {
     writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
