@@ -8,10 +8,7 @@
 
 namespace bril {
 
-bool is_term(const Instr* i) {
-  if (auto eff = dyn_cast<Effect>(i)) return eff->op == "jmp" || eff->op == "br";
-  return false;
-}
+bool is_term(const Instr* i) { return i->isJump(); }
 
 BBList* cur_bbs = nullptr;
 std::unordered_map<std::string, BasicBlock*>* bb_map = nullptr;
@@ -64,11 +61,11 @@ void connectBBs() {
   for (auto it = cur_bbs->begin(); it != cur_bbs->end(); ++it) {
     auto& bb = *it;
     if (auto eff = dyn_cast<Effect>(&bb.code.back())) {
-      if (eff->op == "jmp") {
+      if (eff->op() == Op::Jmp) {
         bb.exits[0] = (*bb_map)[eff->labels[0]];
         bb.exits[0]->entries.push_back(&bb);
         continue;
-      } else if (eff->op == "br") {
+      } else if (eff->op() == Op::Br) {
         bb.exits[0] = (*bb_map)[eff->labels[0]];
         bb.exits[0]->entries.push_back(&bb);
         bb.exits[1] = (*bb_map)[eff->labels[1]];

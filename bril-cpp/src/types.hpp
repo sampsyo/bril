@@ -1,8 +1,8 @@
 #pragma once
 
-#include <boost/container/small_vector.hpp>
 #include <boost/intrusive/list.hpp>
 #include <list>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -30,8 +30,82 @@ struct Type {
 
   bool isVoid() const noexcept { return kind == TypeKind::Void; }
 };
+std::ostream& operator<<(std::ostream& os, const Type& t);
 
 // INSTRUCTION
+
+enum class Op : uint16_t {
+  EFFECT_MASK = 0x0800,
+  VALUE_MASK = 0x8000,
+  KIND_MASK = EFFECT_MASK | VALUE_MASK,
+
+  Const = 0,
+
+  // CORE VALUES
+  Add = 0x8000,  // 32768
+  Mul,
+  Sub,
+  Div,
+  Eq,
+  Lt,
+  Gt,
+  Le,
+  Ge,
+  Not,
+  And,
+  Or,
+  Id,
+  Call_v,
+
+  Phi,  // 327872
+
+  Jmp = 0x0C00,  // 3072
+  Br,            // 3073
+
+  Call_e = 0x0800,  // 2048
+  Ret,
+
+  Print,
+  Nop,  // 2051
+
+  Alloc = 0xC000,  // 49152
+  Free,
+  Store,
+  Load,
+  PtrAdd,  // 49156
+
+  F_add = 0xA000,  // 40960
+  F_mul,
+  F_sub,
+  F_div,
+  F_eq,
+  F_lt,
+  F_le,
+  F_gt,
+  F_ge,  // 40968
+
+  Speculate = 0x0A00,  // 2560
+  Commit,
+  Guard,  // 2562
+
+  C_eq = 0x9000,  // 36864
+  C_lt,
+  C_le,
+  C_gt,
+  C_ge,
+  Char2int,
+  Int2Char,  // 36870
+
+  Label = 1,  // 1
+};
+
+inline auto opToInt(Op op) { return static_cast<std::underlying_type_t<Op>>(op); }
+inline auto intToOp(std::underlying_type_t<Op> op) { return static_cast<Op>(op); }
+inline auto opKindMasked(Op op) {
+  return intToOp(opToInt(op) & opToInt(Op::KIND_MASK));
+}
+std::string toString(Op op);
+std::ostream& operator<<(std::ostream& os, Op op);
 
 union ConstLit {
   int64_t int_val;
@@ -52,14 +126,21 @@ using ArgVec = bril::SmallVector<VarRef, 2>;
 struct Instr : public boost::intrusive::list_base_hook<> {
   const InstrKind kind;
 
+  VarRef dst_;
   Type type_;
+  Op op_;
+  ConstLit lit_;
   ArgVec args_;
+
+  ConstLit& lit() noexcept { return lit_; }
+  const ConstLit& lit() const noexcept { return lit_; }
+  Op op() const noexcept { return op_; }
 
   const ArgVec& args() const noexcept { return args_; }
   ArgVec& args() noexcept { return args_; }
 
-  const VarRef* def() const;
-  VarRef* def();
+  const VarRef& dst() const { return dst_; }
+  VarRef& dst() { return dst_; }
 
   const Type& type() const;
   Type& type();
@@ -68,48 +149,46 @@ struct Instr : public boost::intrusive::list_base_hook<> {
   bool isPhi() const;
 
  protected:
-  Instr(const InstrKind kind_) : kind(kind_), type_(Type::voidType()) {}
-  Instr(const InstrKind kind_, Type type) : kind(kind_), type_(type) {}
+  Instr(const InstrKind kind_, Op op)
+      : kind(kind_), type_(Type::voidType()), op_(op), lit_(0LL) {}
+  Instr(const InstrKind kind_, Op op, Type type)
+      : kind(kind_), type_(type), op_(op), lit_(0LL) {}
+  Instr(const InstrKind kind_, Type type, VarRef dst, ConstLit lit)
+      : kind(kind_), dst_(dst), type_(type), op_(Op::Const), lit_(lit) {}
 };
 
 struct Label : Instr {
   std::string name;
 
-  Label(std::string&& name_) : Instr(InstrKind::Label), name(std::move(name_)) {}
+  Label(std::string&& name_)
+      : Instr(InstrKind::Label, Op::Label), name(std::move(name_)) {}
 
   static bool classof(const Instr* t) { return t->kind == InstrKind::Label; }
 };
 
 struct Const : Instr {
-  VarRef dest;
-  ConstLit lit;
-
-  Const(VarRef dest_, Type type_, ConstLit lit_)
-      : Instr(InstrKind::Const), dest(dest_), lit(lit_) {
-    this->type_ = type_;
-  }
+  Const(Type type, VarRef dst, ConstLit lit)
+      : Instr(InstrKind::Const, type, dst, lit) {}
 
   static bool classof(const Instr* t) { return t->kind == InstrKind::Const; }
 };
 
 struct Value : Instr {
-  VarRef dest;
-  std::string op;
   std::vector<std::string> labels;
   std::vector<std::string> funcs;
 
-  Value(VarRef dest_, Type type, std::string&& op_)
-      : Instr(InstrKind::Value, type), dest(dest_), op(std::move(op_)) {}
+  Value(Op op, VarRef dst_, Type type) : Instr(InstrKind::Value, op, type) {
+    this->dst_ = dst_;
+  }
 
   static bool classof(const Instr* t) { return t->kind == InstrKind::Value; }
 };
 
 struct Effect : Instr {
-  std::string op;
   std::vector<std::string> labels;
   std::vector<std::string> funcs;
 
-  Effect(std::string&& op_) : Instr(InstrKind::Effect), op(std::move(op_)) {}
+  Effect(Op op) : Instr(InstrKind::Effect, op) {}
 
   static bool classof(const Instr* t) { return t->kind == InstrKind::Effect; }
 };
@@ -178,37 +257,14 @@ struct Prog {
 
 namespace bril {
 
-inline const VarRef* Instr::def() const {
-  switch (kind) {
-  case bril::InstrKind::Const:
-    return &cast<Const>(this)->dest;
-  case bril::InstrKind::Value:
-    return &cast<Value>(this)->dest;
-  case bril::InstrKind::Label:
-  case bril::InstrKind::Effect:
-    return nullptr;
-  }
-}
-inline VarRef* Instr::def() {
-  return const_cast<VarRef*>((const_cast<const Instr*>(this)->def()));
-}
-
 inline const Type& Instr::type() const { return type_; }
 inline Type& Instr::type() {
   return const_cast<Type&>(const_cast<const Instr*>(this)->type());
 }
 
-inline bool Instr::isJump() const {
-  if (auto eff = dyn_cast<Effect>(this)) {
-    return eff->op == "jmp" || eff->op == "br";
-  }
-  return false;
-}
+inline bool Instr::isJump() const { return op_ == Op::Jmp || op_ == Op::Br; }
 
-inline bool Instr::isPhi() const {
-  if (auto eff = dyn_cast<Value>(this)) return eff->op == "phi";
-  return false;
-}
+inline bool Instr::isPhi() const { return op_ == Op::Phi; }
 
 inline Type Type::intType(uint32_t ptr_dims) noexcept {
   return Type(TypeKind::Int, ptr_dims);

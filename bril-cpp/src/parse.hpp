@@ -10,6 +10,8 @@ namespace bril {
 
 using json = nlohmann::json;
 
+Op stringToOp(const std::string& s);
+
 ConstLit constLitFromJson(const json& j, Type t);
 Type type_from_json(const json& j);
 void from_json(const json& j, Type& t);

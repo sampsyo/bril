@@ -32,6 +32,16 @@ Type type_from_json(const json& j) {
   assert(false);
 }
 
+Op stringToOp(const std::string& s) {
+#define OPS_DEF(op, str) \
+  if (s == str) return Op::op;
+#define NO_CALL_E_CASE
+#include "ops.defs"
+#undef OPS_DEF
+  assert(false);
+  bril::unreachable();
+}
+
 void from_json(const json& j, Type& t) { t = type_from_json(j); }
 ConstLit constLitFromJson(const json& j, Type t) {
   switch (t.kind) {
@@ -54,16 +64,17 @@ Const* const_from_json(const json& j) {
   auto dest = from_vp->varRefOf(jsonToStr(j.at("dest")));
   auto t = type_from_json(j.at("type"));
   auto lit = constLitFromJson(j, t);
-  return new Const(dest, t, lit);
+  return new Const(t, dest, lit);
 }
 
 Instr* instr_from_json(const json& j) {
   if (j.contains("label")) return new Label(j.at("label").template get<std::string>());
-  std::string op = j.at("op").template get<std::string>();
-  if (op == "const") return const_from_json(j);
+  Op op = stringToOp(jsonToStr(j.at("op")));
+
+  if (op == Op::Const) return const_from_json(j);
   if (j.contains("dest")) {
     auto dest = from_vp->varRefOf(j.at("dest").template get<std::string>());
-    auto v = new Value(dest, type_from_json(j.at("type")), std::move(op));
+    auto v = new Value(op, dest, type_from_json(j.at("type")));
     if (j.contains("args")) {
       for (auto& a : j.at("args"))
         v->args().push_back(from_vp->varRefOf(a.template get<std::string>()));
@@ -72,7 +83,7 @@ Instr* instr_from_json(const json& j) {
     if (j.contains("labels")) j.at("labels").get_to(v->labels);
     return v;
   } else {
-    auto v = new Effect(std::move(op));
+    auto v = new Effect(op);
     if (j.contains("args")) {
       for (auto& a : j.at("args"))
         v->args().push_back(from_vp->varRefOf(a.template get<std::string>()));
@@ -137,7 +148,8 @@ void to_json(json& j, Arg const& a) {
   j = json{{"name", to_vp->strOf(a.name)}, {"type", a.type}};
 }
 void to_json(json& j, const Value& i) {
-  j = json{{"dest", to_vp->strOf(i.dest)}, {"op", i.op}, {"type", i.type()}};
+  j = json{
+      {"dest", to_vp->strOf(i.dst())}, {"op", toString(i.op())}, {"type", i.type()}};
   if (!i.args().empty()) {
     std::vector<std::string_view> args;
     for (auto a : i.args()) args.push_back(to_vp->strOf(a));
@@ -148,7 +160,7 @@ void to_json(json& j, const Value& i) {
 }
 void to_json(json& j, const Label& i) { j = json{{"label", i.name}}; }
 void to_json(json& j, const Effect& i) {
-  j = json{{"op", i.op}};
+  j = json{{"op", toString(i.op())}};
   if (!i.args().empty()) {
     std::vector<std::string_view> args;
     for (auto a : i.args()) args.push_back(to_vp->strOf(a));
@@ -177,8 +189,8 @@ void const_lit_to_json(json& j, const ConstLit& lit, Type type) {
   }
 }
 void to_json(json& j, const Const& i) {
-  j = json{{"dest", to_vp->strOf(i.dest)}, {"op", "const"}, {"type", i.type()}};
-  const_lit_to_json(j, i.lit, i.type());
+  j = json{{"dest", to_vp->strOf(i.dst())}, {"op", "const"}, {"type", i.type()}};
+  const_lit_to_json(j, i.lit(), i.type());
 }
 void to_json(json& j, const Instr& i) {
   switch (i.kind) {
