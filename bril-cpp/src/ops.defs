@@ -1,0 +1,82 @@
+// x-macro for ops
+
+#ifndef OPS_DEF
+#define OPS_DEF(x, s)
+#define NO_OPS_STR_DEF
+#endif  // OPS_DEF
+
+#ifndef CALL_E_STR
+#define CALL_E_STR "call"
+#define NO_CALL_E_STR
+#endif  // CALL_E_STR
+
+#ifndef CALL_V_STR
+#define CALL_V_STR "call"
+#define NO_CALL_V_STR
+#endif  // CALL_V_STR
+
+OPS_DEF(Const, "const")
+OPS_DEF(Add, "add")
+OPS_DEF(Mul, "mul")
+OPS_DEF(Sub, "sub")
+OPS_DEF(Div, "div")
+OPS_DEF(Eq, "eq")
+OPS_DEF(Lt, "lt")
+OPS_DEF(Gt, "gt")
+OPS_DEF(Le, "le")
+OPS_DEF(Ge, "ge")
+OPS_DEF(Not, "not")
+OPS_DEF(And, "and")
+OPS_DEF(Or, "or")
+OPS_DEF(Id, "id")
+#ifndef NO_CALL_V_CASE
+OPS_DEF(Call_v, CALL_V_STR)
+#endif  // NO_CALL_V_CASE
+OPS_DEF(Phi, "phi")
+OPS_DEF(Jmp, "jmp")
+OPS_DEF(Br, "br")
+#ifndef NO_CALL_E_CASE
+OPS_DEF(Call_e, CALL_E_STR)
+#endif  // NO_CALL_E_CASE
+OPS_DEF(Ret, "ret")
+OPS_DEF(Print, "print")
+OPS_DEF(Nop, "nop")
+OPS_DEF(Alloc, "alloc")
+OPS_DEF(Free, "free")
+OPS_DEF(Store, "store")
+OPS_DEF(Load, "load")
+OPS_DEF(PtrAdd, "ptradd")
+OPS_DEF(F_add, "fadd")
+OPS_DEF(F_mul, "fmul")
+OPS_DEF(F_sub, "fsub")
+OPS_DEF(F_div, "fdiv")
+OPS_DEF(F_eq, "feq")
+OPS_DEF(F_lt, "flt")
+OPS_DEF(F_le, "fle")
+OPS_DEF(F_gt, "fgt")
+OPS_DEF(F_ge, "fge")
+OPS_DEF(Speculate, "speculate")
+OPS_DEF(Commit, "commit")
+OPS_DEF(Guard, "guard")
+OPS_DEF(C_eq, "ceq")
+OPS_DEF(C_lt, "clt")
+OPS_DEF(C_le, "cle")
+OPS_DEF(C_gt, "cgt")
+OPS_DEF(C_ge, "cge")
+OPS_DEF(Char2int, "char2int")
+OPS_DEF(Int2Char, "int2char")
+
+#ifdef NO_OPS_STR_DEF
+#undef OPS_DEF
+#undef NO_OPS_STR_DEF
+#endif  // NO_OPS_STR_DEF
+
+#ifdef NO_CALL_E_STR
+#undef CALL_E_STR
+#undef NO_CALL_E_STR
+#endif  // NO_CALL_E_STR
+
+#ifdef NO_CALL_V_STR
+#undef CALL_V_STR
+#undef NO_CALL_V_STR
+#endif  // NO_CALL_V_STR

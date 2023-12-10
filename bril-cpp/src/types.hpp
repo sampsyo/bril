@@ -1,18 +1,19 @@
-#ifndef TYPES_HPP
-#define TYPES_HPP
+#pragma once
 
+#include <boost/container/small_vector.hpp>
 #include <boost/intrusive/list.hpp>
-#include <cstdint>
 #include <list>
 #include <string>
 #include <vector>
 
 #include "casting.hpp"
+#include "small_vector.hpp"
 #include "string_pool.hpp"
 
 namespace bril {
+// TYPE
 
-enum class TypeKind : char { Int, Bool, Float, Char, Ptr };
+enum class TypeKind : char { Void, Int, Bool, Float, Char };
 
 struct Type {
   TypeKind kind : 5;
@@ -20,7 +21,17 @@ struct Type {
 
   Type(TypeKind kind_) : kind(kind_), ptr_dims(0) {}
   Type(TypeKind kind_, uint32_t ptr_dims_) : kind(kind_), ptr_dims(ptr_dims_) {}
+
+  static Type intType(uint32_t ptr_dims = 0) noexcept;
+  static Type boolType(uint32_t ptr_dims = 0) noexcept;
+  static Type floatType(uint32_t ptr_dims = 0) noexcept;
+  static Type charType(uint32_t ptr_dims = 0) noexcept;
+  static Type voidType() noexcept;
+
+  bool isVoid() const noexcept { return kind == TypeKind::Void; }
 };
+
+// INSTRUCTION
 
 union ConstLit {
   int64_t int_val;
@@ -28,202 +39,108 @@ union ConstLit {
   double fp_val;
   uint32_t char_val;
 
-  ConstLit(long long val) : int_val(val) {}
+  ConstLit(int64_t val) : int_val(val) {}
   ConstLit(bool val) : bool_val(val) {}
   ConstLit(double val) : fp_val(val) {}
   ConstLit(uint32_t val) : char_val(val) {}
 };
 
-enum class Op : uint16_t {
-  EFFECT_MASK = 0x0800,
-  VALUE_MASK = 0x8000,
+enum class InstrKind : char { Label, Const, Value, Effect };
 
-  Const = 0,
+using ArgVec = bril::SmallVector<VarRef, 2>;
 
-  // CORE VALUES
-  Add = 0x8000,  // 32768
-  Mul,
-  Sub,
-  Div,
-  Eq,
-  Lt,
-  Gt,
-  Le,
-  Ge,
-  Not,
-  And,
-  Or,
-  Id,
-  Call_v,
+struct Instr : public boost::intrusive::list_base_hook<> {
+  const InstrKind kind;
 
-  Phi,  // 327872
+  Type type_;
+  ArgVec args_;
 
-  Jmp = 0x0C00,  // 3072
-  Br,            // 3073
+  const ArgVec& args() const noexcept { return args_; }
+  ArgVec& args() noexcept { return args_; }
 
-  Call_e = 0x0800,  // 2048
-  Ret,
+  const VarRef* def() const;
+  VarRef* def();
 
-  Print,
-  Nop,  // 2051
+  const Type& type() const;
+  Type& type();
 
-  Alloc = 0xC000,  // 49152
-  Free,
-  Store,
-  Load,
-  PtrAdd,  // 49156
-
-  F_add = 0xA000,  // 40960
-  F_mul,
-  F_sub,
-  F_div,
-  F_eq,
-  F_lt,
-  F_le,
-  F_gt,
-  F_ge,  // 40968
-
-  Speculate = 0x0A00,  // 2560
-  Commit,
-  Guard,  // 2562
-
-  C_eq = 0x9000,  // 36864
-  C_lt,
-  C_le,
-  C_gt,
-  C_ge,
-  Char2int,
-  Int2Char  // 36870
-};
-
-inline auto opToInt(Op op) { return static_cast<std::underlying_type_t<Op>>(op); }
-
-struct BasicBlock;
-
-using ArgIt = uint32_t*;
-using ConstArgIt = const uint32_t*;
-
-using LabelIt = uint16_t*;
-using ConstLabelIt = const uint16_t*;
-
-struct Instr {
- protected:
-  union {
-    struct {
-      Type type_;
-      uint32_t dst_;
-      uint16_t label_start_;
-    };
-    uint16_t labels_[2];
-  };
-  Op op_;
-
-  uint32_t id_;
-
-  union {
-    uint32_t args_[2];
-    ConstLit lit_;
-    struct {
-      uint32_t arg_start_;
-      uint32_t n_args_;
-    };
-  };
-
-  friend struct BasicBlockBuilder;
-  friend struct CodeEditor;
-  friend struct InstrEditor;
+  bool isJump() const;
+  bool isPhi() const;
 
  protected:
-  Instr(Op op, uint32_t id) : op_(op), id_(id) {}
+  Instr(const InstrKind kind_) : kind(kind_), type_(Type::voidType()) {}
+  Instr(const InstrKind kind_, Type type) : kind(kind_), type_(type) {}
+};
 
- public:
-  Op op() const noexcept { return op_; }
+struct Label : Instr {
+  std::string name;
 
-  template <typename T>
-  T as() {
-    return cast<T>(this);
+  Label(std::string&& name_) : Instr(InstrKind::Label), name(std::move(name_)) {}
+
+  static bool classof(const Instr* t) { return t->kind == InstrKind::Label; }
+};
+
+struct Const : Instr {
+  VarRef dest;
+  ConstLit lit;
+
+  Const(VarRef dest_, Type type_, ConstLit lit_)
+      : Instr(InstrKind::Const), dest(dest_), lit(lit_) {
+    this->type_ = type_;
   }
 
-  ArgIt argsBegin(BasicBlock&) noexcept;
-  ArgIt argsEnd(BasicBlock&) noexcept;
-  ConstArgIt argsCBegin(const BasicBlock&) noexcept;
-  ConstArgIt argsCEnd(const BasicBlock&) noexcept;
-
-  LabelIt labelBegin(BasicBlock&) noexcept;
-  LabelIt labelEnd(BasicBlock&) noexcept;
-  ConstLabelIt labelCBegin(const BasicBlock&) const noexcept;
-  ConstLabelIt labelCEnd(const BasicBlock&) const noexcept;
-
-  uint32_t& dst() noexcept { return dst_; }
-  const uint32_t& dst() const noexcept { return dst_; }
+  static bool classof(const Instr* t) { return t->kind == InstrKind::Const; }
 };
 
-struct Const : public Instr {
- public:
-  ConstLit& literal() noexcept { return lit_; }
-  ConstLit literal() const noexcept { return lit_; }
+struct Value : Instr {
+  VarRef dest;
+  std::string op;
+  std::vector<std::string> labels;
+  std::vector<std::string> funcs;
 
-  static bool classof(const Instr* i) { return i->op() == Op::Const; }
+  Value(VarRef dest_, Type type, std::string&& op_)
+      : Instr(InstrKind::Value, type), dest(dest_), op(std::move(op_)) {}
 
-  Const(Op op, uint32_t id, Type type, uint32_t dst, ConstLit lit);
+  static bool classof(const Instr* t) { return t->kind == InstrKind::Value; }
 };
 
-struct Value : public Instr {
- public:
-  static bool classof(const Instr* i) {
-    return opToInt(i->op()) & opToInt(Op::VALUE_MASK);
-  }
+struct Effect : Instr {
+  std::string op;
+  std::vector<std::string> labels;
+  std::vector<std::string> funcs;
 
-  Value(Op op, uint32_t id, Type type, uint32_t dst);
-  Value(Op op, uint32_t id, Type type, uint32_t dst, uint32_t arg0, uint32_t arg1 = 0);
+  Effect(std::string&& op_) : Instr(InstrKind::Effect), op(std::move(op_)) {}
+
+  static bool classof(const Instr* t) { return t->kind == InstrKind::Effect; }
 };
 
-struct Effect : public Instr {
- public:
-  static bool classof(const Instr* i) {
-    return opToInt(i->op()) & opToInt(Op::EFFECT_MASK);
-  }
-
-  Effect(Op op, uint32_t id);
-  Effect(Op op, uint32_t id, uint16_t label0, uint16_t label1 = 0);
-  Effect(Op op, uint32_t id, uint32_t arg0, uint32_t arg1 = 0);
-  Effect(Op op, uint32_t id, uint32_t arg0, uint16_t label0, uint16_t label1 = 0);
-};
-
-struct BasicBlock : public boost::intrusive::list_base_hook<> {
- private:
-  uint32_t id_;
-  uint32_t name_;
-
-  std::vector<Instr> phis_;
-  std::vector<Instr> instrs_;
-  std::vector<uint32_t> args_;
-  std::vector<uint16_t> labels_;
-
-  uint32_t exits_[2];
-
- public:
-  const uint32_t& id() const noexcept { return id_; }
-  uint32_t& id() noexcept { return id_; }
-
-  const uint32_t& name() const noexcept { return name_; }
-  uint32_t& name() noexcept { return name_; }
-
-  const uint32_t* exits() const noexcept { return exits_; }
-  uint32_t* exits() noexcept { return exits_; }
-
- private:
-  BasicBlock(uint32_t id, uint32_t name, uint32_t exit0 = 0, uint32_t exit1 = 0)
-      : id_(id), name_(name) {
-    exits_[0] = exit0;
-    exits_[1] = exit1;
-  }
-
-  friend struct BasicBlockBuilder;
-  friend struct CodeEditor;
-};
+using InstrList = boost::intrusive::list<Instr>;
 
 // BASIC BLOCKS
+
+struct DomInfo;
+
+struct BasicBlock : public boost::intrusive::list_base_hook<> {
+  // serial number of basic block in the function
+  int id;
+  std::string name;
+  // predecessors of this basic block in the cfg
+  std::vector<BasicBlock*> entries;
+  // successors of this basic block in the cfg
+  BasicBlock* exits[2] = {nullptr, nullptr};
+  // dominator info
+  DomInfo* dom_info;
+
+  // potentially contains a label that begins this basic block
+  Label* label = nullptr;
+  // contains all phi nodes
+  InstrList phis;
+  // contains instructions
+  InstrList code;
+
+  BasicBlock(std::string&& name_) : id(-1), name(std::move(name_)) {}
+  BasicBlock(int id_, std::string&& name_) : id(id_), name(std::move(name_)) {}
+};
 
 using BBList = boost::intrusive::list<BasicBlock>;
 
@@ -231,14 +148,14 @@ using BBList = boost::intrusive::list<BasicBlock>;
 
 struct Arg {
   VarRef name;
-  Type* type;
+  Type type;
 
-  Arg(VarRef name_, Type* type_) : name(name_), type(type_) {}
+  Arg(VarRef name_, Type type_) : name(name_), type(type_) {}
 };
 
 struct Func {
   std::string name;
-  Type* ret_type;
+  Type ret_type{TypeKind::Void};
   std::vector<Arg> args;
   BBList bbs;
   std::unique_ptr<BasicBlock*[]> bbsv;
@@ -261,49 +178,49 @@ struct Prog {
 
 namespace bril {
 
-inline Const::Const(Op op, uint32_t id, Type type, uint32_t dst, ConstLit lit)
-    : Instr(op, id) {
-  this->dst_ = dst;
-  this->lit_ = lit;
-  this->type_ = type;
+inline const VarRef* Instr::def() const {
+  switch (kind) {
+  case bril::InstrKind::Const:
+    return &cast<Const>(this)->dest;
+  case bril::InstrKind::Value:
+    return &cast<Value>(this)->dest;
+  case bril::InstrKind::Label:
+  case bril::InstrKind::Effect:
+    return nullptr;
+  }
+}
+inline VarRef* Instr::def() {
+  return const_cast<VarRef*>((const_cast<const Instr*>(this)->def()));
 }
 
-inline Value::Value(Op op, uint32_t id, Type type, uint32_t dst) : Instr(op, id) {
-  this->dst_ = dst;
-  this->type_ = type;
+inline const Type& Instr::type() const { return type_; }
+inline Type& Instr::type() {
+  return const_cast<Type&>(const_cast<const Instr*>(this)->type());
 }
 
-inline Value::Value(Op op, uint32_t id, Type type, uint32_t dst, uint32_t arg0,
-                    uint32_t arg1)
-    : Instr(op, id) {
-  this->dst_ = dst;
-  this->type_ = type;
-  this->args_[0] = arg0;
-  this->args_[1] = arg1;
+inline bool Instr::isJump() const {
+  if (auto eff = dyn_cast<Effect>(this)) {
+    return eff->op == "jmp" || eff->op == "br";
+  }
+  return false;
 }
 
-inline Effect::Effect(Op op, uint32_t id) : Instr(op, id) {}
-
-inline Effect::Effect(Op op, uint32_t id, uint16_t label0, uint16_t label1)
-    : Instr(op, id) {
-  this->labels_[0] = label0;
-  this->labels_[1] = label1;
+inline bool Instr::isPhi() const {
+  if (auto eff = dyn_cast<Value>(this)) return eff->op == "phi";
+  return false;
 }
 
-inline Effect::Effect(Op op, uint32_t id, uint32_t arg0, uint32_t arg1)
-    : Instr(op, id) {
-  this->args_[0] = arg0;
-  this->args_[1] = arg1;
+inline Type Type::intType(uint32_t ptr_dims) noexcept {
+  return Type(TypeKind::Int, ptr_dims);
 }
-
-inline Effect::Effect(Op op, uint32_t id, uint32_t arg0, uint16_t label0,
-                      uint16_t label1)
-    : Instr(op, id) {
-  this->args_[0] = arg0;
-  this->labels_[0] = label0;
-  this->labels_[1] = label1;
+inline Type Type::boolType(uint32_t ptr_dims) noexcept {
+  return Type(TypeKind::Bool, ptr_dims);
 }
-
+inline Type Type::floatType(uint32_t ptr_dims) noexcept {
+  return Type(TypeKind::Float, ptr_dims);
+}
+inline Type Type::charType(uint32_t ptr_dims) noexcept {
+  return Type(TypeKind::Char, ptr_dims);
+}
+inline Type Type::voidType() noexcept { return Type(TypeKind::Void); }
 }  // namespace bril
-
-#endif  // TYPES_HPP

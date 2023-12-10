@@ -46,3 +46,4 @@ target_compile_options(compiler_opts INTERFACE $<$<CONFIG:Debug>:-DETAC_DEBUG>)
 ##################
 
 add_subdirectory(src)
+add_subdirectory(scripts)

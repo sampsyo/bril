@@ -26,7 +26,7 @@ class StringPool {
   std::string_view get(StringRef ref) const;
 };
 
-using VarRef = int;
+using VarRef = uint32_t;
 auto constexpr const kTempRefMax = UINT_MAX;
 
 // manages temps: holding their names, creating fresh & SSA temps
