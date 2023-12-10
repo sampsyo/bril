@@ -734,7 +734,7 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
       // heap.write(arg0, arg1)?;
 
       let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
-      let res = unsafe { (*heap).write(arg0, arg1)? };
+      unsafe { (*heap).write(arg0, arg1)? };
       let _ = unsafe { Arc::from_raw(heap) };
     }
     Free => {
@@ -742,7 +742,7 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
       //let mut heap = state.heap.write().unwrap();
 
       let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
-      let res = unsafe { (*heap).free(arg0)? };
+      unsafe { (*heap).free(arg0)? };
       let _ = unsafe { Arc::from_raw(heap) };
     }
     Speculate | Commit | Guard => unimplemented!(),
@@ -783,7 +783,7 @@ fn execute<T: std::io::Write + Sync + Send + 'static>(
     if let Some(stop_flag) = &stop_flag {
       if stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
         cleanup_handlers(handlers);
-        panic!("Thread terminated");
+        panic!("Terminating unresolved thread. This may lead to undefined behavior.");
       }
     };
     let curr_block = &func.blocks[curr_block_idx];
