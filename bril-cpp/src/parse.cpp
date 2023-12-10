@@ -175,7 +175,7 @@ void to_json(json& j, const Value& i) {
     for (auto a : i.args()) args.push_back(to_vp->strOf(a));
     j["args"] = std::move(args);
   }
-  if (i.op_ == Op::Call_v) j["funcs"] = json{to_fn->sp->get(i.func())};
+  if (i.op() == Op::Call_v) j["funcs"] = json{to_fn->sp->get(i.func())};
   if (!i.labels().empty()) {
     j["labels"] = labelsToStrs(i.labels());
   }
@@ -188,7 +188,7 @@ void to_json(json& j, const Effect& i) {
     for (auto a : i.args()) args.push_back(to_vp->strOf(a));
     j["args"] = std::move(args);
   }
-  if (i.op_ == Op::Call_e) j["funcs"] = json{to_fn->sp->get(i.func())};
+  if (i.op() == Op::Call_e) j["funcs"] = json{to_fn->sp->get(i.func())};
   if (!i.labels().empty()) j["labels"] = labelsToStrs(i.labels());
 }
 void const_lit_to_json(json& j, const ConstLit& lit, Type type) {

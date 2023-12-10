@@ -129,6 +129,7 @@ using LabelRef = StringRef;
 using LabelVec = bril::SmallVector<LabelRef, 2>;
 
 struct Instr {
+ protected:
   Op op_;
   Type type_;
   VarRef dst_;
@@ -137,6 +138,7 @@ struct Instr {
   ArgVec args_;
   LabelVec labels_;
 
+ public:
   const uint32_t& func() const noexcept { return func_; }
   uint32_t& func() noexcept { return func_; }
 
@@ -174,24 +176,24 @@ struct Instr {
   //   ~Instr();
 };
 
-struct Label : Instr {
+struct Label : public Instr {
   Label(LabelRef name) : Instr(Op::Label) { labels_.push_back(name); }
 
   LabelRef name() const noexcept { return labels_[0]; }
 
-  static bool classof(const Instr* t) noexcept { return t->op_ == Op::Label; }
+  static bool classof(const Instr* t) noexcept { return t->op() == Op::Label; }
 };
 
-struct Const : Instr {
+struct Const : public Instr {
   Const(Type type, VarRef dst, ConstLit lit) : Instr(type, dst, lit) {}
 
   ConstLit& lit() noexcept { return lit_; }
   const ConstLit& lit() const noexcept { return lit_; }
 
-  static bool classof(const Instr* t) noexcept { return t->op_ == Op::Const; }
+  static bool classof(const Instr* t) noexcept { return t->op() == Op::Const; }
 };
 
-struct Value : Instr {
+struct Value : public Instr {
   Value(Op op, VarRef dst_, Type type) : Instr(op, type) { this->dst_ = dst_; }
 
   static bool classof(const Instr* t) noexcept {
