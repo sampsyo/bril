@@ -4,6 +4,6 @@
 
 namespace bril {
 
-BBList toCFG(std::vector<Instr *> &instrs);
+BBList toCFG(Func& fn, std::vector<Instr*>& instrs);
 
-} // namespace bril
+}  // namespace bril

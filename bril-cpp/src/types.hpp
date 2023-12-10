@@ -122,6 +122,8 @@ union ConstLit {
 enum class InstrKind : char { Label, Const, Value, Effect };
 
 using ArgVec = bril::SmallVector<VarRef, 2>;
+using LabelRef = StringRef;
+using LabelVec = bril::SmallVector<LabelRef, 2>;
 
 struct Instr : public boost::intrusive::list_base_hook<> {
   const InstrKind kind;
@@ -131,6 +133,7 @@ struct Instr : public boost::intrusive::list_base_hook<> {
   Op op_;
   ConstLit lit_;
   ArgVec args_;
+  LabelVec labels_;
 
   ConstLit& lit() noexcept { return lit_; }
   const ConstLit& lit() const noexcept { return lit_; }
@@ -139,14 +142,17 @@ struct Instr : public boost::intrusive::list_base_hook<> {
   const ArgVec& args() const noexcept { return args_; }
   ArgVec& args() noexcept { return args_; }
 
+  const LabelVec& labels() const noexcept { return labels_; }
+  LabelVec& labels() noexcept { return labels_; }
+
   const VarRef& dst() const { return dst_; }
   VarRef& dst() { return dst_; }
 
-  const Type& type() const;
-  Type& type();
+  const Type& type() const noexcept;
+  Type& type() noexcept;
 
-  bool isJump() const;
-  bool isPhi() const;
+  bool isJump() const noexcept;
+  bool isPhi() const noexcept;
 
  protected:
   Instr(const InstrKind kind_, Op op)
@@ -158,10 +164,9 @@ struct Instr : public boost::intrusive::list_base_hook<> {
 };
 
 struct Label : Instr {
-  std::string name;
+  LabelRef name;
 
-  Label(std::string&& name_)
-      : Instr(InstrKind::Label, Op::Label), name(std::move(name_)) {}
+  Label(LabelRef name_) : Instr(InstrKind::Label, Op::Label), name(name_) {}
 
   static bool classof(const Instr* t) { return t->kind == InstrKind::Label; }
 };
@@ -174,7 +179,6 @@ struct Const : Instr {
 };
 
 struct Value : Instr {
-  std::vector<std::string> labels;
   std::vector<std::string> funcs;
 
   Value(Op op, VarRef dst_, Type type) : Instr(InstrKind::Value, op, type) {
@@ -185,7 +189,6 @@ struct Value : Instr {
 };
 
 struct Effect : Instr {
-  std::vector<std::string> labels;
   std::vector<std::string> funcs;
 
   Effect(Op op) : Instr(InstrKind::Effect, op) {}
@@ -202,7 +205,7 @@ struct DomInfo;
 struct BasicBlock : public boost::intrusive::list_base_hook<> {
   // serial number of basic block in the function
   int id;
-  std::string name;
+  StringRef name;
   // predecessors of this basic block in the cfg
   std::vector<BasicBlock*> entries;
   // successors of this basic block in the cfg
@@ -217,8 +220,8 @@ struct BasicBlock : public boost::intrusive::list_base_hook<> {
   // contains instructions
   InstrList code;
 
-  BasicBlock(std::string&& name_) : id(-1), name(std::move(name_)) {}
-  BasicBlock(int id_, std::string&& name_) : id(id_), name(std::move(name_)) {}
+  BasicBlock(StringRef name_) : id(-1), name(name_) {}
+  BasicBlock(int id_, StringRef name_) : id(id_), name(name_) {}
 };
 
 using BBList = boost::intrusive::list<BasicBlock>;
@@ -257,14 +260,14 @@ struct Prog {
 
 namespace bril {
 
-inline const Type& Instr::type() const { return type_; }
-inline Type& Instr::type() {
+inline const Type& Instr::type() const noexcept { return type_; }
+inline Type& Instr::type() noexcept {
   return const_cast<Type&>(const_cast<const Instr*>(this)->type());
 }
 
-inline bool Instr::isJump() const { return op_ == Op::Jmp || op_ == Op::Br; }
+inline bool Instr::isJump() const noexcept { return op_ == Op::Jmp || op_ == Op::Br; }
 
-inline bool Instr::isPhi() const { return op_ == Op::Phi; }
+inline bool Instr::isPhi() const noexcept { return op_ == Op::Phi; }
 
 inline Type Type::intType(uint32_t ptr_dims) noexcept {
   return Type(TypeKind::Int, ptr_dims);
