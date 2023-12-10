@@ -214,19 +214,23 @@ void to_json(json& j, const Const& i) {
   const_lit_to_json(j, i.lit(), i.type());
 }
 void to_json(json& j, const Instr& i) {
-  switch (i.kind) {
-  case InstrKind::Label:
+  if (i.op() == Op::Label) {
     to_json(j, cast<Label>(i));
-    break;
-  case InstrKind::Const:
+    return;
+  }
+  switch (opKindMasked(i.op())) {
+  case Op::Const:
     to_json(j, cast<Const>(i));
     break;
-  case InstrKind::Value:
+  case Op::VALUE_MASK:
     to_json(j, cast<Value>(i));
     break;
-  case InstrKind::Effect:
+  case Op::EFFECT_MASK:
     to_json(j, cast<Effect>(i));
     break;
+  default:
+    assert(false);
+    bril::unreachable();
   }
 }
 void to_json(json& j, const Instr& i, const Func& fn) {
@@ -248,7 +252,18 @@ void to_json(json& j, const Func& fn) {
   to_fn = &fn;
   to_vp = &fn.vp;
 
-  j = json{{"name", fn.name}, {"args", fn.args}, {"instrs", fn.allInstrs()}};
+  json instrs = json::array();
+  for (const auto& bb : fn.bbs) {
+    std::string name = [&bb]() {
+      if (bb.name) return std::string(to_fn->sp->get(bb.name));
+      return "_bb." + std::to_string(bb.id);
+    }();
+    instrs.push_back({{"label", name}});
+    for (const auto& phi : bb.phis) instrs.push_back(phi);
+    for (const auto& instr : bb.code) instrs.push_back(instr);
+  }
+
+  j = json{{"name", fn.name}, {"args", fn.args}, {"instrs", std::move(instrs)}};
   if (!fn.ret_type.isVoid()) j["type"] = fn.ret_type;
 
   to_vp = nullptr;

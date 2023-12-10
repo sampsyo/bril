@@ -39,6 +39,8 @@ enum class Op : uint16_t {
   VALUE_MASK = 0x8000,
   KIND_MASK = EFFECT_MASK | VALUE_MASK,
 
+  // TOOD: add masks for the extensions
+
   Const = 0,
 
   // CORE VALUES
@@ -68,9 +70,10 @@ enum class Op : uint16_t {
   Print,
   Nop,  // 2051
 
+  Store = 0x4800,  // 18432
+  Free,            // 18433
+
   Alloc = 0xC000,  // 49152
-  Free,
-  Store,
   Load,
   PtrAdd,  // 49156
 
@@ -125,22 +128,18 @@ using ArgVec = bril::SmallVector<VarRef, 2>;
 using LabelRef = StringRef;
 using LabelVec = bril::SmallVector<LabelRef, 2>;
 
-struct Instr : public boost::intrusive::list_base_hook<> {
-  const InstrKind kind;
-
-  VarRef dst_;
-  Type type_;
+struct Instr {
   Op op_;
+  Type type_;
+  VarRef dst_;
+  uint32_t func_;
   ConstLit lit_;
   ArgVec args_;
   LabelVec labels_;
-  uint32_t func_;
 
   const uint32_t& func() const noexcept { return func_; }
   uint32_t& func() noexcept { return func_; }
 
-  ConstLit& lit() noexcept { return lit_; }
-  const ConstLit& lit() const noexcept { return lit_; }
   Op op() const noexcept { return op_; }
 
   const ArgVec& args() const noexcept { return args_; }
@@ -152,51 +151,61 @@ struct Instr : public boost::intrusive::list_base_hook<> {
   const VarRef& dst() const { return dst_; }
   VarRef& dst() { return dst_; }
 
-  const Type& type() const noexcept;
-  Type& type() noexcept;
+  const Type& type() const noexcept { return type_; }
+  Type& type() noexcept { return type_; }
 
   bool isJump() const noexcept;
   bool isPhi() const noexcept;
+  bool isCall() const noexcept;
+  //   bool hasLabels() const noexcept;
+  bool isConst() const noexcept;
+  bool isValue() const noexcept { return opToInt(op_) & opToInt(Op::VALUE_MASK); }
+  bool isEffect() const noexcept { return opToInt(op_) & opToInt(Op::EFFECT_MASK); }
+  bool hasDst() const noexcept { return !isEffect(); }
+  //   bool hasArgs() const noexcept;
 
  protected:
-  Instr(const InstrKind kind_, Op op)
-      : kind(kind_), type_(Type::voidType()), op_(op), lit_(0LL) {}
-  Instr(const InstrKind kind_, Op op, Type type)
-      : kind(kind_), type_(type), op_(op), lit_(0LL) {}
-  Instr(const InstrKind kind_, Type type, VarRef dst, ConstLit lit)
-      : kind(kind_), dst_(dst), type_(type), op_(Op::Const), lit_(lit) {}
+  Instr(Op op) : op_(op), type_(Type::voidType()), lit_(0LL) {}
+  Instr(Op op, Type type) : op_(op), type_(type), lit_(0LL) {}
+  Instr(Type type, VarRef dst, ConstLit lit)
+      : op_(Op::Const), type_(type), dst_(dst), lit_(lit) {}
+
+ public:
+  //   ~Instr();
 };
 
 struct Label : Instr {
-  Label(LabelRef name) : Instr(InstrKind::Label, Op::Label) { labels_.push_back(name); }
+  Label(LabelRef name) : Instr(Op::Label) { labels_.push_back(name); }
 
   LabelRef name() const noexcept { return labels_[0]; }
 
-  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Label; }
+  static bool classof(const Instr* t) noexcept { return t->op_ == Op::Label; }
 };
 
 struct Const : Instr {
-  Const(Type type, VarRef dst, ConstLit lit)
-      : Instr(InstrKind::Const, type, dst, lit) {}
+  Const(Type type, VarRef dst, ConstLit lit) : Instr(type, dst, lit) {}
 
-  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Const; }
+  ConstLit& lit() noexcept { return lit_; }
+  const ConstLit& lit() const noexcept { return lit_; }
+
+  static bool classof(const Instr* t) noexcept { return t->op_ == Op::Const; }
 };
 
 struct Value : Instr {
-  Value(Op op, VarRef dst_, Type type) : Instr(InstrKind::Value, op, type) {
-    this->dst_ = dst_;
-  }
+  Value(Op op, VarRef dst_, Type type) : Instr(op, type) { this->dst_ = dst_; }
 
-  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Value; }
+  static bool classof(const Instr* t) noexcept {
+    return opToInt(t->op()) & opToInt(Op::VALUE_MASK);
+  }
 };
 
 struct Effect : Instr {
-  Effect(Op op) : Instr(InstrKind::Effect, op) {}
+  Effect(Op op) : Instr(op) {}
 
-  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Effect; }
+  static bool classof(const Instr* t) noexcept {
+    return opToInt(t->op()) & opToInt(Op::EFFECT_MASK);
+  }
 };
-
-using InstrList = boost::intrusive::list<Instr>;
 
 // BASIC BLOCKS
 
@@ -205,6 +214,7 @@ struct DomInfo;
 struct BasicBlock : public boost::intrusive::list_base_hook<> {
   // serial number of basic block in the function
   int id;
+  // 0 if anonymous, otherwise the canonicalized name
   StringRef name;
   // predecessors of this basic block in the cfg
   std::vector<BasicBlock*> entries;
@@ -213,12 +223,10 @@ struct BasicBlock : public boost::intrusive::list_base_hook<> {
   // dominator info
   DomInfo* dom_info;
 
-  // potentially contains a label that begins this basic block
-  Label* label = nullptr;
   // contains all phi nodes
-  InstrList phis;
+  std::vector<Instr> phis;
   // contains instructions
-  InstrList code;
+  std::vector<Instr> code;
 
   BasicBlock(StringRef name_) : id(-1), name(name_) {}
   BasicBlock(int id_, StringRef name_) : id(id_), name(name_) {}
@@ -260,15 +268,6 @@ struct Prog {
 
 namespace bril {
 
-inline const Type& Instr::type() const noexcept { return type_; }
-inline Type& Instr::type() noexcept {
-  return const_cast<Type&>(const_cast<const Instr*>(this)->type());
-}
-
-inline bool Instr::isJump() const noexcept { return op_ == Op::Jmp || op_ == Op::Br; }
-
-inline bool Instr::isPhi() const noexcept { return op_ == Op::Phi; }
-
 inline Type Type::intType(uint32_t ptr_dims) noexcept {
   return Type(TypeKind::Int, ptr_dims);
 }
@@ -282,4 +281,19 @@ inline Type Type::charType(uint32_t ptr_dims) noexcept {
   return Type(TypeKind::Char, ptr_dims);
 }
 inline Type Type::voidType() noexcept { return Type(TypeKind::Void); }
+
+inline bool Instr::isJump() const noexcept { return op_ == Op::Jmp || op_ == Op::Br; }
+inline bool Instr::isPhi() const noexcept { return op_ == Op::Phi; }
+// inline bool Instr::hasLabels() const noexcept {
+//   return op_ == Op::Phi || op_ == Op::Guard || op_ == Op::Const || op_ == Op::Label
+//   ||
+//          isJump();
+// }
+inline bool Instr::isCall() const noexcept {
+  return op_ == Op::Call_e || op_ == Op::Call_v;
+}
+inline bool Instr::isConst() const noexcept { return op_ == Op::Const; }
+// inline bool Instr::hasArgs() const noexcept { return !isConst() && op_ != Op::Label;
+// }
+
 }  // namespace bril

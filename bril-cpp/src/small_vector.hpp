@@ -505,7 +505,9 @@ class SmallVectorTemplateBase<T, true> : public SmallVectorTemplateCommon<T> {
     // iterators): std::uninitialized_copy optimizes to memmove, but we can
     // use memcpy here. Note that I and E are iterators and thus might be
     // invalid for memcpy if they are equal.
-    if (I != E) memcpy(reinterpret_cast<void*>(Dest), I, (E - I) * sizeof(T));
+    if (I != E)
+      memcpy(reinterpret_cast<void*>(Dest), I,
+             static_cast<size_t>((E - I)) * sizeof(T));
   }
 
   /// Double the size of the allocated memory, guaranteeing space for at

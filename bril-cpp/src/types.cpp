@@ -10,7 +10,6 @@ namespace bril {
 std::vector<const Instr*> Func::allInstrs() const {
   std::vector<const Instr*> res;
   for (auto& bb : bbs) {
-    if (bb.label) res.push_back(bb.label);
     for (auto& phi : bb.phis) res.push_back(&phi);
     for (auto& instr : bb.code) res.push_back(&instr);
   }

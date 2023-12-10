@@ -14,9 +14,9 @@ auto constexpr const kStringRefMax = UINT_MAX;
 
 class StringPool {
   // id is stored as register number - kARegStart
-  std::unordered_map<std::string, StringRef> str_to_ref_;
+  std::unordered_map<std::string, StringRef> str_to_ref_{{"", 0}};
   // (start index, size)
-  std::vector<std::pair<unsigned int, unsigned int>> ref_to_str_;
+  std::vector<std::pair<unsigned int, unsigned int>> ref_to_str_{{0, 0}};
   std::vector<char> pool_;
 
  public:
@@ -27,17 +27,17 @@ class StringPool {
 };
 
 using VarRef = uint32_t;
-auto constexpr const kTempRefMax = UINT_MAX;
+auto constexpr const kVarRefMax = UINT_MAX;
 
 // manages temps: holding their names, creating fresh & SSA temps
 class VarPool {
-  std::unordered_map<StringRef, VarRef> name_to_id_;
-  std::vector<StringRef> id_to_name_;
+  std::unordered_map<StringRef, VarRef> name_to_id_{{0, 0}};
+  std::vector<StringRef> id_to_name_{0};
   StringPool* sp_;
   // maps from a ref to its representative (without the suffix)
-  std::vector<VarRef> ref_to_rep_;
+  std::vector<VarRef> ref_to_rep_{0};
   // maps from a ref to the number of its latest
-  std::vector<size_t> ref_to_suffix_;
+  std::vector<size_t> ref_to_suffix_{0};
 
  public:
   VarPool(StringPool& sp) : sp_(&sp) {}
