@@ -483,6 +483,14 @@ pub enum ValueOps {
     PtrAdd,
     #[cfg(feature = "async")]
     Resolve,
+    #[cfg(feature = "async")]
+    CompareAndSwap,
+    #[cfg(feature = "async")]
+    LoadAtomic,
+    #[cfg(feature = "async")]
+    StoreAtomic,
+    #[cfg(feature = "async")]
+    NewAtomic,
 }
 
 impl Display for ValueOps {
@@ -544,6 +552,14 @@ impl Display for ValueOps {
             Self::PtrAdd => write!(f, "ptradd"),
             #[cfg(feature = "async")]
             Self::Resolve => write!(f, "resolve"),
+            #[cfg(feature = "async")]
+            Self::CompareAndSwap => write!(f, "cas"),
+            #[cfg(feature = "async")]
+            Self::LoadAtomic => write!(f, "loadatomic"),
+            #[cfg(feature = "async")]
+            Self::StoreAtomic => write!(f, "storeatomic"),
+            #[cfg(feature = "async")]
+            Self::NewAtomic => write!(f, "newatomic"),
         }
     }
 }
@@ -569,6 +585,9 @@ pub enum Type {
     #[cfg(feature = "async")]
     #[serde(rename = "promise")]
     Promise(Box<Self>),
+    #[cfg(feature = "async")]
+    #[serde(rename = "atomicint")]
+    AtomicInt,
 }
 
 impl Display for Type {
@@ -584,6 +603,8 @@ impl Display for Type {
             Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
             #[cfg(feature = "async")]
             Self::Promise(tpe) => write!(f, "promise<{tpe}>"),
+            #[cfg(feature = "async")]
+            Self::AtomicInt => write!(f, "atomicint"),
         }
     }
 }

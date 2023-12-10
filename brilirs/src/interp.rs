@@ -844,7 +844,8 @@ fn parse_args(
           Ok(())
         }
         bril_rs::Type::Pointer(..) => unreachable!(),
-        bril_rs::Type::Promise(..) => unreachable!("line 748"),
+        bril_rs::Type::Promise(..) => unreachable!("line 839"),
+        bril_rs::Type::AtomicInt => unreachable!("line 840"),
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
           .map_or_else(
             || Err(InterpError::NotOneChar),
