@@ -483,6 +483,14 @@ pub enum ValueOps {
     PtrAdd,
     #[cfg(feature = "async")]
     Resolve,
+    #[cfg(feature = "async")]
+    CompareAndSwap,
+    #[cfg(feature = "async")]
+    LoadAtomic,
+    #[cfg(feature = "async")]
+    StoreAtomic,
+    #[cfg(feature = "async")]
+    NewAtomic,
 }
 
 impl Display for ValueOps {
@@ -544,6 +552,14 @@ impl Display for ValueOps {
             Self::PtrAdd => write!(f, "ptradd"),
             #[cfg(feature = "async")]
             Self::Resolve => write!(f, "resolve"),
+            #[cfg(feature = "async")]
+            Self::CompareAndSwap => write!(f, "cas"),
+            #[cfg(feature = "async")]
+            Self::LoadAtomic => write!(f, "loadatomic"),
+            #[cfg(feature = "async")]
+            Self::StoreAtomic => write!(f, "storeatomic"),
+            #[cfg(feature = "async")]
+            Self::NewAtomic => write!(f, "newatomic"),
         }
     }
 }
