@@ -423,7 +423,7 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value {
-      op: ValueOps::StoreAtomic,
+      op: ValueOps::SwapAtomic,
       dest,
       op_type,
       args,

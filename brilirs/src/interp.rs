@@ -346,7 +346,7 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
   use bril_rs::ValueOps::{
     Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, CompareAndSwap, Div, Eq, Fadd, Fdiv,
     Feq, Fge, Fgt, Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, LoadAtomic, Lt, Mul,
-    NewAtomic, Not, Or, Phi, PtrAdd, Resolve, StoreAtomic, Sub,
+    NewAtomic, Not, Or, Phi, PtrAdd, Resolve, Sub, SwapAtomic,
   };
   match op {
     Add => {
@@ -581,7 +581,7 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
       let res = Value::Int(6969696969);
       state.env.set(dest, res);
     }
-    StoreAtomic => {
+    SwapAtomic => {
       let res = Value::Int(6969696969);
       state.env.set(dest, res);
     }
@@ -924,7 +924,6 @@ pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write
 
   let out = Arc::new(out);
   execute(&mut state, main_func_idx, out.clone(), None)?;
-
 
   {
     let heap = state.heap.read().unwrap();

@@ -488,7 +488,7 @@ pub enum ValueOps {
     #[cfg(feature = "async")]
     LoadAtomic,
     #[cfg(feature = "async")]
-    StoreAtomic,
+    SwapAtomic,
     #[cfg(feature = "async")]
     NewAtomic,
 }
@@ -557,7 +557,7 @@ impl Display for ValueOps {
             #[cfg(feature = "async")]
             Self::LoadAtomic => write!(f, "loadatomic"),
             #[cfg(feature = "async")]
-            Self::StoreAtomic => write!(f, "storeatomic"),
+            Self::SwapAtomic => write!(f, "swapatomic"),
             #[cfg(feature = "async")]
             Self::NewAtomic => write!(f, "newatomic"),
         }

@@ -270,7 +270,7 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     #[cfg(feature = "async")]
                     "loadatomic" => ValueOps::LoadAtomic,
                     #[cfg(feature = "async")]
-                    "storeatomic" => ValueOps::StoreAtomic,
+                    "swapatomic" => ValueOps::SwapAtomic,
                     #[cfg(feature = "async")]
                     "cas" => ValueOps::CompareAndSwap,
                     #[cfg(feature = "async")]
