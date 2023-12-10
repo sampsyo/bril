@@ -22,10 +22,10 @@ void formBBs(std::vector<Instr*>& instrs) {
   int bb_cnt = 1;
   for (auto& instr : instrs) {
     if (auto label = dyn_cast<Label>(instr)) {
-      cur = new BasicBlock(bb_cnt, label->name);
+      cur = new BasicBlock(bb_cnt, label->name());
       cur->label = label;
       cur_bbs->push_back(*cur);
-      bb_map->emplace(std::make_pair(label->name, &cur_bbs->back()));
+      bb_map->emplace(std::make_pair(label->name(), &cur_bbs->back()));
       bb_cnt++;
       continue;
     }

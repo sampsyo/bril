@@ -67,10 +67,21 @@ Const* const_from_json(const json& j) {
   return new Const(t, dest, lit);
 }
 
+void addArgs(const json& j, Instr& e) {
+  if (!j.contains("args")) return;
+  for (auto& a : j.at("args")) {
+    e.args().push_back(from_vp->varRefOf(jsonToStr(a)));
+  }
+}
 void addLabels(const json& j, Instr& e) {
+  if (!j.contains("labels")) return;
   for (auto& l : j.at("labels")) {
     e.labels().push_back(from_fn->sp->canonicalize(jsonToStr(l)));
   }
+}
+void addFunc(const json& j, Instr& e) {
+  if (!j.contains("funcs")) return;
+  e.func() = from_fn->sp->canonicalize(jsonToStr(j.at("funcs")[0]));
 }
 
 Instr* instr_from_json(const json& j) {
@@ -81,28 +92,20 @@ Instr* instr_from_json(const json& j) {
   Op op = stringToOp(jsonToStr(j.at("op")));
 
   if (op == Op::Const) return const_from_json(j);
+
+  Instr* i;
   if (j.contains("dest")) {
     auto dest = from_vp->varRefOf(j.at("dest").template get<std::string>());
-    auto v = new Value(op, dest, type_from_json(j.at("type")));
-    if (j.contains("args")) {
-      for (auto& a : j.at("args"))
-        v->args().push_back(from_vp->varRefOf(a.template get<std::string>()));
-    }
-    if (j.contains("funcs")) j.at("funcs").get_to(v->funcs);
-    if (j.contains("labels")) addLabels(j, *v);
-    return v;
+    i = new Value(op, dest, type_from_json(j.at("type")));
   } else {
-    auto v = new Effect(op);
-    if (j.contains("args")) {
-      for (auto& a : j.at("args"))
-        v->args().push_back(from_vp->varRefOf(a.template get<std::string>()));
-    }
-    if (j.contains("funcs")) j.at("funcs").get_to(v->funcs);
-    if (j.contains("labels")) addLabels(j, *v);
-    return v;
+    i = new Effect(op);
+    if (op == Op::Call_v) op = Op::Call_e;
   }
-  assert(false);
-  bril::unreachable();
+
+  addArgs(j, *i);
+  addFunc(j, *i);
+  addLabels(j, *i);
+  return i;
 }
 void from_json(const json& j, Instr*& i) { i = instr_from_json(j); }
 void from_json(const json& j, Func& fn) {
@@ -171,12 +174,12 @@ void to_json(json& j, const Value& i) {
     for (auto a : i.args()) args.push_back(to_vp->strOf(a));
     j["args"] = std::move(args);
   }
-  if (!i.funcs.empty()) j["funcs"] = i.funcs;
+  if (i.op_ == Op::Call_v) j["funcs"] = json{to_fn->sp->get(i.func())};
   if (!i.labels().empty()) {
     j["labels"] = labelsToStrs(i.labels());
   }
 }
-void to_json(json& j, const Label& i) { j = json{{"label", to_fn->sp->get(i.name)}}; }
+void to_json(json& j, const Label& i) { j = json{{"label", to_fn->sp->get(i.name())}}; }
 void to_json(json& j, const Effect& i) {
   j = json{{"op", toString(i.op())}};
   if (!i.args().empty()) {
@@ -184,7 +187,7 @@ void to_json(json& j, const Effect& i) {
     for (auto a : i.args()) args.push_back(to_vp->strOf(a));
     j["args"] = std::move(args);
   }
-  if (!i.funcs.empty()) j["funcs"] = i.funcs;
+  if (i.op_ == Op::Call_e) j["funcs"] = json{to_fn->sp->get(i.func())};
   if (!i.labels().empty()) j["labels"] = labelsToStrs(i.labels());
 }
 void const_lit_to_json(json& j, const ConstLit& lit, Type type) {

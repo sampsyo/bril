@@ -134,6 +134,10 @@ struct Instr : public boost::intrusive::list_base_hook<> {
   ConstLit lit_;
   ArgVec args_;
   LabelVec labels_;
+  uint32_t func_;
+
+  const uint32_t& func() const noexcept { return func_; }
+  uint32_t& func() noexcept { return func_; }
 
   ConstLit& lit() noexcept { return lit_; }
   const ConstLit& lit() const noexcept { return lit_; }
@@ -164,36 +168,32 @@ struct Instr : public boost::intrusive::list_base_hook<> {
 };
 
 struct Label : Instr {
-  LabelRef name;
+  Label(LabelRef name) : Instr(InstrKind::Label, Op::Label) { labels_.push_back(name); }
 
-  Label(LabelRef name_) : Instr(InstrKind::Label, Op::Label), name(name_) {}
+  LabelRef name() const noexcept { return labels_[0]; }
 
-  static bool classof(const Instr* t) { return t->kind == InstrKind::Label; }
+  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Label; }
 };
 
 struct Const : Instr {
   Const(Type type, VarRef dst, ConstLit lit)
       : Instr(InstrKind::Const, type, dst, lit) {}
 
-  static bool classof(const Instr* t) { return t->kind == InstrKind::Const; }
+  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Const; }
 };
 
 struct Value : Instr {
-  std::vector<std::string> funcs;
-
   Value(Op op, VarRef dst_, Type type) : Instr(InstrKind::Value, op, type) {
     this->dst_ = dst_;
   }
 
-  static bool classof(const Instr* t) { return t->kind == InstrKind::Value; }
+  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Value; }
 };
 
 struct Effect : Instr {
-  std::vector<std::string> funcs;
-
   Effect(Op op) : Instr(InstrKind::Effect, op) {}
 
-  static bool classof(const Instr* t) { return t->kind == InstrKind::Effect; }
+  static bool classof(const Instr* t) noexcept { return t->kind == InstrKind::Effect; }
 };
 
 using InstrList = boost::intrusive::list<Instr>;
