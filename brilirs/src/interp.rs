@@ -5,7 +5,7 @@ use bril_rs::Instruction;
 use fxhash::FxHashMap;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicUsize};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
 use mimalloc::MiMalloc;
@@ -527,6 +527,7 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
           Some(val) => val,
           None => Value::Uninitialized,
         };
+
         state.env.pop_frame();
         state.env.set(dest, val);
       }
@@ -544,12 +545,17 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
     },
     Alloc => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
-      let res = state.heap.alloc(arg0)?;
+
+      let mut heap = state.heap.write().unwrap();
+      let res = heap.alloc(arg0)?;
+
       state.env.set(dest, res);
     }
     Load => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-      let res = state.heap.read(arg0)?;
+
+      let heap = state.heap.read().unwrap();
+      let res = heap.read(arg0)?;
       state.env.set(dest, *res);
     }
     PtrAdd => {
@@ -635,11 +641,13 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
     Store => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_arg::<Value>(&state.env, 1, args);
-      state.heap.write(arg0, arg1)?;
+      let mut heap = state.heap.write().unwrap();
+      heap.write(arg0, arg1)?;
     }
     Free => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-      state.heap.free(arg0)?;
+      let mut heap = state.heap.write().unwrap();
+      heap.free(arg0)?;
     }
     Speculate | Commit | Guard => unimplemented!(),
   }
@@ -679,7 +687,7 @@ fn execute<T: std::io::Write + Sync + Send + 'static>(
     if let Some(stop_flag) = &stop_flag {
       if stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
         cleanup_handlers(handlers);
-        panic!("Terminating thread executing function {}", func.name);
+        panic!("Thread terminated");
       }
     };
     let curr_block = &func.blocks[curr_block_idx];
@@ -855,7 +863,7 @@ fn parse_args(
 struct State {
   prog: Arc<BBProgram>,
   env: Environment,
-  heap: Heap,
+  heap: Arc<RwLock<Heap>>,
   instruction_count: Arc<AtomicUsize>,
 }
 
@@ -864,7 +872,7 @@ impl State {
     Self {
       prog: Arc::new(prog),
       env,
-      heap,
+      heap: Arc::new(RwLock::new(heap)),
       instruction_count: Arc::new(AtomicUsize::new(0)),
     }
   }
@@ -900,8 +908,13 @@ pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write
   let out = Arc::new(out);
   execute(&mut state, main_func_idx, out.clone(), None)?;
 
-  if !state.heap.is_empty() {
-    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func_pos));
+
+  {
+    let heap = state.heap.read().unwrap();
+    if !heap.is_empty() {
+      return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func_pos));
+    }
+    drop(heap);
   }
 
   {
