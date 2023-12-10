@@ -125,6 +125,7 @@ void from_json(const json& j, Func& fn) {
     instrs.push_back(instr.template get<Instr*>());
   }
   fn.bbs = toCFG(fn, instrs);
+  fn.populateBBsV();
 
   from_vp = nullptr;
   from_fn = nullptr;
@@ -160,9 +161,14 @@ void to_json(json& j, Arg const& a) {
   j = json{{"name", to_vp->strOf(a.name)}, {"type", a.type}};
 }
 
-std::vector<std::string_view> labelsToStrs(const LabelVec& refs) {
-  std::vector<std::string_view> views;
-  for (auto r : refs) views.push_back(to_fn->sp->get(r));
+std::string bbNameToStr(const BasicBlock& bb) {
+  if (bb.name) return std::string(to_fn->sp->get(bb.name));
+  return "_bb." + std::to_string(bb.id);
+}
+std::string bbIdToNameStr(uint32_t bb) { return bbNameToStr(*to_fn->bbsv[bb]); }
+std::vector<std::string> labelsToStrs(const LabelVec& refs) {
+  std::vector<std::string> views;
+  for (auto r : refs) views.push_back(bbIdToNameStr(r));
   return views;
 }
 
@@ -254,10 +260,7 @@ void to_json(json& j, const Func& fn) {
 
   json instrs = json::array();
   for (const auto& bb : fn.bbs) {
-    std::string name = [&bb]() {
-      if (bb.name) return std::string(to_fn->sp->get(bb.name));
-      return "_bb." + std::to_string(bb.id);
-    }();
+    std::string name = bbNameToStr(bb);
     instrs.push_back({{"label", name}});
     for (const auto& phi : bb.phis) instrs.push_back(phi);
     for (const auto& instr : bb.code) instrs.push_back(instr);

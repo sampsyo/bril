@@ -157,7 +157,7 @@ struct Instr {
   bool isJump() const noexcept;
   bool isPhi() const noexcept;
   bool isCall() const noexcept;
-  //   bool hasLabels() const noexcept;
+  bool hasLabels() const noexcept;
   bool isConst() const noexcept;
   bool isValue() const noexcept { return opToInt(op_) & opToInt(Op::VALUE_MASK); }
   bool isEffect() const noexcept { return opToInt(op_) & opToInt(Op::EFFECT_MASK); }
@@ -284,11 +284,10 @@ inline Type Type::voidType() noexcept { return Type(TypeKind::Void); }
 
 inline bool Instr::isJump() const noexcept { return op_ == Op::Jmp || op_ == Op::Br; }
 inline bool Instr::isPhi() const noexcept { return op_ == Op::Phi; }
-// inline bool Instr::hasLabels() const noexcept {
-//   return op_ == Op::Phi || op_ == Op::Guard || op_ == Op::Const || op_ == Op::Label
-//   ||
-//          isJump();
-// }
+inline bool Instr::hasLabels() const noexcept {
+  return op_ == Op::Phi || op_ == Op::Guard || op_ == Op::Const || op_ == Op::Label ||
+         isJump();
+}
 inline bool Instr::isCall() const noexcept {
   return op_ == Op::Call_e || op_ == Op::Call_v;
 }

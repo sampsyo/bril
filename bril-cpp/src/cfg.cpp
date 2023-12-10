@@ -45,7 +45,12 @@ void formBBs(std::vector<Instr*>& instrs) {
 void deleteEmptyBBs() {
   for (auto it = ++cur_bbs->begin(); it != cur_bbs->end();) {
     auto& bb = *it;
-    if (bb.code.empty() && !bb.name) {
+    if (bb.code.empty()) {
+      if (bb.name) {
+        auto next = it;
+        ++next;
+        (*bb_map)[bb.name] = &*next;
+      }
       it = cur_bbs->erase(it);
       continue;
     }
@@ -98,6 +103,25 @@ void connectBBs() {
   //   }
 }
 
+// replace all string refs to bb names with bb ids
+void replaceStrWithIds() {
+  for (auto& bb : *cur_bbs) {
+    for (auto& phi : bb.phis) {
+      for (auto& label : phi.labels()) {
+        label = static_cast<uint32_t>((*bb_map)[label]->id);
+      }
+    }
+
+    for (auto& instr : bb.code) {
+      if (instr.hasLabels()) {
+        for (auto& label : instr.labels()) {
+          label = static_cast<uint32_t>((*bb_map)[label]->id);
+        }
+      }
+    }
+  }
+}
+
 BBList toCFG(Func& fn, std::vector<Instr*>& instrs) {
   BBList res;
   std::unordered_map<StringRef, BasicBlock*> map;
@@ -109,6 +133,7 @@ BBList toCFG(Func& fn, std::vector<Instr*>& instrs) {
   deleteEmptyBBs();
   connectBBs();
   renumberBBs();
+  replaceStrWithIds();
 
   bb_map = nullptr;
   cur_bbs = nullptr;
