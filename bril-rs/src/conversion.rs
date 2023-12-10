@@ -267,6 +267,14 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "ptradd" => ValueOps::PtrAdd,
                     #[cfg(feature = "async")]
                     "resolve" => ValueOps::Resolve,
+                    #[cfg(feature = "async")]
+                    "loadatomic" => ValueOps::LoadAtomic,
+                    #[cfg(feature = "async")]
+                    "storeatomic" => ValueOps::StoreAtomic,
+                    #[cfg(feature = "async")]
+                    "cas" => ValueOps::CompareAndSwap,
+                    #[cfg(feature = "async")]
+                    "newatomic" => ValueOps::NewAtomic,
                     v => {
                         return Err(ConversionError::InvalidValueOps(v.to_string()))
                             .map_err(|e| e.add_pos(pos))
@@ -331,6 +339,8 @@ impl TryFrom<AbstractType> for Type {
             AbstractType::Primitive(t) if t == "float" => Self::Float,
             #[cfg(feature = "char")]
             AbstractType::Primitive(t) if t == "char" => Self::Char,
+            #[cfg(feature = "async")]
+            AbstractType::Primitive(t) if t == "atomicint" => Self::AtomicInt,
             AbstractType::Primitive(t) => return Err(ConversionError::InvalidPrimitive(t)),
             #[cfg(feature = "memory")]
             AbstractType::Parameterized(t, ty) if t == "ptr" => {

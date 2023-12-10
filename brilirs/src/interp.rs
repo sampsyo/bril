@@ -344,9 +344,9 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
   stop_flag: Option<Arc<AtomicBool>>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
-    Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Resolve,
-    Sub,
+    Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, CompareAndSwap, Div, Eq, Fadd, Fdiv,
+    Feq, Fge, Fgt, Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, LoadAtomic, Lt, Mul,
+    NewAtomic, Not, Or, Phi, PtrAdd, Resolve, StoreAtomic, Sub,
   };
   match op {
     Add => {
@@ -566,6 +566,22 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
       };
 
       state.env.set(dest, res.unwrap());
+    }
+    NewAtomic => {
+      let res = Value::Int(6969696969);
+      state.env.set(dest, res);
+    }
+    LoadAtomic => {
+      let res = Value::Int(6969696969);
+      state.env.set(dest, res);
+    }
+    StoreAtomic => {
+      let res = Value::Int(6969696969);
+      state.env.set(dest, res);
+    }
+    CompareAndSwap => {
+      let res = Value::Int(6969696969);
+      state.env.set(dest, res);
     }
   }
   Ok(())
