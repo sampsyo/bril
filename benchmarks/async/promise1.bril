@@ -1,0 +1,18 @@
+@main {
+  size: int = const 4;
+  size2: bool = const false;
+  prom: promise<int> = call @mod size;
+  prom2: promise<bool> = call @mod2 size2;
+  x : int = resolve prom;
+  y : bool = resolve prom2;
+  print x;
+  print y;
+}
+
+@mod(r: int): promise<int> {
+  ret r;
+}
+
+@mod2(r: bool): promise<bool> {
+  ret r;
+}
