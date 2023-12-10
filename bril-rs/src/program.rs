@@ -569,6 +569,9 @@ pub enum Type {
     #[cfg(feature = "async")]
     #[serde(rename = "promise")]
     Promise(Box<Self>),
+    #[cfg(feature = "async")]
+    #[serde(rename = "atomicint")]
+    AtomicInt,
 }
 
 impl Display for Type {
@@ -584,6 +587,8 @@ impl Display for Type {
             Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
             #[cfg(feature = "async")]
             Self::Promise(tpe) => write!(f, "promise<{tpe}>"),
+            #[cfg(feature = "async")]
+            Self::AtomicInt => write!(f, "atomicint"),
         }
     }
 }
