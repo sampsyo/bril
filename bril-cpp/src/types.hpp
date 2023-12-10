@@ -210,26 +210,50 @@ struct Effect : Instr {
 // BASIC BLOCKS
 
 struct DomInfo;
+struct Func;
 
 struct BasicBlock : public boost::intrusive::list_base_hook<> {
+ private:
   // serial number of basic block in the function
-  int id;
+  int id_;
   // 0 if anonymous, otherwise the canonicalized name
-  StringRef name;
+  StringRef name_;
   // predecessors of this basic block in the cfg
-  std::vector<BasicBlock*> entries;
+  std::vector<BasicBlock*> entries_;
   // successors of this basic block in the cfg
-  BasicBlock* exits[2] = {nullptr, nullptr};
+  BasicBlock* exits_[2] = {nullptr, nullptr};
   // dominator info
-  DomInfo* dom_info;
+  DomInfo* dom_info_;
 
   // contains all phi nodes
-  std::vector<Instr> phis;
+  std::vector<Instr> phis_;
   // contains instructions
-  std::vector<Instr> code;
+  std::vector<Instr> code_;
 
-  BasicBlock(StringRef name_) : id(-1), name(name_) {}
-  BasicBlock(int id_, StringRef name_) : id(id_), name(name_) {}
+ public:
+  explicit BasicBlock(StringRef name) : id_(-1), name_(name) {}
+  BasicBlock(int id, StringRef name) : id_(id), name_(name) {}
+
+  int& id() noexcept { return id_; }
+  const int& id() const noexcept { return id_; }
+
+  StringRef& name() noexcept { return name_; }
+  const StringRef& name() const noexcept { return name_; }
+
+  std::vector<BasicBlock*>& entries() noexcept { return entries_; }
+  const std::vector<BasicBlock*>& entries() const noexcept { return entries_; }
+
+  BasicBlock* (&exits() noexcept)[2] { return exits_; }
+  const BasicBlock* const (&exits() const noexcept)[2] { return exits_; }
+
+  DomInfo*& domInfo() noexcept { return dom_info_; }
+  const DomInfo* const& domInfo() const noexcept { return dom_info_; }
+
+  std::vector<Instr>& phis() noexcept { return phis_; }
+  const std::vector<Instr>& phis() const noexcept { return phis_; }
+
+  std::vector<Instr>& code() noexcept { return code_; }
+  const std::vector<Instr>& code() const noexcept { return code_; }
 };
 
 using BBList = boost::intrusive::list<BasicBlock>;
@@ -248,17 +272,20 @@ struct Func {
   Type ret_type{TypeKind::Void};
   std::vector<Arg> args;
   BBList bbs;
-  std::unique_ptr<BasicBlock*[]> bbsv;
+  std::unique_ptr<std::vector<BasicBlock*>> bbsv;
 
   StringPool* sp;
   VarPool vp;
 
-  std::vector<const Instr*> allInstrs() const;
-  void populateBBsV();
-  void deleteBBsV();
+  std::vector<const Instr*> allInstrs() const noexcept;
+  void populateBBsV() noexcept;
+  void deleteBBsV() noexcept;
 
   Func() : sp(new StringPool()), vp(*sp) {}
 };
+
+std::string bbNameToStr(const Func& fn, const BasicBlock& bb) noexcept;
+std::string bbIdToNameStr(const Func& fn, uint32_t bb) noexcept;
 
 struct Prog {
   std::vector<Func> fns;

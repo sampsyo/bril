@@ -23,6 +23,7 @@ target_sources(core
                 PUBLIC
                     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
                     ${CMAKE_CURRENT_SOURCE_DIR}/small_vector.cpp
+                    ${CMAKE_CURRENT_SOURCE_DIR}/dom.cpp
 )
 target_link_libraries(core PUBLIC Boost::boost PRIVATE compiler_opts)
 target_include_directories(core PUBLIC ${CMAKE_SOURCE_DIR}/src)

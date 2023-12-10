@@ -30,9 +30,9 @@ void formBBs(std::vector<Instr*>& instrs) {
     }
 
     if (instr->isPhi())
-      cur->phis.push_back(*instr);
+      cur->phis().push_back(*instr);
     else
-      cur->code.push_back(*instr);
+      cur->code().push_back(*instr);
 
     if (is_term(instr)) {
       cur = new BasicBlock(bb_cnt, 0);
@@ -45,11 +45,11 @@ void formBBs(std::vector<Instr*>& instrs) {
 void deleteEmptyBBs() {
   for (auto it = ++cur_bbs->begin(); it != cur_bbs->end();) {
     auto& bb = *it;
-    if (bb.code.empty()) {
-      if (bb.name) {
+    if (bb.code().empty()) {
+      if (bb.name()) {
         auto next = it;
         ++next;
-        (*bb_map)[bb.name] = &*next;
+        (*bb_map)[bb.name()] = &*next;
       }
       it = cur_bbs->erase(it);
       continue;
@@ -60,31 +60,31 @@ void deleteEmptyBBs() {
 
 void renumberBBs() {
   int i = -1;
-  for (auto& bb : *cur_bbs) bb.id = ++i;
+  for (auto& bb : *cur_bbs) bb.id() = ++i;
 }
 
 void connectBBs() {
   for (auto it = cur_bbs->begin(); it != cur_bbs->end(); ++it) {
     auto& bb = *it;
-    if (!bb.code.empty()) {
-      auto& last = bb.code.back();
+    if (!bb.code().empty()) {
+      auto& last = bb.code().back();
       if (last.op() == Op::Jmp) {
-        bb.exits[0] = (*bb_map)[last.labels()[0]];
-        bb.exits[0]->entries.push_back(&bb);
+        bb.exits()[0] = (*bb_map)[last.labels()[0]];
+        bb.exits()[0]->entries().push_back(&bb);
         continue;
       } else if (last.op() == Op::Br) {
-        bb.exits[0] = (*bb_map)[last.labels()[0]];
-        bb.exits[0]->entries.push_back(&bb);
-        bb.exits[1] = (*bb_map)[last.labels()[1]];
-        bb.exits[1]->entries.push_back(&bb);
+        bb.exits()[0] = (*bb_map)[last.labels()[0]];
+        bb.exits()[0]->entries().push_back(&bb);
+        bb.exits()[1] = (*bb_map)[last.labels()[1]];
+        bb.exits()[1]->entries().push_back(&bb);
         continue;
       }
     }
     auto c = it;
     if (++c == cur_bbs->end()) break;
 
-    bb.exits[0] = &*c;
-    bb.exits[0]->entries.push_back(&bb);
+    bb.exits()[0] = &*c;
+    bb.exits()[0]->entries().push_back(&bb);
   }
 
   // insert empty starting block
@@ -98,7 +98,7 @@ void connectBBs() {
   //     assert(first.name);
   //     auto& start = *new BasicBlock(0);
   //     cur_bbs->push_front(start);
-  //     start.exits[0] = &first;
+  //     start.exits()[0] = &first;
   //     first.entries.push_back(&start);
   //   }
 }
@@ -106,16 +106,16 @@ void connectBBs() {
 // replace all string refs to bb names with bb ids
 void replaceStrWithIds() {
   for (auto& bb : *cur_bbs) {
-    for (auto& phi : bb.phis) {
+    for (auto& phi : bb.phis()) {
       for (auto& label : phi.labels()) {
-        label = static_cast<uint32_t>((*bb_map)[label]->id);
+        label = static_cast<uint32_t>((*bb_map)[label]->id());
       }
     }
 
-    for (auto& instr : bb.code) {
+    for (auto& instr : bb.code()) {
       if (instr.hasLabels()) {
         for (auto& label : instr.labels()) {
-          label = static_cast<uint32_t>((*bb_map)[label]->id);
+          label = static_cast<uint32_t>((*bb_map)[label]->id());
         }
       }
     }
