@@ -5,7 +5,7 @@ use bril_rs::Instruction;
 use fxhash::FxHashMap;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
 use mimalloc::MiMalloc;
@@ -347,6 +347,16 @@ impl<'a> From<&'a Value> for &'a Pointer {
   }
 }
 
+impl From<&Value> for usize {
+  fn from(value: &Value) -> Self {
+    if let Value::Atomic(idx) = value {
+      *idx
+    } else {
+      unreachable!()
+    }
+  }
+}
+
 impl From<&Self> for Value {
   fn from(value: &Self) -> Self {
     *value
@@ -623,29 +633,28 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
 
       state.env.set(dest, res.unwrap());
     }
-    bril_rs::ValueOps::CompareAndSwap => {
+    CompareAndSwap => {
       //atomic
-      let arg0 = get_arg::<i64>(&state.env, 0, args) as usize;
+      let arg0 = get_arg::<usize>(&state.env, 0, args);
       //expected
       let arg1 = get_arg::<i64>(&state.env, 1, args);
       //update
       let arg2 = get_arg::<i64>(&state.env, 2, args);
       let res = state.atomics.compare_and_swap(arg0, arg1, arg2);
       state.env.set(dest, Value::Int(res));
-    },
-    bril_rs::ValueOps::LoadAtomic => {
-      let arg0 = get_arg::<i64>(&state.env, 0, args) as usize;
+    }
+    LoadAtomic => {
+      let arg0 = get_arg::<usize>(&state.env, 0, args) as usize;
       let res = state.atomics.load_atomic(arg0);
       state.env.set(dest, Value::Int(res));
-    },
-    bril_rs::ValueOps::SwapAtomic => {
-      let arg0 = get_arg::<i64>(&state.env, 0, args) as usize;
+    }
+    SwapAtomic => {
+      let arg0 = get_arg::<usize>(&state.env, 0, args) as usize;
       let arg1 = get_arg::<i64>(&state.env, 1, args);
       let res = state.atomics.swap_atomic(arg0, arg1);
       state.env.set(dest, Value::Int(res));
-    },
-
-    bril_rs::ValueOps::NewAtomic => {
+    }
+    NewAtomic => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
       let atomics = Arc::into_raw(state.atomics.clone()) as *mut Atomics;
       let res = unsafe { (*atomics).new_atomic(arg0) };
