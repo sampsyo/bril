@@ -4,7 +4,7 @@ use bril2json::escape_control_chars;
 use bril_rs::Instruction;
 use fxhash::FxHashMap;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicUsize};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
@@ -91,18 +91,60 @@ impl Environment {
   }
 }
 
-#[derive(Clone)]
+struct Atomics {
+  atomics: HashMap<usize, AtomicI64>,
+  index: AtomicUsize,
+}
+
+impl Default for Atomics {
+  fn default() -> Self {
+    Self {
+      atomics: HashMap::new(),
+      index: AtomicUsize::new(0),
+    }
+  }
+}
+
+impl Atomics {
+  fn new_atomic(&mut self, val: i64) -> Value {
+    let index = self.index.fetch_add(1, Ordering::SeqCst);
+    self.atomics.insert(index, AtomicI64::new(val));
+    Value::Atomic(index)
+  }
+  fn load_atomic(&self, index: usize) -> i64 {
+    self.atomics.get(&index).unwrap().load(Ordering::SeqCst)
+  }
+  fn swap_atomic(&self, index: usize, val: i64) -> i64 {
+    self
+      .atomics
+      .get(&index)
+      .unwrap()
+      .swap(val, Ordering::SeqCst)
+  }
+  fn compare_and_swap(&self, index: usize, old: i64, new: i64) -> i64 {
+    match self.atomics.get(&index).unwrap().compare_exchange(
+      old,
+      new,
+      Ordering::SeqCst,
+      Ordering::SeqCst,
+    ) {
+      Ok(val) => val,
+      Err(val) => val,
+    }
+  }
+}
+
 // todo: This is basically a copy of the heap implement in brili and we could probably do something smarter. This currently isn't that worth it to optimize because most benchmarks do not use the memory extension nor do they run for very long. You (the reader in the future) may be working with bril programs that you would like to speed up that extensively use the bril memory extension. In that case, it would be worth seeing how to implement Heap without a map based memory. Maybe try to re-implement malloc for a large Vec<Value>?
 struct Heap {
   memory: FxHashMap<usize, Vec<Value>>,
-  base_num_counter: usize,
+  base_num_counter: AtomicUsize,
 }
 
 impl Default for Heap {
   fn default() -> Self {
     Self {
       memory: FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default()),
-      base_num_counter: 0,
+      base_num_counter: AtomicUsize::new(0),
     }
   }
 }
@@ -116,8 +158,7 @@ impl Heap {
     let amount: usize = amount
       .try_into()
       .map_err(|_| InterpError::CannotAllocSize(amount))?;
-    let base = self.base_num_counter;
-    self.base_num_counter += 1;
+    let base = self.base_num_counter.fetch_add(1, Ordering::SeqCst);
     self.memory.insert(base, vec![Value::default(); amount]);
     Ok(Value::Pointer(Pointer { base, offset: 0 }))
   }
@@ -177,6 +218,7 @@ enum Value {
   Float(f64),
   Char(char),
   Pointer(Pointer),
+  Atomic(usize),
   #[default]
   Uninitialized,
 }
@@ -205,6 +247,7 @@ impl fmt::Display for Value {
       Self::Float(v) => write!(f, "{v:.17}"),
       Self::Char(c) => write!(f, "{c}"),
       Self::Pointer(p) => write!(f, "{p:?}"),
+      Self::Atomic(a) => write!(f, "atomic_{a}"),
       Self::Uninitialized => unreachable!(),
     }
   }
@@ -227,6 +270,7 @@ fn optimized_val_output<T: std::io::Write>(
       out.write_all(c.encode_utf8(buf).as_bytes())
     }
     Value::Pointer(p) => out.write_all(format!("{p:?}").as_bytes()),
+    Value::Atomic(a) => out.write_all(format!("atomic_{a}").as_bytes()),
     Value::Uninitialized => unreachable!(),
   }
 }
@@ -546,16 +590,22 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
     Alloc => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
 
-      let mut heap = state.heap.write().unwrap();
-      let res = heap.alloc(arg0)?;
+      // let mut heap = state.heap.write().unwrap();
+      // let res = heap.alloc(arg0)?;
+
+      //allows for multiple threads to access the heap at once
+      let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
+      let res = unsafe { (*heap).alloc(arg0)? };
+      let _ = unsafe { Arc::from_raw(heap) };
 
       state.env.set(dest, res);
     }
     Load => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
 
-      let heap = state.heap.read().unwrap();
-      let res = heap.read(arg0)?;
+      // let heap = state.heap.read().unwrap();
+      // let res = heap.read(arg0)?;
+      let res = state.heap.read(arg0)?;
       state.env.set(dest, *res);
     }
     PtrAdd => {
@@ -572,6 +622,36 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
       };
 
       state.env.set(dest, res.unwrap());
+    }
+    bril_rs::ValueOps::CompareAndSwap => {
+      //atomic
+      let arg0 = get_arg::<i64>(&state.env, 0, args) as usize;
+      //expected
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      //update
+      let arg2 = get_arg::<i64>(&state.env, 2, args);
+      let res = state.atomics.compare_and_swap(arg0, arg1, arg2);
+      state.env.set(dest, Value::Int(res));
+    },
+    bril_rs::ValueOps::LoadAtomic => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args) as usize;
+      let res = state.atomics.load_atomic(arg0);
+      state.env.set(dest, Value::Int(res));
+    },
+    bril_rs::ValueOps::SwapAtomic => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args) as usize;
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      let res = state.atomics.swap_atomic(arg0, arg1);
+      state.env.set(dest, Value::Int(res));
+    },
+
+    bril_rs::ValueOps::NewAtomic => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let atomics = Arc::into_raw(state.atomics.clone()) as *mut Atomics;
+      let res = unsafe { (*atomics).new_atomic(arg0) };
+      let _ = unsafe { Arc::from_raw(atomics) };
+
+      state.env.set(dest, res);
     }
   }
   Ok(())
@@ -641,13 +721,20 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
     Store => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_arg::<Value>(&state.env, 1, args);
-      let mut heap = state.heap.write().unwrap();
-      heap.write(arg0, arg1)?;
+      // let mut heap = state.heap.write().unwrap();
+      // heap.write(arg0, arg1)?;
+
+      let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
+      let res = unsafe { (*heap).write(arg0, arg1)? };
+      let _ = unsafe { Arc::from_raw(heap) };
     }
     Free => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-      let mut heap = state.heap.write().unwrap();
-      heap.free(arg0)?;
+      //let mut heap = state.heap.write().unwrap();
+
+      let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
+      let res = unsafe { (*heap).free(arg0)? };
+      let _ = unsafe { Arc::from_raw(heap) };
     }
     Speculate | Commit | Guard => unimplemented!(),
   }
@@ -864,7 +951,8 @@ fn parse_args(
 struct State {
   prog: Arc<BBProgram>,
   env: Environment,
-  heap: Arc<RwLock<Heap>>,
+  heap: Arc<Heap>,
+  atomics: Arc<Atomics>,
   instruction_count: Arc<AtomicUsize>,
 }
 
@@ -873,7 +961,8 @@ impl State {
     Self {
       prog: Arc::new(prog),
       env,
-      heap: Arc::new(RwLock::new(heap)),
+      heap: Arc::new(heap),
+      atomics: Arc::new(Atomics::default()),
       instruction_count: Arc::new(AtomicUsize::new(0)),
     }
   }
@@ -909,13 +998,8 @@ pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write
   let out = Arc::new(out);
   execute(&mut state, main_func_idx, out.clone(), None)?;
 
-
-  {
-    let heap = state.heap.read().unwrap();
-    if !heap.is_empty() {
-      return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func_pos));
-    }
-    drop(heap);
+  if !state.heap.is_empty() {
+    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func_pos));
   }
 
   {
