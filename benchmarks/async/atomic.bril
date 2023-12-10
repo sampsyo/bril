@@ -1,0 +1,16 @@
+@main {
+  one : int = const 1;
+  size : atomicint = newatomic one;
+  expect : int = const 1;
+  upd : int = const 2;
+  res : int = cas size expect upd;
+
+  three : int = const 3;
+  res1 : int = loadatomic size;
+  res2 : int = swapatomic size three;
+  res3 : int = loadatomic size;
+  print res;
+  print res1;
+  print res2;
+  print res3;
+}

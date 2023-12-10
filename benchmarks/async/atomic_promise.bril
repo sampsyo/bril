@@ -1,0 +1,57 @@
+@main {
+  zero : int = const 0;
+  
+  a : atomicint = newatomic zero;
+  res1 : promise<int> = call @incr1 a;
+  res2 : promise<int> = call @incr1 a;
+  res3 : promise<int> = call @incr1 a;
+  res4 : promise<int> = call @incr1 a;
+  res5 : promise<int> = call @incr1 a;
+  res6 : promise<int> = call @incr1 a;
+  res7 : promise<int> = call @incr1 a;
+  res8 : promise<int> = call @incr1 a;
+  res9 : promise<int> = call @incr1 a;
+  res10 : promise<int> = call @incr1 a;
+
+  res11 : promise<int> = call @incr1 a;
+  res12 : promise<int> = call @incr1 a;
+  res13 : promise<int> = call @incr1 a;
+  res14 : promise<int> = call @incr1 a;
+  res15 : promise<int> = call @incr1 a;
+  res16 : promise<int> = call @incr1 a;
+  res17 : promise<int> = call @incr1 a;
+  res18 : promise<int> = call @incr1 a;
+  res19 : promise<int> = call @incr1 a;
+  res20 : promise<int> = call @incr1 a;
+
+  res21 : promise<int> = call @incr1 a;
+  res22 : promise<int> = call @incr1 a;
+  res23 : promise<int> = call @incr1 a;
+  res24 : promise<int> = call @incr1 a;
+  res25 : promise<int> = call @incr1 a;
+  res26 : promise<int> = call @incr1 a;
+  res27 : promise<int> = call @incr1 a;
+  res28 : promise<int> = call @incr1 a;
+  res29 : promise<int> = call @incr1 a;
+  res30 : promise<int> = call @incr1 a;
+  
+.loop:
+  res : int = loadatomic a;
+  print res;
+  jmp .loop;
+}
+
+@incr1(r: atomicint) : promise<int> {
+.loop:
+  res : int = loadatomic r;
+  one : int = const 1;
+  upd : int = add res one;
+
+  old : int = cas r res upd;
+   
+  eq: bool = eq old res;
+  br eq .end .loop;
+.end:
+  zero : int = const 0;
+  ret zero;
+}
