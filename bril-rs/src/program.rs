@@ -587,9 +587,11 @@ pub enum Type {
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
     Pointer(Box<Self>),
+    /// <https://capra.cs.cornell.edu/bril/lang/async.html>
     #[cfg(feature = "async")]
     #[serde(rename = "promise")]
     Promise(Box<Self>),
+    /// <https://capra.cs.cornell.edu/bril/lang/async.html>
     #[cfg(feature = "async")]
     #[serde(rename = "atomicint")]
     AtomicInt,
