@@ -91,6 +91,7 @@ impl Environment {
   }
 }
 
+//A second heap for atomics, since AtomicI64 cannot be added to the Value enum without a lot of work
 struct Atomics {
   atomics: HashMap<usize, AtomicI64>,
   index: AtomicUsize,
@@ -158,6 +159,8 @@ impl Heap {
     let amount: usize = amount
       .try_into()
       .map_err(|_| InterpError::CannotAllocSize(amount))?;
+
+    //make sure we atomically fetch and add the base index
     let base = self.base_num_counter.fetch_add(1, Ordering::SeqCst);
     self.memory.insert(base, vec![Value::default(); amount]);
     Ok(Value::Pointer(Pointer { base, offset: 0 }))
@@ -599,11 +602,9 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
     },
     Alloc => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
-
-      // let mut heap = state.heap.write().unwrap();
-      // let res = heap.alloc(arg0)?;
-
-      //allows for multiple threads to access the heap at once
+      //allows for multiple threads to (unsafely) access the heap at once
+      //synchronization should be accomplished using the implemented atomics
+      //heap base pointer is atomically incremented so allocation is still thread safe
       let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
       let res = unsafe { (*heap).alloc(arg0)? };
       let _ = unsafe { Arc::from_raw(heap) };
@@ -612,9 +613,6 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
     }
     Load => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-
-      // let heap = state.heap.read().unwrap();
-      // let res = heap.read(arg0)?;
       let res = state.heap.read(arg0)?;
       state.env.set(dest, *res);
     }
@@ -625,7 +623,6 @@ fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
       state.env.set(dest, res);
     }
     Resolve => {
-      //let arg0 = get_arg::<&Promise>(&state.env, 0, args);
       let res = match handlers.remove(&args[0]) {
         Some(handle) => handle.0.join().unwrap(),
         None => panic!("Unexpected execution error"),
@@ -730,17 +727,12 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
     Store => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_arg::<Value>(&state.env, 1, args);
-      // let mut heap = state.heap.write().unwrap();
-      // heap.write(arg0, arg1)?;
-
       let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
       unsafe { (*heap).write(arg0, arg1)? };
       let _ = unsafe { Arc::from_raw(heap) };
     }
     Free => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-      //let mut heap = state.heap.write().unwrap();
-
       let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
       unsafe { (*heap).free(arg0)? };
       let _ = unsafe { Arc::from_raw(heap) };
@@ -749,12 +741,6 @@ fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
   }
   Ok(())
 }
-// fn execute_thread<'a, T: std::io::Write>(
-//   state: &mut State<'a, T>,
-//   func: &'a BBFunction,
-// ) -> Result<Option<Value>, PositionalInterpError> {
-//   return thread::spawn(|| execute(state, func));
-// }
 
 fn cleanup_handlers(handlers: HashMap<usize, (JoinHandle<Option<Value>>, Arc<AtomicBool>)>) {
   for (_, (handle, stop_flag)) in handlers {
