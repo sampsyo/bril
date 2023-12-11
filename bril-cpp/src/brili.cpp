@@ -9,7 +9,7 @@
 namespace bril {
 
 Brili::Brili(Prog& p, std::ostream& out, std::ostream& err)
-    : prog_(p), main_(nullptr), out_(out), err_(err) {
+    : prog_(p), main_(nullptr), heap_(err), out_(out), err_(err) {
   for (auto& fn : prog_.fns) {
     if (fn.name == "main") {
       main_ = &fn;
@@ -18,15 +18,12 @@ Brili::Brili(Prog& p, std::ostream& out, std::ostream& err)
   }
 }
 
-struct BrilException {
-  bool printStackTrace;
-  BrilException(bool printStackTrace_ = true) : printStackTrace(printStackTrace_) {}
-};
+struct BrilException {};
 
 std::ostream& operator<<(std::ostream& os, const Val& v) {
   // if pointer type, print address (interpreted as pointer)
   if (v.type.ptr_dims) {
-    os << "0x" << std::hex << v.i << std::dec;
+    os << "0x" << std::hex << v.p.value() << std::dec;
     return os;
   }
 
@@ -55,6 +52,50 @@ std::ostream& operator<<(std::ostream& os, const Val& v) {
     bril::unreachable();
   }
   return os;
+}
+
+Ptr Heap::alloc(size_t sz) noexcept {
+  uint32_t key;
+  if (!free_list_.empty()) {
+    key = free_list_.back();
+    free_list_.pop_back();
+    data_[key].freed = false;
+  } else {
+    key = static_cast<uint32_t>(data_.size());
+    data_.emplace_back();
+  }
+  data_[key].data.resize(sz);
+  return {0, key};
+}
+void Heap::free(Ptr ptr) {
+  if (ptr.key >= data_.size() || ptr.offset) {
+    cerr_ << "error: attempted to free invalid ptr " << ptr.value() << std::endl;
+    throw BrilException();
+  }
+  if (data_[ptr.key].freed) {
+    cerr_ << "error: attempted to free already freed ptr " << ptr.value() << std::endl;
+    throw BrilException();
+  }
+  data_[ptr.key].freed = true;
+  free_list_.push_back(ptr.key);
+}
+void Heap::checkPtr(Ptr ptr) const {
+  if (ptr.key >= data_.size()) {
+    cerr_ << "error: attempted to access to invalid ptr " << ptr.value() << std::endl;
+    throw BrilException();
+  }
+  if (data_[ptr.key].freed) {
+    cerr_ << "error: attempted to access to freed ptr " << ptr.value() << std::endl;
+    throw BrilException();
+  }
+}
+void Heap::store(Ptr ptr, Val val) {
+  checkPtr(ptr);
+  data_[ptr.key].data[ptr.offset] = val;
+}
+Val Heap::load(Ptr ptr) const {
+  checkPtr(ptr);
+  return data_[ptr.key].data[ptr.offset];
 }
 
 void Brili::setLocal(uint32_t dst, Val val) { top().locals[dst] = val; }
@@ -185,8 +226,9 @@ void Brili::exec(const Instr& instr) {
     execRet(instr);
     return;
   case Op::Print:
-    for (auto it = instr.args().begin(); it != std::prev(instr.args().end()); it++)
+    for (auto it = instr.args().begin(); it != std::prev(instr.args().end()); it++) {
       out_ << getLocal(*it) << " ";
+    }
     out_ << getLocal(instr.args().back());
     out_ << std::endl;
     break;
@@ -215,18 +257,43 @@ void Brili::exec(const Instr& instr) {
     VALUE_BINOP(C_gt, >, c);
     VALUE_BINOP(C_ge, >=, c);
 
-  case Op::Store:
-  case Op::Free:
-  case Op::Alloc:
-  case Op::Load:
-  case Op::PtrAdd:
+  case Op::Store: {
+    auto ptr = getLocal(instr.args()[0]).p;
+    auto val = getLocal(instr.args()[1]);
+    heap_.store(ptr, val);
+    break;
+  }
+  case Op::Free: {
+    auto ptr = getLocal(instr.args()[0]).p;
+    heap_.free(ptr);
+    break;
+  }
+  case Op::Alloc: {
+    auto sz = getLocal(instr.args()[0]).i;
+    auto ptr = heap_.alloc(static_cast<size_t>(sz));
+    setLocal(instr.dst(), Val(ptr, instr.type()));
+    break;
+  }
+  case Op::Load: {
+    auto ptr = getLocal(instr.args()[0]).p;
+    auto val = heap_.load(ptr);
+    setLocal(instr.dst(), val);
+    break;
+  }
+  case Op::PtrAdd: {
+    auto ptr = getLocal(instr.args()[0]).p;
+    auto offset = getLocal(instr.args()[1]).i;
+    auto new_ptr = ptr + offset;
+    setLocal(instr.dst(), Val(new_ptr, instr.type()));
+    break;
+  }
 
   case Op::Speculate:
   case Op::Commit:
   case Op::Guard:
-
     err_ << "Unsupported instruction: " << instr.op() << std::endl;
-    throw BrilException(true);
+    throw BrilException();
+
   case Op::Label:
   case Op::KIND_MASK:
   case Op::Phi:  // phi should only be handled when entering a new bb
@@ -239,10 +306,16 @@ void Brili::exec(const Instr& instr) {
 
 struct SetPrecision {
   std::ostream& os;
-  std::streamsize old;
+  std::streamsize old_prec;
+  std::ios_base::fmtflags old_flags;
   SetPrecision(std::ostream& os_, std::streamsize prec)
-      : os(os_), old(os.precision(prec)) {}
-  ~SetPrecision() { os.precision(old); }
+      : os(os_),
+        old_prec(os.precision(prec)),
+        old_flags(os_.setf((os_.flags() | os_.fixed) & ~os_.scientific)) {}
+  ~SetPrecision() {
+    os.precision(old_prec);
+    os.setf(old_flags);
+  }
 };
 
 size_t findPhiIdx(const Instr& phi, uint32_t bb_id) {
@@ -267,6 +340,7 @@ void Brili::execPhis() {
 
 Result Brili::run(std::vector<Val>& args) {
   SetPrecision p(out_, 17);
+  // FIXME: clear stack and heap
 
   res_ = Result();
   try {
@@ -296,7 +370,7 @@ Result Brili::run(std::vector<Val>& args) {
 
     return res_;
   } catch (const BrilException& e) {
-    // if (e.printStackTrace) printStackTrace();
+    // printStackTrace();
     return res_;
   }
 }

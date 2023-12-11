@@ -10,12 +10,27 @@
 
 namespace bril {
 
+struct Ptr {
+  uint32_t offset;
+  uint32_t key;
+
+  uint64_t value() const noexcept {
+    return (static_cast<uint64_t>(key) << 32) | offset;
+  }
+
+  Ptr operator+(int64_t x) noexcept {
+    auto v = value() + static_cast<uint64_t>(x);
+    return {static_cast<uint32_t>(v & 0xffffffff), static_cast<uint32_t>(v >> 32)};
+  }
+};
+
 struct Val {
   union {
     int64_t i;
     double f;
     bool b;
     char32_t c;
+    Ptr p;
   };
   Type type;
 
@@ -25,6 +40,7 @@ struct Val {
   Val(double f_) : f(f_), type(TypeKind::Float) {}
   Val(bool b_) : b(b_), type(TypeKind::Bool) {}
   Val(char32_t c_) : c(c_), type(TypeKind::Char) {}
+  Val(Ptr p_, Type type_) : p(p_), type(type_) {}
 };
 std::ostream& operator<<(std::ostream& os, const Val& v);
 
@@ -55,12 +71,35 @@ struct Result {
   size_t total_dyn_inst = 0;
 };
 
+struct Heap {
+ private:
+  struct Entry {
+    bool freed = false;
+    std::vector<Val> data;
+  };
+  std::vector<Entry> data_;
+  std::vector<uint32_t> free_list_;
+
+  std::ostream& cerr_;
+
+  void checkPtr(Ptr ptr) const;
+
+ public:
+  Ptr alloc(size_t sz) noexcept;
+  void free(Ptr ptr);
+  void store(Ptr ptr, Val val);
+  Val load(Ptr ptr) const;
+
+  Heap(std::ostream& cerr) : cerr_(cerr) {}
+};
+
 struct Brili {
  private:
   Prog& prog_;
   Func* main_;
-  std::stack<ActRec> stack_;
-  ActRec* top_;
+
+  Heap heap_;
+  std::stack<ActRec, std::vector<ActRec>> stack_;
   // TODO: heap
 
   std::ostream& out_;
