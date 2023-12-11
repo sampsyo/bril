@@ -38,7 +38,7 @@ std::ostream& operator<<(std::ostream& os, const Val& v) {
     os << v.f;
     break;
   case TypeKind::Bool:
-    os << v.b;
+    os << (v.b ? "true" : "false");
     break;
   case TypeKind::Char:
     os << v.c;
@@ -54,7 +54,7 @@ void Brili::setLocal(uint32_t dst, Val val) { top().locals[dst] = val; }
 
 const Val& Brili::getLocal(uint32_t src) const {
   if (!top().isInit(src)) {
-    err_ << "Use of uninitialized variable." << std::endl;
+    err_ << "error: use of uninitialized variable." << std::endl;
     throw BrilException();
   }
   return top().locals[src];
@@ -70,21 +70,22 @@ const Val& Brili::getLocal(uint32_t src) const {
     break;                                           \
   }
 
-#define VALUE_BINOP_DIV(op, oper, val_case)          \
-  case Op::op: {                                     \
-    assert(instr.args().size() == 2);                \
-    auto left = getLocal(instr.args()[0]).val_case;  \
-    auto right = getLocal(instr.args()[1]).val_case; \
-    if (right == 0) {                                \
-      err_ << "Division by zero." << std::endl;      \
-      throw BrilException();                         \
-    }                                                \
-    auto val = left oper right;                      \
-    setLocal(instr.dst(), Val(val));                 \
-    break;                                           \
+#define VALUE_BINOP_DIV(op, oper, val_case)            \
+  case Op::op: {                                       \
+    assert(instr.args().size() == 2);                  \
+    auto left = getLocal(instr.args()[0]).val_case;    \
+    auto right = getLocal(instr.args()[1]).val_case;   \
+    if (right == 0) {                                  \
+      err_ << "error: division by zero." << std::endl; \
+      throw BrilException();                           \
+    }                                                  \
+    auto val = left oper right;                        \
+    setLocal(instr.dst(), Val(val));                   \
+    break;                                             \
   }
 
 ActRec makeActRec(std::vector<Val>& args, Func& fn, uint32_t ret_var = 0) {
+  assert(fn.args.size() == args.size());
   ActRec ar{fn, ret_var};
   for (size_t i = 0; i < args.size(); ++i) {
     ar.locals[fn.args[i].name] = args[i];
@@ -100,13 +101,12 @@ Func* Brili::findFunc(const std::string_view& name) const noexcept {
 }
 
 void Brili::execCall(const Instr& call) {
+  ++top().instr;
   auto fn_name = top().fn.sp->get(call.func());
   auto fn = findFunc(std::move(fn_name));
   assert(fn);
 
   auto& args = call.args();
-  assert(fn->args.size() == args.size());
-
   // create activation record for fn
   std::vector<Val> args_vals;
   for (auto arg : args) args_vals.push_back(getLocal(arg));
@@ -125,12 +125,10 @@ void Brili::execRet(const Instr& ret) {
     assert(!stack_.empty());
 
     setLocal(ret_var, ret_val);
-    ++top().instr;
   }
   // otherwise just pop the frame and return
   else {
     stack_.pop();
-    if (!stack_.empty()) ++top().instr;
   }
 }
 
@@ -180,7 +178,9 @@ void Brili::exec(const Instr& instr) {
     execRet(instr);
     return;
   case Op::Print:
-    for (auto& arg : instr.args()) out_ << getLocal(arg) << " ";
+    for (auto it = instr.args().begin(); it != std::prev(instr.args().end()); it++)
+      out_ << getLocal(*it) << " ";
+    out_ << getLocal(instr.args().back());
     out_ << std::endl;
     break;
   case Op::Nop:
@@ -223,38 +223,29 @@ void Brili::exec(const Instr& instr) {
 
 bool Brili::run(std::vector<Val>& args) {
   try {
-    if (main_ == nullptr) {
-      err_ << "Could not find a main function." << std::endl;
-      throw BrilException(false);
-    }
-    if (main_->args.size() != args.size()) {
-      err_ << "Expected " << main_->args.size() << " arguments, got " << args.size()
-           << "." << std::endl;
-      throw BrilException(false);
-    }
-    if (!main_->ret_type.isVoid()) {
-      err_ << "Expected main to not have a return type." << std::endl;
-      throw BrilException(false);
-    }
-
+    assert(main_);
     // create activation record for main
     stack_.push(makeActRec(args, *main_));
 
-    while (true) {
+    while (!stack_.empty()) {
       exec(top().bb->code()[top().instr]);
       if (stack_.empty()) break;
 
+      //   std::cout << "instr " << top().instr << " " << top().bb->code().size()
+      //             << std::endl;
+
       // at the end of this basic block
-      if (top().instr == top().bb->code().size()) {
+      while (top().instr == top().bb->code().size()) {
         // last bb of the function, implicit return
-        if (&top().fn.bbs.back() == top().bb) {
+        if (top().bb == &top().fn.bbs.back()) {
           assert(top().fn.ret_type.isVoid());
           stack_.pop();
           if (stack_.empty()) break;
+        } else {
+          // otherwise go to the next one
+          top().bb = top().bb->nextBB();
+          top().instr = 0;
         }
-        // otherwise go to the next one
-        top().bb = top().bb->nextBB();
-        top().instr = 0;
       }
     }
 
