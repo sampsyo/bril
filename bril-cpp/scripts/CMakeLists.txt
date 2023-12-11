@@ -6,3 +6,6 @@ target_link_libraries(print-dom PRIVATE core conv compiler_opts)
 
 add_executable(ssa-conv ssa_conv.cpp)
 target_link_libraries(ssa-conv PRIVATE core conv compiler_opts)
+
+add_executable(brili brili_main.cpp)
+target_link_libraries(brili PRIVATE core conv brili-lib compiler_opts)

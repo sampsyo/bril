@@ -18,4 +18,12 @@ target_sources(conv
 target_link_libraries(conv PUBLIC core nlohmann_json::nlohmann_json PRIVATE compiler_opts)
 target_include_directories(conv PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
+add_library(brili-lib)
+target_sources(brili-lib
+                PUBLIC
+                    ${CMAKE_CURRENT_SOURCE_DIR}/brili.cpp
+)
+target_link_libraries(brili-lib PUBLIC core PRIVATE compiler_opts)
+target_include_directories(brili-lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
 add_subdirectory(util)

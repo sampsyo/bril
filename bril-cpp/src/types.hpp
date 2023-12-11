@@ -37,12 +37,6 @@ std::ostream& operator<<(std::ostream& os, const Type& t);
 // INSTRUCTION
 
 enum class Op : uint16_t {
-  EFFECT_MASK = 0x0800,
-  VALUE_MASK = 0x8000,
-  KIND_MASK = EFFECT_MASK | VALUE_MASK,
-
-  // TOOD: add masks for the extensions
-
   Const = 0,
 
   // CORE VALUES
@@ -102,6 +96,12 @@ enum class Op : uint16_t {
   Int2Char,  // 36870
 
   Label = 1,  // 1
+
+  EFFECT_MASK = 0x0800,
+  VALUE_MASK = 0x8000,
+  KIND_MASK = EFFECT_MASK | VALUE_MASK,
+
+  // TOOD: add masks for the extensions
 };
 
 inline auto opToInt(Op op) { return static_cast<std::underlying_type_t<Op>>(op); }
@@ -116,12 +116,12 @@ union ConstLit {
   int64_t int_val;
   bool bool_val;
   double fp_val;
-  uint32_t char_val;
+  char32_t char_val;
 
   ConstLit(int64_t val) : int_val(val) {}
   ConstLit(bool val) : bool_val(val) {}
   ConstLit(double val) : fp_val(val) {}
-  ConstLit(uint32_t val) : char_val(val) {}
+  ConstLit(char32_t val) : char_val(val) {}
 };
 
 enum class InstrKind : char { Label, Const, Value, Effect };
@@ -134,8 +134,8 @@ struct Instr {
  protected:
   Op op_;
   Type type_;
-  VarRef dst_;
-  uint32_t func_;
+  VarRef dst_ = 0;
+  uint32_t func_ = 0;
   ConstLit lit_;
   ArgVec args_;
   LabelVec labels_;
@@ -260,6 +260,9 @@ struct BasicBlock : public boost::intrusive::list_base_hook<> {
   std::vector<Instr>& code() noexcept { return code_; }
   const std::vector<Instr>& code() const noexcept { return code_; }
 
+  const BasicBlock* nextBB() const noexcept;
+  BasicBlock* nextBB() noexcept;
+
   void fixTermLabels() noexcept;
   void addTermIfNotPresent() noexcept;
 };
@@ -330,6 +333,12 @@ inline bool Instr::isCall() const noexcept {
   return op_ == Op::Call_e || op_ == Op::Call_v;
 }
 inline bool Instr::isConst() const noexcept { return op_ == Op::Const; }
+inline const BasicBlock* BasicBlock::nextBB() const noexcept {
+  return &*++BBList::s_iterator_to(*this);
+}
+inline BasicBlock* BasicBlock::nextBB() noexcept {
+  return &*++BBList::s_iterator_to(*this);
+}
 // inline bool Instr::hasArgs() const noexcept { return !isConst() && op_ != Op::Label;
 // }
 

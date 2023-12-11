@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "cfg.hpp"
+#include "util/charconv.hpp"
 #include "util/unreachable.hpp"
 
 namespace bril {
@@ -53,7 +54,7 @@ ConstLit constLitFromJson(const json& j, Type t) {
     return ConstLit(j.at("value").template get<double>());
   case TypeKind::Char:
     // FIXME: handle unicode characters
-    return ConstLit(static_cast<uint32_t>(j.at("value").template get<char>()));
+    return ConstLit(static_cast<char32_t>(jsonToStr(j.at("value"))[0]));
   default:
     break;
   }
@@ -204,7 +205,7 @@ void const_lit_to_json(json& j, const ConstLit& lit, Type type) {
     j["value"] = lit.fp_val;
     break;
   case TypeKind::Char:
-    j["value"] = lit.char_val;
+    j["value"] = toString(lit.char_val);
     break;
   default:
     assert(false);
