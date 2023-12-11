@@ -19,6 +19,7 @@ struct Type {
   TypeKind kind : 5;
   uint32_t ptr_dims : 27;
 
+  Type() : kind(TypeKind::Void), ptr_dims(0) {}
   Type(TypeKind kind_) : kind(kind_), ptr_dims(0) {}
   Type(TypeKind kind_, uint32_t ptr_dims_) : kind(kind_), ptr_dims(ptr_dims_) {}
 
@@ -164,6 +165,7 @@ struct Instr {
   bool isValue() const noexcept { return opToInt(op_) & opToInt(Op::VALUE_MASK); }
   bool isEffect() const noexcept { return opToInt(op_) & opToInt(Op::EFFECT_MASK); }
   bool hasDst() const noexcept { return !isEffect(); }
+  bool isTerm() const noexcept;
   //   bool hasArgs() const noexcept;
 
  protected:
@@ -256,6 +258,9 @@ struct BasicBlock : public boost::intrusive::list_base_hook<> {
 
   std::vector<Instr>& code() noexcept { return code_; }
   const std::vector<Instr>& code() const noexcept { return code_; }
+
+  void fixTermLabels() noexcept;
+  void addTermIfNotPresent() noexcept;
 };
 
 using BBList = boost::intrusive::list<BasicBlock>;
@@ -312,6 +317,9 @@ inline Type Type::charType(uint32_t ptr_dims) noexcept {
 inline Type Type::voidType() noexcept { return Type(TypeKind::Void); }
 
 inline bool Instr::isJump() const noexcept { return op_ == Op::Jmp || op_ == Op::Br; }
+inline bool Instr::isTerm() const noexcept {
+  return op_ == Op::Jmp || op_ == Op::Br || op_ == Op::Ret;
+}
 inline bool Instr::isPhi() const noexcept { return op_ == Op::Phi; }
 inline bool Instr::hasLabels() const noexcept {
   return op_ == Op::Phi || op_ == Op::Guard || op_ == Op::Const || op_ == Op::Label ||

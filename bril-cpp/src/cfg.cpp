@@ -43,19 +43,30 @@ void formBBs(std::vector<Instr*>& instrs) {
 }
 
 void deleteEmptyBBs() {
-  for (auto it = ++cur_bbs->begin(); it != cur_bbs->end();) {
+  // don't delete first or last bb
+  auto it = --(--cur_bbs->end());
+  while (it != cur_bbs->begin()) {
     auto& bb = *it;
     if (bb.code().empty()) {
       if (bb.name()) {
-        auto next = it;
-        ++next;
-        (*bb_map)[bb.name()] = &*next;
+        // remap this bb to the next one
+        (*bb_map)[bb.name()] = &*std::next(it);
       }
       it = cur_bbs->erase(it);
-      continue;
     }
-    ++it;
+    --it;
   }
+  //   for (auto it = ++cur_bbs->begin(); std::next(it) != cur_bbs->end();) {
+  //     auto& bb = *it;
+  //     if (bb.code().empty()) {
+  //       if (bb.name()) {
+  //         // remap this bb to the next one
+  //         (*bb_map)[bb.name()] = &*std::next(it);
+  //       }
+  //       it = cur_bbs->erase(it);
+  //       continue;
+  //     }
+  //     ++it;
 }
 
 void renumberBBs() {

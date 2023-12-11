@@ -98,8 +98,8 @@ Instr* instr_from_json(const json& j) {
     auto dest = from_vp->varRefOf(j.at("dest").template get<std::string>());
     i = new Value(op, dest, type_from_json(j.at("type")));
   } else {
-    i = new Effect(op);
     if (op == Op::Call_v) op = Op::Call_e;
+    i = new Effect(op);
   }
 
   addArgs(j, *i);
@@ -150,6 +150,7 @@ void to_json(json& j, Type t) {
     j = "char";
     break;
   case TypeKind::Void:
+  default:
     assert(false);
     bril::unreachable();
   }

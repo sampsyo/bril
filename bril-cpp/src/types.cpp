@@ -73,4 +73,34 @@ std::string bbNameToStr(const Func& fn, const BasicBlock& bb) noexcept {
 std::string bbIdToNameStr(const Func& fn, uint32_t bb) noexcept {
   return bbNameToStr(fn, *(*fn.bbsv)[bb]);
 }
+
+void BasicBlock::fixTermLabels() noexcept {
+  if (code_.empty()) return;
+  auto& last = code_.back();
+  if (!last.isJump()) return;
+
+  for (unsigned int j = 0; j < 2; j++) {
+    auto& exit = exits_[j];
+    if (!exit) break;
+
+    last.labels()[j] = static_cast<uint32_t>(exit->id());
+  }
+}
+
+void BasicBlock::addTermIfNotPresent() noexcept {
+  if (!code_.empty() && code_.back().isTerm()) return;
+  // must be a return
+  if (!exits_[0]) {
+    Effect ret(Op::Ret);
+    code_.push_back(std::move(ret));
+    return;
+  }
+  // must be a single exit
+  assert(!exits_[1]);
+
+  Effect jmp(Op::Jmp);
+  jmp.labels().push_back(static_cast<uint32_t>(exits_[0]->id()));
+  code_.push_back(std::move(jmp));
+}
+
 };  // namespace bril
