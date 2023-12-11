@@ -35,7 +35,14 @@ std::ostream& operator<<(std::ostream& os, const Val& v) {
     os << v.i;
     break;
   case TypeKind::Float:
-    os << v.f;
+    if (v.f == std::numeric_limits<double>::infinity())
+      os << "Infinity";
+    else if (v.f == -std::numeric_limits<double>::infinity())
+      os << "-Infinity";
+    else if (std::isnan(v.f))
+      os << "NaN";
+    else
+      os << v.f;
     break;
   case TypeKind::Bool:
     os << (v.b ? "true" : "false");
@@ -153,9 +160,6 @@ void Brili::exec(const Instr& instr) {
     setLocal(instr.dst(), Val(val));
     break;
   }
-  case Op::Id:
-    setLocal(instr.dst(), top().locals[instr.args()[0]]);
-    break;
   case Op::Call_v:
   case Op::Call_e:
     execCall(instr);
@@ -186,30 +190,38 @@ void Brili::exec(const Instr& instr) {
   case Op::Nop:
     break;
 
+  case Op::Id:
+  case Op::Char2int:
+  case Op::Int2Char:
+    setLocal(instr.dst(), top().locals[instr.args()[0]]);
+    break;
+
+    VALUE_BINOP(F_add, +, f);
+    VALUE_BINOP(F_mul, *, f);
+    VALUE_BINOP(F_sub, -, f);
+    VALUE_BINOP(F_div, /, f);
+    VALUE_BINOP(F_eq, ==, f);
+    VALUE_BINOP(F_lt, <, f);
+    VALUE_BINOP(F_le, <=, f);
+    VALUE_BINOP(F_gt, >, f);
+    VALUE_BINOP(F_ge, >=, f);
+
+    VALUE_BINOP(C_eq, ==, c);
+    VALUE_BINOP(C_lt, <, c);
+    VALUE_BINOP(C_le, <=, c);
+    VALUE_BINOP(C_gt, >, c);
+    VALUE_BINOP(C_ge, >=, c);
+
   case Op::Store:
   case Op::Free:
   case Op::Alloc:
   case Op::Load:
   case Op::PtrAdd:
-  case Op::F_add:
-  case Op::F_mul:
-  case Op::F_sub:
-  case Op::F_div:
-  case Op::F_eq:
-  case Op::F_lt:
-  case Op::F_le:
-  case Op::F_gt:
-  case Op::F_ge:
+
   case Op::Speculate:
   case Op::Commit:
   case Op::Guard:
-  case Op::C_eq:
-  case Op::C_lt:
-  case Op::C_le:
-  case Op::C_gt:
-  case Op::C_ge:
-  case Op::Char2int:
-  case Op::Int2Char:
+
     err_ << "Unsupported instruction: " << instr.op() << std::endl;
     throw BrilException(true);
   case Op::Label:
@@ -222,6 +234,7 @@ void Brili::exec(const Instr& instr) {
 }
 
 bool Brili::run(std::vector<Val>& args) {
+  out_.precision(17);
   try {
     assert(main_);
     // create activation record for main
@@ -230,9 +243,6 @@ bool Brili::run(std::vector<Val>& args) {
     while (!stack_.empty()) {
       exec(top().bb->code()[top().instr]);
       if (stack_.empty()) break;
-
-      //   std::cout << "instr " << top().instr << " " << top().bb->code().size()
-      //             << std::endl;
 
       // at the end of this basic block
       while (top().instr == top().bb->code().size()) {

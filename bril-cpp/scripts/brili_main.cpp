@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include <nlohmann/json.hpp>
 
 #include "brili.hpp"
