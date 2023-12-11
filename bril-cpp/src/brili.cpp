@@ -233,17 +233,25 @@ void Brili::exec(const Instr& instr) {
   ++top().instr;
 }
 
-bool Brili::run(std::vector<Val>& args) {
-  out_.precision(17);
+struct SetPrecision {
+  std::ostream& os;
+  std::streamsize old;
+  SetPrecision(std::ostream& os_, std::streamsize prec)
+      : os(os_), old(os.precision(prec)) {}
+  ~SetPrecision() { os.precision(old); }
+};
+
+Result Brili::run(std::vector<Val>& args) {
+  SetPrecision p(out_, 17);
+
+  Result res;
   try {
     assert(main_);
     // create activation record for main
     stack_.push(makeActRec(args, *main_));
 
     while (!stack_.empty()) {
-      exec(top().bb->code()[top().instr]);
-      if (stack_.empty()) break;
-
+      // at the top in case we jump to an empty block
       // at the end of this basic block
       while (top().instr == top().bb->code().size()) {
         // last bb of the function, implicit return
@@ -257,13 +265,16 @@ bool Brili::run(std::vector<Val>& args) {
           top().instr = 0;
         }
       }
+      if (stack_.empty()) break;
+
+      ++res.total_dyn_inst;
+      exec(top().bb->code()[top().instr]);
     }
 
-    return true;
+    return res;
   } catch (const BrilException& e) {
     // if (e.printStackTrace) printStackTrace();
-    return false;
+    return res;
   }
 }
-
 };  // namespace bril

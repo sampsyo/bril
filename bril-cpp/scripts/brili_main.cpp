@@ -70,9 +70,9 @@ int main(int argc, char** argv) {
   }
 
   bril::Brili brili(prog);
-  brili.run(args);
+  auto res = brili.run(args);
 
   if (print_total_dyn_inst) {
-    std::cerr << "total_dyn_inst: " << 15 << std::endl;
+    std::cerr << "total_dyn_inst: " << res.total_dyn_inst << std::endl;
   }
 }

@@ -50,6 +50,11 @@ struct ActRec {
   BasicBlock& getBB(uint32_t i) const noexcept { return *fn.bbsv->at(i); }
 };
 
+struct Result {
+  bool success = true;
+  size_t total_dyn_inst = 0;
+};
+
 struct Brili {
  private:
   Prog& prog_;
@@ -75,7 +80,7 @@ struct Brili {
  public:
   Brili(Prog& p, std::ostream& out = std::cout, std::ostream& err = std::cerr);
 
-  bool run(std::vector<Val>& args);
+  Result run(std::vector<Val>& args);
 };
 
 }  // namespace bril
