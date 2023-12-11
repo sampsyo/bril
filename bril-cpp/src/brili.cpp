@@ -139,6 +139,13 @@ void Brili::execRet(const Instr& ret) {
   }
 }
 
+void Brili::setBB(uint32_t bb) noexcept {
+  top().last_bb = static_cast<uint32_t>(top().bb->id());
+  top().bb = &top().getBB(bb);
+  top().instr = 0;
+  execPhis();
+}
+
 void Brili::exec(const Instr& instr) {
   switch (instr.op()) {
   case Op::Const:
@@ -164,18 +171,14 @@ void Brili::exec(const Instr& instr) {
   case Op::Call_e:
     execCall(instr);
     return;
-  case Op::Phi:
-    break;
   case Op::Jmp:
-    top().instr = 0;
-    top().bb = &top().getBB(instr.labels()[0]);
+    setBB(instr.labels()[0]);
     return;
   case Op::Br:
-    top().instr = 0;
     if (getLocal(instr.args()[0]).b) {
-      top().bb = &top().getBB(instr.labels()[0]);
+      setBB(instr.labels()[0]);
     } else {
-      top().bb = &top().getBB(instr.labels()[1]);
+      setBB(instr.labels()[1]);
     }
     return;
   case Op::Ret:
@@ -226,6 +229,7 @@ void Brili::exec(const Instr& instr) {
     throw BrilException(true);
   case Op::Label:
   case Op::KIND_MASK:
+  case Op::Phi:  // phi should only be handled when entering a new bb
     assert(false);
     bril::unreachable();
   }
@@ -241,10 +245,30 @@ struct SetPrecision {
   ~SetPrecision() { os.precision(old); }
 };
 
+size_t findPhiIdx(const Instr& phi, uint32_t bb_id) {
+  auto l_it = std::find(phi.labels().begin(), phi.labels().end(), bb_id);
+  assert(l_it != phi.labels().end());
+  return static_cast<size_t>(std::distance(phi.labels().begin(), l_it));
+}
+
+void Brili::execPhis() {
+  auto& bb = *top().bb;
+  if (bb.phis().empty()) return;
+
+  auto idx = findPhiIdx(bb.phis().front(), static_cast<uint32_t>(top().last_bb));
+
+  for (auto& phi : bb.phis()) {
+    auto& val = getLocal(phi.args()[idx]);
+    setLocal(phi.dst(), val);
+
+    ++res_.total_dyn_inst;
+  }
+}
+
 Result Brili::run(std::vector<Val>& args) {
   SetPrecision p(out_, 17);
 
-  Result res;
+  res_ = Result();
   try {
     assert(main_);
     // create activation record for main
@@ -261,20 +285,19 @@ Result Brili::run(std::vector<Val>& args) {
           if (stack_.empty()) break;
         } else {
           // otherwise go to the next one
-          top().bb = top().bb->nextBB();
-          top().instr = 0;
+          setBB(static_cast<uint32_t>(top().bb->id() + 1));
         }
       }
       if (stack_.empty()) break;
 
-      ++res.total_dyn_inst;
+      ++res_.total_dyn_inst;
       exec(top().bb->code()[top().instr]);
     }
 
-    return res;
+    return res_;
   } catch (const BrilException& e) {
     // if (e.printStackTrace) printStackTrace();
-    return res;
+    return res_;
   }
 }
 };  // namespace bril

@@ -66,13 +66,17 @@ struct Brili {
   std::ostream& out_;
   std::ostream& err_;
 
+  Result res_;
+
   Func* findFunc(const std::string_view& name) const noexcept;
 
   void printStackTrace() const;
   void execRet(const Instr& ret);
   void execCall(const Instr& call);
   void exec(const Instr& instr);
+  void execPhis();
   void setLocal(uint32_t dst, Val val);
+  void setBB(uint32_t bb) noexcept;
   const Val& getLocal(uint32_t src) const;
   const ActRec& top() const noexcept { return stack_.top(); }
   ActRec& top() noexcept { return stack_.top(); }

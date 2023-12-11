@@ -7,8 +7,22 @@ pipeline = [
     "brili -p {args}",
 ]
 
-[runs.brili-cpp]
+[runs.cpp]
 pipeline = [
     "bril2json",
+    "./_build/Debug/scripts/brili -p {args}",
+]
+
+[runs.baseline-ssa]
+pipeline = [
+    "bril2json",
+    "./_build/Debug/scripts/ssa-conv --no-leave",
+    "brili -p {args}",
+]
+
+[runs.cpp-ssa]
+pipeline = [
+    "bril2json",
+    "./_build/Debug/scripts/ssa-conv --no-leave",
     "./_build/Debug/scripts/brili -p {args}",
 ]
