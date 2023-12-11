@@ -481,14 +481,19 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/memory.html#operations>
     #[cfg(feature = "memory")]
     PtrAdd,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
     #[cfg(feature = "async")]
     Resolve,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
     #[cfg(feature = "async")]
     CompareAndSwap,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
     #[cfg(feature = "async")]
     LoadAtomic,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
     #[cfg(feature = "async")]
     SwapAtomic,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.md>>
     #[cfg(feature = "async")]
     NewAtomic,
 }
