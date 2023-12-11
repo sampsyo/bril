@@ -4,7 +4,7 @@
 #include <ostream>
 #include <sstream>
 
-#include "unreachable.hpp"
+#include "util/unreachable.hpp"
 
 namespace bril {
 std::vector<const Instr*> Func::allInstrs() const noexcept {

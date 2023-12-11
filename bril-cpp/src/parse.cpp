@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "cfg.hpp"
-#include "unreachable.hpp"
+#include "util/unreachable.hpp"
 
 namespace bril {
 

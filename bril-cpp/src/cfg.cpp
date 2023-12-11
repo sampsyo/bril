@@ -3,8 +3,8 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "casting.hpp"
 #include "types.hpp"
+#include "util/casting.hpp"
 
 namespace bril {
 

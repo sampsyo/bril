@@ -4,7 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include "types.hpp"
-#include "unreachable.hpp"
+#include "util/unreachable.hpp"
 
 namespace bril {
 

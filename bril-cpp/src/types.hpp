@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TYPES_HPP
+#define TYPES_HPP
 
 #include <boost/intrusive/list.hpp>
 #include <list>
@@ -6,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "casting.hpp"
-#include "small_vector.hpp"
-#include "string_pool.hpp"
+#include "util/casting.hpp"
+#include "util/small_vector.hpp"
+#include "util/string_pool.hpp"
 
 namespace bril {
 // TYPE
@@ -333,3 +334,5 @@ inline bool Instr::isConst() const noexcept { return op_ == Op::Const; }
 // }
 
 }  // namespace bril
+
+#endif  // TYPES_HPP
