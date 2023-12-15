@@ -1,5 +1,12 @@
 # Brillvm
 
+## Requirements
+
+You should probably have the expected LLVM version for this tool to work. In
+general, that is a moving target and is specified in the `Cargo.toml` by the
+feature flag used for `Inkwell`, the safe LLVM/Rust bindings. This version will
+be updated as Inkwell gets new support, within the constraints of the rust compiler.
+
 ## Runtime
 
 You must have a linkable runtime library available in the LLVM bc format. You can get this by calling `make rt`
