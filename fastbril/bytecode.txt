@@ -1,0 +1,49 @@
+Instructions are 64bit numbers
+1 bit to mark labelled, 15 bits of opcode, 16bits of destination, 16 bits of
+arg1, 16 bits  of arg2
+
+this is modified for other instructions
+
+Opcodes:
+nop:    0
+const:  1
+add:    2
+mul:    3
+sub:    4
+div:    5
+eq:     6
+lt:     7
+gt:     8
+le:     9
+ge:     10
+not:    11
+and:    12
+or:     13
+jmp:    14
+br:     15
+call:   16
+ret:    17
+print:  18
+phi:    19
+alloc:  20
+free:   21
+store:  22
+load:   23
+ptradd: 24
+fadd:   25
+fmul:   26
+fsub:   27
+fdiv:   28
+feq:    29
+flt:    30
+fle:    31
+fgt:    32
+fge:    33
+lconst: 34
+
+
+types:
+bool:   0
+int:    1
+float:  2
+ptr:    3

@@ -39,3 +39,8 @@ hyperfine --warmup 3 --export-json bench.json \
 rm -f {base}.json
 rm {base}"""
 output."bench.json" = "../bench.json"
+
+[envs.fastbrili]
+default = false
+command = "bril2json < {filename} | ../fastbril/build/fastbrili {args}"
+output.out = "-"

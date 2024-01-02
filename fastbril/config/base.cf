@@ -1,0 +1,22 @@
+CONST  1
+ADD    2
+MUL    3
+SUB    4
+DIV    5
+EQ     6
+LT     7
+GT     8
+LE     9
+GE     10
+NOT    11
+AND    12
+OR     13
+JMP    14
+BR     15
+CALL   16
+RET    17
+PRINT  18
+LCONST 19
+NOP    20
+ID     21
+
