@@ -246,7 +246,7 @@ fn locate_import<S: BuildHasher>(
         eprintln!("Warning, more than one valid path for {path:?} was found, using the first one.");
     }
 
-    let next_path = canonicalize(located_libs.get(0).unwrap().join(path))?;
+    let next_path = canonicalize(located_libs.first().unwrap().join(path))?;
 
     do_import(path_map, &next_path, libs, is_toplevel)?;
 
