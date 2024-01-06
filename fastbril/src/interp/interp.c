@@ -1,6 +1,7 @@
 #include "interp.h"
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 value_t interpret_insn(program_t  *prog, size_t which_fun,
 		       value_t *context, uint16_t *labels,
@@ -126,8 +127,21 @@ value_t interpret_insn(program_t  *prog, size_t which_fun,
 		    printf("%ld", context[args[2 * a + 1]].int_val);
 		    break;
 		  case BRILFLOAT:
-		    printf("%.17g", context[args[2 * a + 1]].float_val);
-		    break;
+            {
+              double f = context[args[2 * a + 1]].float_val;
+              if (isnan(f)) {
+                  printf("NaN");
+              } else if (isinf(f)) {
+                  if (f < 0) {
+                      printf("-Infinity");
+                  } else {
+                      printf("Infinity");
+                  }
+              } else {
+                  printf("%.17lf", f);
+              }
+		      break;
+            }
 		  default:
 		    fprintf(stderr, "unrecognized type: %d. exiting.\n", args[2 * a]);
 		    exit(1);
