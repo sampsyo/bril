@@ -2,8 +2,12 @@
  * Read all the data from stdin as a string.
  */
 export async function readStdin(): Promise<string> {
-  const buf = await Deno.readAll(Deno.stdin);
-  return (new TextDecoder()).decode(buf);
+  let buf = "";
+  const dec = new TextDecoder();
+  for await (const chunk of Deno.stdin.readable) {
+    buf += dec.decode(chunk);
+  }
+  return buf;
 }
 
 export function unreachable(x: never): never {
