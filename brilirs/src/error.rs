@@ -49,6 +49,8 @@ pub enum InterpError {
   PhiMissingLabel(String),
   #[error("unspecified pointer type `{0:?}`")]
   ExpectedPointerType(bril_rs::Type), // found type
+  #[error("unspecified promise type `{0:?}`")]
+  ExpectedPromiseType(bril_rs::Type), // found type
   #[error("Expected type `{0:?}` for function argument, found `{1:?}`")]
   BadFuncArgType(bril_rs::Type, String), // (expected, actual)
   #[error("Expected type `{0:?}` for assignment, found `{1:?}`")]

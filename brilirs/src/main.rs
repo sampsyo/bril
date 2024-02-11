@@ -6,6 +6,7 @@ use std::fs::File;
 use std::io::Read;
 
 fn main() {
+  std::env::set_var("RUST_BACKTRACE", "1");
   let args = Cli::parse();
 
   let input: Box<dyn std::io::Read> = match args.file.clone() {

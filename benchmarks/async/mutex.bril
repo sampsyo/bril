@@ -1,0 +1,99 @@
+@main {
+  size: int = const 1000;
+
+  arr: ptr<int> = alloc size;
+  zero: int = const 0;
+  lock: atomicint = newatomic zero;
+
+  one: int = const 1;
+  two: int = const 2;
+  three: int = const 3;
+  four: int = const 4;
+  five: int = const 5;
+  six: int = const 6;
+  seven: int = const 7;
+  eight: int = const 8;
+  nine: int = const 9;
+  ten: int = const 10;
+  
+  i: int = const 0;
+.loopfill:
+  ptr_i : ptr<int> = ptradd arr i;
+  store ptr_i zero;
+  i : int = add i one;
+  cond: bool = lt i size;
+  br cond .loopfill .endfill;
+.endfill:
+
+  p1: promise<int> = call @increment_array arr size lock one;
+  p2: promise<int> = call @increment_array arr size lock two;
+  p3: promise<int> = call @increment_array arr size lock three;
+  p4: promise<int> = call @increment_array arr size lock four;
+  p5: promise<int> = call @increment_array arr size lock five;
+  p6: promise<int> = call @increment_array arr size lock six;
+  p7: promise<int> = call @increment_array arr size lock seven;
+  p8: promise<int> = call @increment_array arr size lock eight;
+  p9: promise<int> = call @increment_array arr size lock nine;
+  p10: promise<int> = call @increment_array arr size lock ten;
+  
+  res1: int = resolve p1;
+  res2: int = resolve p2;
+  res3: int = resolve p3;
+  res4: int = resolve p4;
+  res5: int = resolve p5;
+  res6: int = resolve p6;
+  res7: int = resolve p7;
+  res8: int = resolve p8;
+  res9: int = resolve p9;
+  res10: int = resolve p10;
+
+  i: int = const 0;
+.loop:
+
+  ptr_i : ptr<int> = ptradd arr i;
+  arr_i : int = load ptr_i;
+  print arr_i;
+  i : int = add i one;
+  cond: bool = lt i size;
+  br cond .loop .end;
+.end:
+  free arr;
+}
+
+@increment_array(arr: ptr<int>, size: int, lock: atomicint, inc_amt: int) : promise<int> {
+  i : int = const 0;
+  one : int = const 1;
+
+.loop:
+  ptr_i : ptr<int> = ptradd arr i;
+  call @acquire_lock lock;
+  arr_i : int = load ptr_i;
+  upd_i : int = add arr_i inc_amt;
+  store ptr_i upd_i;
+  call @release_lock lock;
+  i : int = add i one;
+  cond: bool = lt i size;
+  br cond .loop .end;
+.end:
+  ret i;
+}
+
+@acquire_lock(lock: atomicint) {
+.loop:
+  res: int = loadatomic lock; 
+  one: int = const 1;
+  eq: bool = eq one res;
+  br eq .loop .acquire_lock;
+.acquire_lock:
+  upd: int = add res one;
+  old: int = cas lock res upd;
+  eq: bool = eq old res;
+  br eq .end .loop;
+  .end:
+  ret;
+}
+
+@release_lock(lock: atomicint) {
+  zero: int = const 0;
+  val: int = swapatomic lock zero;
+}

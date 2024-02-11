@@ -2,8 +2,11 @@ use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
 use bril2json::escape_control_chars;
 use bril_rs::Instruction;
-
 use fxhash::FxHashMap;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
 
 use mimalloc::MiMalloc;
 
@@ -23,6 +26,7 @@ use std::fmt;
 //  |        Call "foo" pointer(frame size 2)
 //  |        |
 // [a, b, c, a, b]
+#[derive(Clone)]
 struct Environment {
   // Pointer into env for the start of the current frame
   current_pointer: usize,
@@ -87,17 +91,61 @@ impl Environment {
   }
 }
 
+//A second heap for atomics, since AtomicI64 cannot be added to the Value enum without a lot of work
+struct Atomics {
+  atomics: HashMap<usize, AtomicI64>,
+  index: AtomicUsize,
+}
+
+impl Default for Atomics {
+  fn default() -> Self {
+    Self {
+      atomics: HashMap::new(),
+      index: AtomicUsize::new(0),
+    }
+  }
+}
+
+impl Atomics {
+  fn new_atomic(&mut self, val: i64) -> Value {
+    let index = self.index.fetch_add(1, Ordering::SeqCst);
+    self.atomics.insert(index, AtomicI64::new(val));
+    Value::Atomic(index)
+  }
+  fn load_atomic(&self, index: usize) -> i64 {
+    self.atomics.get(&index).unwrap().load(Ordering::SeqCst)
+  }
+  fn swap_atomic(&self, index: usize, val: i64) -> i64 {
+    self
+      .atomics
+      .get(&index)
+      .unwrap()
+      .swap(val, Ordering::SeqCst)
+  }
+  fn compare_and_swap(&self, index: usize, old: i64, new: i64) -> i64 {
+    match self.atomics.get(&index).unwrap().compare_exchange(
+      old,
+      new,
+      Ordering::SeqCst,
+      Ordering::SeqCst,
+    ) {
+      Ok(val) => val,
+      Err(val) => val,
+    }
+  }
+}
+
 // todo: This is basically a copy of the heap implement in brili and we could probably do something smarter. This currently isn't that worth it to optimize because most benchmarks do not use the memory extension nor do they run for very long. You (the reader in the future) may be working with bril programs that you would like to speed up that extensively use the bril memory extension. In that case, it would be worth seeing how to implement Heap without a map based memory. Maybe try to re-implement malloc for a large Vec<Value>?
 struct Heap {
   memory: FxHashMap<usize, Vec<Value>>,
-  base_num_counter: usize,
+  base_num_counter: AtomicUsize,
 }
 
 impl Default for Heap {
   fn default() -> Self {
     Self {
       memory: FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default()),
-      base_num_counter: 0,
+      base_num_counter: AtomicUsize::new(0),
     }
   }
 }
@@ -111,8 +159,9 @@ impl Heap {
     let amount: usize = amount
       .try_into()
       .map_err(|_| InterpError::CannotAllocSize(amount))?;
-    let base = self.base_num_counter;
-    self.base_num_counter += 1;
+
+    //make sure we atomically fetch and add the base index
+    let base = self.base_num_counter.fetch_add(1, Ordering::SeqCst);
     self.memory.insert(base, vec![Value::default(); amount]);
     Ok(Value::Pointer(Pointer { base, offset: 0 }))
   }
@@ -172,10 +221,10 @@ enum Value {
   Float(f64),
   Char(char),
   Pointer(Pointer),
+  Atomic(usize),
   #[default]
   Uninitialized,
 }
-
 #[derive(Debug, Clone, PartialEq, Copy)]
 struct Pointer {
   base: usize,
@@ -201,12 +250,17 @@ impl fmt::Display for Value {
       Self::Float(v) => write!(f, "{v:.17}"),
       Self::Char(c) => write!(f, "{c}"),
       Self::Pointer(p) => write!(f, "{p:?}"),
+      Self::Atomic(a) => write!(f, "atomic_{a}"),
       Self::Uninitialized => unreachable!(),
     }
   }
 }
 
-fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(), std::io::Error> {
+fn optimized_val_output<T: std::io::Write>(
+  out: &Mutex<T>,
+  val: &Value,
+) -> Result<(), std::io::Error> {
+  let mut out = out.lock().unwrap();
   match val {
     Value::Int(i) => out.write_all(itoa::Buffer::new().format(*i).as_bytes()),
     Value::Bool(b) => out.write_all(if *b { b"true" } else { b"false" }),
@@ -219,6 +273,7 @@ fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(
       out.write_all(c.encode_utf8(buf).as_bytes())
     }
     Value::Pointer(p) => out.write_all(format!("{p:?}").as_bytes()),
+    Value::Atomic(a) => out.write_all(format!("atomic_{a}").as_bytes()),
     Value::Uninitialized => unreachable!(),
   }
 }
@@ -295,6 +350,16 @@ impl<'a> From<&'a Value> for &'a Pointer {
   }
 }
 
+impl From<&Value> for usize {
+  fn from(value: &Value) -> Self {
+    if let Value::Atomic(idx) = value {
+      *idx
+    } else {
+      unreachable!()
+    }
+  }
+}
+
 impl From<&Self> for Value {
   fn from(value: &Self) -> Self {
     *value
@@ -314,18 +379,31 @@ fn make_func_args(callee_func: &BBFunction, args: &[usize], vars: &mut Environme
     });
 }
 
-fn execute_value_op<T: std::io::Write>(
-  state: &mut State<T>,
+fn execute_thread<T: std::io::Write + Sync + Send + 'static>(
+  mut state: State,
+  func: usize,
+  out: Arc<Mutex<T>>,
+  stop_flag: Arc<AtomicBool>,
+) -> Option<Value> {
+  return execute(&mut state, func, out, Some(stop_flag)).unwrap();
+}
+
+fn execute_value_op<T: std::io::Write + Send + Sync + 'static>(
+  state: &mut State,
   op: bril_rs::ValueOps,
   dest: usize,
   args: &[usize],
   labels: &[String],
   funcs: &[usize],
   last_label: Option<&String>,
+  handlers: &mut HashMap<usize, (JoinHandle<Option<Value>>, Arc<AtomicBool>)>,
+  out: Arc<Mutex<T>>,
+  stop_flag: Option<Arc<AtomicBool>>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
-    Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
+    Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, CompareAndSwap, Div, Eq, Fadd, Fdiv,
+    Feq, Fge, Fgt, Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, LoadAtomic, Lt, Mul,
+    NewAtomic, Not, Or, Phi, PtrAdd, Resolve, Sub, SwapAtomic,
   };
   match op {
     Add => {
@@ -481,13 +559,35 @@ fn execute_value_op<T: std::io::Write>(
     Call => {
       let callee_func = state.prog.get(funcs[0]).unwrap();
 
-      make_func_args(callee_func, args, &mut state.env);
+      if callee_func.is_promise() {
+        let mut cloned = state.clone();
+        make_func_args(callee_func, args, &mut cloned.env);
 
-      let result = execute(state, callee_func)?.unwrap();
+        let callee_func = funcs[0];
+        let out = out.clone();
 
-      state.env.pop_frame();
+        let thread_stop_flag = Arc::new(AtomicBool::new(false));
+        let cloned_stop_flag = thread_stop_flag.clone();
+        handlers.insert(
+          dest,
+          (
+            thread::spawn(move || execute_thread(cloned, callee_func, out, cloned_stop_flag)),
+            thread_stop_flag,
+          ),
+        );
+      } else {
+        make_func_args(callee_func, args, &mut state.env);
 
-      state.env.set(dest, result);
+        let result = execute(state, funcs[0].clone(), out, stop_flag)?;
+
+        let val = match result {
+          Some(val) => val,
+          None => Value::Uninitialized,
+        };
+
+        state.env.pop_frame();
+        state.env.set(dest, val);
+      }
     }
     Phi => match last_label {
       None => return Err(InterpError::NoLastLabel),
@@ -502,7 +602,13 @@ fn execute_value_op<T: std::io::Write>(
     },
     Alloc => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
-      let res = state.heap.alloc(arg0)?;
+      //allows for multiple threads to (unsafely) access the heap at once
+      //synchronization should be accomplished using the implemented atomics
+      //heap base pointer is atomically incremented so allocation is still thread safe
+      let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
+      let res = unsafe { (*heap).alloc(arg0)? };
+      let _ = unsafe { Arc::from_raw(heap) };
+
       state.env.set(dest, res);
     }
     Load => {
@@ -516,12 +622,49 @@ fn execute_value_op<T: std::io::Write>(
       let res = Value::Pointer(arg0.add(arg1));
       state.env.set(dest, res);
     }
+    Resolve => {
+      let res = match handlers.remove(&args[0]) {
+        Some(handle) => handle.0.join().unwrap(),
+        None => panic!("Unexpected execution error"),
+      };
+
+      state.env.set(dest, res.unwrap());
+    }
+    CompareAndSwap => {
+      //atomic
+      let arg0 = get_arg::<usize>(&state.env, 0, args);
+      //expected
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      //update
+      let arg2 = get_arg::<i64>(&state.env, 2, args);
+      let res = state.atomics.compare_and_swap(arg0, arg1, arg2);
+      state.env.set(dest, Value::Int(res));
+    }
+    LoadAtomic => {
+      let arg0 = get_arg::<usize>(&state.env, 0, args) as usize;
+      let res = state.atomics.load_atomic(arg0);
+      state.env.set(dest, Value::Int(res));
+    }
+    SwapAtomic => {
+      let arg0 = get_arg::<usize>(&state.env, 0, args) as usize;
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      let res = state.atomics.swap_atomic(arg0, arg1);
+      state.env.set(dest, Value::Int(res));
+    }
+    NewAtomic => {
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let atomics = Arc::into_raw(state.atomics.clone()) as *mut Atomics;
+      let res = unsafe { (*atomics).new_atomic(arg0) };
+      let _ = unsafe { Arc::from_raw(atomics) };
+
+      state.env.set(dest, res);
+    }
   }
   Ok(())
 }
 
-fn execute_effect_op<T: std::io::Write>(
-  state: &mut State<T>,
+fn execute_effect_op<T: std::io::Write + Sync + Send + 'static>(
+  state: &mut State,
   op: bril_rs::EffectOps,
   args: &[usize],
   funcs: &[usize],
@@ -529,6 +672,8 @@ fn execute_effect_op<T: std::io::Write>(
   // There are two output variables where values are stored to effect the loop execution.
   next_block_idx: &mut Option<usize>,
   result: &mut Option<Value>,
+  out: Arc<Mutex<T>>,
+  stop_flag: Option<Arc<AtomicBool>>,
 ) -> Result<(), InterpError> {
   use bril_rs::EffectOps::{
     Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store,
@@ -550,20 +695,24 @@ fn execute_effect_op<T: std::io::Write>(
     Print => {
       // In the typical case, users only print out one value at a time
       // So we can usually avoid extra allocations by providing that string directly
-      if args.len() == 1 {
-        optimized_val_output(&mut state.out, state.env.get(*args.first().unwrap()))?;
-        // Add new line
-        state.out.write_all(&[b'\n'])?;
-      } else {
-        writeln!(
-          state.out,
-          "{}",
-          args
-            .iter()
-            .map(|a| state.env.get(*a).to_string())
-            .collect::<Vec<String>>()
-            .join(" ")
-        )?;
+      {
+        if args.len() == 1 {
+          optimized_val_output(&out, state.env.get(*args.first().unwrap()))?;
+          // Add new line
+          let mut out = out.lock().unwrap();
+          out.write_all(&[b'\n'])?;
+        } else {
+          let mut out = out.lock().unwrap();
+          writeln!(
+            out,
+            "{}",
+            args
+              .iter()
+              .map(|a| state.env.get(*a).to_string())
+              .collect::<Vec<String>>()
+              .join(" ")
+          )?;
+        }
       }
     }
     Nop => {}
@@ -572,39 +721,65 @@ fn execute_effect_op<T: std::io::Write>(
 
       make_func_args(callee_func, args, &mut state.env);
 
-      execute(state, callee_func)?;
+      execute(state, funcs[0].clone(), out, stop_flag)?;
       state.env.pop_frame();
     }
     Store => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       let arg1 = get_arg::<Value>(&state.env, 1, args);
-      state.heap.write(arg0, arg1)?;
+      let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
+      unsafe { (*heap).write(arg0, arg1)? };
+      let _ = unsafe { Arc::from_raw(heap) };
     }
     Free => {
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
-      state.heap.free(arg0)?;
+      let heap = Arc::into_raw(state.heap.clone()) as *mut Heap;
+      unsafe { (*heap).free(arg0)? };
+      let _ = unsafe { Arc::from_raw(heap) };
     }
     Speculate | Commit | Guard => unimplemented!(),
   }
   Ok(())
 }
 
-fn execute<'a, T: std::io::Write>(
-  state: &mut State<'a, T>,
-  func: &'a BBFunction,
+fn cleanup_handlers(handlers: HashMap<usize, (JoinHandle<Option<Value>>, Arc<AtomicBool>)>) {
+  for (_, (handle, stop_flag)) in handlers {
+    stop_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+    let _ = handle.join();
+  }
+}
+
+fn execute<T: std::io::Write + Sync + Send + 'static>(
+  state: &mut State,
+  func: usize,
+  out: Arc<Mutex<T>>,
+  stop_flag: Option<Arc<AtomicBool>>,
 ) -> Result<Option<Value>, PositionalInterpError> {
+  let func = state.prog.get(func).unwrap().clone();
   let mut last_label;
   let mut current_label = None;
   let mut curr_block_idx = 0;
   // A possible return value
   let mut result = None;
 
+  let mut handlers = HashMap::new();
+
   loop {
+    //checks if the thread should be terminated
+    if let Some(stop_flag) = &stop_flag {
+      if stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
+        cleanup_handlers(handlers);
+        panic!("Terminating unresolved thread. This may lead to undefined behavior.");
+      }
+    };
     let curr_block = &func.blocks[curr_block_idx];
     let curr_instrs = &curr_block.instrs;
     let curr_numified_instrs = &curr_block.numified_instrs;
     // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
-    state.instruction_count += curr_instrs.len();
+    //state.instruction_count += curr_instrs.len();
+    state
+      .instruction_count
+      .fetch_add(curr_instrs.len(), std::sync::atomic::Ordering::Relaxed);
     last_label = current_label;
     current_label = curr_block.label.as_ref();
 
@@ -657,6 +832,9 @@ fn execute<'a, T: std::io::Write>(
             labels,
             &numified_code.funcs,
             last_label,
+            &mut handlers,
+            out.clone(),
+            stop_flag.clone(),
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -675,6 +853,8 @@ fn execute<'a, T: std::io::Write>(
             curr_block,
             &mut next_block_idx,
             &mut result,
+            out.clone(),
+            stop_flag.clone(),
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -687,6 +867,7 @@ fn execute<'a, T: std::io::Write>(
     } else if curr_block.exit.len() == 1 {
       curr_block_idx = curr_block.exit[0];
     } else {
+      cleanup_handlers(handlers);
       return Ok(result);
     }
   }
@@ -745,6 +926,8 @@ fn parse_args(
           Ok(())
         }
         bril_rs::Type::Pointer(..) => unreachable!(),
+        bril_rs::Type::Promise(..) => unreachable!("line 839"),
+        bril_rs::Type::AtomicInt => unreachable!("line 840"),
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
           .map_or_else(
             || Err(InterpError::NotOneChar),
@@ -758,23 +941,24 @@ fn parse_args(
   }
 }
 
+#[derive(Clone)]
 // State captures the parts of the interpreter that are used across function boundaries
-struct State<'a, T: std::io::Write> {
-  prog: &'a BBProgram,
+struct State {
+  prog: Arc<BBProgram>,
   env: Environment,
-  heap: Heap,
-  out: T,
-  instruction_count: usize,
+  heap: Arc<Heap>,
+  atomics: Arc<Atomics>,
+  instruction_count: Arc<AtomicUsize>,
 }
 
-impl<'a, T: std::io::Write> State<'a, T> {
-  const fn new(prog: &'a BBProgram, env: Environment, heap: Heap, out: T) -> Self {
+impl State {
+  fn new(prog: BBProgram, env: Environment, heap: Heap) -> Self {
     Self {
-      prog,
+      prog: Arc::new(prog),
       env,
-      heap,
-      out,
-      instruction_count: 0,
+      heap: Arc::new(heap),
+      atomics: Arc::new(Atomics::default()),
+      instruction_count: Arc::new(AtomicUsize::new(0)),
     }
   }
 }
@@ -784,40 +968,52 @@ impl<'a, T: std::io::Write> State<'a, T> {
 /// This should not panic with normal use except if there is a bug or if you are using an unimplemented feature
 /// # Errors
 /// Will error on malformed `BBProgram`, like if the original Bril program was not well-formed
-pub fn execute_main<T: std::io::Write, U: std::io::Write>(
-  prog: &BBProgram,
-  out: T,
+pub fn execute_main<T: std::io::Write + Sync + Send + 'static, U: std::io::Write>(
+  prog: BBProgram,
+  out: Mutex<T>,
   input_args: &[String],
   profiling: bool,
   mut profiling_out: U,
 ) -> Result<(), PositionalInterpError> {
-  let main_func = prog
-    .index_of_main
-    .map(|i| prog.get(i).unwrap())
-    .ok_or(InterpError::NoMainFunction)?;
+  let main_func_idx = match prog.index_of_main {
+    Some(i) => i,
+    None => return Err(InterpError::NoMainFunction.into()),
+  };
 
+  let main_func = prog.get(main_func_idx).unwrap();
   let mut env = Environment::new(main_func.num_of_vars);
   let heap = Heap::default();
+  let main_func_pos = main_func.pos.clone();
 
   env = parse_args(env, &main_func.args, &main_func.args_as_nums, input_args)
     .map_err(|e| e.add_pos(main_func.pos.clone()))?;
 
-  let mut state = State::new(prog, env, heap, out);
+  let mut state = State::new(prog, env, heap);
 
-  execute(&mut state, main_func)?;
+  let out = Arc::new(out);
+  execute(&mut state, main_func_idx, out.clone(), None)?;
 
   if !state.heap.is_empty() {
-    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func.pos.clone()));
+    return Err(InterpError::MemLeak).map_err(|e| e.add_pos(main_func_pos));
   }
 
-  state.out.flush().map_err(InterpError::IoError)?;
+  {
+    let mut writer = out.lock().unwrap();
+    writer.flush().map_err(InterpError::IoError)?;
+  }
 
   if profiling {
-    writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
-      // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
-      // Otherwise we would expect this flush to be a nop.
-      .and_then(|()| profiling_out.flush())
-      .map_err(InterpError::IoError)?;
+    writeln!(
+      profiling_out,
+      "total_dyn_inst: {}",
+      state
+        .instruction_count
+        .load(std::sync::atomic::Ordering::Relaxed)
+    )
+    // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
+    // Otherwise we would expect this flush to be a nop.
+    .and_then(|()| profiling_out.flush())
+    .map_err(InterpError::IoError)?;
   }
 
   Ok(())

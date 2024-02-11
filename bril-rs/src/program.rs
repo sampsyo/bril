@@ -481,6 +481,21 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/memory.html#operations>
     #[cfg(feature = "memory")]
     PtrAdd,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
+    #[cfg(feature = "async")]
+    Resolve,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
+    #[cfg(feature = "async")]
+    CompareAndSwap,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
+    #[cfg(feature = "async")]
+    LoadAtomic,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.html>>
+    #[cfg(feature = "async")]
+    SwapAtomic,
+    /// <<https://capra.cs.cornell.edu/bril/lang/async.md>>
+    #[cfg(feature = "async")]
+    NewAtomic,
 }
 
 impl Display for ValueOps {
@@ -540,6 +555,16 @@ impl Display for ValueOps {
             Self::Load => write!(f, "load"),
             #[cfg(feature = "memory")]
             Self::PtrAdd => write!(f, "ptradd"),
+            #[cfg(feature = "async")]
+            Self::Resolve => write!(f, "resolve"),
+            #[cfg(feature = "async")]
+            Self::CompareAndSwap => write!(f, "cas"),
+            #[cfg(feature = "async")]
+            Self::LoadAtomic => write!(f, "loadatomic"),
+            #[cfg(feature = "async")]
+            Self::SwapAtomic => write!(f, "swapatomic"),
+            #[cfg(feature = "async")]
+            Self::NewAtomic => write!(f, "newatomic"),
         }
     }
 }
@@ -562,6 +587,14 @@ pub enum Type {
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
     Pointer(Box<Self>),
+    /// <https://capra.cs.cornell.edu/bril/lang/async.html>
+    #[cfg(feature = "async")]
+    #[serde(rename = "promise")]
+    Promise(Box<Self>),
+    /// <https://capra.cs.cornell.edu/bril/lang/async.html>
+    #[cfg(feature = "async")]
+    #[serde(rename = "atomicint")]
+    AtomicInt,
 }
 
 impl Display for Type {
@@ -575,6 +608,10 @@ impl Display for Type {
             Self::Char => write!(f, "char"),
             #[cfg(feature = "memory")]
             Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
+            #[cfg(feature = "async")]
+            Self::Promise(tpe) => write!(f, "promise<{tpe}>"),
+            #[cfg(feature = "async")]
+            Self::AtomicInt => write!(f, "atomicint"),
         }
     }
 }

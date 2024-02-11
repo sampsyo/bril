@@ -24,7 +24,7 @@ pub enum ConversionError {
     InvalidPrimitive(String),
 
     /// Expected a parameterized type like ptr, found {0}<{1}>
-    #[error("Expected a parameterized type like ptr, found {0}<{1}>")]
+    #[error("Expected a parameterized type like ptr or promise, found {0}<{1}>")]
     InvalidParameterized(String, String),
 
     /// Expected an value operation, found {0}
@@ -265,6 +265,16 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "load" => ValueOps::Load,
                     #[cfg(feature = "memory")]
                     "ptradd" => ValueOps::PtrAdd,
+                    #[cfg(feature = "async")]
+                    "resolve" => ValueOps::Resolve,
+                    #[cfg(feature = "async")]
+                    "loadatomic" => ValueOps::LoadAtomic,
+                    #[cfg(feature = "async")]
+                    "swapatomic" => ValueOps::SwapAtomic,
+                    #[cfg(feature = "async")]
+                    "cas" => ValueOps::CompareAndSwap,
+                    #[cfg(feature = "async")]
+                    "newatomic" => ValueOps::NewAtomic,
                     v => {
                         return Err(ConversionError::InvalidValueOps(v.to_string()))
                             .map_err(|e| e.add_pos(pos))
@@ -329,10 +339,16 @@ impl TryFrom<AbstractType> for Type {
             AbstractType::Primitive(t) if t == "float" => Self::Float,
             #[cfg(feature = "char")]
             AbstractType::Primitive(t) if t == "char" => Self::Char,
+            #[cfg(feature = "async")]
+            AbstractType::Primitive(t) if t == "atomicint" => Self::AtomicInt,
             AbstractType::Primitive(t) => return Err(ConversionError::InvalidPrimitive(t)),
             #[cfg(feature = "memory")]
             AbstractType::Parameterized(t, ty) if t == "ptr" => {
                 Self::Pointer(Box::new((*ty).try_into()?))
+            }
+            #[cfg(feature = "async")]
+            AbstractType::Parameterized(t, ty) if t == "promise" => {
+                Self::Promise(Box::new((*ty).try_into()?))
             }
             AbstractType::Parameterized(t, ty) => {
                 return Err(ConversionError::InvalidParameterized(t, ty.to_string()))
