@@ -1,0 +1,68 @@
+﻿@main {
+  v37: float = const 3;
+  PI: float = id v37;
+  v38: float = const 2;
+  n: float = id v38;
+  v39: float = const 1;
+  sign: float = id v39;
+  v40: float = id PI;
+  v41: float = id n;
+  v42: float = id sign;
+  call @calculatePI v40 v41 v42;
+  v43: int = const 0;
+}
+@calculatePI(PI: float, n: float, sign: float) {
+  v1: float = const 0;
+  i: float = id v1;
+.for.cond.0:
+  v2: float = id i;
+  v3: float = const 1000000;
+  v4: bool = fle v2 v3;
+  br v4 .for.body.0 .for.end.0;
+.for.body.0:
+  v5: float = id n;
+  v6: float = const 1;
+  v7: float = fadd v5 v6;
+  nPlusOne: float = id v7;
+  v8: float = id n;
+  v9: float = const 2;
+  v10: float = fadd v8 v9;
+  nPlusTwo: float = id v10;
+  v11: float = id nPlusOne;
+  v12: float = id nPlusTwo;
+  v13: float = fmul v11 v12;
+  nPlusOne_Times_nPlusTwo: float = id v13;
+  v14: float = id n;
+  v15: float = id nPlusOne_Times_nPlusTwo;
+  v16: float = fmul v14 v15;
+  denom: float = id v16;
+  v17: float = const 4;
+  v18: float = id denom;
+  v19: float = fdiv v17 v18;
+  frac: float = id v19;
+  v20: float = id sign;
+  v21: float = id frac;
+  v22: float = fmul v20 v21;
+  rhs: float = id v22;
+  v23: float = id PI;
+  v24: float = id rhs;
+  v25: float = fadd v23 v24;
+  PI: float = id v25;
+  v26: float = const 0;
+  v27: float = id sign;
+  v28: float = fsub v26 v27;
+  sign: float = id v28;
+  v29: float = id n;
+  v30: float = const 2;
+  v31: float = fadd v29 v30;
+  n: float = id v31;
+  v32: float = id i;
+  v33: float = const 1;
+  v34: float = fadd v32 v33;
+  i: float = id v34;
+  jmp .for.cond.0;
+.for.end.0:
+  v35: float = id PI;
+  print v35;
+  v36: int = const 0;
+}

@@ -1,0 +1,586 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "size",
+          "op": "const",
+          "type": "int",
+          "value": 512
+        },
+        {
+          "args": [
+            "size"
+          ],
+          "dest": "arr",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "arr",
+            "size"
+          ],
+          "funcs": [
+            "fill_array"
+          ],
+          "op": "call"
+        },
+        {
+          "args": [
+            "arr",
+            "size"
+          ],
+          "dest": "checksum",
+          "funcs": [
+            "adler32"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "checksum"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "arr"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "r",
+          "type": "int"
+        },
+        {
+          "name": "s",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "r",
+            "s"
+          ],
+          "dest": "x",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "s"
+          ],
+          "dest": "y",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "r",
+            "y"
+          ],
+          "dest": "result",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "arr",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "name": "size",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "curr",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "arr"
+          ],
+          "dest": "loc",
+          "op": "id",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "loc",
+            "curr"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "loc",
+            "one"
+          ],
+          "dest": "loc",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "curr",
+            "one"
+          ],
+          "dest": "curr",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "curr",
+            "size"
+          ],
+          "dest": "continue",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "continue"
+          ],
+          "labels": [
+            "loop",
+            "exit"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "exit"
+        },
+        {
+          "op": "nop"
+        }
+      ],
+      "name": "fill_array"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "y",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "val",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "result",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "x",
+            "two"
+          ],
+          "dest": "xmod2",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y",
+            "two"
+          ],
+          "dest": "ymod2",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "xmod2",
+            "one"
+          ],
+          "dest": "xodd",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "ymod2",
+            "one"
+          ],
+          "dest": "yodd",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "xodd",
+            "yodd"
+          ],
+          "dest": "cond",
+          "op": "or",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "true",
+            "false"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "true"
+        },
+        {
+          "args": [
+            "result",
+            "val"
+          ],
+          "dest": "result",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "label": "false"
+        },
+        {
+          "args": [
+            "x",
+            "two"
+          ],
+          "dest": "x",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y",
+            "two"
+          ],
+          "dest": "y",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "zero"
+          ],
+          "dest": "xpos",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "y",
+            "zero"
+          ],
+          "dest": "ypos",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "val",
+            "two"
+          ],
+          "dest": "val",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "xpos",
+            "ypos"
+          ],
+          "dest": "continue",
+          "op": "or",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "continue"
+          ],
+          "labels": [
+            "loop",
+            "exit"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "exit"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "bitwise_or",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "arr",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "name": "size",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "a",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "b",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "curr",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "arr"
+          ],
+          "dest": "loc",
+          "op": "id",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "dest": "adler",
+          "op": "const",
+          "type": "int",
+          "value": 65521
+        },
+        {
+          "dest": "two_raised_to_16",
+          "op": "const",
+          "type": "int",
+          "value": 65536
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "loc"
+          ],
+          "dest": "val",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "val"
+          ],
+          "dest": "a",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "a"
+          ],
+          "dest": "b",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "loc",
+            "one"
+          ],
+          "dest": "loc",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "curr",
+            "one"
+          ],
+          "dest": "curr",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "curr",
+            "size"
+          ],
+          "dest": "continue",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "continue"
+          ],
+          "labels": [
+            "loop",
+            "exit"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "exit"
+        },
+        {
+          "args": [
+            "a",
+            "adler"
+          ],
+          "dest": "a",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "adler"
+          ],
+          "dest": "b",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "two_raised_to_16"
+          ],
+          "dest": "b",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "a"
+          ],
+          "dest": "result",
+          "funcs": [
+            "bitwise_or"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "adler32",
+      "type": "int"
+    }
+  ]
+}
