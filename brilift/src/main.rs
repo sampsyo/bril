@@ -1,7 +1,7 @@
-use cranelift_object::ObjectModule;
 use bril_rs as bril;
+use brilift::translator::{find_func, Args, Translator};
 use cranelift_jit::JITModule;
-use std::env::Args;
+use cranelift_object::ObjectModule;
 
 fn main() {
     let args: Args = argh::from_env();

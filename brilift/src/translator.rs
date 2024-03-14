@@ -969,11 +969,11 @@ impl Translator<JITModule> {
 
     // The normal way to set up a JIT builder.
     #[cfg(not(target_arch = "aarch64"))]
-    fn jit_builder() -> JITBuilder {
+    pub fn jit_builder() -> JITBuilder {
         JITBuilder::new(cranelift_module::default_libcall_names()).unwrap()
     }
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         // Set up the JIT.
         let mut builder = Self::jit_builder();
 
@@ -1015,7 +1015,7 @@ impl Translator<JITModule> {
     }
 
     /// Run a JITted wrapper function.
-    unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
+    pub unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
         let func_ptr = self.get_func_ptr(func_id);
         let arg_ptrs = Self::val_ptrs(args);
         let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
@@ -1025,12 +1025,12 @@ impl Translator<JITModule> {
 
 #[derive(FromArgs)]
 #[argh(description = "Bril compiler")]
-struct Args {
+pub struct Args {
     #[argh(switch, short = 'j', description = "JIT and run (doesn't work)")]
-    jit: bool,
+    pub jit: bool,
 
     #[argh(option, short = 't', description = "target triple")]
-    target: Option<String>,
+    pub target: Option<String>,
 
     #[argh(
         option,
@@ -1038,13 +1038,13 @@ struct Args {
         description = "output object file",
         default = "String::from(\"bril.o\")"
     )]
-    output: String,
+    pub output: String,
 
     #[argh(switch, short = 'd', description = "dump CLIF IR")]
-    dump_ir: bool,
+    pub dump_ir: bool,
 
     #[argh(switch, short = 'v', description = "verbose logging")]
-    verbose: bool,
+    pub verbose: bool,
 
     #[argh(
         option,
@@ -1052,13 +1052,13 @@ struct Args {
         description = "optimization level (none, speed, or speed_and_size)",
         default = "String::from(\"none\")"
     )]
-    opt_level: String,
+    pub opt_level: String,
 
     #[argh(
         positional,
         description = "arguments for @main function (JIT mode only)"
     )]
-    args: Vec<String>,
+    pub args: Vec<String>,
 }
 
 pub fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {
