@@ -192,6 +192,7 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
                     op: _,
                     const_type: typ,
                     value: _,
+                    ..
                 } => Some((dest, typ)),
                 bril::Instruction::Value {
                     args: _,
@@ -200,6 +201,7 @@ fn all_vars(func: &bril::Function) -> HashMap<&String, &bril::Type> {
                     labels: _,
                     op: _,
                     op_type: typ,
+                    ..
                 } => Some((dest, typ)),
                 _ => None,
             },
@@ -400,6 +402,7 @@ impl CompileEnv<'_> {
                 op: _,
                 const_type: typ,
                 value,
+                ..
             } => {
                 let val = self.compile_const(builder, typ, value);
                 builder.def_var(self.vars[dest], val);
@@ -409,6 +412,7 @@ impl CompileEnv<'_> {
                 funcs,
                 labels,
                 op,
+                ..
             } => match op {
                 bril::EffectOps::Print => self.gen_print(args, builder),
                 bril::EffectOps::Jump => {
@@ -454,6 +458,7 @@ impl CompileEnv<'_> {
                 labels: _,
                 op,
                 op_type,
+                ..
             } => match op {
                 bril::ValueOps::Add
                 | bril::ValueOps::Sub
@@ -551,6 +556,7 @@ impl CompileEnv<'_> {
             funcs: _,
             labels: _,
             op,
+            ..
         } = inst
         {
             matches!(
@@ -582,7 +588,7 @@ impl CompileEnv<'_> {
                         terminated = true;
                     }
                 }
-                bril::Code::Label { label } => {
+                bril::Code::Label { label, .. } => {
                     let new_block = self.blocks[label];
 
                     // If the previous block was missing a terminator (fall-through), insert a
@@ -687,7 +693,7 @@ impl<M: Module> Translator<M> {
             .instrs
             .iter()
             .filter_map(|code| match code {
-                bril::Code::Label { label } => {
+                bril::Code::Label { label, .. } => {
                     let block = builder.create_block();
                     Some((label, block))
                 }
