@@ -23,6 +23,7 @@ enum RTFunc {
     PrintInt,
     PrintBool,
     PrintFloat,
+    PrintChar,
     PrintSep,
     PrintEnd,
     Alloc,
@@ -48,6 +49,11 @@ impl RTFunc {
             },
             Self::PrintFloat => ir::Signature {
                 params: vec![ir::AbiParam::new(ir::types::F64)],
+                returns: vec![],
+                call_conv,
+            },
+            Self::PrintChar => ir::Signature {
+                params: vec![ir::AbiParam::new(ir::types::R32)],
                 returns: vec![],
                 call_conv,
             },
@@ -82,6 +88,7 @@ impl RTFunc {
             Self::PrintInt => "_bril_print_int",
             Self::PrintBool => "_bril_print_bool",
             Self::PrintFloat => "_bril_print_float",
+            Self::PrintChar => todo!(),
             Self::PrintSep => "_bril_print_sep",
             Self::PrintEnd => "_bril_print_end",
             Self::Alloc => "_bril_alloc",
@@ -94,6 +101,7 @@ impl RTFunc {
             RTFunc::PrintInt => rt::print_int as *const u8,
             RTFunc::PrintBool => rt::print_bool as *const u8,
             RTFunc::PrintFloat => rt::print_float as *const u8,
+            RTFunc::PrintChar => rt::print_char as *const u8,
             RTFunc::PrintSep => rt::print_sep as *const u8,
             RTFunc::PrintEnd => rt::print_end as *const u8,
             RTFunc::Alloc => rt::mem_alloc as *const u8,
@@ -110,6 +118,7 @@ enum RTSetupFunc {
     ParseInt,
     ParseBool,
     ParseFloat,
+    ParseChar,
 }
 
 impl RTSetupFunc {
@@ -143,6 +152,14 @@ impl RTSetupFunc {
                 returns: vec![ir::AbiParam::new(ir::types::F64)],
                 call_conv,
             },
+            Self::ParseChar => ir::Signature {
+                params: vec![
+                    ir::AbiParam::new(pointer_type),
+                    ir::AbiParam::new(ir::types::I64),
+                ],
+                returns: vec![ir::AbiParam::new(ir::types::R32)],
+                call_conv,
+            }
         }
     }
 
@@ -151,6 +168,7 @@ impl RTSetupFunc {
             Self::ParseInt => "_bril_parse_int",
             Self::ParseBool => "_bril_parse_bool",
             Self::ParseFloat => "_bril_parse_float",
+            Self::ParseChar => todo!(),
         }
     }
 }
@@ -161,6 +179,7 @@ fn translate_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
         bril::Type::Int => ir::types::I64,
         bril::Type::Bool => ir::types::I8,
         bril::Type::Float => ir::types::F64,
+        bril::Type::Char => ir::types::R32,
         bril::Type::Pointer(_) => pointer_type,
     }
 }
@@ -311,6 +330,7 @@ impl CompileEnv<'_> {
                 bril::Type::Int => RTFunc::PrintInt,
                 bril::Type::Bool => RTFunc::PrintBool,
                 bril::Type::Float => RTFunc::PrintFloat,
+                bril::Type::Char => RTFunc::PrintChar,
                 bril::Type::Pointer(_) => todo!(),
             };
             let print_ref = self.rt_refs[print_func];
@@ -348,6 +368,13 @@ impl CompileEnv<'_> {
                     _ => panic!("incorrect literal type for float"),
                 };
                 builder.ins().f64const(val)
+            }
+            bril::Type::Char => {
+                let val = match lit {
+                    bril::Literal::Char(c) => *c,
+                    _ => panic!("incorrect literal type for char"),
+                };
+                builder.ins().iconst(ir::types::R32, val as i64)
             }
             bril::Type::Pointer(_) => panic!("pointer literals not allowed"),
         }
@@ -791,6 +818,7 @@ impl<M: Module> Translator<M> {
                     bril::Type::Int => RTSetupFunc::ParseInt,
                     bril::Type::Bool => RTSetupFunc::ParseBool,
                     bril::Type::Float => RTSetupFunc::ParseFloat,
+                    bril::Type::Char => RTSetupFunc::ParseChar,
                     bril::Type::Pointer(_) => unimplemented!("can't print pointers"),
                 }];
                 let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
@@ -1016,6 +1044,7 @@ impl Translator<JITModule> {
                 bril::Literal::Int(i) => i as *const i64 as *const u8,
                 bril::Literal::Bool(b) => b as *const bool as *const u8,
                 bril::Literal::Float(f) => f as *const f64 as *const u8,
+                bril::Literal::Char(c) => c as *const char as *const u8,
             })
             .collect()
     }
