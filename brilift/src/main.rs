@@ -47,6 +47,7 @@ fn main() {
                 bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
                 bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
                 bril::Type::Float => bril::Literal::Float(val_str.parse().unwrap()),
+                bril::Type::Char => bril::Literal::Char(val_str.parse().unwrap()),
                 bril::Type::Pointer(_) => unimplemented!("pointers not supported as main args"),
             })
             .collect();

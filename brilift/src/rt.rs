@@ -25,11 +25,6 @@ pub extern "C" fn print_float(f: f64) {
 }
 
 #[no_mangle]
-pub extern "C" fn print_char(c: char) {
-    print!("{c}");
-}
-
-#[no_mangle]
 pub extern "C" fn print_sep() {
     print!(" ");
 }

@@ -101,7 +101,7 @@ impl RTFunc {
             RTFunc::PrintInt => rt::print_int as *const u8,
             RTFunc::PrintBool => rt::print_bool as *const u8,
             RTFunc::PrintFloat => rt::print_float as *const u8,
-            RTFunc::PrintChar => rt::print_char as *const u8,
+            RTFunc::PrintChar => todo!(),
             RTFunc::PrintSep => rt::print_sep as *const u8,
             RTFunc::PrintEnd => rt::print_end as *const u8,
             RTFunc::Alloc => rt::mem_alloc as *const u8,
@@ -476,7 +476,8 @@ impl CompileEnv<'_> {
                 bril::EffectOps::Free => {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
                     builder.ins().call(self.rt_refs[RTFunc::Free], &[ptr_arg]);
-                }
+                },
+                bril::EffectOps::Speculate | bril::EffectOps::Commit | bril::EffectOps::Guard => unimplemented!(),
             },
             bril::Instruction::Value {
                 args,
@@ -572,6 +573,8 @@ impl CompileEnv<'_> {
                     let res = builder.ins().iadd(orig_ptr, offset_val);
                     builder.def_var(self.vars[dest], res);
                 }
+                bril::ValueOps::Phi => unimplemented!(),
+                bril::ValueOps::Ceq | bril::ValueOps::Clt | bril::ValueOps::Cgt | bril::ValueOps::Cle | bril::ValueOps::Cge | bril::ValueOps::Char2int | bril::ValueOps::Int2char => todo!(),
             },
         }
     }
