@@ -1,5 +1,4 @@
 use crate::rt;
-use argh::FromArgs;
 use bril_rs as bril;
 use core::mem;
 use cranelift_codegen::entity::EntityRef;
@@ -159,7 +158,7 @@ impl RTSetupFunc {
                 ],
                 returns: vec![ir::AbiParam::new(ir::types::R32)],
                 call_conv,
-            }
+            },
         }
     }
 
@@ -476,8 +475,10 @@ impl CompileEnv<'_> {
                 bril::EffectOps::Free => {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
                     builder.ins().call(self.rt_refs[RTFunc::Free], &[ptr_arg]);
-                },
-                bril::EffectOps::Speculate | bril::EffectOps::Commit | bril::EffectOps::Guard => unimplemented!(),
+                }
+                bril::EffectOps::Speculate | bril::EffectOps::Commit | bril::EffectOps::Guard => {
+                    unimplemented!()
+                }
             },
             bril::Instruction::Value {
                 args,
@@ -574,7 +575,13 @@ impl CompileEnv<'_> {
                     builder.def_var(self.vars[dest], res);
                 }
                 bril::ValueOps::Phi => unimplemented!(),
-                bril::ValueOps::Ceq | bril::ValueOps::Clt | bril::ValueOps::Cgt | bril::ValueOps::Cle | bril::ValueOps::Cge | bril::ValueOps::Char2int | bril::ValueOps::Int2char => todo!(),
+                bril::ValueOps::Ceq
+                | bril::ValueOps::Clt
+                | bril::ValueOps::Cgt
+                | bril::ValueOps::Cle
+                | bril::ValueOps::Cge
+                | bril::ValueOps::Char2int
+                | bril::ValueOps::Int2char => todo!(),
             },
         }
     }
@@ -1059,44 +1066,6 @@ impl Translator<JITModule> {
         let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
         func(arg_ptrs.as_ptr());
     }
-}
-
-#[derive(FromArgs)]
-#[argh(description = "Bril compiler")]
-pub struct Args {
-    #[argh(switch, short = 'j', description = "JIT and run (doesn't work)")]
-    pub jit: bool,
-
-    #[argh(option, short = 't', description = "target triple")]
-    pub target: Option<String>,
-
-    #[argh(
-        option,
-        short = 'o',
-        description = "output object file",
-        default = "String::from(\"bril.o\")"
-    )]
-    pub output: String,
-
-    #[argh(switch, short = 'd', description = "dump CLIF IR")]
-    pub dump_ir: bool,
-
-    #[argh(switch, short = 'v', description = "verbose logging")]
-    pub verbose: bool,
-
-    #[argh(
-        option,
-        short = 'O',
-        description = "optimization level (none, speed, or speed_and_size)",
-        default = "String::from(\"none\")"
-    )]
-    pub opt_level: String,
-
-    #[argh(
-        positional,
-        description = "arguments for @main function (JIT mode only)"
-    )]
-    pub args: Vec<String>,
 }
 
 pub fn find_func<'a>(funcs: &'a [bril::Function], name: &str) -> &'a bril::Function {

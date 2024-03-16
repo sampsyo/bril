@@ -1,10 +1,49 @@
+use argh::FromArgs;
 use bril_rs as bril;
-use brilift::translator::{find_func, Args, Translator};
+use brilift::translator::{find_func, Translator};
+use brilift::{compile, CompileArgs, OptLevel};
 use cranelift_jit::JITModule;
-use cranelift_object::ObjectModule;
+
+#[derive(FromArgs)]
+#[argh(description = "Bril compiler")]
+struct RunArgs {
+    #[argh(switch, short = 'j', description = "JIT and run (doesn't work)")]
+    jit: bool,
+
+    #[argh(option, short = 't', description = "target triple")]
+    target: Option<String>,
+
+    #[argh(
+        option,
+        short = 'o',
+        description = "output object file",
+        default = "String::from(\"bril.o\")"
+    )]
+    output: String,
+
+    #[argh(switch, short = 'd', description = "dump CLIF IR")]
+    dump_ir: bool,
+
+    #[argh(switch, short = 'v', description = "verbose logging")]
+    verbose: bool,
+
+    #[argh(
+        option,
+        short = 'O',
+        description = "optimization level (none, speed, or speed_and_size)",
+        default = "String::from(\"none\")"
+    )]
+    opt_level: String,
+
+    #[argh(
+        positional,
+        description = "arguments for @main function (JIT mode only)"
+    )]
+    args: Vec<String>,
+}
 
 fn main() {
-    let args: Args = argh::from_env();
+    let args: RunArgs = argh::from_env();
 
     // Set up logging.
     simplelog::TermLogger::init(
@@ -55,15 +94,12 @@ fn main() {
         // Invoke the main function.
         unsafe { trans.run(entry_id, &main_args) };
     } else {
-        // Compile.
-        let mut trans = Translator::<ObjectModule>::new(args.target, &args.opt_level);
-        trans.compile_prog(&prog, args.dump_ir);
-
-        // Add a C-style `main` wrapper.
-        let main = find_func(&prog.functions, "main");
-        trans.add_c_main(&main.args, args.dump_ir);
-
-        // Write object file.
-        trans.emit(&args.output);
+        compile(CompileArgs {
+            program: &prog,
+            target: args.target.clone(),
+            output: &args.output,
+            opt_level: args.opt_level.parse::<OptLevel>().unwrap(),
+            dump_ir: args.dump_ir,
+        });
     }
 }
