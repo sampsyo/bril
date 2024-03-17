@@ -52,7 +52,7 @@ impl RTFunc {
                 call_conv,
             },
             Self::PrintChar => ir::Signature {
-                params: vec![ir::AbiParam::new(ir::types::R32)],
+                params: vec![ir::AbiParam::new(ir::types::I32)],
                 returns: vec![],
                 call_conv,
             },
@@ -156,7 +156,7 @@ impl RTSetupFunc {
                     ir::AbiParam::new(pointer_type),
                     ir::AbiParam::new(ir::types::I64),
                 ],
-                returns: vec![ir::AbiParam::new(ir::types::R32)],
+                returns: vec![ir::AbiParam::new(ir::types::I32)],
                 call_conv,
             },
         }
@@ -178,7 +178,7 @@ fn translate_type(typ: &bril::Type, pointer_type: ir::Type) -> ir::Type {
         bril::Type::Int => ir::types::I64,
         bril::Type::Bool => ir::types::I8,
         bril::Type::Float => ir::types::F64,
-        bril::Type::Char => ir::types::R32,
+        bril::Type::Char => ir::types::I32,
         bril::Type::Pointer(_) => pointer_type,
     }
 }
@@ -373,7 +373,7 @@ impl CompileEnv<'_> {
                     bril::Literal::Char(c) => *c,
                     _ => panic!("incorrect literal type for char"),
                 };
-                builder.ins().iconst(ir::types::R32, val as i64)
+                builder.ins().iconst(ir::types::I32, val as i64)
             }
             bril::Type::Pointer(_) => panic!("pointer literals not allowed"),
         }
