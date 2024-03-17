@@ -1042,11 +1042,18 @@ impl Translator<JITModule> {
     }
 
     /// Run a JITted wrapper function.
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
         let func_ptr = self.get_func_ptr(func_id);
         let arg_ptrs = Self::val_ptrs(args);
         let func = mem::transmute::<_, fn(*const *const u8) -> ()>(func_ptr);
         func(arg_ptrs.as_ptr());
+    }
+}
+
+impl Default for Translator<JITModule> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
