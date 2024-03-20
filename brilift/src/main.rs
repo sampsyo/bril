@@ -1,8 +1,6 @@
 use argh::FromArgs;
 use bril_rs as bril;
-use brilift::compile;
-use brilift::translator::{find_func, Translator};
-use cranelift_jit::JITModule;
+use brilift::{compile, jit_run};
 use std::str::FromStr;
 
 #[derive(FromArgs)]
@@ -91,37 +89,7 @@ fn main() {
     let prog = bril::load_program();
 
     if args.jit {
-        // Compile.
-        let mut trans = Translator::<JITModule>::new();
-        trans.compile_prog(&prog, args.dump_ir);
-
-        // Add a JIT wrapper for `main`.
-        let main = find_func(&prog.functions, "main");
-        let entry_id = trans.add_mem_wrapper("main", &main.args, args.dump_ir);
-
-        // Parse CLI arguments.
-        if main.args.len() != args.args.len() {
-            panic!(
-                "@main expects {} arguments; got {}",
-                main.args.len(),
-                args.args.len()
-            );
-        }
-        let main_args: Vec<bril::Literal> = main
-            .args
-            .iter()
-            .zip(args.args)
-            .map(|(arg, val_str)| match arg.arg_type {
-                bril::Type::Int => bril::Literal::Int(val_str.parse().unwrap()),
-                bril::Type::Bool => bril::Literal::Bool(val_str == "true"),
-                bril::Type::Float => bril::Literal::Float(val_str.parse().unwrap()),
-                bril::Type::Char => bril::Literal::Char(val_str.parse().unwrap()),
-                bril::Type::Pointer(_) => unimplemented!("pointers not supported as main args"),
-            })
-            .collect();
-
-        // Invoke the main function.
-        unsafe { trans.run(entry_id, &main_args) };
+        jit_run(&prog, args.args, args.dump_ir);
     } else {
         compile(
             &prog,
