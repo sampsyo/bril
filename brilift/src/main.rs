@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 #[derive(FromArgs)]
 #[argh(description = "Bril compiler")]
-struct RunArgs {
+struct BriliftArgs {
     #[argh(switch, short = 'j', description = "JIT and run (doesn't work)")]
     jit: bool,
 
@@ -70,7 +70,7 @@ impl FromStr for OptLevel {
 }
 
 fn main() {
-    let args: RunArgs = argh::from_env();
+    let args: BriliftArgs = argh::from_env();
 
     // Set up logging.
     simplelog::TermLogger::init(
