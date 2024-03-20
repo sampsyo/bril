@@ -1,8 +1,9 @@
 use argh::FromArgs;
 use bril_rs as bril;
+use brilift::compile;
 use brilift::translator::{find_func, Translator};
-use brilift::{compile, CompileArgs, OptLevel};
 use cranelift_jit::JITModule;
+use std::str::FromStr;
 
 #[derive(FromArgs)]
 #[argh(description = "Bril compiler")]
@@ -31,15 +32,43 @@ struct RunArgs {
         option,
         short = 'O',
         description = "optimization level (none, speed, or speed_and_size)",
-        default = "String::from(\"none\")"
+        default = "OptLevel::None"
     )]
-    opt_level: String,
+    opt_level: OptLevel,
 
     #[argh(
         positional,
         description = "arguments for @main function (JIT mode only)"
     )]
     args: Vec<String>,
+}
+
+pub enum OptLevel {
+    None,
+    Speed,
+    SpeedAndSize,
+}
+
+impl OptLevel {
+    pub fn to_str(self) -> &'static str {
+        match self {
+            OptLevel::None => "none",
+            OptLevel::Speed => "speed",
+            OptLevel::SpeedAndSize => "speed_and_size",
+        }
+    }
+}
+
+impl FromStr for OptLevel {
+    type Err = String;
+    fn from_str(s: &str) -> Result<OptLevel, String> {
+        match s {
+            "none" => Ok(OptLevel::None),
+            "speed" => Ok(OptLevel::Speed),
+            "speed_and_size" => Ok(OptLevel::SpeedAndSize),
+            _ => Err(format!("unknown optimization level {s}")),
+        }
+    }
 }
 
 fn main() {
@@ -94,12 +123,12 @@ fn main() {
         // Invoke the main function.
         unsafe { trans.run(entry_id, &main_args) };
     } else {
-        compile(CompileArgs {
-            program: &prog,
-            target: args.target.clone(),
-            output: &args.output,
-            opt_level: args.opt_level.parse::<OptLevel>().unwrap(),
-            dump_ir: args.dump_ir,
-        });
+        compile(
+            &prog,
+            args.target.clone(),
+            &args.output,
+            args.opt_level.to_str(),
+            args.dump_ir,
+        );
     }
 }
