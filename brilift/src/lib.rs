@@ -41,7 +41,7 @@ pub fn compile(
 pub fn jit_run(program: &Program, args: Vec<String>, dump_ir: bool) {
     // Compile.
     let mut trans = Translator::<JITModule>::new();
-    trans.compile_prog(&program, dump_ir);
+    trans.compile_prog(program, dump_ir);
 
     // Add a JIT wrapper for `main`.
     let main = find_func(&program.functions, "main");
