@@ -311,8 +311,8 @@ impl CompileEnv<'_> {
                 bril::Type::Int => RTFunc::PrintInt,
                 bril::Type::Bool => RTFunc::PrintBool,
                 bril::Type::Float => RTFunc::PrintFloat,
-                bril::Type::Char => todo!(),
-                bril::Type::Pointer(_) => todo!(),
+                bril::Type::Char => unimplemented!(),
+                bril::Type::Pointer(_) => unimplemented!(),
             };
             let print_ref = self.rt_refs[print_func];
             builder.ins().call(print_ref, &[arg_val]);
@@ -556,14 +556,14 @@ impl CompileEnv<'_> {
                     let res = builder.ins().iadd(orig_ptr, offset_val);
                     builder.def_var(self.vars[dest], res);
                 }
-                bril::ValueOps::Phi => unimplemented!(),
-                bril::ValueOps::Ceq
+                bril::ValueOps::Phi
+                | bril::ValueOps::Ceq
                 | bril::ValueOps::Clt
                 | bril::ValueOps::Cgt
                 | bril::ValueOps::Cle
                 | bril::ValueOps::Cge
                 | bril::ValueOps::Char2int
-                | bril::ValueOps::Int2char => todo!(),
+                | bril::ValueOps::Int2char => unimplemented!(),
             },
         }
     }
@@ -810,7 +810,7 @@ impl<M: Module> Translator<M> {
                     bril::Type::Int => RTSetupFunc::ParseInt,
                     bril::Type::Bool => RTSetupFunc::ParseBool,
                     bril::Type::Float => RTSetupFunc::ParseFloat,
-                    bril::Type::Char => todo!(),
+                    bril::Type::Char => unimplemented!(),
                     bril::Type::Pointer(_) => unimplemented!("can't print pointers"),
                 }];
                 let idx_arg = builder.ins().iconst(ir::types::I64, (i + 1) as i64); // skip argv[0]
