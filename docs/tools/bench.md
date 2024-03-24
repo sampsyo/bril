@@ -38,6 +38,7 @@ The current benchmarks are:
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
+* `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
 * `loopfact`: Compute *n!* imperatively using a loop.
 * `major-elm`: Find the majority element in an array using [a linear time voting algorithm](https://www.cs.utexas.edu/~moore/best-ideas/mjrty/).
 * `mandelbrot`: Generates a really low resolution, ascii, [mandelbrot set][mandelbrot].
@@ -46,7 +47,7 @@ The current benchmarks are:
 * `max-subarray`: solution to the classic Maximum Subarray problem.
 * `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
-* `norm`: Calculate the [euclidean norm][euclidean] of a vector 
+* `norm`: Calculate the [euclidean norm][euclidean] of a vector
 * `n_root`: Calculate nth root of a float using newton's method.
 * `orders`: Compute the order ord(u) for each u in a cyclic group [<Zn,+>][cgroup] of integers modulo *n* under the group operation + (modulo *n*). Set the second argument *is_lcm* to true if you would like to compute the orders using the lowest common multiple and otherwise the program will use the greatest common divisor.
 * `pascals-row`: Computes a row in Pascal's Triangle.
@@ -58,7 +59,7 @@ The current benchmarks are:
 * `pythagorean_triple`: Prints all Pythagorean triples with the given c, if such triples exist. An intentionally very naive implementation.
 * `quadratic`: The [quadratic formula][qf], including a hand-rolled implementation of square root.
 * `quickselect`: Find the kth smallest element in an array using the quickselect algorithm.
-* `quicksort`: [Quicksort using the Lomuto partition scheme][qsort]. 
+* `quicksort`: [Quicksort using the Lomuto partition scheme][qsort].
 * `quicksort-hoare`: Quicksort using [Hoare partioning][qsort-hoare] and median of three pivot selection.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.

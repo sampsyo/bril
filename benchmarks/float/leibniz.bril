@@ -1,0 +1,40 @@
+@main {
+  pi: float = const 0;
+  # denominator
+  denom: float = const 1;
+  is_even: bool = const false;
+  i: int = const 1;
+  end: int = const 1000000;
+
+.for.start:
+  b: bool = lt i end;
+  br b .for.body .for.end;
+
+.for.body:
+  fone: float = const 1;
+  br is_even .if.true .if.false;
+
+.if.true:
+  f1: float = fdiv fone denom;
+  pi: float = fsub pi f1;
+  jmp .if.end;
+
+.if.false:
+  f2: float = fdiv fone denom;
+  pi: float = fadd pi f2;
+
+.if.end:
+  two: float = const 2;
+  denom: float= fadd denom two;
+
+  # step
+  is_even: bool = not is_even;
+  one: int = const 1;
+  i: int = add i one;
+  jmp .for.start;
+
+.for.end:
+  four: float = const 4;
+  pi: float = fmul pi four;
+  print pi;
+}
