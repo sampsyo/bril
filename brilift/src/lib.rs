@@ -71,3 +71,8 @@ pub fn jit_run(program: &Program, args: Vec<String>, dump_ir: bool) {
     // Invoke the main function.
     unsafe { trans.run(entry_id, &main_args) };
 }
+
+/// The C runtime library for Rust library users.
+pub fn c_runtime() -> &'static str {
+    include_str!("../rt.c")
+}
