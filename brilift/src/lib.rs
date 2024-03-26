@@ -74,5 +74,5 @@ pub fn jit_run(program: &Program, args: Vec<String>, dump_ir: bool) {
 
 /// The C runtime library for Rust library users.
 pub fn c_runtime() -> &'static str {
-    include_str!("../rt.c")
+    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/rt.c"))
 }
