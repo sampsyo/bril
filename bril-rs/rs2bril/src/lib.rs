@@ -1173,6 +1173,6 @@ pub fn from_file_to_program(
             })
             .collect(),
         #[cfg(feature = "import")]
-        imports: vec![]
+        imports: vec![],
     }
 }
