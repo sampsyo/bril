@@ -21,4 +21,7 @@ clap         = { version = "4.4", features = ["derive"] }
 [dependencies.bril-rs]
 version = "0.1.0"
 path = ".."
-features = [ "memory", "float", "position"]
+features = [ "memory", "float", "position" ]
+
+[features]
+import = [ "bril-rs/import" ]

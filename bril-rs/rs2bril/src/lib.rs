@@ -1172,5 +1172,7 @@ pub fn from_file_to_program(
                 from_empty_function_to_function(f, &mut state)
             })
             .collect(),
+        #[cfg(feature = "import")]
+        imports: vec![],
     }
 }
