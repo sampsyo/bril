@@ -53,7 +53,7 @@ jobs:
           toolchain: stable
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+        uses: KyleMayes/install-llvm-action@v2.0.2
         if: matrix.needs_llvm
         with:
           version: ${{ env.LLVM_VERSION }}
@@ -104,7 +104,7 @@ jobs:
           toolchain: stable
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+        uses: KyleMayes/install-llvm-action@v2.0.2
         if: matrix.path == 'bril-rs/brillvm/Cargo.toml'
         with:
           version: ${{ env.LLVM_VERSION }}
