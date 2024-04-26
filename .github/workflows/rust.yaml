@@ -31,7 +31,7 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       matrix:
         test-code:
@@ -90,7 +90,7 @@ jobs:
         run: ${{ matrix.test-code }}
 
   rust-ci:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     env:
       RUSTDOCFLAGS: -D warnings
       RUSTFLAGS: -D warnings
