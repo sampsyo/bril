@@ -9,6 +9,9 @@ BENCHMARKS := ../../benchmarks/core/*.bril \
 			  ../../benchmarks/mem/*.bril \
 			  ../../benchmarks/mixed/*.bril
 
+build:
+	cargo build
+
 clean:
 	cargo clean
 	rm rt.bc
@@ -23,9 +26,9 @@ example:
 	bril2json < ../../benchmarks/mixed/cholesky.bril | cargo run -- -i
 
 .PHONY: test
-test:
+test: build rt
 	turnt -e brillvm $(TESTS)
 
 .PHONY: benchmark
-benchmark:
+benchmark: build rt
 	turnt -e brillvm $(BENCHMARKS)

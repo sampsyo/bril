@@ -44,7 +44,7 @@ jobs:
         include:
           - test-code: "cd bril-rs && make features"
             needs_cargo_hack: true
-          - test-code: "cd bril-rs/brillvm && cargo build && make rt"
+          - test-code: "cd bril-rs/brillvm && make build"
             needs_llvm: true
     steps:
       - uses: actions/checkout@v4
