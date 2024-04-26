@@ -65,7 +65,8 @@ jobs:
           repository: cucapra/turnt
           path: './turnt'
       - name: Install Turnt part 2
-        run: cd turnt ; flit install --symlink
+        run: flit install --symlink
+        working-directory: ./turnt
 
       - name: Problem matcher
         run: echo '::add-matcher::.github/tap-matcher.json'
