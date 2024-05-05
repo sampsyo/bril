@@ -72,6 +72,11 @@ pub unsafe extern "C" fn _bril_parse_float(arg: *const c_char) -> f64 {
     r_str.parse::<f64>().unwrap()
 }
 
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    loop {}
+}
+
 #[cfg(not(test))]
 #[panic_handler]
 fn my_panic(_info: &core::panic::PanicInfo) -> ! {

@@ -1,3 +1,4 @@
+workspace = { members = ["runtime"] }
 [package]
 name = "brillvm"
 version = "0.1.0"
@@ -19,15 +20,10 @@ clap = { version = "4.4", features = ["derive"] }
 inkwell = { git = "https://github.com/TheDan64/inkwell.git", features = [
     "llvm18-0",
 ] }
-libc-print = "0.1"
 
 [dependencies.bril-rs]
 path = ".."
 features = ["float", "ssa", "memory"]
-
-[[bin]]
-name = "rt"
-path = "bin/rt.rs"
 
 # Need to set a default `main` to build `rt` bin
 [[bin]]
