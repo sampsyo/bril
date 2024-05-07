@@ -62,7 +62,8 @@ impl State {
     }
 
     fn starting_new_function(&mut self, name: &String) {
-        self.ident_type_map = self.func_context_map.get(name).unwrap().0.clone();
+        self.ident_type_map
+            .clone_from(&self.func_context_map.get(name).unwrap().0);
     }
 
     fn add_type_for_ident(&mut self, ident: String, ty: Type) {
@@ -570,35 +571,35 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 // So we need to set a specific destination
                 // https://doc.rust-lang.org/reference/expressions.html#place-expressions-and-value-expressions
                 (BinOp::AddAssign(_), Type::Int) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Add, Type::Int)
                 }
                 (BinOp::AddAssign(_), Type::Float) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Fadd, Type::Float)
                 }
                 (BinOp::SubAssign(_), Type::Int) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Sub, Type::Int)
                 }
                 (BinOp::SubAssign(_), Type::Float) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Fsub, Type::Float)
                 }
                 (BinOp::MulAssign(_), Type::Int) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Mul, Type::Int)
                 }
                 (BinOp::MulAssign(_), Type::Float) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Fmul, Type::Float)
                 }
                 (BinOp::DivAssign(_), Type::Int) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Div, Type::Int)
                 }
                 (BinOp::DivAssign(_), Type::Float) => {
-                    place_expression = arg1.clone();
+                    place_expression.clone_from(&arg1);
                     (ValueOps::Fdiv, Type::Float)
                 }
                 (_, _) => unimplemented!("{op:?}"),
