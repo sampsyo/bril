@@ -42,7 +42,7 @@ impl BBProgram {
       .collect::<Result<Vec<BBFunction>, InterpError>>()?;
 
     let bb = Self {
-      index_of_main: func_map.get(&"main".to_string()).copied(),
+      index_of_main: func_map.get("main").copied(),
       func_index,
     };
     if func_map.len() == num_funcs {
