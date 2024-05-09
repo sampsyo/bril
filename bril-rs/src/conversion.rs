@@ -224,6 +224,7 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "or" => ValueOps::Or,
                     "call" => ValueOps::Call,
                     "id" => ValueOps::Id,
+                    "select" => ValueOps::Select,
                     "sub" => ValueOps::Sub,
                     #[cfg(feature = "ssa")]
                     "phi" => ValueOps::Phi,
