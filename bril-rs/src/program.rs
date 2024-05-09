@@ -421,6 +421,8 @@ pub enum ValueOps {
     Call,
     /// <https://capra.cs.cornell.edu/bril/lang/core.html#miscellaneous>
     Id,
+    /// Select
+    Select,
     /// <https://capra.cs.cornell.edu/bril/lang/ssa.html#operations>
     #[cfg(feature = "ssa")]
     Phi,
@@ -500,6 +502,7 @@ impl Display for ValueOps {
             Self::Or => write!(f, "or"),
             Self::Call => write!(f, "call"),
             Self::Id => write!(f, "id"),
+            Self::Select => write!(f, "select"),
             #[cfg(feature = "ssa")]
             Self::Phi => write!(f, "phi"),
             #[cfg(feature = "float")]
