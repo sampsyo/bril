@@ -1,3 +1,4 @@
+workspace = { members = ["runtime"] }
 [package]
 name = "brillvm"
 version = "0.1.0"
@@ -5,7 +6,7 @@ authors = ["Patrick LaFontaine <32135464+Pat-Lafon@users.noreply.github.com>"]
 edition = "2021"
 description = "A compiler for Bril into LLVM IR"
 readme = "README.md"
-repository = "https://github.com/sampsyo/bril"
+repository = "https://github.com/uwplse/bril"
 # license = "MIT"
 license-file = "../../LICENSE"
 categories = ["command-line-utilities", "compilers"]
@@ -16,21 +17,12 @@ default-run = "main"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
-inkwell = { version = "0.2", features = ["llvm16-0"] }
-libc-print = "0.1"
+inkwell = { git = "https://github.com/TheDan64/inkwell.git", features = [
+    "llvm18-0",
+] }
 
-# For overriding parking_lot_core to latest version from 0.9.7
-# To pull in the removal of `window-sys` which was causing duplicate dependencies
-[patch.crates-io]
-parking_lot_core = { git = "https://github.com/Amanieu/parking_lot" }
+bril-rs = { git = "https://github.com/uwplse/bril", branch = "eggcc-main", features = ["float", "ssa", "memory"] }
 
-[dependencies.bril-rs]
-path = ".."
-features = ["float", "ssa", "memory"]
-
-[[bin]]
-name = "rt"
-path = "bin/rt.rs"
 
 # Need to set a default `main` to build `rt` bin
 [[bin]]

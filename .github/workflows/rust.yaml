@@ -26,26 +26,41 @@ on:
 
 name: Workflow checks for rust code
 
+env:
+  LLVM_VERSION: 18.0
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       matrix:
         test-code:
           - "cd bril-rs && make test TURNTARGS=-v"
-          - "cd bril-rs && make features"
           - "cd brilirs && make test TURNTARGS=-v"
           - "cd brilirs && make benchmark TURNTARGS=-v"
           - "cd brilift && cargo build --release && make rt.o && make test TURNTARGS=-v"
           - "cd brilift && cargo build --release && make rt.o && make benchmark TURNTARGS=-v"
+        # Code requiring additional dependencies are separated out
+        include:
+          - test-code: "cd bril-rs && make features"
+            needs_cargo_hack: true
+          - test-code: "cd bril-rs/brillvm && make build"
+            needs_llvm: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
 
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2.0.2
+        if: matrix.needs_llvm
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
       - name: Install cargo-hack for feature-flag checking
         run: cargo install cargo-hack
+        if: matrix.needs_cargo_hack
 
       - uses: actions/setup-python@v4
         with:
@@ -65,7 +80,8 @@ jobs:
           repository: cucapra/turnt
           path: './turnt'
       - name: Install Turnt part 2
-        run: cd turnt ; flit install --symlink
+        run: flit install --symlink
+        working-directory: ./turnt
 
       - name: Problem matcher
         run: echo '::add-matcher::.github/tap-matcher.json'
@@ -74,7 +90,7 @@ jobs:
         run: ${{ matrix.test-code }}
 
   rust-ci:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     env:
       RUSTDOCFLAGS: -D warnings
       RUSTFLAGS: -D warnings
@@ -88,10 +104,10 @@ jobs:
           toolchain: stable
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
+        uses: KyleMayes/install-llvm-action@v2.0.2
         if: matrix.path == 'bril-rs/brillvm/Cargo.toml'
         with:
-          version: "16.0"
+          version: ${{ env.LLVM_VERSION }}
 
       - name: cargo check
         run: cargo check --manifest-path ${{ matrix.path }} --all-targets

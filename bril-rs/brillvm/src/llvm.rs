@@ -5,7 +5,7 @@ use inkwell::{
     builder::Builder,
     context::Context,
     module::Module,
-    types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, PointerType},
+    types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
     values::{BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
     AddressSpace, FloatPredicate, IntPredicate,
 };
@@ -23,7 +23,7 @@ where
         Type::Int => fn_map(context.i64_type().into()),
         Type::Bool => fn_map(context.bool_type().into()),
         Type::Float => fn_map(context.f64_type().into()),
-        Type::Pointer(_) => fn_map(build_pointertype(context, ty).into()),
+        Type::Pointer(_) => fn_map(context.ptr_type(AddressSpace::default()).into()),
     }
 }
 
@@ -32,13 +32,6 @@ fn unwrap_bril_ptrtype(ty: &Type) -> &Type {
         Type::Pointer(ty) => ty,
         _ => unreachable!(),
     }
-}
-
-/// Converts a Bril Pointer type into an LLVM Pointer type
-fn build_pointertype<'a>(context: &'a Context, ty: &Type) -> PointerType<'a> {
-    llvm_type_map(context, unwrap_bril_ptrtype(ty), |t| {
-        t.ptr_type(AddressSpace::default())
-    })
 }
 
 /// Converts a Bril function signature into an LLVM function type
@@ -65,7 +58,7 @@ fn build_load<'a>(
     name: &str,
 ) -> BasicValueEnum<'a> {
     llvm_type_map(context, &ptr.ty, |pointee_ty| {
-        builder.build_load(pointee_ty, ptr.ptr, name)
+        builder.build_load(pointee_ty, ptr.ptr, name).unwrap()
     })
 }
 
@@ -80,7 +73,7 @@ impl<'a> WrappedPointer<'a> {
     fn new(builder: &'a Builder, context: &'a Context, name: &str, ty: &Type) -> Self {
         Self {
             ty: ty.clone(),
-            ptr: llvm_type_map(context, ty, |ty| builder.build_alloca(ty, name)),
+            ptr: llvm_type_map(context, ty, |ty| builder.build_alloca(ty, name).unwrap()),
         }
     }
 }
@@ -147,13 +140,15 @@ fn build_op<'a, 'b>(
     args: &'b [String],
     dest: &'b String,
 ) {
-    builder.build_store(
-        heap.get(dest).ptr,
-        op(args
-            .iter()
-            .map(|n| build_load(context, builder, &heap.get(n), &fresh.fresh_var()))
-            .collect()),
-    );
+    builder
+        .build_store(
+            heap.get(dest).ptr,
+            op(args
+                .iter()
+                .map(|n| build_load(context, builder, &heap.get(n), &fresh.fresh_var()))
+                .collect()),
+        )
+        .unwrap();
 }
 
 // Like `build_op` but where there is no return value
@@ -204,10 +199,12 @@ fn build_instruction<'a, 'b>(
             value: Literal::Int(i),
         } => {
             #[allow(clippy::cast_precision_loss)]
-            builder.build_store(
-                heap.get(dest).ptr,
-                context.f64_type().const_float(*i as f64),
-            );
+            builder
+                .build_store(
+                    heap.get(dest).ptr,
+                    context.f64_type().const_float(*i as f64),
+                )
+                .unwrap();
         }
         Instruction::Constant {
             dest,
@@ -216,10 +213,12 @@ fn build_instruction<'a, 'b>(
             value: Literal::Int(i),
         } => {
             #[allow(clippy::cast_sign_loss)]
-            builder.build_store(
-                heap.get(dest).ptr,
-                context.i64_type().const_int(*i as u64, true),
-            );
+            builder
+                .build_store(
+                    heap.get(dest).ptr,
+                    context.i64_type().const_int(*i as u64, true),
+                )
+                .unwrap();
         }
         Instruction::Constant {
             dest,
@@ -227,10 +226,12 @@ fn build_instruction<'a, 'b>(
             const_type: _,
             value: Literal::Bool(b),
         } => {
-            builder.build_store(
-                heap.get(dest).ptr,
-                context.bool_type().const_int((*b).into(), false),
-            );
+            builder
+                .build_store(
+                    heap.get(dest).ptr,
+                    context.bool_type().const_int((*b).into(), false),
+                )
+                .unwrap();
         }
         Instruction::Constant {
             dest,
@@ -238,7 +239,9 @@ fn build_instruction<'a, 'b>(
             const_type: _,
             value: Literal::Float(f),
         } => {
-            builder.build_store(heap.get(dest).ptr, context.f64_type().const_float(*f));
+            builder
+                .build_store(heap.get(dest).ptr, context.f64_type().const_float(*f))
+                .unwrap();
         }
         Instruction::Value {
             args,
@@ -261,6 +264,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -288,6 +292,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -315,6 +320,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -342,6 +348,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -370,6 +377,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -398,6 +406,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -426,6 +435,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -454,6 +464,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -482,6 +493,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -505,6 +517,7 @@ fn build_instruction<'a, 'b>(
                 |v| {
                     builder
                         .build_not::<IntValue>(v[0].try_into().unwrap(), &ret_name)
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -532,6 +545,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -559,6 +573,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -595,6 +610,7 @@ fn build_instruction<'a, 'b>(
                                 .as_slice(),
                             &ret_name,
                         )
+                        .unwrap()
                         .try_as_basic_value()
                         .left()
                         .unwrap()
@@ -632,6 +648,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -659,6 +676,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -686,6 +704,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -713,6 +732,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -741,6 +761,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -769,6 +790,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -797,6 +819,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -825,6 +848,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -853,6 +877,7 @@ fn build_instruction<'a, 'b>(
                             v[1].try_into().unwrap(),
                             &ret_name,
                         )
+                        .unwrap()
                         .into()
                 },
                 args,
@@ -866,14 +891,16 @@ fn build_instruction<'a, 'b>(
             op: EffectOps::Return,
         } => {
             if args.is_empty() {
-                builder.build_return(None);
+                builder.build_return(None).unwrap();
             } else {
-                builder.build_return(Some(&build_load(
-                    context,
-                    builder,
-                    &heap.get(&args[0]),
-                    &fresh.fresh_var(),
-                )));
+                builder
+                    .build_return(Some(&build_load(
+                        context,
+                        builder,
+                        &heap.get(&args[0]),
+                        &fresh.fresh_var(),
+                    )))
+                    .unwrap();
             }
         }
         Instruction::Effect {
@@ -895,14 +922,16 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_call(
-                        function,
-                        v.iter()
-                            .map(|val| (*val).into())
-                            .collect::<Vec<_>>()
-                            .as_slice(),
-                        &ret_name,
-                    );
+                    builder
+                        .build_call(
+                            function,
+                            v.iter()
+                                .map(|val| (*val).into())
+                                .collect::<Vec<_>>()
+                                .as_slice(),
+                            &ret_name,
+                        )
+                        .unwrap();
                 },
                 args,
             );
@@ -932,33 +961,40 @@ fn build_instruction<'a, 'b>(
                 let v = build_load(context, builder, &wrapped_ptr, &fresh.fresh_var());
                 match wrapped_ptr.ty {
                     Type::Int => {
-                        builder.build_call(print_int, &[v.into()], "print_int");
+                        builder
+                            .build_call(print_int, &[v.into()], "print_int")
+                            .unwrap();
                     }
                     Type::Bool => {
-                        builder.build_call(
-                            print_bool,
-                            &[builder
-                                .build_int_cast::<IntValue>(
-                                    v.try_into().unwrap(),
-                                    context.bool_type(),
-                                    "bool_cast",
-                                )
-                                .into()],
-                            "print_bool",
-                        );
+                        builder
+                            .build_call(
+                                print_bool,
+                                &[builder
+                                    .build_int_cast::<IntValue>(
+                                        v.try_into().unwrap(),
+                                        context.bool_type(),
+                                        "bool_cast",
+                                    )
+                                    .unwrap()
+                                    .into()],
+                                "print_bool",
+                            )
+                            .unwrap();
                     }
                     Type::Float => {
-                        builder.build_call(print_float, &[v.into()], "print_float");
+                        builder
+                            .build_call(print_float, &[v.into()], "print_float")
+                            .unwrap();
                     }
                     Type::Pointer(_) => {
                         unreachable!()
                     }
                 };
                 if i < len - 1 {
-                    builder.build_call(print_sep, &[], "print_sep");
+                    builder.build_call(print_sep, &[], "print_sep").unwrap();
                 }
             });
-            builder.build_call(print_end, &[], "print_end");
+            builder.build_call(print_end, &[], "print_end").unwrap();
         }
         Instruction::Effect {
             args: _,
@@ -966,9 +1002,11 @@ fn build_instruction<'a, 'b>(
             labels,
             op: EffectOps::Jump,
         } => {
-            builder.build_unconditional_branch(block_map_get(
-                context, llvm_func, block_map, &labels[0],
-            ));
+            builder
+                .build_unconditional_branch(block_map_get(
+                    context, llvm_func, block_map, &labels[0],
+                ))
+                .unwrap();
         }
         Instruction::Effect {
             args,
@@ -984,11 +1022,9 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_conditional_branch(
-                        v[0].try_into().unwrap(),
-                        then_block,
-                        else_block,
-                    );
+                    builder
+                        .build_conditional_branch(v[0].try_into().unwrap(), then_block, else_block)
+                        .unwrap();
                 },
                 args,
             );
@@ -1007,10 +1043,9 @@ fn build_instruction<'a, 'b>(
                 .map(|l| block_map_get(context, llvm_func, block_map, l))
                 .collect::<Vec<_>>();
 
-            let phi = builder.build_phi(
-                build_pointertype(context, &Type::Pointer(Box::new(op_type.clone()))),
-                &name,
-            );
+            let phi = builder
+                .build_phi(context.ptr_type(AddressSpace::default()), &name)
+                .unwrap();
 
             let pointers = args.iter().map(|a| heap.get(a).ptr).collect::<Vec<_>>();
 
@@ -1024,18 +1059,20 @@ fn build_instruction<'a, 'b>(
                     .as_slice(),
             );
 
-            builder.build_store(
-                heap.get(dest).ptr,
-                build_load(
-                    context,
-                    builder,
-                    &WrappedPointer {
-                        ty: op_type.clone(),
-                        ptr: phi.as_basic_value().into_pointer_value(),
-                    },
-                    &fresh.fresh_var(),
-                ),
-            );
+            builder
+                .build_store(
+                    heap.get(dest).ptr,
+                    build_load(
+                        context,
+                        builder,
+                        &WrappedPointer {
+                            ty: op_type.clone(),
+                            ptr: phi.as_basic_value().into_pointer_value(),
+                        },
+                        &fresh.fresh_var(),
+                    ),
+                )
+                .unwrap();
         }
         Instruction::Value {
             args,
@@ -1079,7 +1116,11 @@ fn build_instruction<'a, 'b>(
                     builder,
                     heap,
                     fresh,
-                    |v| builder.build_load(pointee_ty, v[0].try_into().unwrap(), &name),
+                    |v| {
+                        builder
+                            .build_load(pointee_ty, v[0].try_into().unwrap(), &name)
+                            .unwrap()
+                    },
                     args,
                     dest,
                 );
@@ -1109,6 +1150,7 @@ fn build_instruction<'a, 'b>(
                                 &[v[1].try_into().unwrap()],
                                 &name,
                             )
+                            .unwrap()
                             .into()
                     })
                 },
@@ -1128,7 +1170,7 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_store(v[0].try_into().unwrap(), v[1]);
+                    builder.build_store(v[0].try_into().unwrap(), v[1]).unwrap();
                 },
                 args,
             );
@@ -1145,7 +1187,7 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_free(v[0].try_into().unwrap());
+                    builder.build_free(v[0].try_into().unwrap()).unwrap();
                 },
                 args,
             );
@@ -1224,7 +1266,7 @@ pub fn create_module_from_program<'a>(
                 llvm_func.get_param_iter().enumerate().for_each(|(i, arg)| {
                     let Argument { name, arg_type } = &args[i];
                     let ptr = heap.add(&builder, context, name, arg_type).ptr;
-                    builder.build_store(ptr, arg);
+                    builder.build_store(ptr, arg).unwrap();
                 });
 
                 instrs.iter().for_each(|i| match i {
@@ -1262,12 +1304,14 @@ pub fn create_module_from_program<'a>(
 
                         // Check if wee need to insert a jump since all llvm blocks must be terminated
                         if !is_terminating_instr(&last_instr) {
-                            builder.build_unconditional_branch(block_map_get(
-                                context,
-                                llvm_func,
-                                &mut block_map,
-                                label,
-                            ));
+                            builder
+                                .build_unconditional_branch(block_map_get(
+                                    context,
+                                    llvm_func,
+                                    &mut block_map,
+                                    label,
+                                ))
+                                .unwrap();
                         }
 
                         // Start a new block
@@ -1297,7 +1341,7 @@ pub fn create_module_from_program<'a>(
 
             // Make sure every function is terminated with a return if not already
             if !is_terminating_instr(&last_instr) {
-                builder.build_return(None);
+                builder.build_return(None).unwrap();
             }
         });
 
@@ -1307,11 +1351,7 @@ pub fn create_module_from_program<'a>(
     let entry_func_type = context.i32_type().fn_type(
         &[
             context.i32_type().into(),
-            context
-                .i8_type()
-                .ptr_type(AddressSpace::default())
-                .ptr_type(AddressSpace::default())
-                .into(),
+            context.ptr_type(AddressSpace::default()).into(),
         ],
         false,
     );
@@ -1339,37 +1379,40 @@ pub fn create_module_from_program<'a>(
         function.get_param_iter().enumerate().for_each(|(i, _)| {
             let Argument { name, arg_type } = &args[i];
             let ptr = heap.add(&builder, context, name, arg_type).ptr;
-            let arg_str = builder.build_load(
-                context.i8_type().ptr_type(AddressSpace::default()),
-                unsafe {
-                    builder.build_in_bounds_gep(
-                        context
-                            .i8_type()
-                            .ptr_type(AddressSpace::default())
-                            .ptr_type(AddressSpace::default()),
-                        argv,
-                        &[context.i64_type().const_int((i + 1) as u64, true)],
-                        "calculate offset",
-                    )
-                },
-                "load arg",
-            );
+            let arg_str = builder
+                .build_load(
+                    context.ptr_type(AddressSpace::default()),
+                    unsafe {
+                        builder.build_in_bounds_gep(
+                            context.ptr_type(AddressSpace::default()),
+                            argv,
+                            &[context.i64_type().const_int((i + 1) as u64, true)],
+                            "calculate offset",
+                        )
+                    }
+                    .unwrap(),
+                    "load arg",
+                )
+                .unwrap();
             let arg = match arg_type {
                 Type::Int => builder
                     .build_call(parse_int, &[arg_str.into()], "parse_int")
+                    .unwrap()
                     .try_as_basic_value()
                     .unwrap_left(),
                 Type::Bool => builder
                     .build_call(parse_bool, &[arg_str.into()], "parse_bool")
+                    .unwrap()
                     .try_as_basic_value()
                     .unwrap_left(),
                 Type::Float => builder
                     .build_call(parse_float, &[arg_str.into()], "parse_float")
+                    .unwrap()
                     .try_as_basic_value()
                     .unwrap_left(),
                 Type::Pointer(_) => unreachable!(),
             };
-            builder.build_store(ptr, arg);
+            builder.build_store(ptr, arg).unwrap();
         });
 
         build_effect_op(
@@ -1378,14 +1421,16 @@ pub fn create_module_from_program<'a>(
             &heap,
             &mut fresh,
             |v| {
-                builder.build_call(
-                    function,
-                    v.iter()
-                        .map(|val| (*val).into())
-                        .collect::<Vec<_>>()
-                        .as_slice(),
-                    "call main",
-                );
+                builder
+                    .build_call(
+                        function,
+                        v.iter()
+                            .map(|val| (*val).into())
+                            .collect::<Vec<_>>()
+                            .as_slice(),
+                        "call main",
+                    )
+                    .unwrap();
             },
             &args
                 .iter()
@@ -1393,7 +1438,9 @@ pub fn create_module_from_program<'a>(
                 .collect::<Vec<String>>(),
         );
     }
-    builder.build_return(Some(&context.i32_type().const_int(0, true)));
+    builder
+        .build_return(Some(&context.i32_type().const_int(0, true)))
+        .unwrap();
 
     // Return the module
     runtime_module
