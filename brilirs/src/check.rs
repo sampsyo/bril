@@ -189,9 +189,8 @@ fn type_check_instruction<'a>(
       check_num_funcs(0, funcs)?;
       check_num_labels(0, labels)?;
       check_asmt_type(&Type::Bool, get_type(env, 0, args)?)?;
-      check_asmt_type(&Type::Int, get_type(env, 1, args)?)?;
-      check_asmt_type(&Type::Int, get_type(env, 2, args)?)?;
-      check_asmt_type(&Type::Int, op_type)?;
+      check_asmt_type(&op_type, get_type(env, 1, args)?)?;
+      check_asmt_type(&op_type, get_type(env, 2, args)?)?;
       update_env(env, dest, op_type)
     }
     Instruction::Value {
