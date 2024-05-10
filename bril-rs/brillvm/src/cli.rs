@@ -8,13 +8,16 @@ use inkwell::{
 };
 use std::io::Read;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[command(about, version, author)] // keeps the cli synced with Cargo.toml
 #[command(allow_hyphen_values(true))] // allows for negative numbers
 pub struct Cli {
     /// The bril file to be compiled to LLVM. stdin is assumed if file is not provided.
     #[arg(short, long, action)]
     pub file: Option<String>,
+    /// The bril file to be compiled to LLVM. stdin is assumed if this string is not provided.
+    #[arg(short, long, action)]
+    pub program: Option<String>,
 
     /// The path to the runtime library. Defaults to rt.bc
     #[arg(short, long, action)]
@@ -34,9 +37,11 @@ pub fn run(args: &Cli) -> String {
     if let Some(f) = &args.file {
         let path = std::fs::canonicalize(f).unwrap();
         let mut file = std::fs::File::open(path).unwrap();
-        file.read_to_string(&mut src).unwrap()
+        file.read_to_string(&mut src).unwrap();
+    } else if let Some(prog) = &args.program {
+        src.clone_from(prog);
     } else {
-        std::io::stdin().read_to_string(&mut src).unwrap()
+        std::io::stdin().read_to_string(&mut src).unwrap();
     };
     let prog = load_program_from_read(src.as_bytes());
 
