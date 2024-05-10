@@ -4,5 +4,5 @@ use clap::Parser;
 fn main() {
     let args = Cli::parse();
 
-    run(&args);
+    println!("{}", run(&args));
 }

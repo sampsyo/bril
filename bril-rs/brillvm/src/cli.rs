@@ -29,7 +29,7 @@ pub struct Cli {
     pub args: Vec<String>,
 }
 
-pub fn run(args: &Cli) {
+pub fn run(args: &Cli) -> String {
     let mut src = String::new();
     if let Some(f) = &args.file {
         let path = std::fs::canonicalize(f).unwrap();
@@ -63,7 +63,8 @@ pub fn run(args: &Cli) {
         unsafe {
             engine.run_function_as_main(llvm_prog.get_function("main").unwrap(), &args);
         }
+        String::new()
     } else {
-        println!("{}", llvm_prog.to_string());
+        llvm_prog.to_string()
     }
 }
