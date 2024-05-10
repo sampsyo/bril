@@ -479,6 +479,13 @@ impl CompileEnv<'_> {
                 | bril::ValueOps::Or => {
                     self.gen_binary(builder, args, dest, op_type, Self::translate_op(*op));
                 }
+                bril::ValueOps::Select => {
+                    let cond = builder.use_var(self.vars[&args[0]]);
+                    let thn = builder.use_var(self.vars[&args[1]]);
+                    let els = builder.use_var(self.vars[&args[2]]);
+                    let res = builder.ins().select(cond, thn, els);
+                    builder.def_var(self.vars[dest], res);    
+                }
                 bril::ValueOps::Lt
                 | bril::ValueOps::Le
                 | bril::ValueOps::Eq

@@ -627,6 +627,34 @@ fn build_instruction<'a, 'b>(
             op: ValueOps::Id,
             op_type: _,
         } => build_op(context, builder, heap, fresh, |v| v[0], args, dest),
+
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Select,
+            op_type: _
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder.build_select::<BasicValueEnum, IntValue>(
+                        v[0].try_into().unwrap(),
+                        v[1],
+                        v[2],
+                        &ret_name
+                    )
+                },
+                args,
+                dest
+            );
+        }
+
         Instruction::Value {
             args,
             dest,
