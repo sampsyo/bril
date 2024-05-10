@@ -629,14 +629,14 @@ fn build_instruction<'a, 'b>(
                 |v| {
                     builder.build_select::<BasicValueEnum, IntValue>(
                         v[0].try_into().unwrap(),
-                        v[1].try_into().unwrap(),
-                        v[2].try_into().unwrap(),
+                        v[1],
+                        v[2],
                         &ret_name
-                    ).into()
+                    )
                 },
                 args,
                 dest
-            )
+            );
         }
 
         Instruction::Value {
