@@ -21,9 +21,8 @@ inkwell = { git = "https://github.com/TheDan64/inkwell.git", features = [
     "llvm18-0",
 ] }
 
-[dependencies.bril-rs]
-path = ".."
-features = ["float", "ssa", "memory"]
+bril-rs = { git = "https://github.com/uwplse/bril", branch = "eggcc-main", features = ["float", "ssa", "memory"] }
+
 
 # Need to set a default `main` to build `rt` bin
 [[bin]]
