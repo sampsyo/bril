@@ -648,7 +648,7 @@ fn build_instruction<'a, 'b>(
                         v[1],
                         v[2],
                         &ret_name
-                    )
+                    ).unwrap()
                 },
                 args,
                 dest
