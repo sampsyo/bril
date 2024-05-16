@@ -6,7 +6,9 @@ use inkwell::{
     context::Context,
     module::Module,
     types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
-    values::{BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
+    values::{
+        AsValueRef, BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue,
+    },
     AddressSpace, FloatPredicate, IntPredicate,
 };
 
@@ -634,7 +636,7 @@ fn build_instruction<'a, 'b>(
             funcs: _,
             labels: _,
             op: ValueOps::Select,
-            op_type: _
+            op_type: _,
         } => {
             let ret_name = fresh.fresh_var();
             build_op(
@@ -643,15 +645,17 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select::<BasicValueEnum, IntValue>(
-                        v[0].try_into().unwrap(),
-                        v[1],
-                        v[2],
-                        &ret_name
-                    ).unwrap()
+                    builder
+                        .build_select::<BasicValueEnum, IntValue>(
+                            v[0].try_into().unwrap(),
+                            v[1],
+                            v[2],
+                            &ret_name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
 
@@ -1065,42 +1069,7 @@ fn build_instruction<'a, 'b>(
             op: ValueOps::Phi,
             op_type,
         } => {
-            let name = fresh.fresh_var();
-            let blocks = labels
-                .iter()
-                .map(|l| block_map_get(context, llvm_func, block_map, l))
-                .collect::<Vec<_>>();
-
-            let phi = builder
-                .build_phi(context.ptr_type(AddressSpace::default()), &name)
-                .unwrap();
-
-            let pointers = args.iter().map(|a| heap.get(a).ptr).collect::<Vec<_>>();
-
-            // The phi node is a little non-standard since we can't load in values from the stack before the phi instruction. Instead, the phi instruction will be over stack locations which will then be loaded into the corresponding output location.
-            phi.add_incoming(
-                pointers
-                    .iter()
-                    .zip(blocks.iter())
-                    .map(|(val, block)| (val as &dyn BasicValue, *block))
-                    .collect::<Vec<_>>()
-                    .as_slice(),
-            );
-
-            builder
-                .build_store(
-                    heap.get(dest).ptr,
-                    build_load(
-                        context,
-                        builder,
-                        &WrappedPointer {
-                            ty: op_type.clone(),
-                            ptr: phi.as_basic_value().into_pointer_value(),
-                        },
-                        &fresh.fresh_var(),
-                    ),
-                )
-                .unwrap();
+            panic!("Phi nodes should be handled by build_phi");
         }
         Instruction::Value {
             args,
@@ -1326,31 +1295,79 @@ pub fn create_module_from_program<'a>(
 
                 // Maps labels to llvm blocks for jumps
                 let mut block_map = HashMap::new();
-                instrs.iter().for_each(|i| match i {
-                    bril_rs::Code::Label { label, .. } => {
-                        let new_block = block_map_get(context, llvm_func, &mut block_map, label);
-
-                        // Check if wee need to insert a jump since all llvm blocks must be terminated
-                        if !is_terminating_instr(&last_instr) {
-                            builder
-                                .build_unconditional_branch(block_map_get(
-                                    context,
-                                    llvm_func,
-                                    &mut block_map,
-                                    label,
-                                ))
-                                .unwrap();
-                        }
-
-                        // Start a new block
-                        block = new_block;
-                        builder.position_at_end(block);
-                        last_instr = None;
+                let mut index = 0;
+                while index < instrs.len() {
+                    if is_terminating_instr(&last_instr)
+                        && matches!(instrs[index], Code::Instruction { .. })
+                    {
+                        index += 1;
+                        continue;
                     }
-                    bril_rs::Code::Instruction(i) => {
-                        // Check if we are in a basic block that has already been terminated
-                        // If so, we just keep skipping unreachable instructions until we hit a new block or run out of instructions
-                        if !is_terminating_instr(&last_instr) {
+
+                    let mut phi_index = index;
+                    let mut phi_ptrs = vec![];
+                    while phi_index < instrs.len() && is_phi(&instrs[phi_index]) {
+                        match &instrs[phi_index] {
+                            Code::Instruction(instr) => {
+                                phi_ptrs.push((
+                                    instr.clone(),
+                                    build_phi(
+                                        instr,
+                                        context,
+                                        &runtime_module,
+                                        &builder,
+                                        &heap,
+                                        &mut block_map,
+                                        llvm_func,
+                                        &mut fresh,
+                                    ),
+                                ));
+                                last_instr = Some(instr.clone());
+                            }
+                            Code::Label { .. } => unreachable!(),
+                        }
+                        phi_index += 1;
+                    }
+
+                    for (instr, phi) in phi_ptrs {
+                        finish_phi(
+                            &instr,
+                            context,
+                            &runtime_module,
+                            &builder,
+                            &heap,
+                            &mut fresh,
+                            phi,
+                        );
+                    }
+                    if phi_index > index {
+                        index = phi_index;
+                        continue;
+                    }
+
+                    match &instrs[index] {
+                        bril_rs::Code::Label { label, .. } => {
+                            let new_block =
+                                block_map_get(context, llvm_func, &mut block_map, label);
+
+                            // Check if wee need to insert a jump since all llvm blocks must be terminated
+                            if !is_terminating_instr(&last_instr) {
+                                builder
+                                    .build_unconditional_branch(block_map_get(
+                                        context,
+                                        llvm_func,
+                                        &mut block_map,
+                                        label,
+                                    ))
+                                    .unwrap();
+                            }
+
+                            // Start a new block
+                            block = new_block;
+                            builder.position_at_end(block);
+                            last_instr = None;
+                        }
+                        bril_rs::Code::Instruction(i) => {
                             build_instruction(
                                 i,
                                 context,
@@ -1364,7 +1381,8 @@ pub fn create_module_from_program<'a>(
                             last_instr = Some(i.clone());
                         }
                     }
-                });
+                    index += 1;
+                }
             }
 
             // Make sure every function is terminated with a return if not already
@@ -1472,4 +1490,102 @@ pub fn create_module_from_program<'a>(
 
     // Return the module
     runtime_module
+}
+
+pub(crate) fn is_phi(i: &Code) -> bool {
+    matches!(
+        i,
+        Code::Instruction(Instruction::Value {
+            op: ValueOps::Phi,
+            ..
+        })
+    )
+}
+
+// The workhorse of converting a Bril Instruction to an LLVM Instruction
+#[allow(clippy::too_many_arguments)]
+fn build_phi<'a, 'b>(
+    i: &'b Instruction,
+    context: &'a Context,
+    _module: &'a Module,
+    builder: &'a Builder,
+    heap: &Heap<'a, 'b>,
+    block_map: &mut HashMap<String, BasicBlock<'a>>,
+    llvm_func: FunctionValue<'a>,
+    fresh: &mut Fresh,
+) -> PointerValue<'a> {
+    match i {
+        Instruction::Value {
+            args,
+            dest: _,
+            funcs: _,
+            labels,
+            op: ValueOps::Phi,
+            op_type: _,
+        } => {
+            let name = fresh.fresh_var();
+            let blocks = labels
+                .iter()
+                .map(|l| block_map_get(context, llvm_func, block_map, l))
+                .collect::<Vec<_>>();
+
+            let phi = builder
+                .build_phi(context.ptr_type(AddressSpace::default()), &name)
+                .unwrap();
+
+            let pointers = args.iter().map(|a| heap.get(a).ptr).collect::<Vec<_>>();
+
+            // The phi node is a little non-standard since we can't load in values from the stack before the phi instruction. Instead, the phi instruction will be over stack locations which will then be loaded into the corresponding output location.
+            phi.add_incoming(
+                pointers
+                    .iter()
+                    .zip(blocks.iter())
+                    .map(|(val, block)| (val as &dyn BasicValue, *block))
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+            );
+
+            phi.as_basic_value().into_pointer_value()
+        }
+        _ => unreachable!(),
+    }
+}
+
+/// finish the phi by loading in the value
+#[allow(clippy::too_many_arguments)]
+fn finish_phi<'a, 'b>(
+    i: &'b Instruction,
+    context: &'a Context,
+    _module: &'a Module,
+    builder: &'a Builder,
+    heap: &Heap<'a, 'b>,
+    fresh: &mut Fresh,
+    ptr: PointerValue<'a>,
+) {
+    match i {
+        Instruction::Value {
+            args: _,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Phi,
+            op_type,
+        } => {
+            builder
+                .build_store(
+                    heap.get(dest).ptr,
+                    build_load(
+                        context,
+                        builder,
+                        &WrappedPointer {
+                            ty: op_type.clone(),
+                            ptr,
+                        },
+                        &fresh.fresh_var(),
+                    ),
+                )
+                .unwrap();
+        }
+        _ => unreachable!(),
+    }
 }
