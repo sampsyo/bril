@@ -22,7 +22,21 @@ A couple of notes about flags:
 - `-r <file>` can be used to provide a path to the runtime library `rt.bc` if it is not contained in the same directory.
 - `<args>` All other arguments should be passable as normal if in `-i` mode.
 
-Valid Bril programs are assumed as input with no attempt at error handling. Each compiler `.ll` file is verified before being emitted. If the line `llvm_prog.verify().unwrap();` raises an error then open an issue with your Bril program!
+Valid Bril programs are assumed as input with no attempt at error handling. Each
+compiler `.ll` file is verified before being emitted. If the line
+`llvm_prog.verify().unwrap();` raises an error then open an issue with your Bril
+program!
+
+### Phi Nodes
+
+Bril's specification of phi nodes is not equivalent to LLVM's specification of
+phi nodes. For example, in LLVM, phi nodes must be located at the start of a basic
+block.
+
+Brillvm does not require that your Bril code be in SSA form (as it assumes
+the LLVM `mem2reg` pass will be sufficient if that is needed) but if you choose
+to supply Bril code with `phi` operations, Brillvm will assume that they follow
+LLVM's additional constraints.
 
 ## TroubleShooting
 
