@@ -1043,6 +1043,15 @@ fn build_instruction<'a, 'b>(
                 .map(|l| block_map_get(context, llvm_func, block_map, l))
                 .collect::<Vec<_>>();
 
+            // Phi nodes must always go before all other instructions
+            // Note, this changes the order of user provided phi nodes
+            // If this bril code follows LLVM's phi node restrictions, then
+            // there should be no observable sideeffects
+            let current_block = builder.get_insert_block().unwrap();
+            current_block
+                .get_first_instruction()
+                .map(|instruction| builder.position_before(&instruction));
+
             let phi = builder
                 .build_phi(context.ptr_type(AddressSpace::default()), &name)
                 .unwrap();
@@ -1058,6 +1067,10 @@ fn build_instruction<'a, 'b>(
                     .collect::<Vec<_>>()
                     .as_slice(),
             );
+
+            // Because we set the position to the start of the block, we should
+            // reset it afterwards
+            builder.position_at_end(current_block);
 
             builder
                 .build_store(

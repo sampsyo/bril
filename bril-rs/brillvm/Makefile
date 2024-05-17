@@ -23,7 +23,8 @@ rt:
 
 example:
 # bril2json < ../../benchmarks/mem/sieve.bril | cargo run -- -i 100
-	bril2json < ../../benchmarks/mixed/cholesky.bril | cargo run -- -i
+# bril2json < ../../benchmarks/mixed/cholesky.bril | cargo run -- -i
+	bril2json < ../../test/interp/ssa/ssa-two-phi.bril | cargo run -- -i true
 
 .PHONY: test
 test:
