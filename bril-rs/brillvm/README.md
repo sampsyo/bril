@@ -33,7 +33,7 @@ Bril's specification of phi nodes is not equivalent to LLVM's specification of
 phi nodes. For example, in LLVM, phi nodes must be located at the start of a basic
 block.
 
-Brillvm does not require that your Bril code be in SSA form(as it assumes
+Brillvm does not require that your Bril code be in SSA form (as it assumes
 the LLVM `mem2reg` pass will be sufficient if that is needed) but if you choose
 to supply Bril code with `phi` operations, Brillvm will assume that they follow
 LLVM's additional constraints.
