@@ -31,7 +31,7 @@ env:
 
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         test-code:
@@ -53,7 +53,7 @@ jobs:
           toolchain: stable
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2.0.2
+        uses: Pat-Lafon/install-llvm-action@master
         if: matrix.needs_llvm
         with:
           version: ${{ env.LLVM_VERSION }}
@@ -90,7 +90,7 @@ jobs:
         run: ${{ matrix.test-code }}
 
   rust-ci:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       RUSTDOCFLAGS: -D warnings
       RUSTFLAGS: -D warnings
@@ -104,7 +104,7 @@ jobs:
           toolchain: stable
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2.0.2
+        uses: Pat-Lafon/install-llvm-action@master
         if: matrix.path == 'bril-rs/brillvm/Cargo.toml'
         with:
           version: ${{ env.LLVM_VERSION }}
