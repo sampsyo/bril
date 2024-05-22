@@ -53,10 +53,11 @@ jobs:
           toolchain: stable
 
       - name: Install LLVM and Clang
-        uses: Pat-Lafon/install-llvm-action@master
         if: matrix.needs_llvm
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{ env.LLVM_VERSION }}
 
       - name: Install cargo-hack for feature-flag checking
         run: cargo install cargo-hack
@@ -104,10 +105,11 @@ jobs:
           toolchain: stable
 
       - name: Install LLVM and Clang
-        uses: Pat-Lafon/install-llvm-action@master
         if: matrix.path == 'bril-rs/brillvm/Cargo.toml'
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{ env.LLVM_VERSION }}
 
       - name: cargo check
         run: cargo check --manifest-path ${{ matrix.path }} --all-targets
