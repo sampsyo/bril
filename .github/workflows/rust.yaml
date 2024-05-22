@@ -57,7 +57,7 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh ${{ env.LLVM_VERSION }}
+          sudo ./llvm.sh ${{ env.LLVM_VERSION }} all
 
       - name: Install cargo-hack for feature-flag checking
         run: cargo install cargo-hack
@@ -109,7 +109,7 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh ${{ env.LLVM_VERSION }}
+          sudo ./llvm.sh ${{ env.LLVM_VERSION }} all
 
       - name: cargo check
         run: cargo check --manifest-path ${{ matrix.path }} --all-targets
