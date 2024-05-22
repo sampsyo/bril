@@ -1,4 +1,3 @@
-workspace = { members = ["runtime"] }
 [package]
 name = "brillvm"
 version = "0.1.0"
@@ -29,12 +28,3 @@ features = ["float", "ssa", "memory"]
 [[bin]]
 name = "main"
 path = "src/main.rs"
-
-# To properly set up the rt library for linking with LLVM
-[profile.dev]
-panic = "abort"
-lto = true
-
-[profile.release]
-panic = "abort"
-lto = true

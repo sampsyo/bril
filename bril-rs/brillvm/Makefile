@@ -19,7 +19,7 @@ clean:
 
 .PHONY: rt
 rt:
-	cd runtime && cargo rustc --release -- --emit=llvm-bc && mv ../target/release/deps/runtime-*.bc ../rt.bc
+	cd runtime && cargo rustc --release -- --emit=llvm-bc && mv target/release/deps/runtime-*.bc ../rt.bc
 
 example:
 # bril2json < ../../benchmarks/mem/sieve.bril | cargo run -- -i 100

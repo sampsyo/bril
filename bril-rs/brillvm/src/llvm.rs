@@ -1048,9 +1048,9 @@ fn build_instruction<'a, 'b>(
             // If this bril code follows LLVM's phi node restrictions, then
             // there should be no observable sideeffects
             let current_block = builder.get_insert_block().unwrap();
-            current_block
-                .get_first_instruction()
-                .map(|instruction| builder.position_before(&instruction));
+            if let Some(instruction) = current_block.get_first_instruction() {
+                builder.position_before(&instruction);
+            }
 
             let phi = builder
                 .build_phi(context.ptr_type(AddressSpace::default()), &name)
