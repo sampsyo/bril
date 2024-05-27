@@ -228,6 +228,8 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "smax" => ValueOps::Smax,
                     "smin" => ValueOps::Smin,
                     "sub" => ValueOps::Sub,
+                    "shl" => ValueOps::Shl,
+                    "shr" => ValueOps::Shr,
                     #[cfg(feature = "ssa")]
                     "phi" => ValueOps::Phi,
                     #[cfg(feature = "float")]

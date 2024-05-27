@@ -427,6 +427,10 @@ pub enum ValueOps {
     Smax,
     /// Signed min
     Smin,
+    /// Shift left
+    Shl,
+    /// Shift right
+    Shr,
     /// <https://capra.cs.cornell.edu/bril/lang/ssa.html#operations>
     #[cfg(feature = "ssa")]
     Phi,
@@ -515,6 +519,8 @@ impl Display for ValueOps {
             Self::Select => write!(f, "select"),
             Self::Smax => write!(f, "smax"),
             Self::Smin => write!(f, "smin"),
+            Self::Shl => write!(f, "shl"),
+            Self::Shr => write!(f, "shr"),
             #[cfg(feature = "ssa")]
             Self::Phi => write!(f, "phi"),
             #[cfg(feature = "float")]

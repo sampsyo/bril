@@ -95,7 +95,15 @@ fn type_check_instruction<'a>(
       update_env(env, dest, const_type)
     }
     Instruction::Value {
-      op: ValueOps::Add | ValueOps::Sub | ValueOps::Mul | ValueOps::Div,
+      op:
+        ValueOps::Add
+        | ValueOps::Sub
+        | ValueOps::Mul
+        | ValueOps::Div
+        | ValueOps::Smax
+        | ValueOps::Smin
+        | ValueOps::Shl
+        | ValueOps::Shr,
       dest,
       op_type,
       args,
@@ -194,24 +202,13 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value {
-      op: ValueOps::Smax | ValueOps::Smin,
-      dest,
-      op_type,
-      args,
-      funcs,
-      labels,
-      pos: _,
-    } => {
-      check_num_args(2, args)?;
-      check_num_funcs(0, funcs)?;
-      check_num_labels(0, labels)?;
-      check_asmt_type(&Type::Int, get_type(env, 0, args)?)?;
-      check_asmt_type(&Type::Int, get_type(env, 1, args)?)?;
-      check_asmt_type(&Type::Int, op_type)?;
-      update_env(env, dest, op_type)
-    }
-    Instruction::Value {
-      op: ValueOps::Fadd | ValueOps::Fsub | ValueOps::Fmul | ValueOps::Fdiv,
+      op:
+        ValueOps::Fadd
+        | ValueOps::Fsub
+        | ValueOps::Fmul
+        | ValueOps::Fdiv
+        | ValueOps::Fmax
+        | ValueOps::Fmin,
       dest,
       op_type,
       args,
@@ -242,23 +239,6 @@ fn type_check_instruction<'a>(
       check_asmt_type(&Type::Float, get_type(env, 0, args)?)?;
       check_asmt_type(&Type::Float, get_type(env, 1, args)?)?;
       check_asmt_type(&Type::Bool, op_type)?;
-      update_env(env, dest, op_type)
-    }
-    Instruction::Value {
-      op: ValueOps::Fmax | ValueOps::Fmin,
-      dest,
-      op_type,
-      args,
-      funcs,
-      labels,
-      pos: _,
-    } => {
-      check_num_args(2, args)?;
-      check_num_funcs(0, funcs)?;
-      check_num_labels(0, labels)?;
-      check_asmt_type(&Type::Float, get_type(env, 0, args)?)?;
-      check_asmt_type(&Type::Float, get_type(env, 1, args)?)?;
-      check_asmt_type(&Type::Float, op_type)?;
       update_env(env, dest, op_type)
     }
     Instruction::Value {

@@ -374,6 +374,8 @@ impl CompileEnv<'_> {
             bril::ValueOps::Fsub => ir::Opcode::Fsub,
             bril::ValueOps::Fmul => ir::Opcode::Fmul,
             bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
+            bril::ValueOps::Shl => ir::Opcode::Ishl,
+            bril::ValueOps::Shr => ir::Opcode::Ushr,
             _ => panic!("not a translatable opcode: {op}"),
         }
     }
@@ -476,7 +478,9 @@ impl CompileEnv<'_> {
                 | bril::ValueOps::Mul
                 | bril::ValueOps::Div
                 | bril::ValueOps::And
-                | bril::ValueOps::Or => {
+                | bril::ValueOps::Or
+                | bril::ValueOps::Shl
+                | bril::ValueOps::Shr => {
                     self.gen_binary(builder, args, dest, op_type, Self::translate_op(*op));
                 }
                 bril::ValueOps::Select => {
