@@ -6,7 +6,6 @@ edition = "2021"
 description = "A rust representation of the Bril language"
 readme = "README.md"
 repository = "https://github.com/sampsyo/bril"
-# license = "MIT"
 license-file = "../LICENSE"
 categories = ["command-line-utilities", "compilers", "data-structures", "parser-implementations"]
 keywords = ["compiler", "bril", "parser", "data-structures", "language"]

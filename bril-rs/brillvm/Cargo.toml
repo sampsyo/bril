@@ -16,32 +16,15 @@ default-run = "main"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
-inkwell = { version = "0.2", features = ["llvm16-0"] }
-libc-print = "0.1"
-
-# For overriding parking_lot_core to latest version from 0.9.7
-# To pull in the removal of `window-sys` which was causing duplicate dependencies
-[patch.crates-io]
-parking_lot_core = { git = "https://github.com/Amanieu/parking_lot" }
+inkwell = { git = "https://github.com/TheDan64/inkwell.git", features = [
+    "llvm18-0",
+] }
 
 [dependencies.bril-rs]
 path = ".."
 features = ["float", "ssa", "memory"]
 
-[[bin]]
-name = "rt"
-path = "bin/rt.rs"
-
 # Need to set a default `main` to build `rt` bin
 [[bin]]
 name = "main"
 path = "src/main.rs"
-
-# To properly set up the rt library for linking with LLVM
-[profile.dev]
-panic = "abort"
-lto = true
-
-[profile.release]
-panic = "abort"
-lto = true

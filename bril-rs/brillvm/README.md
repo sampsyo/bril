@@ -56,3 +56,15 @@ This tool relies on the `llvm-sys` crate to find the correct version of LLVM to 
 ```shell
 LLVM_SYS_150_PREFIX="/opt/homebrew/Cellar/llvm/15.0.7_1/"
 ```
+
+### zstd not found
+
+```shell
+ld: Library 'zstd' not found
+```
+
+Mac specific: Assuming you have zstd installed via `brew install zstd`, googling
+around has found that you might need
+`export LIBRARY_PATH=$LIBRARY_PATH:$(brew --prefix zstd)/lib/`. Apparently this
+also hit the ruby community at some point so, they have many issues with similar
+resolutions to this problem.
