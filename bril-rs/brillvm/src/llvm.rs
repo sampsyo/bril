@@ -664,6 +664,131 @@ fn build_instruction<'a, 'b>(
             dest,
             funcs: _,
             labels: _,
+            op: ValueOps::Smax,
+            op_type: _,
+        } => {
+            let cmp_name = fresh.fresh_var();
+            let name = fresh.fresh_var();
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder.build_select(
+                        builder.build_int_compare::<IntValue>(
+                            IntPredicate::SGT,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &cmp_name
+                        ).unwrap(),
+                        v[0],
+                        v[1],
+                        &name
+                    ).unwrap()
+                },
+                args,
+                dest
+            );
+        }
+
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Smin,
+            op_type: _,
+        } => {
+            let cmp_name = fresh.fresh_var();
+            let name = fresh.fresh_var();
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder.build_select(
+                        builder.build_int_compare::<IntValue>(
+                            IntPredicate::SLT,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &cmp_name
+                        ).unwrap(),
+                        v[0],
+                        v[1],
+                        &name
+                    ).unwrap()
+                },
+                args,
+                dest
+            );
+        }
+
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Shl,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_left_shift::<IntValue>(
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &ret_name
+                        )
+                        .unwrap()
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Shr,
+            op_type: _,
+        } => {
+            let ret_name = fresh.fresh_var();
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder
+                        .build_right_shift::<IntValue>(
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            false, // sign extend
+                            &ret_name
+                        )
+                        .unwrap()
+                        .into()
+                },
+                args,
+                dest,
+            );
+        }
+
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
             op: ValueOps::Fadd,
             op_type: _,
         } => {
@@ -916,6 +1041,71 @@ fn build_instruction<'a, 'b>(
                 dest,
             );
         }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fmax,
+            op_type: _,
+        } => {
+            let cmp_name = fresh.fresh_var();
+            let name = fresh.fresh_var();
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder.build_select(
+                        builder.build_float_compare::<FloatValue>(
+                            FloatPredicate::OGT,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &cmp_name
+                        ).unwrap(),
+                        v[0],
+                        v[1],
+                        &name
+                    ).unwrap()
+                },
+                args,
+                dest
+            );
+        }
+        Instruction::Value {
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Fmin,
+            op_type: _,
+        } => {
+            let cmp_name = fresh.fresh_var();
+            let name = fresh.fresh_var();
+            build_op(
+                context,
+                builder,
+                heap,
+                fresh,
+                |v| {
+                    builder.build_select(
+                        builder.build_float_compare::<FloatValue>(
+                            FloatPredicate::OLT,
+                            v[0].try_into().unwrap(),
+                            v[1].try_into().unwrap(),
+                            &cmp_name
+                        ).unwrap(),
+                        v[0],
+                        v[1],
+                        &name
+                    ).unwrap()
+                },
+                args,
+                dest
+            );
+        }
+
         Instruction::Effect {
             args,
             funcs: _,

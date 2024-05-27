@@ -21,7 +21,8 @@ inkwell = { git = "https://github.com/TheDan64/inkwell.git", features = [
     "llvm18-0",
 ], rev = "6c0fb56b3554e939f9ca61b465043d6a84fb7b95" }
 
-bril-rs = { git = "https://github.com/uwplse/bril", features = ["float", "ssa", "memory"] }
+# TODO: Remove rev when https://github.com/uwplse/bril/pull/6 merges
+bril-rs = { git = "https://github.com/uwplse/bril", rev="40ec0e5803c69bc2cde794785ba6b13a4fc401fe", features = ["float", "ssa", "memory"] }
 
 
 # Need to set a default `main` to build `rt` bin
