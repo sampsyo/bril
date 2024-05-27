@@ -4,6 +4,7 @@ use crate::{
 };
 use bril_rs::{ConstOps, EffectOps, Instruction, Type, ValueOps};
 
+use clap::ValueEnum;
 use fxhash::FxHashMap;
 
 const fn check_num_args(expected: usize, args: &[String]) -> Result<(), InterpError> {
@@ -193,6 +194,24 @@ fn type_check_instruction<'a>(
       check_asmt_type(&op_type, get_type(env, 2, args)?)?;
       update_env(env, dest, op_type)
     }
+    Instruction::Value { 
+      op: ValueOps::Smax,
+      dest,
+      op_type,
+      args,
+      funcs,
+      labels,
+      pos: _
+    } => { todo!() }
+    Instruction::Value { 
+      op: ValueOps::Smin,
+      dest,
+      op_type,
+      args,
+      funcs,
+      labels,
+      pos: _
+    } => { todo!() }
     Instruction::Value {
       op: ValueOps::Fadd | ValueOps::Fsub | ValueOps::Fmul | ValueOps::Fdiv,
       dest,

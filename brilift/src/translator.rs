@@ -486,6 +486,12 @@ impl CompileEnv<'_> {
                     let res = builder.ins().select(cond, thn, els);
                     builder.def_var(self.vars[dest], res);    
                 }
+                bril::ValueOps::Smax => {
+                    todo!()
+                }
+                bril::ValueOps::Smin => {
+                    todo!()
+                }
                 bril::ValueOps::Lt
                 | bril::ValueOps::Le
                 | bril::ValueOps::Eq

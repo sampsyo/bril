@@ -659,6 +659,24 @@ fn build_instruction<'a, 'b>(
             );
         }
 
+        Instruction::Value{
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Smax,
+            op_type: _,
+        } => { todo!() }
+
+        Instruction::Value{
+            args,
+            dest,
+            funcs: _,
+            labels: _,
+            op: ValueOps::Smin,
+            op_type: _,
+        } => { todo!() }
+
         Instruction::Value {
             args,
             dest,

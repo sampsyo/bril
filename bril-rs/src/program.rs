@@ -423,6 +423,10 @@ pub enum ValueOps {
     Id,
     /// Select
     Select,
+    /// Signed max
+    Smax,
+    /// Signed min
+    Smin,
     /// <https://capra.cs.cornell.edu/bril/lang/ssa.html#operations>
     #[cfg(feature = "ssa")]
     Phi,
@@ -503,6 +507,8 @@ impl Display for ValueOps {
             Self::Call => write!(f, "call"),
             Self::Id => write!(f, "id"),
             Self::Select => write!(f, "select"),
+            Self::Smax => write!(f, "smax"),
+            Self::Smin => write!(f, "smin"),
             #[cfg(feature = "ssa")]
             Self::Phi => write!(f, "phi"),
             #[cfg(feature = "float")]
