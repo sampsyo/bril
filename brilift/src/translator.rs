@@ -484,7 +484,7 @@ impl CompileEnv<'_> {
                     let thn = builder.use_var(self.vars[&args[1]]);
                     let els = builder.use_var(self.vars[&args[2]]);
                     let res = builder.ins().select(cond, thn, els);
-                    builder.def_var(self.vars[dest], res);    
+                    builder.def_var(self.vars[dest], res);
                 }
                 bril::ValueOps::Smax => {
                     let a = builder.use_var(self.vars[&args[0]]);
