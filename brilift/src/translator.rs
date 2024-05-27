@@ -546,6 +546,22 @@ impl CompileEnv<'_> {
                     self.gen_fcmp(builder, args, dest, Self::translate_floatcc(*op))
                 }
 
+                bril::ValueOps::Fmax => {
+                    let a = builder.use_var(self.vars[&args[0]]);
+                    let b = builder.use_var(self.vars[&args[1]]);
+                    let cmp = builder.ins().fcmp(FloatCC::GreaterThan, a, b);
+                    let res = builder.ins().select(cmp, a, b);
+                    builder.def_var(self.vars[dest], res);
+                }
+
+                bril::ValueOps::Fmin => {
+                    let a = builder.use_var(self.vars[&args[0]]);
+                    let b = builder.use_var(self.vars[&args[1]]);
+                    let cmp = builder.ins().fcmp(FloatCC::LessThan, a, b);
+                    let res = builder.ins().select(cmp, a, b);
+                    builder.def_var(self.vars[dest], res);
+                }
+
                 // Memory extension.
                 bril::ValueOps::Alloc => {
                     // The number of elements to allocate comes from the program.

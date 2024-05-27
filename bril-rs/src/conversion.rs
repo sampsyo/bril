@@ -248,6 +248,10 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "fle" => ValueOps::Fle,
                     #[cfg(feature = "float")]
                     "fge" => ValueOps::Fge,
+                    #[cfg(feature = "float")]
+                    "fmax" => ValueOps::Fmax,
+                    #[cfg(feature = "float")]
+                    "fmin" => ValueOps::Fmin,
                     #[cfg(feature = "char")]
                     "ceq" => ValueOps::Ceq,
                     #[cfg(feature = "char")]

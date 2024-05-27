@@ -325,8 +325,8 @@ fn execute_value_op<T: std::io::Write>(
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Select,
-    Smax, Smin, Sub,
+    Fle, Flt, Fmax, Fmin, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi,
+    PtrAdd, Select, Smax, Smin, Sub,
   };
   match op {
     Add => {
@@ -458,6 +458,18 @@ fn execute_value_op<T: std::io::Write>(
       let arg0 = get_arg::<f64>(&state.env, 0, args);
       let arg1 = get_arg::<f64>(&state.env, 1, args);
       state.env.set(dest, Value::Bool(arg0 >= arg1));
+    }
+    Fmax => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      let res = if arg0 > arg1 { arg0 } else { arg1 };
+      state.env.set(dest, Value::Float(res));
+    }
+    Fmin => {
+      let arg0 = get_arg::<f64>(&state.env, 0, args);
+      let arg1 = get_arg::<f64>(&state.env, 1, args);
+      let res = if arg0 < arg1 { arg0 } else { arg1 };
+      state.env.set(dest, Value::Float(res));
     }
     Ceq => {
       let arg0 = get_arg::<char>(&state.env, 0, args);

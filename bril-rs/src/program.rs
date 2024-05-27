@@ -457,6 +457,12 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/float.html#operations>
     #[cfg(feature = "float")]
     Fge,
+    /// Float max
+    #[cfg(feature = "float")]
+    Fmax,
+    /// Float min
+    #[cfg(feature = "float")]
+    Fmin,
     /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
     #[cfg(feature = "char")]
     Ceq,
@@ -529,6 +535,10 @@ impl Display for ValueOps {
             Self::Fle => write!(f, "fle"),
             #[cfg(feature = "float")]
             Self::Fge => write!(f, "fge"),
+            #[cfg(feature = "float")]
+            Self::Fmax => write!(f, "fmax"),
+            #[cfg(feature = "float")]
+            Self::Fmin => write!(f, "fmin"),
             #[cfg(feature = "char")]
             Self::Ceq => write!(f, "ceq"),
             #[cfg(feature = "char")]
