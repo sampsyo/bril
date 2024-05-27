@@ -402,8 +402,18 @@ fn execute_value_op<T: std::io::Write>(
       let res = if arg0 { arg1 } else { arg2 };
       state.env.set(dest, res);
     }
-    Smax => { todo!() }
-    Smin => { todo!() }
+    Smax => { 
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      let res = if arg0 > arg1 { arg0 } else { arg1 };
+      state.env.set(dest, Value::Int(res));
+     }
+    Smin => { 
+      let arg0 = get_arg::<i64>(&state.env, 0, args);
+      let arg1 = get_arg::<i64>(&state.env, 1, args);
+      let res = if arg0 < arg1 { arg0 } else { arg1 };
+      state.env.set(dest, Value::Int(res));
+     }
     Fadd => {
       let arg0 = get_arg::<f64>(&state.env, 0, args);
       let arg1 = get_arg::<f64>(&state.env, 1, args);

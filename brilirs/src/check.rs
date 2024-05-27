@@ -195,23 +195,22 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value { 
-      op: ValueOps::Smax,
+      op: ValueOps::Smax | ValueOps::Smin,
       dest,
       op_type,
       args,
       funcs,
       labels,
       pos: _
-    } => { todo!() }
-    Instruction::Value { 
-      op: ValueOps::Smin,
-      dest,
-      op_type,
-      args,
-      funcs,
-      labels,
-      pos: _
-    } => { todo!() }
+    } => { 
+      check_num_args(2, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      check_asmt_type(&Type::Int, get_type(env, 0, args)?)?;
+      check_asmt_type(&Type::Int, get_type(env, 1, args)?)?;
+      check_asmt_type(&Type::Int, op_type)?;
+      update_env(env, dest, op_type)
+    }
     Instruction::Value {
       op: ValueOps::Fadd | ValueOps::Fsub | ValueOps::Fmul | ValueOps::Fdiv,
       dest,
