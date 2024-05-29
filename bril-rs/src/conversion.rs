@@ -225,7 +225,11 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "call" => ValueOps::Call,
                     "id" => ValueOps::Id,
                     "select" => ValueOps::Select,
+                    "smax" => ValueOps::Smax,
+                    "smin" => ValueOps::Smin,
                     "sub" => ValueOps::Sub,
+                    "shl" => ValueOps::Shl,
+                    "shr" => ValueOps::Shr,
                     #[cfg(feature = "ssa")]
                     "phi" => ValueOps::Phi,
                     #[cfg(feature = "float")]
@@ -246,6 +250,10 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     "fle" => ValueOps::Fle,
                     #[cfg(feature = "float")]
                     "fge" => ValueOps::Fge,
+                    #[cfg(feature = "float")]
+                    "fmax" => ValueOps::Fmax,
+                    #[cfg(feature = "float")]
+                    "fmin" => ValueOps::Fmin,
                     #[cfg(feature = "char")]
                     "ceq" => ValueOps::Ceq,
                     #[cfg(feature = "char")]

@@ -95,7 +95,15 @@ fn type_check_instruction<'a>(
       update_env(env, dest, const_type)
     }
     Instruction::Value {
-      op: ValueOps::Add | ValueOps::Sub | ValueOps::Mul | ValueOps::Div,
+      op:
+        ValueOps::Add
+        | ValueOps::Sub
+        | ValueOps::Mul
+        | ValueOps::Div
+        | ValueOps::Smax
+        | ValueOps::Smin
+        | ValueOps::Shl
+        | ValueOps::Shr,
       dest,
       op_type,
       args,
@@ -183,18 +191,24 @@ fn type_check_instruction<'a>(
       args,
       funcs,
       labels,
-      pos: _  
+      pos: _,
     } => {
       check_num_args(3, args)?;
       check_num_funcs(0, funcs)?;
       check_num_labels(0, labels)?;
       check_asmt_type(&Type::Bool, get_type(env, 0, args)?)?;
-      check_asmt_type(&op_type, get_type(env, 1, args)?)?;
-      check_asmt_type(&op_type, get_type(env, 2, args)?)?;
+      check_asmt_type(op_type, get_type(env, 1, args)?)?;
+      check_asmt_type(op_type, get_type(env, 2, args)?)?;
       update_env(env, dest, op_type)
     }
     Instruction::Value {
-      op: ValueOps::Fadd | ValueOps::Fsub | ValueOps::Fmul | ValueOps::Fdiv,
+      op:
+        ValueOps::Fadd
+        | ValueOps::Fsub
+        | ValueOps::Fmul
+        | ValueOps::Fdiv
+        | ValueOps::Fmax
+        | ValueOps::Fmin,
       dest,
       op_type,
       args,

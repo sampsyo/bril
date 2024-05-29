@@ -423,6 +423,14 @@ pub enum ValueOps {
     Id,
     /// Select
     Select,
+    /// Signed max
+    Smax,
+    /// Signed min
+    Smin,
+    /// Shift left
+    Shl,
+    /// Shift right
+    Shr,
     /// <https://capra.cs.cornell.edu/bril/lang/ssa.html#operations>
     #[cfg(feature = "ssa")]
     Phi,
@@ -453,6 +461,12 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/float.html#operations>
     #[cfg(feature = "float")]
     Fge,
+    /// Float max
+    #[cfg(feature = "float")]
+    Fmax,
+    /// Float min
+    #[cfg(feature = "float")]
+    Fmin,
     /// <https://capra.cs.cornell.edu/bril/lang/char.html#operations>
     #[cfg(feature = "char")]
     Ceq,
@@ -503,6 +517,10 @@ impl Display for ValueOps {
             Self::Call => write!(f, "call"),
             Self::Id => write!(f, "id"),
             Self::Select => write!(f, "select"),
+            Self::Smax => write!(f, "smax"),
+            Self::Smin => write!(f, "smin"),
+            Self::Shl => write!(f, "shl"),
+            Self::Shr => write!(f, "shr"),
             #[cfg(feature = "ssa")]
             Self::Phi => write!(f, "phi"),
             #[cfg(feature = "float")]
@@ -523,6 +541,10 @@ impl Display for ValueOps {
             Self::Fle => write!(f, "fle"),
             #[cfg(feature = "float")]
             Self::Fge => write!(f, "fge"),
+            #[cfg(feature = "float")]
+            Self::Fmax => write!(f, "fmax"),
+            #[cfg(feature = "float")]
+            Self::Fmin => write!(f, "fmin"),
             #[cfg(feature = "char")]
             Self::Ceq => write!(f, "ceq"),
             #[cfg(feature = "char")]

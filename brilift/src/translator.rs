@@ -374,6 +374,8 @@ impl CompileEnv<'_> {
             bril::ValueOps::Fsub => ir::Opcode::Fsub,
             bril::ValueOps::Fmul => ir::Opcode::Fmul,
             bril::ValueOps::Fdiv => ir::Opcode::Fdiv,
+            bril::ValueOps::Shl => ir::Opcode::Ishl,
+            bril::ValueOps::Shr => ir::Opcode::Ushr,
             _ => panic!("not a translatable opcode: {op}"),
         }
     }
@@ -476,7 +478,9 @@ impl CompileEnv<'_> {
                 | bril::ValueOps::Mul
                 | bril::ValueOps::Div
                 | bril::ValueOps::And
-                | bril::ValueOps::Or => {
+                | bril::ValueOps::Or
+                | bril::ValueOps::Shl
+                | bril::ValueOps::Shr => {
                     self.gen_binary(builder, args, dest, op_type, Self::translate_op(*op));
                 }
                 bril::ValueOps::Select => {
@@ -484,7 +488,21 @@ impl CompileEnv<'_> {
                     let thn = builder.use_var(self.vars[&args[1]]);
                     let els = builder.use_var(self.vars[&args[2]]);
                     let res = builder.ins().select(cond, thn, els);
-                    builder.def_var(self.vars[dest], res);    
+                    builder.def_var(self.vars[dest], res);
+                }
+                bril::ValueOps::Smax => {
+                    let a = builder.use_var(self.vars[&args[0]]);
+                    let b = builder.use_var(self.vars[&args[1]]);
+                    let cmp = builder.ins().icmp(IntCC::SignedGreaterThan, a, b);
+                    let res = builder.ins().select(cmp, a, b);
+                    builder.def_var(self.vars[dest], res);
+                }
+                bril::ValueOps::Smin => {
+                    let a = builder.use_var(self.vars[&args[0]]);
+                    let b = builder.use_var(self.vars[&args[1]]);
+                    let cmp = builder.ins().icmp(IntCC::SignedLessThan, a, b);
+                    let res = builder.ins().select(cmp, a, b);
+                    builder.def_var(self.vars[dest], res);
                 }
                 bril::ValueOps::Lt
                 | bril::ValueOps::Le
@@ -530,6 +548,22 @@ impl CompileEnv<'_> {
                 | bril::ValueOps::Fge
                 | bril::ValueOps::Fgt => {
                     self.gen_fcmp(builder, args, dest, Self::translate_floatcc(*op))
+                }
+
+                bril::ValueOps::Fmax => {
+                    let a = builder.use_var(self.vars[&args[0]]);
+                    let b = builder.use_var(self.vars[&args[1]]);
+                    let cmp = builder.ins().fcmp(FloatCC::GreaterThan, a, b);
+                    let res = builder.ins().select(cmp, a, b);
+                    builder.def_var(self.vars[dest], res);
+                }
+
+                bril::ValueOps::Fmin => {
+                    let a = builder.use_var(self.vars[&args[0]]);
+                    let b = builder.use_var(self.vars[&args[1]]);
+                    let cmp = builder.ins().fcmp(FloatCC::LessThan, a, b);
+                    let res = builder.ins().select(cmp, a, b);
+                    builder.def_var(self.vars[dest], res);
                 }
 
                 // Memory extension.
