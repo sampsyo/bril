@@ -1,4 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+#![allow(clippy::doc_markdown)] // Not uniform? Just lints on one line
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::needless_for_each)]
 #![doc = include_str!("../README.md")]
