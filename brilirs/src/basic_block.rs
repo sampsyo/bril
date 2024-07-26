@@ -210,12 +210,14 @@ impl BBFunction {
     let mut curr_block = BasicBlock::new();
     for instr in func.instrs {
       match instr {
-        bril_rs::Code::Label { label, pos: _ } => {
+        bril_rs::Code::Label { label, pos } => {
           if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
             blocks.push(curr_block);
             curr_block = BasicBlock::new();
           }
-          label_map.insert(label.to_string(), blocks.len());
+          if label_map.insert(label.to_string(), blocks.len()).is_some() {
+            return Err(InterpError::DuplicateLabel(label).add_pos(pos));
+          }
           curr_block.label = Some(label);
         }
         bril_rs::Code::Instruction(i @ bril_rs::Instruction::Effect { op, .. })
