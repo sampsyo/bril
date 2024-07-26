@@ -220,23 +220,11 @@ impl BBFunction {
           }
           curr_block.label = Some(label);
         }
-        bril_rs::Code::Instruction(bril_rs::Instruction::Effect {
-          op,
-          args,
-          funcs,
-          labels,
-          pos,
-        }) if op == bril_rs::EffectOps::Jump
-          || op == bril_rs::EffectOps::Branch
-          || op == bril_rs::EffectOps::Return =>
+        bril_rs::Code::Instruction(i @ bril_rs::Instruction::Effect { op, .. })
+          if op == bril_rs::EffectOps::Jump
+            || op == bril_rs::EffectOps::Branch
+            || op == bril_rs::EffectOps::Return =>
         {
-          let i = bril_rs::Instruction::Effect {
-            op,
-            args,
-            funcs,
-            labels,
-            pos,
-          };
           curr_block.numified_instrs.push(NumifiedInstruction::new(
             &i,
             &mut num_of_vars,
