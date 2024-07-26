@@ -212,12 +212,10 @@ impl BBFunction {
       match instr {
         bril_rs::Code::Label { label, pos: _ } => {
           if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
-            if let Some(old_label) = curr_block.label.as_ref() {
-              label_map.insert(old_label.to_string(), blocks.len());
-            }
             blocks.push(curr_block);
             curr_block = BasicBlock::new();
           }
+          label_map.insert(label.to_string(), blocks.len());
           curr_block.label = Some(label);
         }
         bril_rs::Code::Instruction(i @ bril_rs::Instruction::Effect { op, .. })
@@ -232,9 +230,6 @@ impl BBFunction {
             func_map,
           )?);
           curr_block.instrs.push(i);
-          if let Some(l) = curr_block.label.as_ref() {
-            label_map.insert(l.to_string(), blocks.len());
-          }
           blocks.push(curr_block);
           curr_block = BasicBlock::new();
         }
@@ -251,9 +246,6 @@ impl BBFunction {
     }
 
     if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
-      if let Some(l) = curr_block.label.as_ref() {
-        label_map.insert(l.to_string(), blocks.len());
-      }
       blocks.push(curr_block);
     }
 
