@@ -25,6 +25,8 @@ pub enum InterpError {
   NotOneChar,
   #[error("multiple functions of the same name found")]
   DuplicateFunction,
+  #[error("duplicate label `{0}` found")]
+  DuplicateLabel(String),
   #[error("Expected empty return for `{0}`, found value")]
   NonEmptyRetForFunc(String),
   #[error("cannot allocate `{0}` entries")]

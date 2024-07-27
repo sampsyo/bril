@@ -210,33 +210,21 @@ impl BBFunction {
     let mut curr_block = BasicBlock::new();
     for instr in func.instrs {
       match instr {
-        bril_rs::Code::Label { label, pos: _ } => {
+        bril_rs::Code::Label { label, pos } => {
           if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
-            if let Some(old_label) = curr_block.label.as_ref() {
-              label_map.insert(old_label.to_string(), blocks.len());
-            }
             blocks.push(curr_block);
             curr_block = BasicBlock::new();
           }
+          if label_map.insert(label.to_string(), blocks.len()).is_some() {
+            return Err(InterpError::DuplicateLabel(label).add_pos(pos));
+          }
           curr_block.label = Some(label);
         }
-        bril_rs::Code::Instruction(bril_rs::Instruction::Effect {
-          op,
-          args,
-          funcs,
-          labels,
-          pos,
-        }) if op == bril_rs::EffectOps::Jump
-          || op == bril_rs::EffectOps::Branch
-          || op == bril_rs::EffectOps::Return =>
+        bril_rs::Code::Instruction(i @ bril_rs::Instruction::Effect { op, .. })
+          if op == bril_rs::EffectOps::Jump
+            || op == bril_rs::EffectOps::Branch
+            || op == bril_rs::EffectOps::Return =>
         {
-          let i = bril_rs::Instruction::Effect {
-            op,
-            args,
-            funcs,
-            labels,
-            pos,
-          };
           curr_block.numified_instrs.push(NumifiedInstruction::new(
             &i,
             &mut num_of_vars,
@@ -244,9 +232,6 @@ impl BBFunction {
             func_map,
           )?);
           curr_block.instrs.push(i);
-          if let Some(l) = curr_block.label.as_ref() {
-            label_map.insert(l.to_string(), blocks.len());
-          }
           blocks.push(curr_block);
           curr_block = BasicBlock::new();
         }
@@ -263,9 +248,6 @@ impl BBFunction {
     }
 
     if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
-      if let Some(l) = curr_block.label.as_ref() {
-        label_map.insert(l.to_string(), blocks.len());
-      }
       blocks.push(curr_block);
     }
 
