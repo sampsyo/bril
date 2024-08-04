@@ -16,9 +16,7 @@ default-run = "main"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
-inkwell = { git = "https://github.com/TheDan64/inkwell.git", features = [
-    "llvm18-0",
-] }
+inkwell = { version = "0.5", features = ["llvm18-0"] }
 
 [dependencies.bril-rs]
 path = ".."
