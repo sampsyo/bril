@@ -4,6 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+cranelift-codegen = { version = "0.110.1", features = ["all-arch"] }
+cranelift-frontend = "0.110.1"
+cranelift-object = "0.110.1"
+cranelift-module = "0.110.1"
+cranelift-native = "0.110.1"
+cranelift-jit = "0.110.1"
+argh = "^0.1.12"
+simplelog = "^0.12.2"
+enum-map = "^2.7.3"
 bril-rs = { path = "../bril-rs", features = [
     "memory",
     "float",
@@ -13,12 +22,3 @@ bril-rs = { path = "../bril-rs", features = [
     "import",
     "char",
 ] }
-cranelift-codegen = { version = "0.106.0", features = ["all-arch"] }
-cranelift-frontend = "0.106.0"
-cranelift-object = "0.106.0"
-cranelift-module = "0.106.0"
-cranelift-native = "0.106.0"
-cranelift-jit = "0.106.0"
-argh = "^0.1.12"
-simplelog = "^0.12.2"
-enum-map = "^2.7.3"
