@@ -1,6 +1,3 @@
-#![allow(clippy::needless_lifetimes)]
-#![allow(clippy::just_underscores_and_digits)]
-#![allow(clippy::deprecated_cfg_attr)]
 #![allow(clippy::no_effect_underscore_binding)]
 #![allow(clippy::unnested_or_patterns)]
 #![allow(clippy::trivially_copy_pass_by_ref)]
@@ -17,7 +14,6 @@
 #![allow(clippy::match_same_arms)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::extra_unused_lifetimes)]
-#![allow(clippy::needless_raw_string_hashes)]
 
 use std::str::FromStr;
 use std::path::PathBuf;
