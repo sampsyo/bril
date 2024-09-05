@@ -2,7 +2,6 @@
 #![warn(missing_docs)]
 #![warn(clippy::allow_attributes)]
 #![doc = include_str!("../README.md")]
-#![allow(clippy::too_many_lines)]
 
 /// Provides the unstructured representation of Bril programs
 pub mod abstract_program;
