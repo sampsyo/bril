@@ -17,7 +17,10 @@ const pos: Option<Position> = None;
 // todo Should this also wrap Serde errors? In this case, maybe change the name from ConversionError
 // Having the #[error(...)] for all variants derives the Display trait as well
 #[derive(Error, Debug)]
-#[allow(clippy::module_name_repetitions)]
+#[expect(
+    clippy::module_name_repetitions,
+    reason = "I allow the `Error` suffix for enums"
+)]
 pub enum ConversionError {
     /// Expected a primitive type like int or bool, found {0}"
     #[error("Expected a primitive type like int or bool, found {0}")]
