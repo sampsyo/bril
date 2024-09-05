@@ -1,5 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![warn(missing_docs)]
+#![warn(clippy::allow_attributes)]
 #![doc = include_str!("../README.md")]
 #![allow(clippy::too_many_lines)]
 
