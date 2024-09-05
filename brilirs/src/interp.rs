@@ -553,7 +553,7 @@ fn execute_effect_op<T: std::io::Write>(
       if args.len() == 1 {
         optimized_val_output(&mut state.out, state.env.get(*args.first().unwrap()))?;
         // Add new line
-        state.out.write_all(&[b'\n'])?;
+        state.out.write_all(b"\n")?;
       } else {
         writeln!(
           state.out,
