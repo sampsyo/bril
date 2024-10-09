@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use inkwell::{
+    attributes::{Attribute, AttributeLoc},
     basic_block::BasicBlock,
     builder::Builder,
     context::Context,
@@ -675,20 +676,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_int_compare::<IntValue>(
-                            IntPredicate::SGT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_int_compare::<IntValue>(
+                                    IntPredicate::SGT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
 
@@ -708,20 +713,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_int_compare::<IntValue>(
-                            IntPredicate::SLT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_int_compare::<IntValue>(
+                                    IntPredicate::SLT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
 
@@ -744,7 +753,7 @@ fn build_instruction<'a, 'b>(
                         .build_left_shift::<IntValue>(
                             v[0].try_into().unwrap(),
                             v[1].try_into().unwrap(),
-                            &ret_name
+                            &ret_name,
                         )
                         .unwrap()
                         .into()
@@ -774,7 +783,7 @@ fn build_instruction<'a, 'b>(
                             v[0].try_into().unwrap(),
                             v[1].try_into().unwrap(),
                             false, // sign extend
-                            &ret_name
+                            &ret_name,
                         )
                         .unwrap()
                         .into()
@@ -1057,20 +1066,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_float_compare::<FloatValue>(
-                            FloatPredicate::OGT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_float_compare::<FloatValue>(
+                                    FloatPredicate::OGT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
         Instruction::Value {
@@ -1089,20 +1102,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_float_compare::<FloatValue>(
-                            FloatPredicate::OLT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_float_compare::<FloatValue>(
+                                    FloatPredicate::OLT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
 
@@ -1651,6 +1668,25 @@ pub fn create_module_from_program<'a>(
             builder.build_store(ptr, arg).unwrap();
         });
 
+        let ticks_start_name = fresh.fresh_var();
+        #[cfg(target_arch = "x86_64")]
+        let get_ticks_start = "_bril_get_ticks_start";
+        #[cfg(target_arch = "aarch64")]
+        let get_ticks_start = "_bril_get_ticks";
+        let ticks_start = builder
+            .build_call(
+                runtime_module.get_function(get_ticks_start).unwrap(),
+                &[],
+                &ticks_start_name,
+            )
+            .unwrap()
+            .try_as_basic_value()
+            .unwrap_left();
+        // make it always inline get_ticks_start
+        let func = runtime_module.get_function(get_ticks_start).unwrap();
+        func.remove_enum_attribute(AttributeLoc::Function, 28);
+        func.add_attribute(AttributeLoc::Function, context.create_enum_attribute(3, 1));
+
         build_effect_op(
             context,
             &builder,
@@ -1673,6 +1709,44 @@ pub fn create_module_from_program<'a>(
                 .map(|Argument { name, .. }| name.clone())
                 .collect::<Vec<String>>(),
         );
+
+        let ticks_end_name = fresh.fresh_var();
+        #[cfg(target_arch = "x86_64")]
+        let get_ticks_end = "_bril_get_ticks_end";
+        #[cfg(target_arch = "aarch64")]
+        let get_ticks_end = "_bril_get_ticks";
+        let func = runtime_module.get_function(get_ticks_end).unwrap();
+        // always inline get_ticks_end
+        func.remove_enum_attribute(AttributeLoc::Function, 28);
+        func.add_attribute(AttributeLoc::Function, context.create_enum_attribute(3, 1));
+
+        let ticks_end = builder
+            .build_call(
+                runtime_module.get_function(get_ticks_end).unwrap(),
+                &[],
+                &ticks_end_name,
+            )
+            .unwrap()
+            .try_as_basic_value()
+            .unwrap_left();
+
+        // print out the different between the ticks
+        let ticks_diff = fresh.fresh_var();
+        let diff_val = builder
+            .build_int_sub::<IntValue>(
+                ticks_end.try_into().unwrap(),
+                ticks_start.try_into().unwrap(),
+                &ticks_diff,
+            )
+            .unwrap();
+
+        // use bril_print_unsiged_int to print out the difference
+        let print_ticks = runtime_module
+            .get_function("_bril_eprintln_unsigned_int")
+            .unwrap();
+        builder
+            .build_call(print_ticks, &[diff_val.into()], "print_ticks")
+            .unwrap();
     }
     builder
         .build_return(Some(&context.i32_type().const_int(0, true)))
