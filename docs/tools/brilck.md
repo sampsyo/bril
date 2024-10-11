@@ -10,7 +10,7 @@ Install
 The `brilck` tool uses [Deno][].
 Type this:
 
-    $ deno install brilck.ts
+    $ deno install -g brilck.ts
 
 If you haven't already, you will then need to add `$HOME/.deno/bin` to [your `$PATH`][path].
 

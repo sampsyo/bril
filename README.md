@@ -22,7 +22,7 @@ Install the Tools
 You will want the IR interpreter, which uses [Deno][].
 Just type this:
 
-    $ deno install brili.ts
+    $ deno install -g brili.ts
 
 As Deno tells you, you will then need to add `$HOME/.deno/bin` to [your `$PATH`][path].
 You will then have `brili`, which takes a Bril program as JSON on stdin and executes it.

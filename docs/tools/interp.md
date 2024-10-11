@@ -13,7 +13,7 @@ Install
 To use the interpreter, you will need [Deno][].
 Just run:
 
-    $ deno install brili.ts
+    $ deno install -g brili.ts
 
 As Deno tells you, you will then need to add `$HOME/.deno/bin` to [your `$PATH`][path].
 

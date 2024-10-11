@@ -13,7 +13,7 @@ Install
 The TypeScript compiler uses [Deno][].
 Type this:
 
-    $ deno install --allow-env --allow-read ts2bril.ts
+    $ deno install -g --allow-env --allow-read ts2bril.ts
 
 If you haven't already, you will then need to add `$HOME/.deno/bin` to [your `$PATH`][path].
 
