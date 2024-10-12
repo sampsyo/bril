@@ -947,7 +947,7 @@ function evalProg(prog: bril.Program) {
     curlabel: null,
     specparent: null,
   }
-  evalFunc(main, state);
+  let retVal = evalFunc(main, state);
 
   if (!heap.isEmpty()) {
     throw error(`Some memory locations have not been freed by end of execution.`);
@@ -957,6 +957,7 @@ function evalProg(prog: bril.Program) {
     console.error(`total_dyn_inst: ${state.icount}`);
   }
 
+  Deno.exit(Number(retVal));
 }
 
 async function main() {
