@@ -1,15 +1,13 @@
-use std::{collections::HashMap, ffi::CStr};
+use std::collections::HashMap;
 
 use inkwell::{
-    attributes::{Attribute, AttributeLoc},
+    attributes::AttributeLoc,
     basic_block::BasicBlock,
     builder::Builder,
     context::Context,
     module::Module,
     types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
-    values::{
-        AsValueRef, BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue,
-    },
+    values::{BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
     AddressSpace, FloatPredicate, IntPredicate,
 };
 
@@ -1269,12 +1267,12 @@ fn build_instruction<'a, 'b>(
             );
         }
         Instruction::Value {
-            args,
-            dest,
+            args: __args,
+            dest: _dest,
             funcs: _,
-            labels,
+            labels: _,
             op: ValueOps::Phi,
-            op_type,
+            op_type: _op_type,
         } => {
             panic!("Phi nodes should be handled by build_phi");
         }
@@ -1498,7 +1496,7 @@ pub fn create_module_from_program<'a>(
         .for_each(|(llvm_func, instrs, mut block, heap)| {
             let mut last_instr = None;
 
-            // If their are actually instructions, proceed
+            // If there are actually instructions, proceed
             if !instrs.is_empty() {
                 builder.position_at_end(block);
 
@@ -1540,8 +1538,26 @@ pub fn create_module_from_program<'a>(
                 while index < instrs.len() {
                     // for main, we expect the last instruction to be a print
                     if llvm_func.get_name().to_str().unwrap() == "_main"
-                        && index == instrs.len() - 1
+                        && matches!(
+                            instrs[index],
+                            Code::Instruction(Instruction::Effect {
+                                op: EffectOps::Print,
+                                ..
+                            })
+                        )
                     {
+                        // either this is the last instruction or the next one is a return
+                        assert!(
+                            index == instrs.len() - 1
+                                || matches!(
+                                    instrs[index + 1],
+                                    Code::Instruction(Instruction::Effect {
+                                        op: EffectOps::Return,
+                                        ..
+                                    })
+                                )
+                        );
+
                         // measure cycles and print
                         let ticks_end_name = fresh.fresh_var();
                         #[cfg(target_arch = "x86_64")]
@@ -1783,7 +1799,7 @@ pub fn create_module_from_program<'a>(
     runtime_module
 }
 
-pub(crate) fn is_phi(i: &Code) -> bool {
+pub(crate) const fn is_phi(i: &Code) -> bool {
     matches!(
         i,
         Code::Instruction(Instruction::Value {
