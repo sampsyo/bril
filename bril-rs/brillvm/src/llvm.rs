@@ -1500,10 +1500,10 @@ pub fn create_module_from_program<'a>(
             if !instrs.is_empty() {
                 builder.position_at_end(block);
 
-                // in main, first start measuring time
                 // When we are in main, start measuring time
                 if llvm_func.get_name().to_str().unwrap() == "_main" {
                     let ticks_start_name = fresh.fresh_var();
+                    // get_ticks_start is used on x86 and get_ticks is used on arm
                     #[cfg(target_arch = "x86_64")]
                     let get_ticks_start = "_bril_get_ticks_start";
                     #[cfg(target_arch = "aarch64")]
