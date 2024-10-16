@@ -1518,10 +1518,11 @@ pub fn create_module_from_program<'a>(
                         .try_as_basic_value()
                         .unwrap_left();
                     ticks_start_ref = Some(ticks_start);
-                    // make it always inline get_ticks_start
-                    let func = runtime_module.get_function(get_ticks_start).unwrap();
+                    // TODO I would like to inline get_ticks_start for less overhead
+                    // however, this results in segfaults for some reason
+                    /*let func = runtime_module.get_function(get_ticks_start).unwrap();
                     func.remove_enum_attribute(AttributeLoc::Function, 28);
-                    func.add_attribute(AttributeLoc::Function, context.create_enum_attribute(3, 1));
+                    func.add_attribute(AttributeLoc::Function, context.create_enum_attribute(3, 1));*/
                     // also assert the last instruction is a print
                     assert!(matches!(
                         instrs.last().unwrap().clone(),
@@ -1564,13 +1565,15 @@ pub fn create_module_from_program<'a>(
                         let get_ticks_end = "_bril_get_ticks_end";
                         #[cfg(target_arch = "aarch64")]
                         let get_ticks_end = "_bril_get_ticks";
-                        let func = runtime_module.get_function(get_ticks_end).unwrap();
+                        // TODO I would like to inline get_ticks_start for less overhead
+                        // however, this results in segfaults for some reason
+                        /*let func = runtime_module.get_function(get_ticks_end).unwrap();
                         // always inline get_ticks_end
                         func.remove_enum_attribute(AttributeLoc::Function, 28);
                         func.add_attribute(
                             AttributeLoc::Function,
                             context.create_enum_attribute(3, 1),
-                        );
+                        );*/
 
                         let ticks_end = builder
                             .build_call(
