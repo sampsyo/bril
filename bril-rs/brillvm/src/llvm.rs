@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use inkwell::{
-    attributes::AttributeLoc,
     basic_block::BasicBlock,
     builder::Builder,
     context::Context,
@@ -1419,6 +1418,7 @@ pub fn create_module_from_program<'a>(
     context: &'a Context,
     Program { functions, .. }: &Program,
     runtime_module: Module<'a>,
+    add_timing: bool,
 ) -> Module<'a> {
     let builder = context.create_builder();
 
@@ -1501,7 +1501,7 @@ pub fn create_module_from_program<'a>(
                 builder.position_at_end(block);
 
                 // When we are in main, start measuring time
-                if llvm_func.get_name().to_str().unwrap() == "_main" {
+                if add_timing && llvm_func.get_name().to_str().unwrap() == "_main" {
                     let ticks_start_name = fresh.fresh_var();
                     // get_ticks_start is used on x86 and get_ticks is used on arm
                     #[cfg(target_arch = "x86_64")]
@@ -1538,7 +1538,7 @@ pub fn create_module_from_program<'a>(
                 let mut index = 0;
                 while index < instrs.len() {
                     // for main, we expect the last instruction to be a print
-                    if llvm_func.get_name().to_str().unwrap() == "_main"
+                    if add_timing && llvm_func.get_name().to_str().unwrap() == "_main"
                         && matches!(
                             instrs[index],
                             Code::Instruction(Instruction::Effect {
@@ -1699,7 +1699,9 @@ pub fn create_module_from_program<'a>(
             }
         });
 
-    assert!(added_timing);
+    if add_timing {
+        assert!(added_timing);
+    }
 
     // Add new main function to act as a entry point to the function.
     // Sets up arguments for a _main call
