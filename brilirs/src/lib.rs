@@ -1,5 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![warn(missing_docs)]
+#![warn(clippy::allow_attributes)]
 #![allow(clippy::float_cmp)]
 #![allow(clippy::similar_names)]
 #![allow(clippy::too_many_lines)]

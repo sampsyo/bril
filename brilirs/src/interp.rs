@@ -553,7 +553,7 @@ fn execute_effect_op<T: std::io::Write>(
       if args.len() == 1 {
         optimized_val_output(&mut state.out, state.env.get(*args.first().unwrap()))?;
         // Add new line
-        state.out.write_all(&[b'\n'])?;
+        state.out.write_all(b"\n")?;
       } else {
         writeln!(
           state.out,
@@ -623,9 +623,10 @@ fn execute<'a, T: std::io::Write>(
           // Integer literals can be promoted to Floating point
           if const_type == &bril_rs::Type::Float {
             match value {
-              // So yes, as clippy points out, you technically lose precision here on the `*i as f64` cast. On the other hand, you already give up precision when you start using floats and I haven't been able to find a case where you are giving up precision in the cast that you don't already lose by using floating points.
-              // So it's probably fine unless proven otherwise.
-              #[allow(clippy::cast_precision_loss)]
+              #[expect(
+                clippy::cast_precision_loss,
+                reason = "So yes, as clippy points out, you technically lose precision here on the `*i as f64` cast. On the other hand, you already give up precision when you start using floats and I haven't been able to find a case where you are giving up precision in the cast that you don't already lose by using floating points. So it's probably fine unless proven otherwise."
+              )]
               bril_rs::Literal::Int(i) => state
                 .env
                 .set(numified_code.dest.unwrap(), Value::Float(*i as f64)),
@@ -779,7 +780,9 @@ impl<'a, T: std::io::Write> State<'a, T> {
   }
 }
 
-/// The entrance point to the interpreter. It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [`std::io::Write`]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [`std::io::stderr`]
+/// The entrance point to the interpreter.
+///
+/// It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [`std::io::Write`]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [`std::io::stderr`]
 /// # Panics
 /// This should not panic with normal use except if there is a bug or if you are using an unimplemented feature
 /// # Errors
