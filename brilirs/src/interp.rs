@@ -780,7 +780,9 @@ impl<'a, T: std::io::Write> State<'a, T> {
   }
 }
 
-/// The entrance point to the interpreter. It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [`std::io::Write`]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [`std::io::stderr`]
+/// The entrance point to the interpreter.
+///
+/// It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [`std::io::Write`]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [`std::io::stderr`]
 /// # Panics
 /// This should not panic with normal use except if there is a bug or if you are using an unimplemented feature
 /// # Errors
