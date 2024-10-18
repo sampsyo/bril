@@ -6,9 +6,7 @@ use inkwell::{
     context::Context,
     module::Module,
     types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
-    values::{
-        AsValueRef, BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue,
-    },
+    values::{BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
     AddressSpace, FloatPredicate, IntPredicate,
 };
 
@@ -675,20 +673,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_int_compare::<IntValue>(
-                            IntPredicate::SGT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_int_compare::<IntValue>(
+                                    IntPredicate::SGT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
 
@@ -708,20 +710,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_int_compare::<IntValue>(
-                            IntPredicate::SLT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_int_compare::<IntValue>(
+                                    IntPredicate::SLT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
 
@@ -744,7 +750,7 @@ fn build_instruction<'a, 'b>(
                         .build_left_shift::<IntValue>(
                             v[0].try_into().unwrap(),
                             v[1].try_into().unwrap(),
-                            &ret_name
+                            &ret_name,
                         )
                         .unwrap()
                         .into()
@@ -774,7 +780,7 @@ fn build_instruction<'a, 'b>(
                             v[0].try_into().unwrap(),
                             v[1].try_into().unwrap(),
                             false, // sign extend
-                            &ret_name
+                            &ret_name,
                         )
                         .unwrap()
                         .into()
@@ -1057,20 +1063,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_float_compare::<FloatValue>(
-                            FloatPredicate::OGT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_float_compare::<FloatValue>(
+                                    FloatPredicate::OGT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
         Instruction::Value {
@@ -1089,20 +1099,24 @@ fn build_instruction<'a, 'b>(
                 heap,
                 fresh,
                 |v| {
-                    builder.build_select(
-                        builder.build_float_compare::<FloatValue>(
-                            FloatPredicate::OLT,
-                            v[0].try_into().unwrap(),
-                            v[1].try_into().unwrap(),
-                            &cmp_name
-                        ).unwrap(),
-                        v[0],
-                        v[1],
-                        &name
-                    ).unwrap()
+                    builder
+                        .build_select(
+                            builder
+                                .build_float_compare::<FloatValue>(
+                                    FloatPredicate::OLT,
+                                    v[0].try_into().unwrap(),
+                                    v[1].try_into().unwrap(),
+                                    &cmp_name,
+                                )
+                                .unwrap(),
+                            v[0],
+                            v[1],
+                            &name,
+                        )
+                        .unwrap()
                 },
                 args,
-                dest
+                dest,
             );
         }
 
@@ -1252,12 +1266,12 @@ fn build_instruction<'a, 'b>(
             );
         }
         Instruction::Value {
-            args,
-            dest,
+            args: __args,
+            dest: _dest,
             funcs: _,
-            labels,
+            labels: _,
             op: ValueOps::Phi,
-            op_type,
+            op_type: _op_type,
         } => {
             panic!("Phi nodes should be handled by build_phi");
         }
@@ -1404,6 +1418,7 @@ pub fn create_module_from_program<'a>(
     context: &'a Context,
     Program { functions, .. }: &Program,
     runtime_module: Module<'a>,
+    add_timing: bool,
 ) -> Module<'a> {
     let builder = context.create_builder();
 
@@ -1474,19 +1489,122 @@ pub fn create_module_from_program<'a>(
         .collect(); // Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed.
 
     // Now actually build each function
+    let mut added_timing = false;
+    let mut ticks_start_ref = None;
     funcs
         .into_iter()
         .for_each(|(llvm_func, instrs, mut block, heap)| {
             let mut last_instr = None;
 
-            // If their are actually instructions, proceed
+            // If there are actually instructions, proceed
             if !instrs.is_empty() {
                 builder.position_at_end(block);
+
+                // When we are in main, start measuring time
+                if add_timing && llvm_func.get_name().to_str().unwrap() == "_main" {
+                    let ticks_start_name = fresh.fresh_var();
+                    // get_ticks_start is used on x86 and get_ticks is used on arm
+                    #[cfg(target_arch = "x86_64")]
+                    let get_ticks_start = "_bril_get_ticks_start";
+                    #[cfg(target_arch = "aarch64")]
+                    let get_ticks_start = "_bril_get_ticks";
+                    let ticks_start = builder
+                        .build_call(
+                            runtime_module.get_function(get_ticks_start).unwrap(),
+                            &[],
+                            &ticks_start_name,
+                        )
+                        .unwrap()
+                        .try_as_basic_value()
+                        .unwrap_left();
+                    ticks_start_ref = Some(ticks_start);
+                    // TODO I would like to inline get_ticks_start for less overhead
+                    // however, this results in segfaults for some reason
+                    /*let func = runtime_module.get_function(get_ticks_start).unwrap();
+                    func.remove_enum_attribute(AttributeLoc::Function, 28);
+                    func.add_attribute(AttributeLoc::Function, context.create_enum_attribute(3, 1));*/
+                    // also assert the last instruction is a print
+                    assert!(matches!(
+                        instrs.last().unwrap().clone(),
+                        Code::Instruction(Instruction::Effect {
+                            op: EffectOps::Print,
+                            ..
+                        })
+                    ));
+                }
 
                 // Maps labels to llvm blocks for jumps
                 let mut block_map = HashMap::new();
                 let mut index = 0;
                 while index < instrs.len() {
+                    // for main, we expect the last instruction to be a print
+                    if add_timing && llvm_func.get_name().to_str().unwrap() == "_main"
+                        && matches!(
+                            instrs[index],
+                            Code::Instruction(Instruction::Effect {
+                                op: EffectOps::Print,
+                                ..
+                            })
+                        )
+                    {
+                        // either this is the last instruction or the next one is a return
+                        assert!(
+                            index == instrs.len() - 1
+                                || matches!(
+                                    instrs[index + 1],
+                                    Code::Instruction(Instruction::Effect {
+                                        op: EffectOps::Return,
+                                        ..
+                                    })
+                                )
+                        );
+
+                        // measure cycles and print
+                        let ticks_end_name = fresh.fresh_var();
+                        #[cfg(target_arch = "x86_64")]
+                        let get_ticks_end = "_bril_get_ticks_end";
+                        #[cfg(target_arch = "aarch64")]
+                        let get_ticks_end = "_bril_get_ticks";
+                        // TODO I would like to inline get_ticks_start for less overhead
+                        // however, this results in segfaults for some reason
+                        /*let func = runtime_module.get_function(get_ticks_end).unwrap();
+                        // always inline get_ticks_end
+                        func.remove_enum_attribute(AttributeLoc::Function, 28);
+                        func.add_attribute(
+                            AttributeLoc::Function,
+                            context.create_enum_attribute(3, 1),
+                        );*/
+
+                        let ticks_end = builder
+                            .build_call(
+                                runtime_module.get_function(get_ticks_end).unwrap(),
+                                &[],
+                                &ticks_end_name,
+                            )
+                            .unwrap()
+                            .try_as_basic_value()
+                            .unwrap_left();
+
+                        // print out the different between the ticks
+                        let ticks_diff = fresh.fresh_var();
+                        let diff_val = builder
+                            .build_int_sub::<IntValue>(
+                                ticks_end.try_into().unwrap(),
+                                ticks_start_ref.unwrap().try_into().unwrap(),
+                                &ticks_diff,
+                            )
+                            .unwrap();
+
+                        // use bril_print_unsiged_int to print out the difference
+                        let print_ticks = runtime_module
+                            .get_function("_bril_eprintln_unsigned_int")
+                            .unwrap();
+                        builder
+                            .build_call(print_ticks, &[diff_val.into()], "print_ticks")
+                            .unwrap();
+                        added_timing = true;
+                    }
+
                     if is_terminating_instr(&last_instr)
                         && matches!(instrs[index], Code::Instruction { .. })
                     {
@@ -1580,6 +1698,10 @@ pub fn create_module_from_program<'a>(
                 builder.build_return(None).unwrap();
             }
         });
+
+    if add_timing {
+        assert!(added_timing);
+    }
 
     // Add new main function to act as a entry point to the function.
     // Sets up arguments for a _main call
@@ -1682,7 +1804,7 @@ pub fn create_module_from_program<'a>(
     runtime_module
 }
 
-pub(crate) fn is_phi(i: &Code) -> bool {
+pub(crate) const fn is_phi(i: &Code) -> bool {
     matches!(
         i,
         Code::Instruction(Instruction::Value {

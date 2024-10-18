@@ -30,6 +30,9 @@ pub struct Cli {
     /// Arguments for the main function
     #[arg(action)]
     pub args: Vec<String>,
+
+    #[arg(action)]
+    pub add_timing: bool,
 }
 
 pub fn run(args: &Cli) -> String {
@@ -49,7 +52,7 @@ pub fn run(args: &Cli) -> String {
     let runtime_path = args.runtime.as_ref().map_or("rt.bc", |f| f);
     // create a module from the runtime library for functions like printing/parsing
     let runtime_module = Module::parse_bitcode_from_path(runtime_path, &context).unwrap();
-    let llvm_prog = create_module_from_program(&context, &prog, runtime_module);
+    let llvm_prog = create_module_from_program(&context, &prog, runtime_module, args.add_timing);
 
     //println!("{}", prog);
     //llvm_prog.print_to_file("tmp.ll").unwrap();
