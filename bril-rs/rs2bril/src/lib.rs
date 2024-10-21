@@ -1026,6 +1026,33 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
         }) if attrs.is_empty() && path.get_ident().is_some() => {
             (Some(path.get_ident().unwrap().to_string()), Vec::new())
         }
+        // f64 constants
+        Expr::Path(ExprPath {
+            attrs,
+            qself: None,
+            path,
+        }) if attrs.is_empty() && path.segments[0].ident == "f64" => {
+            let dest = state.fresh_var(Type::Float);
+            let float = if path.segments.len() == 2 && path.segments[1].ident == "INFINITY" {
+                f64::INFINITY
+            } else if path.segments.len() == 2 && path.segments[1].ident == "NEG_INFINITY" {
+                f64::NEG_INFINITY
+            } else if path.segments.len() == 2 && path.segments[1].ident == "NAN" {
+                f64::NAN
+            } else {
+                panic!("can't handle f64 path: {path:?}");
+            };
+            (
+                Some(dest.clone()),
+                vec![Code::Instruction(Instruction::Constant {
+                    dest,
+                    op: ConstOps::Const,
+                    pos,
+                    const_type: Type::Float,
+                    value: Literal::Float(float),
+                })],
+            )
+        }
         Expr::Reference(ExprReference {
             attrs,
             and_token: _,
