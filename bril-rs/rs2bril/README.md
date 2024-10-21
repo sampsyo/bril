@@ -14,6 +14,7 @@ View the interface with `cargo doc --open` or install with `make install` using 
 - Memory is implemented using Rust arrays. These are statically sized values unlike how calls to Bril `alloc` can be dynamically sized. One solution is to just allocate a large enough array and then treat the dynamic size like the length. (A subset of vectors could also be specialized in the future).
 - Arrays must be initialized with repetition syntax, which is awkward for nested arrays.
 - In normal Rust, `if` can also be used as an expression that evaluates a value to be put in a variable. This is not implemented and it is assumed that there will only be if statements.
+- The Bril code that it produces is super inefficient and it is left to other tools to optimize it.
 - `!=` and automatic promotions of integer literals to floats are not implemented.
 - To support indexing into arrays, you can cast to usize in the Rust code. This will be ignored when generating Bril. `arr[i as usize];`
 - The parts of Rust which make it valid like lifetimes, references, mutability, and function visibility are ignored and compiled away in Bril.
