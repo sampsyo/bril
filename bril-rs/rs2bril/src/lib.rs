@@ -400,6 +400,16 @@ fn array_repetition_helper(
     mut code: Vec<Code>,
     state: &mut State,
 ) -> (Option<String>, Vec<Code>) {
+    // make constant one
+    let one = state.fresh_var(Type::Int);
+    code.push(Code::Instruction(Instruction::Constant {
+        dest: one.clone(),
+        op: ConstOps::Const,
+        pos: None,
+        const_type: Type::Int,
+        value: Literal::Int(1),
+    }));
+
     let arr_type = Type::Pointer(Box::new(state.get_type_for_ident(rep_var)));
     let pointer = state.fresh_var(arr_type.clone());
     let size = state.fresh_var(Type::Int);
@@ -482,15 +492,6 @@ fn array_repetition_helper(
         labels: Vec::new(),
         op: EffectOps::Store,
         pos: None,
-    }));
-    // make constant one
-    let one = state.fresh_var(Type::Int);
-    code.push(Code::Instruction(Instruction::Constant {
-        dest: one.clone(),
-        op: ConstOps::Const,
-        pos: None,
-        const_type: Type::Int,
-        value: Literal::Int(1),
     }));
 
     // increment current ptr
