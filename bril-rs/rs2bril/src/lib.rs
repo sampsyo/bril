@@ -62,7 +62,8 @@ impl State {
     }
 
     fn starting_new_function(&mut self, name: &String) {
-        self.ident_type_map.clone_from(&self.func_context_map.get(name).unwrap().0);
+        self.ident_type_map
+            .clone_from(&self.func_context_map.get(name).unwrap().0);
     }
 
     fn add_type_for_ident(&mut self, ident: String, ty: Type) {
@@ -390,6 +391,146 @@ fn from_signature_to_function(
         args,
         return_type,
     }
+}
+
+/// Create and initialize an array containing `num_rep` repetitions of `rep_var`.
+fn array_repetition_helper(
+    rep_var: &String,
+    num_reps: i64,
+    mut code: Vec<Code>,
+    state: &mut State,
+) -> (Option<String>, Vec<Code>) {
+    // make constant one
+    let one = state.fresh_var(Type::Int);
+    code.push(Code::Instruction(Instruction::Constant {
+        dest: one.clone(),
+        op: ConstOps::Const,
+        pos: None,
+        const_type: Type::Int,
+        value: Literal::Int(1),
+    }));
+
+    let arr_type = Type::Pointer(Box::new(state.get_type_for_ident(rep_var)));
+    let pointer = state.fresh_var(arr_type.clone());
+    let size = state.fresh_var(Type::Int);
+    code.push(Code::Instruction(Instruction::Constant {
+        dest: size.clone(),
+        op: ConstOps::Const,
+        pos: None,
+        const_type: Type::Int,
+        value: Literal::Int(num_reps),
+    }));
+    code.push(Code::Instruction(Instruction::Value {
+        args: vec![size.clone()],
+        dest: pointer.clone(),
+        funcs: Vec::new(),
+        labels: Vec::new(),
+        op: ValueOps::Alloc,
+        pos: None,
+        op_type: arr_type.clone(),
+    }));
+
+    // make an index pointer for the array
+    let current_ptr = state.fresh_var(arr_type.clone());
+    code.push(Code::Instruction(Instruction::Value {
+        args: vec![pointer.clone()],
+        dest: current_ptr.clone(),
+        funcs: Vec::new(),
+        labels: Vec::new(),
+        op: ValueOps::Id,
+        pos: None,
+        op_type: arr_type.clone(),
+    }));
+
+    let start_label = state.fresh_label();
+    let then_label = state.fresh_label();
+    let end_label = state.fresh_label();
+
+    let iter = state.fresh_var(Type::Int);
+    code.push(Code::Instruction(Instruction::Constant {
+        dest: iter.clone(),
+        op: ConstOps::Const,
+        pos: None,
+        const_type: Type::Int,
+        value: Literal::Int(0),
+    }));
+
+    code.push(Code::Label {
+        label: start_label.clone(),
+        pos: None,
+    });
+
+    // check if iter < size
+    let cond_var = state.fresh_var(Type::Bool);
+    code.push(Code::Instruction(Instruction::Value {
+        args: vec![iter.clone(), size],
+        dest: cond_var.clone(),
+        funcs: Vec::new(),
+        labels: Vec::new(),
+        op: ValueOps::Lt,
+        pos: None,
+        op_type: Type::Bool,
+    }));
+
+    code.push(Code::Instruction(Instruction::Effect {
+        args: vec![cond_var],
+        funcs: Vec::new(),
+        labels: vec![then_label.clone(), end_label.clone()],
+        op: EffectOps::Branch,
+        pos: None,
+    }));
+
+    code.push(Code::Label {
+        label: then_label,
+        pos: None,
+    });
+
+    // write var to the current ptr
+    code.push(Code::Instruction(Instruction::Effect {
+        args: vec![current_ptr.clone(), rep_var.clone()],
+        funcs: Vec::new(),
+        labels: Vec::new(),
+        op: EffectOps::Store,
+        pos: None,
+    }));
+
+    // increment current ptr
+    code.push(Code::Instruction(Instruction::Value {
+        args: vec![current_ptr.clone(), one.clone()],
+        dest: current_ptr,
+        funcs: Vec::new(),
+        labels: Vec::new(),
+        op: ValueOps::PtrAdd,
+        pos: None,
+        op_type: arr_type,
+    }));
+
+    // increment iter
+    code.push(Code::Instruction(Instruction::Value {
+        args: vec![iter.clone(), one],
+        dest: iter,
+        funcs: Vec::new(),
+        labels: Vec::new(),
+        op: ValueOps::Add,
+        pos: None,
+        op_type: Type::Int,
+    }));
+
+    // jump to start label
+    code.push(Code::Instruction(Instruction::Effect {
+        args: Vec::new(),
+        funcs: Vec::new(),
+        labels: vec![start_label],
+        op: EffectOps::Jump,
+        pos: None,
+    }));
+
+    code.push(Code::Label {
+        label: end_label,
+        pos: None,
+    });
+
+    (Some(pointer), code)
 }
 
 fn array_init_helper(
@@ -885,6 +1026,33 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
         }) if attrs.is_empty() && path.get_ident().is_some() => {
             (Some(path.get_ident().unwrap().to_string()), Vec::new())
         }
+        // f64 constants
+        Expr::Path(ExprPath {
+            attrs,
+            qself: None,
+            path,
+        }) if attrs.is_empty() && path.segments[0].ident == "f64" => {
+            let dest = state.fresh_var(Type::Float);
+            let float = if path.segments.len() == 2 && path.segments[1].ident == "INFINITY" {
+                f64::INFINITY
+            } else if path.segments.len() == 2 && path.segments[1].ident == "NEG_INFINITY" {
+                f64::NEG_INFINITY
+            } else if path.segments.len() == 2 && path.segments[1].ident == "NAN" {
+                f64::NAN
+            } else {
+                panic!("can't handle f64 path: {path:?}");
+            };
+            (
+                Some(dest.clone()),
+                vec![Code::Instruction(Instruction::Constant {
+                    dest,
+                    op: ConstOps::Const,
+                    pos,
+                    const_type: Type::Float,
+                    value: Literal::Float(float),
+                })],
+            )
+        }
         Expr::Reference(ExprReference {
             attrs,
             and_token: _,
@@ -908,8 +1076,12 @@ fn from_expr_to_bril(expr: Expr, state: &mut State) -> (Option<String>, Vec<Code
                 _ => panic!("can't handle non-literal Int for repeated array length"),
             };
 
-            let vars = std::iter::repeat(var.unwrap()).take(array_len).collect();
-            array_init_helper(vars, code, state)
+            array_repetition_helper(
+                &var.unwrap(),
+                i64::try_from(array_len).unwrap(),
+                code,
+                state,
+            )
         }
         Expr::Return(ExprReturn {
             attrs,
