@@ -634,9 +634,10 @@ impl CompileEnv<'_> {
             } else {
                 // If the function has a return type
                 // Lets just trap since this must be dead code
-                builder
-                    .ins()
-                    .trap(/* Some random trap code */cranelift_codegen::ir::TrapCode::TableOutOfBounds);
+                builder.ins().trap(
+                    /* Some random trap code */
+                    cranelift_codegen::ir::TrapCode::TableOutOfBounds,
+                );
             }
         }
     }
