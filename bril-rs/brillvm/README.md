@@ -9,7 +9,8 @@ be updated as Inkwell gets new support, within the constraints of the rust compi
 
 ## Runtime
 
-You must have a linkable runtime library available in the LLVM bc format. You can get this by calling `make rt`
+You must have a linkable runtime library available in the LLVM bc format.
+You can get this by calling `make rt`.
 
 ## Usage
 
@@ -37,6 +38,12 @@ Brillvm does not require that your Bril code be in SSA form (as it assumes
 the LLVM `mem2reg` pass will be sufficient if that is needed) but if you choose
 to supply Bril code with `phi` operations, Brillvm will assume that they follow
 LLVM's additional constraints.
+
+### Limitations
+
+- Rust and Bril both allow variables to be re-declared with different types. Brillvm
+  does not yet support this and assumes that a given variable will only have one
+  type within a function.
 
 ## TroubleShooting
 
