@@ -588,7 +588,12 @@ impl CompileEnv<'_> {
     }
 
     /// Emit the body of a Bril function into a CLIF function.
-    fn compile_body(&self, insts: &[bril::Code], builder: &mut FunctionBuilder) {
+    fn compile_body(
+        &self,
+        insts: &[bril::Code],
+        builder: &mut FunctionBuilder,
+        return_type: Option<&bril::Type>,
+    ) {
         let mut terminated = false; // Entry block is open.
         for code in insts {
             match code {
@@ -624,7 +629,16 @@ impl CompileEnv<'_> {
 
         // Implicit return in the last block.
         if !terminated {
-            builder.ins().return_(&[]);
+            if return_type.is_none() {
+                builder.ins().return_(&[]);
+            } else {
+                // If the function has a return type
+                // Lets just trap since this must be dead code
+                builder.ins().trap(
+                    /* Some random trap code */
+                    cranelift_codegen::ir::TrapCode::TableOutOfBounds,
+                );
+            }
         }
     }
 }
@@ -747,7 +761,7 @@ impl<M: Module> Translator<M> {
         }
 
         // Insert instructions.
-        env.compile_body(&func.instrs, &mut builder);
+        env.compile_body(&func.instrs, &mut builder, func.return_type.as_ref());
 
         builder.seal_all_blocks();
         builder.finalize();

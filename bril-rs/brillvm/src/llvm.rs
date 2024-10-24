@@ -96,10 +96,19 @@ impl<'a, 'b> Heap<'a, 'b> {
         name: &'b String,
         ty: &Type,
     ) -> WrappedPointer<'a> {
-        self.map
+        let result = self
+            .map
             .entry(name)
             .or_insert_with(|| WrappedPointer::new(builder, context, name, ty))
-            .clone()
+            .clone();
+        if result.ty != *ty {
+            println!(
+                "`{}` had type `{}` but is now being assigned type `{}`",
+                name, result.ty, ty
+            );
+            unimplemented!("brillvm does not currently support variables within a function having different types. Implementing this might require a control flow analysis? Feel free to try and implement this.")
+        }
+        result
     }
 
     fn get(&self, name: &String) -> WrappedPointer<'a> {
@@ -1294,7 +1303,7 @@ pub fn create_module_from_program<'a>(
                     }
                 });
 
-                (llvm_func, instrs, block, heap)
+                (llvm_func, instrs, block, heap, return_type)
             },
         )
         .collect(); // Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed.
@@ -1302,20 +1311,21 @@ pub fn create_module_from_program<'a>(
     // Now actually build each function
     funcs
         .into_iter()
-        .for_each(|(llvm_func, instrs, mut block, heap)| {
+        .for_each(|(llvm_func, instrs, mut block, heap, return_type)| {
             let mut last_instr = None;
+
+            // Maps labels to llvm blocks for jumps
+            let mut block_map = HashMap::new();
 
             // If their are actually instructions, proceed
             if !instrs.is_empty() {
                 builder.position_at_end(block);
 
-                // Maps labels to llvm blocks for jumps
-                let mut block_map = HashMap::new();
                 instrs.iter().for_each(|i| match i {
                     bril_rs::Code::Label { label, .. } => {
                         let new_block = block_map_get(context, llvm_func, &mut block_map, label);
 
-                        // Check if wee need to insert a jump since all llvm blocks must be terminated
+                        // Check if we need to insert a jump since all llvm blocks must be terminated
                         if !is_terminating_instr(&last_instr) {
                             builder
                                 .build_unconditional_branch(block_map_get(
@@ -1354,7 +1364,19 @@ pub fn create_module_from_program<'a>(
 
             // Make sure every function is terminated with a return if not already
             if !is_terminating_instr(&last_instr) {
-                builder.build_return(None).unwrap();
+                if return_type.is_none() {
+                    builder.build_return(None).unwrap();
+                } else {
+                    // This block did not have a terminating instruction
+                    // Returning void is ill-typed for this function
+                    // This code should be unreachable in well-formed Bril
+                    // Let's just arbitrarily jump to avoid needing to
+                    // instantiate a valid return value.
+                    assert!(!block_map.is_empty());
+                    builder
+                        .build_unconditional_branch(*block_map.values().next().unwrap())
+                        .unwrap();
+                }
             }
         });
 
