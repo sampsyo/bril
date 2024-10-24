@@ -96,10 +96,15 @@ impl<'a, 'b> Heap<'a, 'b> {
         name: &'b String,
         ty: &Type,
     ) -> WrappedPointer<'a> {
-        self.map
+        let result = self.map
             .entry(name)
             .or_insert_with(|| WrappedPointer::new(builder, context, name, ty))
-            .clone()
+            .clone();
+        if result.ty != *ty {
+            println!("`{}` had type `{}` but is now being assigned type `{}`", name, result.ty, ty);
+            unimplemented!("brillvm does not currently support variables within a function having different types. Implementing this might require a control flow analysis? Feel free to try and implement this.")
+        }
+        result
     }
 
     fn get(&self, name: &String) -> WrappedPointer<'a> {
