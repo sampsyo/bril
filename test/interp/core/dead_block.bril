@@ -1,0 +1,10 @@
+@abs(x: int): int {
+  ret x;
+  .label435:
+}
+
+@main() {
+    x : int = const 42;
+    y : int = call @abs x;
+    print y;
+}
