@@ -632,12 +632,11 @@ impl CompileEnv<'_> {
             if return_type.is_none() {
                 builder.ins().return_(&[]);
             } else {
-                // If the function has a return type
-                // Lets just trap since this must be dead code
-                builder.ins().trap(
-                    /* Some random trap code */
-                    cranelift_codegen::ir::TrapCode::TableOutOfBounds,
-                );
+                // An implicit return is illegal when there is a return type,
+                // so this code is unreachable.
+                builder
+                    .ins()
+                    .trap(cranelift_codegen::ir::TrapCode::UnreachableCodeReached);
             }
         }
     }
