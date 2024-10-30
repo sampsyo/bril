@@ -1523,14 +1523,6 @@ pub fn create_module_from_program<'a>(
                     /*let func = runtime_module.get_function(get_ticks_start).unwrap();
                     func.remove_enum_attribute(AttributeLoc::Function, 28);
                     func.add_attribute(AttributeLoc::Function, context.create_enum_attribute(3, 1));*/
-                    // also assert the last instruction is a print
-                    assert!(matches!(
-                        instrs.last().unwrap().clone(),
-                        Code::Instruction(Instruction::Effect {
-                            op: EffectOps::Print,
-                            ..
-                        })
-                    ));
                 }
 
                 // Maps labels to llvm blocks for jumps
