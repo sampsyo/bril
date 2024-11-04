@@ -44,7 +44,7 @@ fn build_functiontype<'a>(
         .iter()
         .map(|t| llvm_type_map(context, t, Into::into))
         .collect();
-    #[allow(clippy::option_if_let_else)] // I think this is more readable
+    #[expect(clippy::option_if_let_else)] // I think this is more readable
     match return_ty {
         None => context.void_type().fn_type(&param_types, false),
         Some(t) => llvm_type_map(context, t, |t| t.fn_type(&param_types, false)),
@@ -188,7 +188,7 @@ fn block_map_get<'a>(
 }
 
 // The workhorse of converting a Bril Instruction to an LLVM Instruction
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn build_instruction<'a, 'b>(
     i: &'b Instruction,
     context: &'a Context,
@@ -207,7 +207,7 @@ fn build_instruction<'a, 'b>(
             const_type: Type::Float,
             value: Literal::Int(i),
         } => {
-            #[allow(clippy::cast_precision_loss)]
+            #[expect(clippy::cast_precision_loss)]
             builder
                 .build_store(
                     heap.get(dest).ptr,
@@ -221,7 +221,7 @@ fn build_instruction<'a, 'b>(
             const_type: _,
             value: Literal::Int(i),
         } => {
-            #[allow(clippy::cast_sign_loss)]
+            #[expect(clippy::cast_sign_loss, reason = "u64 because of the C++/C API")]
             builder
                 .build_store(
                     heap.get(dest).ptr,
@@ -1246,7 +1246,10 @@ pub fn create_module_from_program<'a>(
     let mut fresh = Fresh::new();
 
     // Add all functions to the module, initialize all variables in the heap, and setup for the second phase
-    #[allow(clippy::needless_collect)]
+    #[expect(
+        clippy::needless_collect,
+        reason = "Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed."
+    )]
     let funcs: Vec<_> = functions
         .iter()
         .map(
@@ -1306,7 +1309,7 @@ pub fn create_module_from_program<'a>(
                 (llvm_func, instrs, block, heap, return_type)
             },
         )
-        .collect(); // Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed.
+        .collect();
 
     // Now actually build each function
     funcs
