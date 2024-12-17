@@ -22,7 +22,7 @@ use bril_rs::{
 
 use crate::error::BrildError;
 
-fn mangle_name(path: &Path, func_name: &String) -> String {
+fn mangle_name(path: &Path, func_name: &str) -> String {
     let mut parts = path.components();
     parts.next();
 

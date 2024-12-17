@@ -38,7 +38,7 @@ fn unwrap_bril_ptrtype(ty: &Type) -> &Type {
 fn build_functiontype<'a>(
     context: &'a Context,
     args: &[&Type],
-    return_ty: &Option<Type>,
+    return_ty: Option<&Type>,
 ) -> FunctionType<'a> {
     let param_types: Vec<BasicMetadataTypeEnum> = args
         .iter()
@@ -1218,7 +1218,7 @@ fn build_instruction<'a, 'b>(
 }
 
 // Check for instructions that end a block
-const fn is_terminating_instr(i: &Option<Instruction>) -> bool {
+const fn is_terminating_instr(i: Option<&Instruction>) -> bool {
     matches!(
         i,
         Some(Instruction::Effect {
@@ -1266,7 +1266,7 @@ pub fn create_module_from_program<'a>(
                         .iter()
                         .map(|Argument { arg_type, .. }| arg_type)
                         .collect::<Vec<_>>(),
-                    return_type,
+                    return_type.as_ref(),
                 );
 
                 let func_name = if name == "main" { "_main" } else { name };
@@ -1329,7 +1329,7 @@ pub fn create_module_from_program<'a>(
                         let new_block = block_map_get(context, llvm_func, &mut block_map, label);
 
                         // Check if we need to insert a jump since all llvm blocks must be terminated
-                        if !is_terminating_instr(&last_instr) {
+                        if !is_terminating_instr(last_instr.as_ref()) {
                             builder
                                 .build_unconditional_branch(block_map_get(
                                     context,
@@ -1348,7 +1348,7 @@ pub fn create_module_from_program<'a>(
                     bril_rs::Code::Instruction(i) => {
                         // Check if we are in a basic block that has already been terminated
                         // If so, we just keep skipping unreachable instructions until we hit a new block or run out of instructions
-                        if !is_terminating_instr(&last_instr) {
+                        if !is_terminating_instr(last_instr.as_ref()) {
                             build_instruction(
                                 i,
                                 context,
@@ -1366,7 +1366,7 @@ pub fn create_module_from_program<'a>(
             }
 
             // Make sure every function is terminated with a return if not already
-            if !is_terminating_instr(&last_instr) {
+            if !is_terminating_instr(last_instr.as_ref()) {
                 if return_type.is_none() {
                     builder.build_return(None).unwrap();
                 } else {
