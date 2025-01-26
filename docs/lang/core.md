@@ -64,6 +64,6 @@ Only `call` may (optionally) produce a result; the rest appear only as Effect Op
 Miscellaneous
 -------------
 
-* `id`: A type-insensitive identity. Takes one argument, which is a variable of any type, and produces the same value (which must have the same type, obvi).
+* `id`: A type-insensitive identity. Takes one argument, which is a variable of any type, and produces the same value (which must have the same type, obviously).
 * `print`: Output values to the console (with a newline). Takes any number of arguments of any type and does not produce a result.
 * `nop`: Do nothing. Takes no arguments and produces no result.
