@@ -153,14 +153,7 @@ impl Display for Argument {
 #[serde(untagged)]
 pub enum Code {
     /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#label>
-    Label {
-        /// The name of the label
-        label: String,
-        /// Where the label is located in source code
-        #[cfg(feature = "position")]
-        #[serde(flatten, skip_serializing_if = "Option::is_none")]
-        pos: Option<Position>,
-    },
+    Label(Label),
     /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#instruction>
     Instruction(Instruction),
 }
@@ -168,13 +161,30 @@ pub enum Code {
 impl Display for Code {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Label {
-                label,
-                #[cfg(feature = "position")]
-                    pos: _,
-            } => write!(f, ".{label}:"),
+            Self::Label(label) => write!(f, ".{}:", label.name),
             Self::Instruction(instr) => write!(f, "  {instr}"),
         }
+    }
+}
+
+/// <https://capra.cs.cornell.edu/bril/lang/syntax.html#label>
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Label {
+    /// The name of the label
+    pub name: String,
+
+    /// Where the label is located in source code
+    #[cfg(feature = "position")]
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub pos: Option<Position>,
+}
+
+#[cfg(feature = "position")]
+impl Label {
+    /// A helper function to extract the position value if it exists from an instruction
+    #[must_use]
+    pub fn get_pos(&self) -> Option<Position> {
+        self.pos.clone()
     }
 }
 
