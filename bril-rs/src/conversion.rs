@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     AbstractArgument, AbstractCode, AbstractFunction, AbstractInstruction, AbstractProgram,
-    AbstractType, Argument, Code, EffectOps, Function, Instruction, Position, Program, Type,
+    AbstractType, Argument, Code, EffectOps, Function, Instruction, Label, Position, Program, Type,
     ValueOps,
 };
 
@@ -160,11 +160,11 @@ impl TryFrom<AbstractCode> for Code {
                 label,
                 #[cfg(feature = "position")]
                 pos,
-            } => Self::Label {
-                label,
+            } => Self::Label(Label {
+                name: label,
                 #[cfg(feature = "position")]
                 pos,
-            },
+            }),
             AbstractCode::Instruction(i) => Self::Instruction(i.try_into()?),
         })
     }
