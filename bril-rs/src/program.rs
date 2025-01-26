@@ -171,6 +171,7 @@ impl Display for Code {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Label {
     /// The name of the label
+    #[serde(rename = "label")]
     pub name: String,
 
     /// Where the label is located in source code
