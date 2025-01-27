@@ -204,7 +204,7 @@ module Dominance = struct
   end
 
   module Lists : S with type out := string list = struct
-    let f = Map.map ~f:String.Set.to_list
+    let f = Map.map ~f:Set.to_list
     let dominators ?strict = Fn.compose f (Sets.dominators ?strict)
     let dominated ?strict = Fn.compose f (Sets.dominated ?strict)
 
