@@ -15,7 +15,7 @@ export type PrimType = "int" | "bool" | "float" | "char";
 /**
  * Parameterized types. (We only have pointers for now.)
  */
-export type ParamType = { ptr: Type };
+export type ParamType = {ptr: Type};
 
 /**
  * Value types.
@@ -25,7 +25,7 @@ export type Type = PrimType | ParamType;
 /**
  * An (always optional) source code position.
  */
-export type Position = { row: number, col: number };
+export type Position = {row: number, col: number};
 
 /**
  * Common fields in any operation.
@@ -42,8 +42,8 @@ interface Op {
  */
 export interface EffectOperation extends Op {
   op: "br" | "jmp" | "print" | "ret" | "call" |
-  "store" | "free" |
-  "speculate" | "guard" | "commit";
+    "store" | "free" |
+    "speculate" | "guard" | "commit";
 }
 
 /**
@@ -52,16 +52,15 @@ export interface EffectOperation extends Op {
  */
 export interface ValueOperation extends Op {
   op: "add" | "mul" | "sub" | "div" |
-  "id" | "nop" |
-  "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
-  "call" |
-  "load" | "ptradd" | "alloc" |
-  "fadd" | "fmul" | "fsub" | "fdiv" |
-  "feq" | "flt" | "fle" | "fgt" | "fge" |
-  "ceq" | "clt" | "cle" | "cgt" | "cge" |
-  "char2int" | "int2char" |
-  "phi" |
-  "bitcast";
+      "id" | "nop" |
+      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
+      "call" |
+      "load" | "ptradd" | "alloc" |
+      "fadd" | "fmul" | "fsub" | "fdiv" |
+      "feq" | "flt" | "fle" | "fgt" | "fge" |
+      "ceq" | "clt" | "cle" | "cgt" | "cge" | 
+      "char2int" | "int2char" |
+      "phi";
   dest: Ident;
   type: Type;
 }
