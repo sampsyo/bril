@@ -1,6 +1,6 @@
 [package]
 name = "bril-rs"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Patrick LaFontaine <32135464+Pat-Lafon@users.noreply.github.com>"]
 edition = "2021"
 description = "A rust representation of the Bril language"
