@@ -1,0 +1,4 @@
+@main() {
+  c1: char = const 'h';
+  i1: int = bitcast c1;
+}

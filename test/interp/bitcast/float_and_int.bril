@@ -1,0 +1,5 @@
+@main() {
+  as_int: int = const 4591870180066957722;
+  as_float: float = bitcast as_int;
+  print as_int as_float;
+}
