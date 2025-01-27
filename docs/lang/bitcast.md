@@ -25,8 +25,8 @@ type>`, storing the result in `<destination variable>`:
 
 ```json
 {
-    "op": "bitcast", 
-    "dest": "<destination variable>", 
+    "op": "bitcast",
+    "dest": "<destination variable>",
     "type": "<destination type>",
     "args": ["<input variable>"]
 }
