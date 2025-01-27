@@ -1,7 +1,7 @@
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
 use bril2json::escape_control_chars;
-use bril_rs::Instruction;
+use bril_rs::{Instruction, Type};
 
 use fxhash::FxHashMap;
 
@@ -322,10 +322,12 @@ fn execute_value_op<T: std::io::Write>(
   labels: &[String],
   funcs: &[usize],
   last_label: Option<&String>,
+  op_type: &Type,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
-    Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
+    Add, Alloc, And, Bitcast, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
+    Fge, Fgt, Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd,
+    Sub,
   };
   match op {
     Add => {
@@ -516,6 +518,44 @@ fn execute_value_op<T: std::io::Write>(
       let res = Value::Pointer(arg0.add(arg1));
       state.env.set(dest, res);
     }
+    Bitcast => {
+      fn is_identity<T: std::io::Write>(state: &State<T>, value: &Value, into_type: &Type) -> bool {
+        match (value, into_type) {
+          (Value::Int(_), Type::Int)
+          | (Value::Bool(_), Type::Bool)
+          | (Value::Float(_), Type::Float)
+          | (Value::Char(_), Type::Char) => true,
+          (Value::Pointer(pointer), Type::Pointer(pointer_inner)) => {
+            let pointer_value = state.heap.read(pointer).expect("invalid pointer");
+            is_identity(state, pointer_value, &pointer_inner)
+          }
+          _ => false,
+        }
+      }
+
+      let input = get_arg::<&Value>(&state.env, 0, args);
+
+      if is_identity(state, input, op_type) {
+        state.env.set(dest, input.clone());
+      } else {
+        match (input, op_type) {
+          // https://users.rust-lang.org/t/i64-u64-mapping-revisited/109315
+          // the to and from native endian stuff is a nop
+          // if link dies try web archive
+          (Value::Int(int), Type::Float) => {
+            let uint = u64::from_ne_bytes(int.to_ne_bytes());
+            let float = f64::from_bits(uint);
+            state.env.set(dest, Value::Float(float));
+          }
+          (Value::Float(float), Type::Int) => {
+            let uint = float.to_bits();
+            let int = i64::from_ne_bytes(uint.to_ne_bytes());
+            state.env.set(dest, Value::Int(int));
+          }
+          _ => panic!("unsupported bitcast"),
+        }
+      }
+    }
   }
   Ok(())
 }
@@ -643,7 +683,7 @@ fn execute<'a, T: std::io::Write>(
         Instruction::Value {
           op,
           dest: _,
-          op_type: _,
+          op_type,
           args: _,
           labels,
           funcs: _,
@@ -657,6 +697,7 @@ fn execute<'a, T: std::io::Write>(
             labels,
             &numified_code.funcs,
             last_label,
+            op_type,
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
