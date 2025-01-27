@@ -260,6 +260,28 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value {
+      op: ValueOps::Bitcast,
+      args,
+      dest,
+      funcs,
+      labels,
+      pos: _,
+      op_type,
+    } => {
+      check_num_args(1, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      match (get_type(env, 0, args)?, op_type) {
+        (Type::Int | Type::Float | Type::Char | Type::Pointer(_), Type::Bool)
+        | (Type::Int | Type::Bool | Type::Float | Type::Pointer(_), Type::Char)
+        | (Type::Bool | Type::Char, Type::Int | Type::Float | Type::Pointer(_)) => {
+          return Err(InterpError::InvalidBitcastType);
+        }
+        _ => {}
+      }
+      update_env(env, dest, op_type)
+    }
+    Instruction::Value {
       op: ValueOps::Call,
       dest,
       op_type,
