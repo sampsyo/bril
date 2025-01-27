@@ -481,6 +481,9 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/memory.html#operations>
     #[cfg(feature = "memory")]
     PtrAdd,
+    /// <https://capra.cs.cornell.edu/bril/lang/bitcast.html#operations>
+    #[cfg(feature = "bitcast")]
+    Bitcast,
 }
 
 impl Display for ValueOps {
@@ -540,6 +543,8 @@ impl Display for ValueOps {
             Self::Load => write!(f, "load"),
             #[cfg(feature = "memory")]
             Self::PtrAdd => write!(f, "ptradd"),
+            #[cfg(feature = "bitcast")]
+            Self::Bitcast => write!(f, "bitcast"),
         }
     }
 }

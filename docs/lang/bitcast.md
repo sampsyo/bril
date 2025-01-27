@@ -18,7 +18,7 @@ Implementations/extensions may choose to define the semantics of bitcasting betw
 custom types or between a custom type and a core type.
 
 Syntax
----
+------
 
 The following JSON represents a bitcast from `<input variable>` to `<destination
 type>`, storing the result in `<destination variable>`:
