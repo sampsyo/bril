@@ -14,7 +14,7 @@ keywords = ["compiler", "bril", "parser", "data-structures", "language"]
 
 [dependencies]
 clap         = { version = "4.4", features = ["derive"] }
-thiserror    = "1.0"
+thiserror    = "2.0"
 
 [dependencies.bril2json]
 version      = "0.1.0"

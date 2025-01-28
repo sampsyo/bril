@@ -13,7 +13,7 @@ keywords = ["compiler", "bril", "parser", "data-structures", "language"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 
