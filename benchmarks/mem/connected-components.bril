@@ -1,0 +1,152 @@
+# This benchmark counts the number of connected components in a graph represented by an adjacency matrix.
+# Defines a stack interface with push and pop operations in memory
+# Utilizes stack representation in memory to perfect iterative depth-first search
+# Developed by Kabir Samsi (kas499)
+
+@print_through(arr : ptr<int>, size : int) {
+    one: int = const 1;
+    i: int = const 0;
+
+    .loop:
+        cond = lt i size;
+        br cond .printmore .done;
+    .printmore:
+        idx: ptr<int> = ptradd arr i;
+        elem: int = load idx;
+        print elem;
+    .loopcheck:
+        i: int = add i one;
+        jmp .loop;
+    .done:
+        print; # Line break after full print
+        ret;
+}
+
+# Push an element to the top of a stack by copying over to a larger memory component
+@push(stack : ptr<int>, newnode : int, size : int) : ptr<int> {
+  one : int = const 1;
+  newsize : int = add size one;
+  result: ptr<int> = alloc newsize;
+
+  # Initialize and add new node to top of the stack
+  i : int = const 0;
+  write_idx: ptr<int> = ptradd result i;
+  store write_idx newnode;
+
+  # Access top of the current stack
+  read_idx: ptr<int> = ptradd stack i;
+  
+  # Set new insert position
+  i : int = add i one;
+
+  # And now just copy the rest of the array over
+  .copyloop:
+    cond: bool = lt i newsize;
+    br cond .copy .done;
+  .copy:
+    # Store stack's top element at new write index
+    top: int = load read_idx;
+    write_idx: ptr<int> = ptradd result i;
+    store write_idx top;
+
+    # Update read index to next element
+    read_idx: ptr<int> = ptradd stack i;
+
+  .loop_end: # Increment and return to loop head
+    i: int = add i one;
+    jmp .copyloop;
+    
+  .done: # Free the old stack and return the new one
+    free stack;
+    ret result;
+}
+
+# Pop an element from the top of a stack
+@pop(stack : ptr<int>, size : int) : ptr<int> {
+  one : int = const 1;
+  newsize : int = sub size one;
+  result: ptr<int> = alloc newsize;
+
+  # Start copy pointer one ahead of start node, effectively popping it
+  i : int = const 1;
+
+  # Starting at index 1, copy the whole array over
+  .copyloop:
+    cond: bool = lt i size;
+    br cond .copy .done;
+  .copy:
+    # Load element in
+    read_idx: ptr<int> = ptradd stack i;
+    top: int = load read_idx;
+
+    # Store stack's top element at one before (overwriting the first element)
+    write_pos : int = sub i one;
+    write_idx: ptr<int> = ptradd result write_pos;
+    store write_idx top;
+
+  .loop_end: # Increment and return to loop head
+    i: int = add i one;
+    jmp .copyloop;
+    
+  .done: # Free the old stack and return the new one
+    free stack;
+    ret result;
+}
+
+# DFS graph to compute connected components
+@dfs(graph: ptr<ptr<int>>) : int {
+    one : int = const 1;
+    ret one;
+}
+
+# Main block (for now, just simulates pushes and pops on stack)
+@main() {
+    zero : int = const 0;
+    one : int = const 1;
+    two : int = const 2;
+    three : int = const 3;
+    four : int = const 4;
+    five : int = const 5;
+    six : int = const 6;
+    seven : int = const 7;
+
+    size : int = const 1;
+
+    arr: ptr<int> = alloc size;
+    insert: ptr<int> = ptradd arr zero;
+    store insert two;
+    
+    arr: ptr<int> = call @push arr one size;
+    size : int = add size one;
+    arr: ptr<int> = call @push arr five size;
+    size : int = add size one;
+    arr: ptr<int> = call @push arr three size;
+    size : int = add size one;
+    arr: ptr<int> = call @push arr four size;
+    size : int = add size one;
+
+    call @print_through arr size;
+
+    arr: ptr<int> = call @push arr zero size;
+    size : int = add one size;
+    call @print_through arr size;
+    
+    arr: ptr<int> = call @push arr seven size;
+    size : int = add one size;
+    call @print_through arr size;
+
+    # Pop out elements until array is almost empty
+    i : int = const 0;
+    .loop:
+        cond : bool = lt i six;
+        br cond .body .end;
+    .body:
+        arr: ptr<int> = call @pop arr size;
+        size : int = sub size one;
+        call @print_through arr size;
+    .loopinv:
+        i : int = add i one;
+        jmp .loop;
+    .end:
+        free arr;
+}
