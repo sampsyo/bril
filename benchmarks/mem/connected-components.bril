@@ -249,6 +249,21 @@
         ret components;
 }
 
+# Insert undirected edge from <from> to <to> (both directions in adjacency matrix)
+@insert_edge(graph : ptr<int>, from : int, to : int, size: int) {
+    one : int = const 1;
+    # Undirected edge (0, 5)
+    offset_count : int = mul from size;
+    offset_count : int = add offset_count to;
+    offset: ptr<int> = ptradd graph offset_count;
+    store offset one;
+
+    offset_count : int = mul to size;
+    offset_count : int = add offset_count from;
+    offset: ptr<int> = ptradd graph offset_count;
+    store offset one;
+}
+
 # Main block – Creates a graph with 8 nodes numbered 0...7 and 3 components.
 # The specific components are {1, 2, 3, 4}, {0, 5}, {6, 7}.
 # Adding/removing/modifying edges in the graph can be done within @main.
@@ -256,8 +271,16 @@
   nodes : int = const 8;
   dim : int = mul nodes nodes;
   adj : ptr<int> = alloc dim;
-  one : int = const 1;
+
+  # Node labels
   zero : int = const 0;
+  one : int = const 1;
+  two : int = const 2;
+  three : int = const 3;
+  four : int = const 4;
+  five : int = const 5;
+  six : int = const 6;
+  seven : int = const 7;
   
   i : int = const 0;
   .init_loop:
@@ -272,53 +295,11 @@
   
   .fill_edges: # Now, insert the edges
   
-    # Undirected edge (0, 5)
-    offset_count : int = const 5;
-    offset: ptr<int> = ptradd adj offset_count;
-    store offset one;
-    offset_count : int = const 40;
-    offset: ptr<int> = ptradd adj offset_count;
-    store offset one;
-
-    # Undirected edge (1, 2)
-    offset_count : int = const 10;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-    offset_count : int = const 17;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-
-    # Undirected edge (2, 3)
-    offset_count : int = const 19;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-    offset_count : int = const 26;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-
-    # Undirected edge (1, 4)
-    offset_count : int = const 12;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-    offset_count : int = const 33;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-
-    # Undirected edge (2, 4)
-    offset_count : int = const 20;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-    offset_count : int = const 34;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-
-    # Undirected edge (6, 7)
-    offset_count : int = const 55;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
-    offset_count : int = const 62;
-    offset : ptr<int> = ptradd adj offset_count;
-    store offset one;
+    call @insert_edge adj zero five nodes; # Undirected edge (0, 5)
+    call @insert_edge adj one two nodes; # Undirected edge (1, 2)
+    call @insert_edge adj two three nodes; # Undirected edge (2, 3)
+    call @insert_edge adj one four nodes; # Undirected edge (1, 4)
+    call @insert_edge adj two four nodes; # Undirected edge (2, 4)
 
   .compute_components:
     components : int = call @dfs adj nodes;
