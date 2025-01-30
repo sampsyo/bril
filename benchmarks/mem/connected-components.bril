@@ -4,6 +4,26 @@
 # Utilizes stack representation in memory to assist in iterative depth-first search
 # Developed by Kabir Samsi (kas499)
 
+# Auxiliary function to print through the contents of an array in memory
+@print_through(arr : ptr<int>, size : int) {
+    one: int = const 1;
+    i: int = const 0;
+
+    .loop:
+        cond = lt i size;
+        br cond .printmore .done;
+    .printmore:
+        idx: ptr<int> = ptradd arr i;
+        elem: int = load idx;
+        print elem;
+    .loopcheck:
+        i: int = add i one;
+        jmp .loop;
+    .done:
+        print; # Line break after full print
+        ret;
+}
+
 # Push an element to the top of a stack by copying over to a larger memory component
 @push(stack : ptr<int>, newnode : int, size : int) : ptr<int> {
   zero : int = const 0;
@@ -99,7 +119,7 @@
       ret result;
 }
 
-# Find index of first unvisited node; return -1 if none
+# Find index of first unvisited node; return (length + 1) if none
 @first_unvisited (visited : ptr<int>, n : int) : int {
   i : int = const 0;
   zero : int = const 0;
@@ -140,7 +160,6 @@
       i : int = add i one;
       jmp .populate_visited;
 
-
     .rest:
     visited_count : int = const 0;
     components : int = const 0;
@@ -148,15 +167,20 @@
     # Iterate until every component is visited
     .component_loop:
       cond : bool = lt visited_count n;
-      br cond .dfs_loop .end;
+      br cond .dfs_init .end;
 
-      .dfs_loop:
+      .dfs_init:
         # Start by finding the next unvisited element
         next_node : int = call @first_unvisited visited n;
+
+        visited_offset : ptr<int> = ptradd visited next_node;
+        store visited_offset one;
         stack : ptr<int> = alloc one;
         stack_size : int = const 1;
         store stack next_node;
         visited_count : int = add visited_count one;
+
+        .dfs_loop: # Keep running DFS while stack has elements
 
         cond : bool = gt stack_size zero;
         br cond .trav_loop .terminate;
@@ -171,7 +195,7 @@
           i : int = const 0;
           
           # Iterate through each neighbor
-          .stack_loop:
+          .neighbor_loop:
             iter_cond : bool = lt i n;
             br iter_cond .iter .break;
           .iter:
@@ -181,10 +205,11 @@
             cell : ptr<int> = ptradd graph cell_idx;
             cell_data : int = load cell;
             
-            # Check if visited
+            # Load data on whether neighbor has been visited previously
             visited_cell : ptr<int> = ptradd visited i;
             visited_data : int = load visited_cell;
 
+            # Check if neighbor, and if visited
             is_neighbor : bool = eq cell_data one;
             not_visited : bool = eq visited_data zero;
             push_cond : bool = and is_neighbor not_visited;
@@ -194,46 +219,29 @@
             # Mark new node as visited and add to stack
             .push_stack:
               stack : ptr<int> = call @push stack i stack_size;
-              store visited_cell one;
               stack_size : int = add stack_size one;
+              store visited_cell one;
+              visited_count : int = add visited_count one;
 
             .no_push:
               i : int = add i one;
-              jmp .stack_loop;
+              jmp .neighbor_loop;
 
           .break:
+            jmp .dfs_loop;
 
         .terminate: #End single round of DFS and increment number of components
+          call @print_through visited n;
           components : int = add components one;
+          free stack;
+          jmp .component_loop;
       
       .end:
-        free stack;
         free visited;
         ret components;
 }
 
-# Auxiliary function to print through the contents of an array in memory
-@print_through(arr : ptr<int>, size : int) {
-    one: int = const 1;
-    i: int = const 0;
-
-    .loop:
-        cond = lt i size;
-        br cond .printmore .done;
-    .printmore:
-        idx: ptr<int> = ptradd arr i;
-        elem: int = load idx;
-        print elem;
-    .loopcheck:
-        i: int = add i one;
-        jmp .loop;
-    .done:
-        print; # Line break after full print
-        ret;
-}
-
-# Main block.
-# Creates a graph with 8 nodes and 3 components
+# Main block – Creates a graph with 8 nodes and 4 components.
 @main() {
   nodes : int = const 8;
   dim : int = mul nodes nodes;
