@@ -1,3 +1,4 @@
+# Montgomery reduction algorithm for fast modular multiplication 
 # ARGS: 100 17 47 12 
 @main(r: int, n: int, nn: int, t: int): int {
   # Compute `m = ((t % r) * nn) % r`
