@@ -325,9 +325,9 @@ fn execute_value_op<T: std::io::Write>(
   op_type: &Type,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
-    Add, Alloc, And, Bitcast, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
-    Fge, Fgt, Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd,
-    Sub,
+    Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
+    Fge, Fgt, Fle, Float2Bits, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or,
+    Phi, PtrAdd, Sub,
   };
   match op {
     Add => {
@@ -518,43 +518,31 @@ fn execute_value_op<T: std::io::Write>(
       let res = Value::Pointer(arg0.add(arg1));
       state.env.set(dest, res);
     }
-    Bitcast => {
-      fn is_identity<T: std::io::Write>(state: &State<T>, value: &Value, into_type: &Type) -> bool {
-        match (value, into_type) {
-          (Value::Int(_), Type::Int)
-          | (Value::Bool(_), Type::Bool)
-          | (Value::Float(_), Type::Float)
-          | (Value::Char(_), Type::Char) => true,
-          (Value::Pointer(pointer), Type::Pointer(pointer_inner)) => {
-            let pointer_value = state.heap.read(pointer).expect("invalid pointer");
-            is_identity(state, pointer_value, &pointer_inner)
-          }
-          _ => false,
-        }
-      }
-
+    Float2Bits => {
       let input = get_arg::<&Value>(&state.env, 0, args);
 
-      if is_identity(state, input, op_type) {
-        state.env.set(dest, input.clone());
-      } else {
-        match (input, op_type) {
-          // https://users.rust-lang.org/t/i64-u64-mapping-revisited/109315
-          // the to and from native endian stuff is a nop
-          // if link dies try web archive
-          (Value::Int(int), Type::Float) => {
-            let uint = u64::from_ne_bytes(int.to_ne_bytes());
-            let float = f64::from_bits(uint);
-            state.env.set(dest, Value::Float(float));
-          }
-          (Value::Float(float), Type::Int) => {
-            let uint = float.to_bits();
-            let int = i64::from_ne_bytes(uint.to_ne_bytes());
-            state.env.set(dest, Value::Int(int));
-          }
-          _ => panic!("unsupported bitcast"),
-        }
-      }
+      let (Value::Float(float), Type::Int) = (input, op_type) else {
+        panic!("Invalid bitcast");
+      };
+
+      // https://users.rust-lang.org/t/i64-u64-mapping-revisited/109315
+      // the to and from native endian stuff is a nop
+      // if link dies try web archive
+      let uint = float.to_bits();
+      let int = i64::from_ne_bytes(uint.to_ne_bytes());
+      state.env.set(dest, Value::Int(int));
+    }
+    Bits2Float => {
+      let input = get_arg::<&Value>(&state.env, 0, args);
+
+      let (Value::Int(int), Type::Float) = (input, op_type) else {
+        panic!("Invalid bitcast");
+      };
+
+      // see comment for Float2Bits
+      let uint = u64::from_ne_bytes(int.to_ne_bytes());
+      let float = f64::from_bits(uint);
+      state.env.set(dest, Value::Float(float));
     }
   }
   Ok(())

@@ -266,7 +266,9 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     #[cfg(feature = "memory")]
                     "ptradd" => ValueOps::PtrAdd,
                     #[cfg(feature = "bitcast")]
-                    "bitcast" => ValueOps::Bitcast,
+                    "bits2float" => ValueOps::Bits2Float,
+                    #[cfg(feature = "bitcast")]
+                    "floats2bit" => ValueOps::Float2Bits,
                     v => {
                         return Err(ConversionError::InvalidValueOps(v.to_string()))
                             .map_err(|e| e.add_pos(pos))

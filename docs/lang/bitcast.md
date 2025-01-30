@@ -1,50 +1,45 @@
 Bit Casting
-==============
+===========
 
-Bril has an extension for bit-casting between values of the same bit width.
+Bril has an extension for bit-casting between `int`s and `float`s.
+Thus, this extension depends on the [float] extension.
 
 Operations
 ----------
 
-There is one new instruction, a value operation:
+There are two new instructions, both of them value operations:
 
-- `bitcast`:
-  Takes one value of bit width $N$ and produces a value of the width-$N$ output
-  type with the same bit representation, if conversion is defined between the
-  input and output types. It is an error to bitcast between types of distinct 
-  bit widths, or between types for which bitcasting is not well-defined.
-
-Implementations/extensions may choose to define the semantics of bitcasting between their
-custom types or between a custom type and a core type.
+- `float2bits`: Takes as input a single argument of type `float` and bitcasts
+  the float to an `int`.
+- `bits2float`: Takes as input a single argument of type `int` and bitcasts
+  the integer to a `float`.
 
 Syntax
 ------
 
-The following JSON represents a bitcast from `<input variable>` to `<destination
-type>`, storing the result in `<destination variable>`:
+The following JSON represents a bitcast from the float `<input variable>` to
+an integer, storing the result in `<destination variable>`:
 
 ```json
 {
-    "op": "bitcast",
+    "op": "float2bits",
     "dest": "<destination variable>",
-    "type": "<destination type>",
+    "type": "int",
     "args": ["<input variable>"]
 }
 ```
 
-Semantics
----------
+The following JSON represents a bitcast from the integer `<input variable>` to
+a float, storing the result in `<destination variable>`:
 
-- A `bitcast` has no side effects.
-- `bitcast`ing from a value of type `T` to type `T` is equivalent to the identity function; it is well-defined.
-- Let types `T` and `U` have the same bit width, and let bitcasting be defined
-  between `T` and `U`. If `x` is a valid value of type
-  `T`, but the bit representation of `x` is not a bit representation of a valid
-  value of type `U`, the result of the bitcast is undefined. Implementations may
-  choose to silently allow the cast, raise an error, or perform some other
-  action.
-- The casts from `float` to `int` and `int` to `float` are well-defined and
-  follow the IEEE floating-point specification.
+```json
+{
+    "op": "bits2float",
+    "dest": "<destination variable>",
+    "type": "float",
+    "args": ["<input variable>"]
+}
+```
 
 Examples
 --------
@@ -54,7 +49,7 @@ integer into a floating-point number (in this case, $0.1$):
 
 ```
 as_int: int = const 4591870180066957722;
-as_float: float = bitcast as_int;
+as_float: float = bits2float as_int;
 print as_float;
 ```
 
