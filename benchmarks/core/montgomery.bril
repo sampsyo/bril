@@ -5,7 +5,7 @@
 # `n * nn = -1 mod r`, and we pick `nn = 47`. We then run the following algo
 # to get the result `11`, which equals `(7 * 5) % 17`.
 # ARGS: 100 17 47 12 
-@main(r: int, n: int, nn: int, t: int): int {
+@main(r: int, n: int, nn: int, t: int) {
   # Compute `m = ((t % r) * nn) % r`
   tr: int = call @mod t r;
   trnn: int = mul tr nn;
