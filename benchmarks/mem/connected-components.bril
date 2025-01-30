@@ -231,7 +231,6 @@
             jmp .dfs_loop;
 
         .terminate: #End single round of DFS and increment number of components
-          call @print_through visited n;
           components : int = add components one;
           free stack;
           jmp .component_loop;
