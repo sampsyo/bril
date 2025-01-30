@@ -300,6 +300,7 @@
     call @insert_edge adj two three nodes; # Undirected edge (2, 3)
     call @insert_edge adj one four nodes; # Undirected edge (1, 4)
     call @insert_edge adj two four nodes; # Undirected edge (2, 4)
+    call @insert_edge adj six seven nodes; # Undirected edge (6, 7)
 
   .compute_components:
     components : int = call @dfs adj nodes;
