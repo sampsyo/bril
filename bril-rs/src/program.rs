@@ -642,6 +642,10 @@ impl FromStr for ValueOps {
             "load" => Self::Load,
             #[cfg(feature = "memory")]
             "ptradd" => Self::PtrAdd,
+            #[cfg(feature = "bitcast")]
+            "bits2float" => Self::Bits2Float,
+            #[cfg(feature = "bitcast")]
+            "float2bits" => Self::Float2Bits,
             v => Err(ConversionError::InvalidValueOps(v.to_string()))?,
         })
     }
