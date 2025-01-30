@@ -160,7 +160,7 @@
         visited_count : int = add visited_count one;
 
         cond : bool = gt size zero;
-        br cond .trav_loop .terminate
+        br cond .trav_loop .terminate;
 
         .trav_loop:
           # Pop from the top of the stack
@@ -242,8 +242,7 @@
   .edge_loop:
     cond : bool = eq i edges;
     br cond .add_edge .end;
-  .add_edge;
-    from : int = 
+  .add_edge:
     i : int = add i one;
   .end:
     components : int = call @dfs adj nodes;
