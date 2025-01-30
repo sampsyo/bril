@@ -1,0 +1,27 @@
+@main(num: float) {
+    v0: float = id num;
+    x: float = call @rsqrt v0;
+    print x;
+}
+@rsqrt(num: float): float {
+    half: float = const 0.5;
+    x2: float = fmul num half;
+    y: float = id num;
+    
+    i: int = float2bits num;
+
+    magic: int = const 1597463007;
+    two: int = const 2;
+    i2: int = div i two;
+    i: int = sub magic i2;
+
+    y: float = bits2float i3;
+
+    threehalfs: float = const 1.5;
+    y2: float = fmul y y;
+    x2y2: float = fmul x2 y2;
+    diff: float = fsub threehalfs x2y2;
+    finaly: float = fmul y diff;
+
+    ret finaly;
+}

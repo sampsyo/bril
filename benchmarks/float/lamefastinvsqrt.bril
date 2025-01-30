@@ -1,0 +1,47 @@
+@main(num: float, precision: float) {
+    v0: float = id num;
+    v1: float = id precision;
+    x: float = call @rsqrt v0 v1;
+    print x;
+}
+@rsqrt(num: float, precision: float): float {
+    v0: float = id num;
+    v1: float = id precision;
+    half: float = const 0.5;
+    one: float = const 1.0;
+    
+    x2: float = fmul v0 half;
+
+    y: float = id v0;
+    newy: float = fdiv one v0;
+
+  .onestep:
+    diff: float = call @absdiff newy y;
+    done: bool = flt diff v1;
+    br done .break .continue;
+  .continue:
+    y: float = id newy;
+    newy: float = call @onestep x2 y;
+    jmp .onestep;
+  .break:
+    ret newy;
+}
+@onestep(x2: float, num: float): float {
+    threehalfs: float = const 1.5;
+    y: float = id num;
+    y2: float = fmul y y;
+    x2y2: float = fmul x2 y2;
+    diff: float = fsub threehalfs x2y2;
+    finaly: float = fmul y diff;
+    ret finaly;
+}
+@absdiff(a: float, b: float): float {
+    firstsmall: bool = flt a b;
+    br firstsmall .bminusa .aminusb;
+  .bminusa:
+    z: float = fsub b a;
+    ret z;
+  .aminusb:
+    y: float = fsub a b;
+    ret y;
+}
