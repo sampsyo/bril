@@ -30,20 +30,13 @@ jobs:
       - name: Install all TypeScript tools
         run: deno install brili.ts ; deno install brilck.ts ; deno install --allow-env --allow-read ts2bril.ts
 
-      - name: Install Flit
-        run: pip install flit
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Install Python tools
-        run: cd bril-txt ; flit install --symlink
+        run: cd bril-txt ; uv tool install .
 
       - name: Install Turnt
-        # run: pip install turnt  # Use instead if pip turnt version >= 1.7
-        uses: actions/checkout@v4
-        with:
-          repository: cucapra/turnt
-          path: './turnt'
-      - name: Install Turnt part 2
-        run: cd turnt ; flit install --symlink
-
+        run: uv tool install turnt
 
       - name: Problem matcher
         run: echo '::add-matcher::.github/tap-matcher.json'
@@ -68,10 +61,10 @@ jobs:
       - name: Install brilck
         run: deno install brilck.ts
 
-      - name: Install Flit
-        run: pip install flit
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Install Python tools
-        run: cd bril-txt ; flit install --symlink
+        run: cd bril-txt ; uv tool install .
 
       - name: Problem matcher
         run: echo '::add-matcher::.github/brilck-matcher.json'
