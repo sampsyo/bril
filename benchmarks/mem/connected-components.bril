@@ -107,27 +107,41 @@
 
   # Loop until we find an unvisited node or have gone through all elements
   .loop:
-    offset = ptradd visited i;
+    offset : ptr<int> = ptradd visited i;
     loaded : int = load offset;
     bounds : bool = eq i n;
-    found : bool = eq offset zero;
+    found : bool = eq loaded zero;
     cond : bool = or bounds found;
     br cond .terminate .continue;
   .continue:
     i : int = add i one;
     jmp .loop;
   .terminate:
-    rtn i;
+    ret i;
 }
 
 # DFS graph to compute connected components
-@dfs(graph: ptr<ptr<int>>, n : int) : int {
+@dfs(graph: ptr<int>, n : int) : int {
     
     zero : int = const 0;
     one : int = const 1;
 
     # Mark first node as visited
     visited : ptr<int> = alloc n;
+    
+    i : int = const 0;
+    .populate_visited:
+      cond : bool = lt i n;
+      br cond .keep_looping .rest;
+
+    .keep_looping:
+      offset : ptr<int> = ptradd visited i;
+      store offset zero;
+      i : int = add i one;
+      jmp .populate_visited;
+
+
+    .rest:
     visited_count : int = const 0;
     components : int = const 0;
 
@@ -144,7 +158,7 @@
         store stack next_node;
         visited_count : int = add visited_count one;
 
-        cond : bool = gt size zero;
+        cond : bool = gt stack_size zero;
         br cond .trav_loop .terminate;
 
         .trav_loop:
@@ -194,6 +208,7 @@
       
       .end:
         free stack;
+        free visited;
         ret components;
 }
 
@@ -279,9 +294,8 @@
     offset : ptr<int> = ptradd adj offset_count;
     store offset one;
 
-  compute_components:
-    components : int = call @dfs adj nodes;  
-    call @print_through adj dim;
+  .compute_components:
+    components : int = call @dfs adj nodes;
     free adj;
-    ret components;
+    print components;
 }
