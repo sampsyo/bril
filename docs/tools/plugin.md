@@ -17,7 +17,7 @@ If you're using Neovim, Ethan Uppal made a simple wrapper around `bril-vim` for
 the [Lazy](https://lazy.folke.io) package manager, supporting LSP in addition to
 the syntax highlighting (link [here](https://github.com/ethanuppal/bril.nvim/tree/main)):
 
-```
+```lua
 { "ethanuppal/bril.nvim" }
 ```
 
