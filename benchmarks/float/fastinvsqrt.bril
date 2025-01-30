@@ -10,7 +10,7 @@
     
     i: int = float2bits num;
 
-    magic: int = const 1597463007;
+    magic: int = const 6910469410427058089;
     two: int = const 2;
     i2: int = div i two;
     i: int = sub magic i2;
