@@ -109,7 +109,7 @@
     #print id loc pos;
     curr: ptr<int> = ptradd board pos;
     cval: int = load curr;
-    sum = add sum cval;
+    sum: int = add sum cval;
     
     modulo: int = call @mod pos n;
     lw: bool = eq modulo zero;
