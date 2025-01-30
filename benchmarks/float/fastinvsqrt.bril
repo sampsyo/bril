@@ -15,7 +15,7 @@
     i2: int = div i two;
     i: int = sub magic i2;
 
-    y: float = bits2float i3;
+    y: float = bits2float i;
 
     threehalfs: float = const 1.5;
     y2: float = fmul y y;
