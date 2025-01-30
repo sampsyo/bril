@@ -1,26 +1,8 @@
-# This benchmark counts the number of connected components in a graph represented by an adjacency matrix.
+# This benchmark counts the number of connected components in an undirected graph.
+# The graph is represented by an adjacency matrix of specified (8 x 8) dimensions.
 # Defines a stack interface with push and pop operations in memory
-# Utilizes stack representation in memory to perfect iterative depth-first search
+# Utilizes stack representation in memory to assist in iterative depth-first search
 # Developed by Kabir Samsi (kas499)
-
-# Returns a value between 0 and max
-# Source: Code taken from adj2csr.bril
-@rand(seq: ptr<int>, max: int) : int {
-  a: int = const 25214903917;
-  c: int = const 11;
-  m: int = const 281474976710656;
-  x: int = load seq;
-  ax: int = mul a x;
-  axpc: int = add ax c;
-  next: int = div axpc m;
-  next: int = mul next m;
-  next: int = sub axpc next;
-  store seq next;
-  val: int = div next max;
-  val: int = mul val max;
-  val: int = sub next val;
-  ret val;
-}
 
 # Push an element to the top of a stack by copying over to a larger memory component
 @push(stack : ptr<int>, newnode : int, size : int) : ptr<int> {
@@ -29,10 +11,12 @@
   empty : bool = eq size zero;
   br empty .push_empty .push_nonempty;
 
+  # If the stack is empty, then it will be represented as [-1] per design. Just update the value.
   .push_empty:
     store stack newnode;
     ret stack;
 
+  # Otherwise, extend the memory and prepend.
   .push_nonempty:
     one : int = const 1;
     newsize : int = add size one;
@@ -84,6 +68,7 @@
     store stack negone;
     ret stack;
 
+  # If it has multiple, treat like a normal pop operation
   .pop_multiple:
     newsize : int = sub size one;
     result: ptr<int> = alloc newsize;
@@ -232,20 +217,71 @@
         ret;
 }
 
-# Main block. Inputs are the number of nodes in the graph and the number of edges.
-@main(nodes : int, edges: int) {
+# Main block.
+# Creates a graph with 8 nodes and 3 components
+@main() {
+  nodes : int = const 8;
   dim : int = mul nodes nodes;
   adj : ptr<int> = alloc dim;
   one : int = const 1;
-
+  zero : int = const 0;
+  
   i : int = const 0;
-  .edge_loop:
-    cond : bool = eq i edges;
-    br cond .add_edge .end;
-  .add_edge:
+  .init_loop:
+    cond : bool = lt i dim;
+    br cond .continue .fill_edges;
+
+  .continue:
+    offset : ptr<int> = ptradd adj i;
+    store offset zero;
     i : int = add i one;
-  .end:
-    components : int = call @dfs adj nodes;
+    jmp .init_loop;
+  
+  .fill_edges: # Now, insert the edges
+  
+    # Undirected edge (0, 5)
+    offset_count : int = const 5;
+    offset: ptr<int> = ptradd adj offset_count;
+    store offset one;
+    offset_count : int = const 40;
+    offset: ptr<int> = ptradd adj offset_count;
+    store offset one;
+
+    # Undirected edge (1, 2)
+    offset_count : int = const 10;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+    offset_count : int = const 17;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+
+    # Undirected edge (2, 3)
+    offset_count : int = const 19;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+    offset_count : int = const 26;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+
+    # Undirected edge (1, 4)
+    offset_count : int = const 12;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+    offset_count : int = const 33;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+
+    # Undirected edge (2, 4)
+    offset_count : int = const 20;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+    offset_count : int = const 34;
+    offset : ptr<int> = ptradd adj offset_count;
+    store offset one;
+
+  compute_components:
+    components : int = call @dfs adj nodes;  
+    call @print_through adj dim;
     free adj;
     ret components;
 }
