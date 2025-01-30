@@ -44,8 +44,8 @@ a float, storing the result in `<destination variable>`:
 Examples
 --------
 
-The following textual excerpt of Bril uses the [float] extension to convert an
-integer into a floating-point number (in this case, $0.1$):
+The following textual excerpt of Bril converts an integer into a
+floating-point number (in this case, $0.1$):
 
 ```
 as_int: int = const 4591870180066957722;
