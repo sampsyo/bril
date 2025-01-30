@@ -77,6 +77,7 @@ The current benchmarks are:
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
 * `reverse`: Compute number with reversed digits (e.g. 123 -> 321).
+* `combination`: Compute binomial combination, ie. n choose k, for positive integers.
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
