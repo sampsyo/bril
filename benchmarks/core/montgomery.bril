@@ -1,0 +1,27 @@
+# ARGS: 100 17 47 12 
+@main(r: int, n: int, nn: int, t: int): int {
+  # Compute `m = ((t % r) * nn) % r`
+  tr: int = call @mod t r;
+  trnn: int = mul tr nn;
+  m: int = call @mod trnn r;
+  # Compute `t <- (t + mn) / r`
+  mn: int = mul m n;
+  tmn: int = add t mn;
+  t: int = div tmn r;
+  # if t >= N then { return t - n } else { return t }
+  b: bool = ge t n;
+  br b .then .else;
+.then:
+  res: int = sub t n;
+  print res;
+.else:
+  print t;
+}
+
+# Computes `x % y` by computing x - (y * ( x /y))
+@mod(x: int, y: int): int {
+  q: int = div x y;
+  xq: int = mul y q;
+  result: int = sub x xq;
+  ret result; 
+}
