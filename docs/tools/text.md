@@ -36,11 +36,10 @@ Tools
 -----
 
 [The `bril-txt` parser & pretty printer][briltxt] are written in Python.
-You can install them with [Flit][] by doing something like:
+You can install them with [uv][] by doing something like:
 
-    $ pip install --user flit
     $ cd bril-txt
-    $ flit install --symlink --user
+    $ uv tool install .
 
 You'll now have tools called `bril2json` and `bril2txt`.
 Both read from standard input and write to standard output.
@@ -50,5 +49,5 @@ You can try a "round trip" like this, for example:
 
 The `bril2json` parser also supports a `-p` flag to include [source positions](../lang/syntax.md#source-positions).
 
-[flit]: https://flit.readthedocs.io/
 [briltxt]: https://github.com/sampsyo/bril/blob/main/bril-txt/briltxt.py
+[uv]: https://docs.astral.sh/uv/

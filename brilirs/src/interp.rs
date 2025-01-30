@@ -651,9 +651,10 @@ fn execute<'a, T: std::io::Write>(
           // Integer literals can be promoted to Floating point
           if const_type == &bril_rs::Type::Float {
             match value {
-              // So yes, as clippy points out, you technically lose precision here on the `*i as f64` cast. On the other hand, you already give up precision when you start using floats and I haven't been able to find a case where you are giving up precision in the cast that you don't already lose by using floating points.
-              // So it's probably fine unless proven otherwise.
-              #[allow(clippy::cast_precision_loss)]
+              #[expect(
+                clippy::cast_precision_loss,
+                reason = "So yes, as clippy points out, you technically lose precision here on the `*i as f64` cast. On the other hand, you already give up precision when you start using floats and I haven't been able to find a case where you are giving up precision in the cast that you don't already lose by using floating points. So it's probably fine unless proven otherwise."
+              )]
               bril_rs::Literal::Int(i) => state
                 .env
                 .set(numified_code.dest.unwrap(), Value::Float(*i as f64)),

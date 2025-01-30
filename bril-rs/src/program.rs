@@ -1,9 +1,12 @@
 use std::{
     fmt::{self, Display, Formatter},
     hash::Hash,
+    str::FromStr,
 };
 
 use serde::{Deserialize, Serialize};
+
+use crate::conversion::ConversionError;
 
 /// Equivalent to a file of bril code
 #[cfg_attr(not(feature = "float"), derive(Eq))]
@@ -389,6 +392,32 @@ impl Display for EffectOps {
     }
 }
 
+impl FromStr for EffectOps {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "jmp" => Self::Jump,
+            "br" => Self::Branch,
+            "call" => Self::Call,
+            "ret" => Self::Return,
+            "print" => Self::Print,
+            "nop" => Self::Nop,
+            #[cfg(feature = "memory")]
+            "store" => Self::Store,
+            #[cfg(feature = "memory")]
+            "free" => Self::Free,
+            #[cfg(feature = "speculate")]
+            "speculate" => Self::Speculate,
+            #[cfg(feature = "speculate")]
+            "commit" => Self::Commit,
+            #[cfg(feature = "speculate")]
+            "guard" => Self::Guard,
+            e => Err(ConversionError::InvalidEffectOps(e.to_string()))?,
+        })
+    }
+}
+
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#value-operation>
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -554,6 +583,70 @@ impl Display for ValueOps {
     }
 }
 
+impl FromStr for ValueOps {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "add" => Self::Add,
+            "mul" => Self::Mul,
+            "div" => Self::Div,
+            "eq" => Self::Eq,
+            "lt" => Self::Lt,
+            "gt" => Self::Gt,
+            "le" => Self::Le,
+            "ge" => Self::Ge,
+            "not" => Self::Not,
+            "and" => Self::And,
+            "or" => Self::Or,
+            "call" => Self::Call,
+            "id" => Self::Id,
+            "sub" => Self::Sub,
+            #[cfg(feature = "ssa")]
+            "phi" => Self::Phi,
+            #[cfg(feature = "float")]
+            "fadd" => Self::Fadd,
+            #[cfg(feature = "float")]
+            "fsub" => Self::Fsub,
+            #[cfg(feature = "float")]
+            "fmul" => Self::Fmul,
+            #[cfg(feature = "float")]
+            "fdiv" => Self::Fdiv,
+            #[cfg(feature = "float")]
+            "feq" => Self::Feq,
+            #[cfg(feature = "float")]
+            "flt" => Self::Flt,
+            #[cfg(feature = "float")]
+            "fgt" => Self::Fgt,
+            #[cfg(feature = "float")]
+            "fle" => Self::Fle,
+            #[cfg(feature = "float")]
+            "fge" => Self::Fge,
+            #[cfg(feature = "char")]
+            "ceq" => Self::Ceq,
+            #[cfg(feature = "char")]
+            "clt" => Self::Clt,
+            #[cfg(feature = "char")]
+            "cgt" => Self::Cgt,
+            #[cfg(feature = "char")]
+            "cle" => Self::Cle,
+            #[cfg(feature = "char")]
+            "cge" => Self::Cge,
+            #[cfg(feature = "char")]
+            "char2int" => Self::Char2int,
+            #[cfg(feature = "char")]
+            "int2char" => Self::Int2char,
+            #[cfg(feature = "memory")]
+            "alloc" => Self::Alloc,
+            #[cfg(feature = "memory")]
+            "load" => Self::Load,
+            #[cfg(feature = "memory")]
+            "ptradd" => Self::PtrAdd,
+            v => Err(ConversionError::InvalidValueOps(v.to_string()))?,
+        })
+    }
+}
+
 /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#type>
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
@@ -585,6 +678,22 @@ impl Display for Type {
             Self::Char => write!(f, "char"),
             #[cfg(feature = "memory")]
             Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
+        }
+    }
+}
+
+impl FromStr for Type {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "int" => Ok(Self::Int),
+            "bool" => Ok(Self::Bool),
+            #[cfg(feature = "float")]
+            "float" => Ok(Self::Float),
+            #[cfg(feature = "char")]
+            "char" => Ok(Self::Char),
+            _ => Err(ConversionError::InvalidPrimitive(s.to_string())),
         }
     }
 }

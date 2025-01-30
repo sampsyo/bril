@@ -1,4 +1,4 @@
-import * as ts from 'https://esm.sh/typescript@5.0.4';
+import * as ts from 'https://esm.sh/typescript@5.7.3';
 import * as bril from './bril-ts/bril.ts';
 import {Builder} from './bril-ts/builder.ts';
 

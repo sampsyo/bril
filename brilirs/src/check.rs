@@ -43,8 +43,10 @@ fn update_env<'a>(
   dest: &'a str,
   typ: &'a Type,
 ) -> Result<(), InterpError> {
-  // https://github.com/rust-lang/rust-clippy/issues/8346
-  #[allow(clippy::option_if_let_else)]
+  #[expect(
+    clippy::option_if_let_else,
+    reason = "https://github.com/rust-lang/rust-clippy/issues/8346"
+  )]
   if let Some(current_typ) = env.get(dest) {
     check_asmt_type(current_typ, typ)
   } else {

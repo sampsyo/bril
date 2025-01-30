@@ -22,7 +22,7 @@ clap = { version = "4.4", features = ["derive"] }
 clap_complete = { version = "4.4", optional = true }
 
 [dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 clap = { version = "4.4", features = ["derive"] }
 fxhash = "0.2"
 mimalloc = "0.1"

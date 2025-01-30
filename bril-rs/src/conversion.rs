@@ -2,22 +2,26 @@ use std::fmt::Display;
 
 use crate::{
     AbstractArgument, AbstractCode, AbstractFunction, AbstractInstruction, AbstractProgram,
-    AbstractType, Argument, Code, EffectOps, Function, Instruction, Position, Program, Type,
-    ValueOps,
+    AbstractType, Argument, Code, Function, Instruction, Position, Program, Type,
 };
 
 use thiserror::Error;
 
-// This is a nifty trick to supply a global value for pos when it is not defined
 #[cfg(not(feature = "position"))]
-#[allow(non_upper_case_globals)]
+#[expect(
+    non_upper_case_globals,
+    reason = "This is a nifty trick to supply a global value for pos when it is not defined"
+)]
 const pos: Option<Position> = None;
 
 /// This is the [`std::error::Error`] implementation for `bril_rs`. This crate currently only supports errors from converting between [`AbstractProgram`] and [Program]
 // todo Should this also wrap Serde errors? In this case, maybe change the name from ConversionError
 // Having the #[error(...)] for all variants derives the Display trait as well
 #[derive(Error, Debug)]
-#[allow(clippy::module_name_repetitions)]
+#[expect(
+    clippy::module_name_repetitions,
+    reason = "I allow the `Error` suffix for enums"
+)]
 pub enum ConversionError {
     /// Expected a primitive type like int or bool, found {0}"
     #[error("Expected a primitive type like int or bool, found {0}")]
@@ -210,70 +214,7 @@ impl TryFrom<AbstractInstruction> for Instruction {
                     .map_err(|e: ConversionError| e.add_pos(pos.clone()))?,
                 #[cfg(feature = "position")]
                 pos: pos.clone(),
-                op: match op.as_ref() {
-                    "add" => ValueOps::Add,
-                    "mul" => ValueOps::Mul,
-                    "div" => ValueOps::Div,
-                    "eq" => ValueOps::Eq,
-                    "lt" => ValueOps::Lt,
-                    "gt" => ValueOps::Gt,
-                    "le" => ValueOps::Le,
-                    "ge" => ValueOps::Ge,
-                    "not" => ValueOps::Not,
-                    "and" => ValueOps::And,
-                    "or" => ValueOps::Or,
-                    "call" => ValueOps::Call,
-                    "id" => ValueOps::Id,
-                    "sub" => ValueOps::Sub,
-                    #[cfg(feature = "ssa")]
-                    "phi" => ValueOps::Phi,
-                    #[cfg(feature = "float")]
-                    "fadd" => ValueOps::Fadd,
-                    #[cfg(feature = "float")]
-                    "fsub" => ValueOps::Fsub,
-                    #[cfg(feature = "float")]
-                    "fmul" => ValueOps::Fmul,
-                    #[cfg(feature = "float")]
-                    "fdiv" => ValueOps::Fdiv,
-                    #[cfg(feature = "float")]
-                    "feq" => ValueOps::Feq,
-                    #[cfg(feature = "float")]
-                    "flt" => ValueOps::Flt,
-                    #[cfg(feature = "float")]
-                    "fgt" => ValueOps::Fgt,
-                    #[cfg(feature = "float")]
-                    "fle" => ValueOps::Fle,
-                    #[cfg(feature = "float")]
-                    "fge" => ValueOps::Fge,
-                    #[cfg(feature = "char")]
-                    "ceq" => ValueOps::Ceq,
-                    #[cfg(feature = "char")]
-                    "clt" => ValueOps::Clt,
-                    #[cfg(feature = "char")]
-                    "cgt" => ValueOps::Cgt,
-                    #[cfg(feature = "char")]
-                    "cle" => ValueOps::Cle,
-                    #[cfg(feature = "char")]
-                    "cge" => ValueOps::Cge,
-                    #[cfg(feature = "char")]
-                    "char2int" => ValueOps::Char2int,
-                    #[cfg(feature = "char")]
-                    "int2char" => ValueOps::Int2char,
-                    #[cfg(feature = "memory")]
-                    "alloc" => ValueOps::Alloc,
-                    #[cfg(feature = "memory")]
-                    "load" => ValueOps::Load,
-                    #[cfg(feature = "memory")]
-                    "ptradd" => ValueOps::PtrAdd,
-                    #[cfg(feature = "bitcast")]
-                    "bits2float" => ValueOps::Bits2Float,
-                    #[cfg(feature = "bitcast")]
-                    "floats2bit" => ValueOps::Float2Bits,
-                    v => {
-                        return Err(ConversionError::InvalidValueOps(v.to_string()))
-                            .map_err(|e| e.add_pos(pos))
-                    }
-                },
+                op: op.parse().map_err(|e: ConversionError| e.add_pos(pos))?,
             },
             AbstractInstruction::Effect {
                 args,
@@ -288,28 +229,7 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 labels,
                 #[cfg(feature = "position")]
                 pos: pos.clone(),
-                op: match op.as_ref() {
-                    "jmp" => EffectOps::Jump,
-                    "br" => EffectOps::Branch,
-                    "call" => EffectOps::Call,
-                    "ret" => EffectOps::Return,
-                    "print" => EffectOps::Print,
-                    "nop" => EffectOps::Nop,
-                    #[cfg(feature = "memory")]
-                    "store" => EffectOps::Store,
-                    #[cfg(feature = "memory")]
-                    "free" => EffectOps::Free,
-                    #[cfg(feature = "speculate")]
-                    "speculate" => EffectOps::Speculate,
-                    #[cfg(feature = "speculate")]
-                    "commit" => EffectOps::Commit,
-                    #[cfg(feature = "speculate")]
-                    "guard" => EffectOps::Guard,
-                    e => {
-                        return Err(ConversionError::InvalidEffectOps(e.to_string()))
-                            .map_err(|e| e.add_pos(pos))
-                    }
-                },
+                op: op.parse().map_err(|e: ConversionError| e.add_pos(pos))?,
             },
         })
     }
@@ -326,21 +246,15 @@ impl TryFrom<Option<AbstractType>> for Type {
 impl TryFrom<AbstractType> for Type {
     type Error = ConversionError;
     fn try_from(value: AbstractType) -> Result<Self, Self::Error> {
-        Ok(match value {
-            AbstractType::Primitive(t) if t == "int" => Self::Int,
-            AbstractType::Primitive(t) if t == "bool" => Self::Bool,
-            #[cfg(feature = "float")]
-            AbstractType::Primitive(t) if t == "float" => Self::Float,
-            #[cfg(feature = "char")]
-            AbstractType::Primitive(t) if t == "char" => Self::Char,
-            AbstractType::Primitive(t) => return Err(ConversionError::InvalidPrimitive(t)),
+        match value {
+            AbstractType::Primitive(t) => t.parse(),
             #[cfg(feature = "memory")]
             AbstractType::Parameterized(t, ty) if t == "ptr" => {
-                Self::Pointer(Box::new((*ty).try_into()?))
+                Ok(Self::Pointer(Box::new((*ty).try_into()?)))
             }
             AbstractType::Parameterized(t, ty) => {
-                return Err(ConversionError::InvalidParameterized(t, ty.to_string()))
+                Err(ConversionError::InvalidParameterized(t, ty.to_string()))
             }
-        })
+        }
     }
 }

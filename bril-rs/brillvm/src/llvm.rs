@@ -38,13 +38,13 @@ fn unwrap_bril_ptrtype(ty: &Type) -> &Type {
 fn build_functiontype<'a>(
     context: &'a Context,
     args: &[&Type],
-    return_ty: &Option<Type>,
+    return_ty: Option<&Type>,
 ) -> FunctionType<'a> {
     let param_types: Vec<BasicMetadataTypeEnum> = args
         .iter()
         .map(|t| llvm_type_map(context, t, Into::into))
         .collect();
-    #[allow(clippy::option_if_let_else)] // I think this is more readable
+    #[expect(clippy::option_if_let_else)] // I think this is more readable
     match return_ty {
         None => context.void_type().fn_type(&param_types, false),
         Some(t) => llvm_type_map(context, t, |t| t.fn_type(&param_types, false)),
@@ -188,7 +188,7 @@ fn block_map_get<'a>(
 }
 
 // The workhorse of converting a Bril Instruction to an LLVM Instruction
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn build_instruction<'a, 'b>(
     i: &'b Instruction,
     context: &'a Context,
@@ -207,7 +207,7 @@ fn build_instruction<'a, 'b>(
             const_type: Type::Float,
             value: Literal::Int(i),
         } => {
-            #[allow(clippy::cast_precision_loss)]
+            #[expect(clippy::cast_precision_loss)]
             builder
                 .build_store(
                     heap.get(dest).ptr,
@@ -221,7 +221,7 @@ fn build_instruction<'a, 'b>(
             const_type: _,
             value: Literal::Int(i),
         } => {
-            #[allow(clippy::cast_sign_loss)]
+            #[expect(clippy::cast_sign_loss, reason = "u64 because of the C++/C API")]
             builder
                 .build_store(
                     heap.get(dest).ptr,
@@ -1218,7 +1218,7 @@ fn build_instruction<'a, 'b>(
 }
 
 // Check for instructions that end a block
-const fn is_terminating_instr(i: &Option<Instruction>) -> bool {
+const fn is_terminating_instr(i: Option<&Instruction>) -> bool {
     matches!(
         i,
         Some(Instruction::Effect {
@@ -1246,7 +1246,10 @@ pub fn create_module_from_program<'a>(
     let mut fresh = Fresh::new();
 
     // Add all functions to the module, initialize all variables in the heap, and setup for the second phase
-    #[allow(clippy::needless_collect)]
+    #[expect(
+        clippy::needless_collect,
+        reason = "Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed."
+    )]
     let funcs: Vec<_> = functions
         .iter()
         .map(
@@ -1263,7 +1266,7 @@ pub fn create_module_from_program<'a>(
                         .iter()
                         .map(|Argument { arg_type, .. }| arg_type)
                         .collect::<Vec<_>>(),
-                    return_type,
+                    return_type.as_ref(),
                 );
 
                 let func_name = if name == "main" { "_main" } else { name };
@@ -1306,7 +1309,7 @@ pub fn create_module_from_program<'a>(
                 (llvm_func, instrs, block, heap, return_type)
             },
         )
-        .collect(); // Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed.
+        .collect();
 
     // Now actually build each function
     funcs
@@ -1326,7 +1329,7 @@ pub fn create_module_from_program<'a>(
                         let new_block = block_map_get(context, llvm_func, &mut block_map, label);
 
                         // Check if we need to insert a jump since all llvm blocks must be terminated
-                        if !is_terminating_instr(&last_instr) {
+                        if !is_terminating_instr(last_instr.as_ref()) {
                             builder
                                 .build_unconditional_branch(block_map_get(
                                     context,
@@ -1345,7 +1348,7 @@ pub fn create_module_from_program<'a>(
                     bril_rs::Code::Instruction(i) => {
                         // Check if we are in a basic block that has already been terminated
                         // If so, we just keep skipping unreachable instructions until we hit a new block or run out of instructions
-                        if !is_terminating_instr(&last_instr) {
+                        if !is_terminating_instr(last_instr.as_ref()) {
                             build_instruction(
                                 i,
                                 context,
@@ -1363,7 +1366,7 @@ pub fn create_module_from_program<'a>(
             }
 
             // Make sure every function is terminated with a return if not already
-            if !is_terminating_instr(&last_instr) {
+            if !is_terminating_instr(last_instr.as_ref()) {
                 if return_type.is_none() {
                     builder.build_return(None).unwrap();
                 } else {
