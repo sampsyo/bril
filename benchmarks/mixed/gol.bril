@@ -1,0 +1,280 @@
+# Given n and a seed. 
+# Will generate an nxn matrix with random values using seed.
+# Will print the randomly generated matrix. (13, index, value)
+# Print the number 3 as a separator.
+# And print the the next matrix in Conway's game of life. (13, index, value)
+# ARGS: 3 4
+@main(n: int, seed: int) {
+    id: int = const 3;
+    one: int = const 1;
+    rng: ptr<int> = alloc one;
+    store rng seed;
+    
+    msize: int = mul n n;
+    arr: ptr<int> = call @rand_array msize rng;
+    call @print_array msize arr;
+    
+    print id;
+
+    #call @test_neighbors msize n arr;
+    dest: ptr<int> = alloc msize;
+    call @next_board msize n arr dest;
+    call @print_array msize dest;
+
+    free rng;
+    free arr;
+    free dest;
+}
+
+@next_board(msize: int, n: int, board: ptr<int>, dest: ptr<int>) {
+    zero: int = const 0;
+    one: int = const 1;
+    i: int = const 0;
+.compare:
+    exit: bool = ge i msize;
+    br exit .exit .continue;
+.continue:
+    curr: ptr<int> = ptradd board i;
+    cval: int = load curr;
+    neighbors: int = call @alive msize n i board;
+    nval: int = call @next_cell cval neighbors;
+    nptr: ptr<int> = ptradd dest i;
+    store nptr nval;
+    i: int = add i one;
+    jmp .compare;
+.exit:
+}
+
+@next_cell(x: int, neighbors: int): int {
+    one: int = const 1;
+    two: int = const 2;
+    three: int = const 3;
+    four: int = const 4;
+    x_alive: bool = eq x one;
+    br x_alive .alive .dead;
+    res: int = const 0;
+
+.alive:
+    dies: bool = lt neighbors two;
+    br dies .should_die .alive1;
+
+.alive1:
+    lives: bool = lt neighbors four;
+    br lives .should_live .should_die;
+
+.dead:
+    lives: bool = eq neighbors three;
+    br lives .should_live .should_die;
+
+.should_live:
+    res: int = const 1;
+    jmp .exit;
+
+.should_die:
+    res: int = const 0;
+    jmp .exit;
+
+.exit:
+    ret res;
+}
+
+@test_neighbors(msize: int, n: int, board: ptr<int>) {
+    id: int = const 223;
+    i: int = const 0; 
+    one: int = const 1;
+.comparison:
+    exit: bool = ge i msize;
+    br exit .exit .body;
+
+.body:
+    alive: int = call @alive msize n i board;
+    print id i alive;
+    i: int = add i one;
+    jmp .comparison;
+
+.exit:
+
+}
+
+@alive(msize: int, n: int, i: int, board: ptr<int>): int {
+    id: int = const 7;
+    zero: int = const 0;
+    one: int = const 1;
+    sum: int = const 0;
+    skip: bool = lt i n;
+    br skip .d .a;
+.a:
+    pos: int = sub i n;
+    loc: int = const 1;
+    #print id loc pos;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+    
+    modulo: int = call @mod pos n;
+    lw: bool = eq modulo zero;
+    br lw .a.bis .b;
+.a.bis:
+    pos: int = sub i n;
+    modulo: int = call @mod pos n;
+    modulo: int = add modulo one;
+    rw: bool = eq modulo n;
+    br rw .d .c;
+.b:
+    pos: int = sub i n;
+    pos: int = sub pos one;
+    loc: int = const 2;
+    #print id loc pos;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+    jmp .a.bis;
+
+.c:
+    pos: int = sub i n;
+    pos: int = add pos one;
+    loc: int = const 3;
+    #print id loc pos;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+    jmp .d;
+
+.d:
+    modulo: int = call @mod i n;
+    lw: bool = eq modulo zero;
+    br lw .d.bis .e;
+
+.d.bis:
+    modulo: int = call @mod i n;
+    modulo: int = add modulo one;
+    rw: bool = eq modulo n;
+    br rw .g .f;
+
+.e:
+    pos: int = sub i one;
+    loc: int = const 4;
+    #print id loc pos;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+    jmp .d.bis;
+
+.f:
+    pos: int = add i one;
+    loc: int = const 5;
+    #print id loc pos;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+    jmp .g;
+
+.g:
+    next_pos: int = add i n;
+    exit: bool = ge next_pos msize;
+    br exit .exit .g.bis;
+
+.g.bis:
+    modulo: int = call @mod i n;
+    lw: bool = eq modulo zero;
+    br lw .h .g.bis2;
+
+.g.bis2:
+    pos: int = add i n;
+    pos: int = sub pos one;
+    loc: int = const 6;
+    #print id loc pos;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+    jmp .h;
+
+.h:
+    pos: int = add i n;
+    loc: int = const 7;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+
+    modulo: int = call @mod i n;
+    modulo: int = add modulo one;
+    rw: bool = eq modulo n;
+    br rw .exit .i;
+
+.i:
+    pos: int = add i n;
+    pos: int = add pos one;
+    loc: int = const 8;
+    curr: ptr<int> = ptradd board pos;
+    cval: int = load curr;
+    sum: int = add sum cval;
+    jmp .exit;
+.exit:
+    ret sum;
+
+}
+
+# from mat-mul.bril
+# adjusted modulo operation to prevent negative numbers
+# adjusted a, c, m - with values from L'Ecuyer 1999.
+@rand(seq: ptr<int>, max: int) : int {
+  a: int = const 1588635695;
+  c: int = const 0;
+  m: int = const 4294967291;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = call @mod axpc m;
+  store seq next;
+  val: int = call @mod next max;
+  ret val;
+}
+
+@rand_array(n: int, rng: ptr<int>): ptr<int> {
+    one: int = const 1;
+    two: int = const 2;
+    i: int = const 0;
+    arr: ptr<int> = alloc n;
+.compare:
+    done: bool = ge i n;
+    br done .exit .continue;
+.continue:
+    r: int = call @rand rng two;
+    curr: ptr<int> = ptradd arr i;
+    store curr r;
+    i: int = add i one;
+    jmp .compare;
+.exit:
+    ret arr;
+}
+
+@print_array(n: int, arr: ptr<int>) {
+    zero: int = const 0;
+    one: int = const 1;
+    i: int = const 0;
+    last: int = sub n one;
+    id: int = const 13;
+.compare:
+    exit: bool = ge i n;
+    br exit .exit .continue;
+.continue:
+    curr: ptr<int> = ptradd arr i;
+    val: int = load curr;
+    print id i val;
+    i: int = add i one;
+    jmp .compare;
+.exit:
+}
+
+@mod(a: int, b: int): int {
+    quotient: int = div a b;
+    whole: int = mul quotient b;
+    remainder: int = sub a whole;
+    zero: int = const 0;
+    exit: bool = ge remainder zero;
+    br exit .exit .adjust;
+.adjust:
+    remainder: int = add remainder b;
+.exit:
+    ret remainder;
+}
