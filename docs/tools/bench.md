@@ -45,6 +45,7 @@ The current benchmarks are:
 * `mat-inv` : Calculates the inverse of a 3x3 matrix and prints it out.
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `max-subarray`: solution to the classic Maximum Subarray problem.
+* `mccarthy91`: Run the [McCarthy 91 function][mccarthy91], a nested-recursive function which always returns 91.
 * `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `norm`: Calculate the [euclidean norm][euclidean] of a vector
@@ -113,3 +114,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [qsort-hoare]: https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
 [modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
 [totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
+[mccarthy91]: https://en.wikipedia.org/wiki/McCarthy_91_function
