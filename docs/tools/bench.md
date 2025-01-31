@@ -96,6 +96,7 @@ The current benchmarks are:
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
 * `reverse`: Compute number with reversed digits (e.g. 123 -> 321).
 * `fib_recursive`: Computes the *n*th Fibonacci number using recursion, where `fib(n) = fib(n-1) + fib(n-2)`, with base cases `fib(0) = 0` and `fib(1) = 1`. Demonstrates recursive function calls and branching.
+* `cordic`: Compute the sine of a number using the [CORDIC][cordic] algorithm
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -136,3 +137,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [exp_by_squaring]: https://en.wikipedia.org/wiki/Exponentiation_by_squaring
 [montgomery]: https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
+[cordic]: https://en.wikipedia.org/wiki/CORDIC
+
