@@ -50,6 +50,7 @@ The current benchmarks are:
 * `mat-mul`: Multiplies two `nxn` matrices using the [naive][matmul] matrix multiplication algorithm. The matrices are randomly generated using a [linear congruential generator][rng].
 * `max-subarray`: solution to the classic Maximum Subarray problem.
 * `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
+* `montgomery`: Computes modular multiplication using the [Montgomery reduction][montgomery] algorithm.
 * `mod_pow`: Performs [modular exponentiation][modpow] using the right-to-left binary method.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `norm`: Calculate the [euclidean norm][euclidean] of a vector
@@ -123,4 +124,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [qsort-hoare]: https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
 [modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
 [totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
+[montgomery]: https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
