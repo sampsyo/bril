@@ -1,0 +1,22 @@
+# Compute the McCarthy 91 function, a recursive function which returns 91.
+# ARGS: 15
+@mccarthy91(n: int): int {
+  ten: int = const 10;
+  eleven: int = const 11;
+  hundred: int = const 100;
+  big: bool = gt n hundred;
+  br big .big .small;
+.big:
+  tmp: int = sub n ten;
+  ret tmp;
+.small:
+  tmp: int = add n eleven;
+  tmp: int = call @mccarthy91 tmp;
+  tmp: int = call @mccarthy91 tmp;
+  ret tmp;
+}
+
+@main(n: int) {
+  result: int = call @mccarthy91 n;
+  print result;
+}

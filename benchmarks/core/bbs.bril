@@ -1,0 +1,39 @@
+# Blum Blum Shub Pseudorandom Number Generator
+# Returns the least significant bit for every element in the generated sequence.
+
+@mod(n: int, modulus: int) : int {
+  result: int = div n modulus;
+  multiple: int = mul result modulus;
+  remainder: int = sub n multiple;
+  ret remainder;
+}
+
+@lsb(n : int) : int {
+  two: int = const 2;
+  bit: int = call @mod n two;
+  ret bit;
+}
+
+@square(n: int) : int {
+  result: int = mul n n;
+  ret result;
+}
+
+# ARGS: 11 23 3 6
+@main(p: int, q: int, seed: int, sequence_length: int) {
+  modulus: int = mul p q;
+  start: int = const 0;
+  end: int = id sequence_length;
+.loop.branch:
+  cond: bool = lt start end;
+  br cond .loop.body .loop.end;
+.loop.body:
+  squared: int = call @square seed;
+  seed: int = call @mod squared modulus;
+  least_significant_bit: int = call @lsb seed;
+  print least_significant_bit;
+  one: int = const 1;
+  start: int = add start one;
+  jmp .loop.branch;
+.loop.end:
+}
