@@ -273,9 +273,8 @@ fn type_check_instruction<'a>(
       check_num_args(1, args)?;
       check_num_funcs(0, funcs)?;
       check_num_labels(0, labels)?;
-      if !matches!((get_type(env, 0, args)?, op_type), (Type::Int, Type::Float)) {
-        return Err(InterpError::InvalidBitcastType);
-      }
+      check_asmt_type(get_type(env, 0, args)?, &Type::Int)?;
+      check_asmt_type(op_type, &Type::Float)?;
       update_env(env, dest, op_type)
     }
     Instruction::Value {
@@ -290,9 +289,8 @@ fn type_check_instruction<'a>(
       check_num_args(1, args)?;
       check_num_funcs(0, funcs)?;
       check_num_labels(0, labels)?;
-      if !matches!((get_type(env, 0, args)?, op_type), (Type::Float, Type::Int)) {
-        return Err(InterpError::InvalidBitcastType);
-      }
+      check_asmt_type(get_type(env, 0, args)?, &Type::Float)?;
+      check_asmt_type(op_type, &Type::Int)?;
       update_env(env, dest, op_type)
     }
     Instruction::Value {
