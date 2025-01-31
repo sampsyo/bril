@@ -1,0 +1,140 @@
+# ARGS: 2 5
+
+# Linear congruential pseudorandom number generator
+# Tweaked from benchmarks/mem/mat-mul.bril 
+@rand(state : ptr<int>, max : int) : int {
+    # generate random `val` in `[max - 1, max + 1]`
+    a     : int = const 1588635695;
+    c     : int = const 0;
+    m     : int = const 4294967291;
+    #a     : int = const 25214903917;
+    #c     : int = const 11;
+    #m     : int = const 281474976710656;
+    x     : int = load state;
+    ax    : int = mul a x;
+    axpc  : int = add ax c;
+    next  : int = div axpc m;
+    next  : int = mul next m;
+    next  : int = sub axpc next;
+    store state next;
+    val   : int = div next max;
+    val   : int = mul val max;
+    val   : int = sub next val;
+    
+    # if (val < 0) { val = -1 * val; }
+    zero  : int  = const 0;
+    minus : int  = const -1;
+    neg   : bool = lt val zero;
+    br neg .negate .done;
+    .negate:
+    val : int = mul val minus;
+
+    .done:
+    ret val;
+}
+
+@step(n : int, loc : ptr<int>, rand_state : ptr<int>) {
+    one : int = const 1;
+    two : int = const 2;
+    n2  : int = mul two n;
+    rnd : int = call @rand rand_state n2;
+    
+    # Directions: for i in {0, ..., n - 1}
+    # rnd = 2i + 1 -> Forward  on axis i, loc[i]++
+    # rnd = 2i     -> Backward on axis i, loc[i]--
+   
+    # for (int i = 0; i < n; i++) { 
+    #   if (rnd == 2 * i)     loc[i]--;
+    #   if (rnd == 2 * i + 1) loc[i]++;
+    # }
+    i : int = const 0;
+    .loop:
+    i2    : int = mul i  two;
+    i2p1  : int = add i2 one;
+    loc_i : ptr<int> = ptradd loc i;
+
+    # if (rnd == 2 * i) loc[i]--;
+    rnd_eq_i2 : bool = eq i2 rnd;
+    br rnd_eq_i2 .then_i2 .else_i2;
+    .then_i2:
+    coord : int = load loc_i;
+    coord : int = sub coord one;
+    store loc_i coord;
+    ret;
+    .else_i2:
+
+    # if (rnd == 2 * i + 1) loc[i]++;
+    rnd_eq_i2p1 : bool = eq i2p1 rnd;
+    br rnd_eq_i2p1 .then_i2p1 .else_i2p1;
+    .then_i2p1:
+    coord : int = load loc_i;
+    coord : int = add coord one;
+    store loc_i coord;
+    ret;
+    .else_i2p1:
+
+    i : int = add i one;
+    jmp .loop;
+}
+
+@main(n : int, seed : int) {
+    zero       : int = const 0;
+    one        : int = const 1;
+    limit      : int = const 100000;
+
+    rand_state : ptr<int> = alloc one;
+    loc        : ptr<int> = alloc n;
+    
+    # dash := '-'
+    fortyfive  : int  = const 45;
+    dash       : char = int2char fortyfive;
+    
+    # initialize random seed
+    store rand_state seed;
+
+    # initialize and print start location (0,0, ..., 0)
+    i : int = const 0;
+    .cont_init:
+    loc_i : ptr<int> = ptradd loc i;
+    store loc_i zero;
+    print zero;
+    i : int = add i one;
+    i_eq_n : bool = eq i n;
+    br i_eq_n .end_init .cont_init;
+    .end_init:
+    print dash;
+    
+    # Random Walk 
+    # stopping conditions: 
+    #   - reach the start locations: (0, ..., 0)
+    #   - reach 100000 steps
+    steps : int = const 0;
+    .loop:
+    call @step n loc rand_state;
+    steps : int = add steps one;
+
+    i          : int  = const 0;
+    back_home  : bool = const true;
+    .cont:
+    loc_i      : ptr<int> = ptradd loc i;
+    coord      : int      = load loc_i;
+    print coord;
+    coord_eq_0 : bool = eq coord zero;
+    back_home  : bool = and coord_eq_0 back_home;
+    i          : int  = add i one;
+    i_eq_n     : bool = eq i n;
+    br i_eq_n .end .cont;
+    .end:
+    
+    steps_eq_limit : bool = eq steps limit;
+    stop           : bool = or back_home steps_eq_limit;
+    br stop .home .print_dash;
+    .print_dash:
+    print dash;
+    jmp .loop;
+
+    .home:
+    free rand_state;
+    free loc;
+    ret;
+}

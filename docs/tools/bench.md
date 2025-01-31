@@ -75,6 +75,7 @@ The current benchmarks are:
 * `quickselect`: Find the kth smallest element in an array using the quickselect algorithm.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort].
 * `quicksort-hoare`: Quicksort using [Hoare partioning][qsort-hoare] and median of three pivot selection.
+* `random-walk`: Perform a simple random walk on the integer lattice [`Z^d`][int_lattice]: that is, starting from the origin, repeatedly make a random move of length one in one of the lattice directions. The walk terminates after 100000 steps or upon returning to the start.
 * `ray-bbox-intersection`: Finds whether a ray intersects an axis-aligned bounding box.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
@@ -139,4 +140,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [montgomery]: https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
 [cordic]: https://en.wikipedia.org/wiki/CORDIC
+[int_lattice]: https://en.wikipedia.org/wiki/Integer_lattice
 
