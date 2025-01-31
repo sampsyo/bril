@@ -67,6 +67,7 @@ The current benchmarks are:
 * `quickselect`: Find the kth smallest element in an array using the quickselect algorithm.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort].
 * `quicksort-hoare`: Quicksort using [Hoare partioning][qsort-hoare] and median of three pivot selection.
+* `ray-bbox-intersection`: Finds whether a ray intersects an axis-aligned bounding box.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
 * `fitsinside`: Output whether or not a rectangle fits inside of another rectangle given the width and height lengths.
