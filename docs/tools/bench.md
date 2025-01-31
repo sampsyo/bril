@@ -17,6 +17,7 @@ The current benchmarks are:
 * `bitshift`: Computes the LEFTSHIFT and RIGHTSHIFT for any integer, also implements an efficient pow function for integers
 * `bubblesort`: Sorting algorithm that works by repeatedly swapping the adjacent elements if they are in wrong order.
 * `catalan`: Print the *n*th term in the [Catalan][catalan] sequence, compute using recursive function calls.
+* `char-poly`: Calculates the characteristic polynomial of a given 3x3 matrix, returning its coefficients as an array.
 * `check-primes`: Check the first *n* natural numbers for primality, printing out a 1 if the number is prime and a 0 if it's not.
 * `cholesky`: Perform Cholesky decomposition of a Hermitian and positive definite matrix. The result is validated by comparing with Python's `scipy.linalg.cholesky`.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
