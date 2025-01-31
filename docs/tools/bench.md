@@ -54,6 +54,7 @@ The current benchmarks are:
 * `pascals-row`: Computes a row in Pascal's Triangle.
 * `palindrome`: Outputs a 0-1 value indicating whether the input is a [palindrome][palindrome] number.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
+* `permutation`: Calculates the number of possible permutations of k objects from a set of n.
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `primes-between`: Print the primes in the interval `[a, b]`.
 * `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
