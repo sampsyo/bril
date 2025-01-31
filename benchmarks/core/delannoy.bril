@@ -1,0 +1,64 @@
+# ARGS: 8
+# 
+# recursively compute delannoy number without memo on square board with size (n = 8)
+#
+# delannoy number is defined as:
+#   the number of paths from the southwest corner (0, 0) of a rectangular grid to the northeast corner (n, n)
+#   using only single steps north, northeast, or east
+#
+# bril code is compiled from the following ts script
+# 
+# function count_path(x: bigint, y: bigint): bigint {
+#    if (x == 0n)
+#            return 1n;
+#    if (y == 0n)
+#            return 1n;
+#    return count_path(x-1n,y) + count_path(x, y-1n) + count_path(x-1n, y-1n);
+# }
+
+@main(n: int){
+  v1: int = id n;
+  v2: int = id n;
+  ans: int = call @count_path v1 v2;
+  v3: int = id ans;
+  print v3;
+  v4: int = const 0;
+}
+@count_path(x: int, y: int): int {
+  v1: int = id x;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = const 1;
+  ret v4;
+.else.0:
+  v6: int = id y;
+  v7: int = const 0;
+  v8: bool = eq v6 v7;
+  br v8 .then.5 .else.5;
+.then.5:
+  v9: int = const 1;
+  ret v9;
+.else.5:
+  v10: int = id x;
+  v11: int = const 1;
+  v12: int = sub v10 v11;
+  v13: int = id y;
+  v14: int = call @count_path v12 v13;
+  v15: int = id x;
+  v16: int = id y;
+  v17: int = const 1;
+  v18: int = sub v16 v17;
+  v19: int = call @count_path v15 v18;
+  v20: int = add v14 v19;
+  v21: int = id x;
+  v22: int = const 1;
+  v23: int = sub v21 v22;
+  v24: int = id y;
+  v25: int = const 1;
+  v26: int = sub v24 v25;
+  v27: int = call @count_path v23 v26;
+  v28: int = add v20 v27;
+  ret v28;
+}
