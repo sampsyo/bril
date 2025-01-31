@@ -68,6 +68,7 @@ The current benchmarks are:
 * `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
+* `sqrt_bin_search`: Uses a binary search to find the floor of the square root of an integer
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-check`: Compute the sum of [1, n] by both loop and formula, and check if the result is the same.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
