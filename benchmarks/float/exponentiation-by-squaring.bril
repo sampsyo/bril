@@ -1,12 +1,12 @@
 @main {
-  x1: float = const -2.7;
-  n1: int = const 124;
-  x_to_n1 : float = call @exp_by_squaring_iterative x1 n1;
-  print x_to_n1;
-  x2: float = const .1218;
-  n2: int = const -150;
-  x_to_n2 : float = call @exp_by_squaring_iterative x2 n2;
-  print x_to_n2;
+    x1: float = const -2.7;
+    n1: int = const 124;
+    x_to_n1 : float = call @exp_by_squaring_iterative x1 n1;
+    print x_to_n1;
+    x2: float = const .1218;
+    n2: int = const -150;
+    x_to_n2 : float = call @exp_by_squaring_iterative x2 n2;
+    print x_to_n2;
 }
 
 # adapted from https://en.wikipedia.org/wiki/Exponentiation_by_squaring#With_constant_auxiliary_memory
