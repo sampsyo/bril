@@ -57,7 +57,7 @@
 .recurs:
     oneless: int = sub x one;
     stepback: int = call @factorial oneless;
-    fact = mul x stepback;
+    fact: int = mul x stepback;
     ret fact;
 }
 
