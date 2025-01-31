@@ -267,6 +267,7 @@
 # Main block – Creates a graph with n nodes numbered 0...n-1.
 # Six edges are drawn in the graph.
 # Adding/removing/modifying edges in the graph can be done within @main.
+# ARGS: 8
 @main(nodes : int) {
   dim : int = mul nodes nodes;
   adj : ptr<int> = alloc dim;
