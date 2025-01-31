@@ -1,0 +1,32 @@
+# ARGS: 1234567890
+@main(n: int) {
+  v0: int = const 0;
+  total: int = id v0;
+.for.cond.1:
+  v2: int = id n;
+  v3: int = const 0;
+  v4: bool = gt v2 v3;
+  br v4 .for.body.1 .for.end.1;
+.for.body.1:
+  v5: int = id n;
+  v6: int = const 10;
+  v7: int = div v5 v6;
+  tenth: int = id v7;
+  v8: int = id n;
+  v9: int = const 10;
+  v10: int = id tenth;
+  v11: int = mul v9 v10;
+  v12: int = sub v8 v11;
+  currentDigit: int = id v12;
+  v13: int = id total;
+  v14: int = id currentDigit;
+  v15: int = add v13 v14;
+  total: int = id v15;
+  v16: int = id tenth;
+  n: int = id v16;
+  jmp .for.cond.1;
+.for.end.1:
+  v17: int = id total;
+  print v17;
+  v18: int = const 0;
+}
