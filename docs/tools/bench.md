@@ -77,6 +77,7 @@ The current benchmarks are:
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
 * `reverse`: Compute number with reversed digits (e.g. 123 -> 321).
+* `cordic`: Compute the sine of a number using the [CORDIC][cordic] algorithm
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -113,3 +114,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [qsort-hoare]: https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
 [modinv]: https://en.wikipedia.org/wiki/Modular_multiplicative_inverse
 [totient]: https://en.wikipedia.org/wiki/Euler's_totient_function
+[cordic]: https://en.wikipedia.org/wiki/CORDIC
