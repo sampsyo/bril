@@ -1,0 +1,1 @@
+command = "python branch_names.py {filename}"

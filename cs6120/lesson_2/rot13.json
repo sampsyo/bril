@@ -1,0 +1,105 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "aed",
+          "funcs": [
+            "rot"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "aed"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "thirteen",
+          "op": "const",
+          "type": "int",
+          "value": 13
+        },
+        {
+          "dest": "twenty_six",
+          "op": "const",
+          "type": "int",
+          "value": 26
+        },
+        {
+          "args": [
+            "n",
+            "thirteen"
+          ],
+          "dest": "shifted",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "shifted",
+            "twenty_six"
+          ],
+          "dest": "over",
+          "op": "ge",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "over"
+          ],
+          "labels": [
+            "if",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if"
+        },
+        {
+          "args": [
+            "shifted",
+            "twenty_six"
+          ],
+          "dest": "shifted",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "shifted"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "rot",
+      "type": "int"
+    }
+  ]
+}
