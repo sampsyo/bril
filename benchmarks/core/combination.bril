@@ -1,0 +1,65 @@
+# ARGS: 12 3
+
+
+#input: int n, int k
+#Perform n choose k.
+#For example, if the input is 12 3, then we should output 12 choose 3 = 220
+#Note: if n or k are given as a negative number, I return 0. This is an editorial choice; consider it
+#undefined for negative n or k.
+#If n is positive and k is 0, I return 1. For nonnegative n,k, n is less than k, I return 0.
+
+
+#Final call
+@main (n:int,k:int) {
+    final: int = call @combo n k;
+    print final;
+}
+
+#Combination-- first goes through edge cases (negatives, k-0, n < k), then call factorial to build the
+#binomial formula if we get past the edge cases.
+@combo (n:int,k:int): int {
+    zero: int = const 0;
+    one: int = const 1;
+    nneg: bool = lt n zero;
+    kneg: bool = lt k zero;
+    eitherneg: bool = or nneg kneg;
+    br eitherneg .negatives .natural;
+.negatives:
+    ret zero;
+.natural: #from now on we know we're in the naturals
+    kzero: bool = eq k zero;
+    br kzero .zeroes .positive;
+.zeroes:
+    ret one;
+.positive: #from now on we know we have only positives
+    nltk: bool = lt n k;
+    br nltk .negatives .valid; #just reuse 'negatives' as my if case since they're both just return 0
+.valid:
+    nfac: int = call @factorial n;
+    kfac: int = call @factorial k;
+    nmink: int = sub n k;
+    #^ n minus k ^
+    nkfac: int = call @factorial nmink;
+    comboden: int = mul kfac nkfac;
+    #^ combo denonminator, aka k!*(n-k)! ^
+    combo: int = div nfac comboden;
+    ret combo;
+}
+
+#Factorial function
+@factorial (x:int): int {
+    one: int = const 1;
+    basee: bool = eq x one;
+    br basee .base .recurs;
+    #^ if x == 1 do base case else go to recurs (recursive step) ^
+.base:
+    ret one;
+.recurs:
+    oneless: int = sub x one;
+    stepback: int = call @factorial oneless;
+    fact: int = mul x stepback;
+    ret fact;
+}
+
+# Some inspiration / bril syntax help coming from looking at David Han's permutation benchmark,
+# ananyagoenka's Fibonacci benchmark, and UnsignedByte's Matrix Multiplication benchmark!

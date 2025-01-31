@@ -1,0 +1,39 @@
+# Geometric series sum formula
+# S_n = a * (1 - r^n) / (1 - r)
+
+# ARGS: 2 3 5
+@main(a: int, r: int, n: int) {
+    # first term (a)
+    # common ratio (r)
+    # number of terms (n)
+    
+    one: int = const 1;
+    
+    # calculate r^n
+    r_n: int = const 1;
+    i: int = const 0;
+
+.loop:
+    cond: bool = lt i n;
+    br cond .body .done;
+
+.body:
+    r_n: int = mul r_n r;
+    i: int = add i one;
+    jmp .loop;
+    
+.done:
+    # calculate numerator (a * (1 - r^n))
+    one_minus_r_n: int = sub one r_n;
+    numerator: int = mul a one_minus_r_n;
+
+    # calculate denominator (1 - r)
+    one_minus_r: int = sub one r;
+
+    # calculate sum
+    sum: int = div numerator one_minus_r;
+
+    # Print the result
+    print sum;
+}
+

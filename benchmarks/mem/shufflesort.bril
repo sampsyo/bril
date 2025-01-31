@@ -1,0 +1,221 @@
+@shuffle(arr: ptr<int>, size: int, rng: ptr<int>) {
+  zero: int = const 0;
+  one: int = const 1;
+  i: int = sub size one;
+
+.loop:
+  cond: bool = gt i zero;
+  br cond .body .done;
+.body:
+  call @rand rng;
+  j: int = load rng;
+  j: int = call @abs j;
+  mod_j: int = add i one;
+  j: int = call @mod j mod_j;
+
+  call @swap arr i j;
+  
+  i: int = sub i one;
+  jmp .loop;
+.done:
+  ret;
+}
+
+@shufflesort(arr: ptr<int>, size: int, rng: ptr<int>, max: int): bool {
+  sorted: bool = const false;
+
+  one: int = const 1;
+  i: int = const 0;
+
+.loop:
+  cond: bool = le i max;
+  br cond .body .done;
+.body:
+  call @shuffle arr size rng;
+
+  sorted: bool = call @chk_sorted arr size;
+
+  i: int = add i one;
+  br sorted .done .loop;
+.done:
+  ret sorted;
+}
+
+# ARGS: 234 873 123 525 12 549867
+@main(n1: int, n2: int, n3: int, n4: int, n5: int, seed: int) {
+  size: int = const 5;
+  max_attempts: int = const 100;
+  arr: ptr<int> = alloc size;
+
+  one: int = const 1;
+
+  # store numbers in arr
+  i: int = const 0;
+  loc: ptr<int> = ptradd arr i;
+  store loc n1;
+
+  i: int = add i one;
+  loc: ptr<int> = ptradd arr i;
+  store loc n2;
+
+  i: int = add i one;
+  loc: ptr<int> = ptradd arr i;
+  store loc n3;
+
+  i: int = add i one;
+  loc: ptr<int> = ptradd arr i;
+  store loc n4;
+
+  i: int = add i one;
+  loc: ptr<int> = ptradd arr i;
+  store loc n5;
+
+  # random number generator
+  rng: ptr<int> = alloc one;
+  store rng seed;
+
+  sorted: bool = call @shufflesort arr size rng max_attempts;
+ 
+  br sorted .sorted .exit;
+.sorted:
+  call @print_arr arr size;
+.exit:
+  free arr;
+  free rng;
+}
+
+@chk_sorted(arr: ptr<int>, size: int): bool {
+  sorted: bool = const true;
+
+  i: int = const 1;
+  one: int = const 1;
+
+.loop:
+  cond: bool = lt i size;
+  br cond .body .exit;
+.body:
+  curr_loc: ptr<int> = ptradd arr i;
+  curr_val: int = load curr_loc;
+
+  prev_idx: int = sub i one;
+  prev_loc: ptr<int> = ptradd arr prev_idx;
+  prev_val: int = load prev_loc;
+
+  cond: bool = le prev_val curr_val;
+  br cond .le .gt;
+.le:
+  i: int = add i one;
+  jmp .loop;
+.gt:
+  sorted: bool = const false;
+  jmp .exit;
+.exit:
+  ret sorted;
+}
+
+@print_arr(arr: ptr<int>, size: int) {
+  i: int = const 0;
+  one: int = const 1;
+
+.loop:
+  cond: bool = lt i size;
+  br cond .body .exit;
+.body:
+    loc: ptr<int> = ptradd arr i;
+    val: int = load loc;
+    print val;
+    i: int = add i one;
+    jmp .loop;
+.exit:
+  ret;
+}
+
+@abs(i: int): int {
+  zero: int = const 0;
+  neg_one: int = const -1;
+
+  neg: bool = lt i zero;
+  br neg .neg .pos;
+.neg:
+  i: int = mul i neg_one;
+.pos:
+  ret i;
+}
+
+@mod(a: int, b: int): int {
+  dv: int = div a b;
+  mv: int = mul b dv;
+  rem: int = sub a mv;
+  ret rem;
+}
+
+@swap(arr: ptr<int>, i: int, j: int) {
+ arr_i: ptr<int> = ptradd arr i;
+ arr_j: ptr<int> = ptradd arr j;
+ val_i: int = load arr_i;
+ val_j: int = load arr_j;
+ store arr_i val_j;
+ store arr_j val_i;
+}
+
+# the code for generating a random number below is gotten from the CSRMV benchmark
+# (https://github.com/sampsyo/bril/blob/46d91d585dd63c202ec49466c8024c071b44b0ca/benchmarks/mem/csrmv.bril)
+
+# Exclusive or (xor) used by LFSR
+@xor(x: bool, y: bool): bool {
+    xn: bool = not x;
+    yn: bool = not y;
+    xyn: bool = and x yn;
+    xny: bool = and xn y;
+    res: bool = or xyn xny;
+    ret res;
+}
+
+# Get a bit from an integer.
+# Return true if the bit is 1, false if 0
+# position starts at 0
+@getbit(x: int, position: int): bool {
+    one: int = const 1;
+    two: int = const 2;
+    # remove bits lower than position
+    i: int = const 0;
+.loop_cond:
+    cond: bool = lt i position;
+    br cond .loop_body .loop_exit;
+.loop_body:
+    x: int = div x two;
+    i: int = add i one;
+    jmp .loop_cond;
+.loop_exit:
+    # at this moment, if x == (x/2)*2, the bit is 0
+    halfx: int = div x two;
+    twohalfx: int = mul halfx two;
+    iszero: bool = eq twohalfx x;
+    res: bool = not iszero;
+    ret res;
+}
+
+# A Linear Feedback Shift Register (LFSR) random number generator
+# this function only update the state
+@rand(state: ptr<int>) {
+    s: int = load state;
+    two: int = const 2;
+    one: int = const 1;
+    head0_pos: int = const 11;
+    head1_pos: int = const 13;
+    head2_pos: int = const 14;
+    head3_pos: int = const 16;
+    head0: bool = call @getbit s head0_pos;
+    head1: bool = call @getbit s head1_pos;
+    head2: bool = call @getbit s head2_pos;
+    head3: bool = call @getbit s head3_pos;
+    fb: bool = call @xor head0 head1;
+    fb: bool = call @xor fb head2;
+    fb: bool = call @xor fb head3;
+    s: int = mul s two;
+    br fb .add_one .end;
+.add_one:
+    s: int = add s one;
+.end:
+    store state s;
+}
