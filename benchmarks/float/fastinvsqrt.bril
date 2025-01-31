@@ -1,4 +1,4 @@
-#ARGS: 10.0
+#ARGS: 165
 @main(num: float) {
     v0: float = id num;
     x: float = call @rsqrt v0;
