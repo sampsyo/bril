@@ -1,7 +1,7 @@
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
 use bril2json::escape_control_chars;
-use bril_rs::{Instruction, Type};
+use bril_rs::Instruction;
 
 use fxhash::FxHashMap;
 
@@ -322,7 +322,6 @@ fn execute_value_op<T: std::io::Write>(
   labels: &[String],
   funcs: &[usize],
   last_label: Option<&String>,
-  op_type: &Type,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
@@ -660,7 +659,7 @@ fn execute<'a, T: std::io::Write>(
         Instruction::Value {
           op,
           dest: _,
-          op_type,
+          op_type: _,
           args: _,
           labels,
           funcs: _,
@@ -674,7 +673,6 @@ fn execute<'a, T: std::io::Write>(
             labels,
             &numified_code.funcs,
             last_label,
-            op_type,
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
