@@ -37,6 +37,7 @@ The current benchmarks are:
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
+* `karatsuba`: Multiplies two large numbers using [Karatsuba's alogirthm](https://en.wikipedia.org/wiki/Karatsuba_algorithm)
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
 * `loopfact`: Compute *n!* imperatively using a loop.
