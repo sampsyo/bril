@@ -10,7 +10,7 @@
     i: int = const 0;
 
     .loop:
-        cond = lt i size;
+        cond : bool = lt i size;
         br cond .printmore .done;
     .printmore:
         idx: ptr<int> = ptradd arr i;
@@ -264,11 +264,9 @@
     store offset one;
 }
 
-# Main block – Creates a graph with 8 nodes numbered 0...7 and 3 components.
-# The specific components are {1, 2, 3, 4}, {0, 5}, {6, 7}.
-# Adding/removing/modifying edges in the graph can be done within @main.
-@main() {
-  nodes : int = const 8;
+# Main block – Creates a graph with n nodes numbered 0 ... n-1.
+# n is input-specified (should be > 2); anywhere from 2 to n edges are generated randomly.
+@main(nodes : int) {
   dim : int = mul nodes nodes;
   adj : ptr<int> = alloc dim;
 
