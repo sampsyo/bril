@@ -47,6 +47,7 @@ The current benchmarks are:
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
+* `logistic`: Compute the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
 * `loopfact`: Compute *n!* imperatively using a loop.
 * `major-elm`: Find the majority element in an array using [a linear time voting algorithm](https://www.cs.utexas.edu/~moore/best-ideas/mjrty/).
 * `mandelbrot`: Generates a really low resolution, ascii, [mandelbrot set][mandelbrot].
