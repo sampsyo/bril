@@ -29,7 +29,7 @@ The current benchmarks are:
 * `eight-queens`: Counts the number of solutions for *n* queens problem, a generalization of [Eight queens puzzle][eight_queens].
 * `euclid`: Calculates the greatest common divisor between two large numbers using the [Euclidean Algorithm][euclid] with a helper function for the modulo operator.
 * `euler`: Approximates [Euler's number][euler] using the Taylor series.
-* `exponentiation-by-squaring`: Fast iterative computation of large integer powers using [Exponentiation by squaring][exp_by_squaring].
+* `exponentiation-by-squaring`: Fast iterative computation of large integer powers using [exponentiation by squaring][exp_by_squaring].
 * `fact`: Prints the factorial of *n*, computing it recursively.
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
