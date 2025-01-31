@@ -1,0 +1,26 @@
+# Logistic map: https://en.wikipedia.org/wiki/Logistic_map
+
+@logistic_map(r: float, x: float, n: float) {
+  zero: float = const 0;
+  one: float = const 1;
+  tmp: float = fsub one x;
+  tmp: float = fmul tmp x;
+  x: float = fmul r tmp;
+
+  print x;
+
+  b: bool = feq n zero;
+  br b .return .cont;
+
+  .cont: 
+  n1: float = fsub n one;
+  call @logistic_map r x n1;
+
+  .return:
+  ret;
+}
+
+# ARGS: 3 0.5 100
+@main(r: float, x: float, n: float){
+  call @logistic_map r x n;
+}
