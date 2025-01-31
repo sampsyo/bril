@@ -1,0 +1,47 @@
+#ARGS: 37454400 0 37454400
+@main(x: int, min_guess: int, max_guess: int) {
+  v0: int = id min_guess;
+  v1: int = const 1;
+  v2: int = add v0 v1;
+  min_plus_1: int = id v2;
+  v4: int = id min_plus_1;
+  v5: int = id max_guess;
+  v6: bool = eq v4 v5;
+  br v6 .then.3 .else.3;
+.then.3:
+  v7: int = id min_guess;
+  print v7;
+  v8: int = const 0;
+  ret;
+.else.3:
+  v9: int = id min_guess;
+  v10: int = id max_guess;
+  v11: int = add v9 v10;
+  sum_bounds: int = id v11;
+  v12: int = id sum_bounds;
+  v13: int = const 2;
+  v14: int = div v12 v13;
+  mid: int = id v14;
+  v15: int = id mid;
+  v16: int = id mid;
+  v17: int = mul v15 v16;
+  mid_squared: int = id v17;
+  v19: int = id mid_squared;
+  v20: int = id x;
+  v21: bool = le v19 v20;
+  br v21 .then.18 .else.18;
+.then.18:
+  v22: int = id x;
+  v23: int = id mid;
+  v24: int = id max_guess;
+  call @main v22 v23 v24;
+  v25: int = const 0;
+  jmp .endif.18;
+.else.18:
+  v26: int = id x;
+  v27: int = id min_guess;
+  v28: int = id mid;
+  call @main v26 v27 v28;
+  v29: int = const 0;
+.endif.18:
+}
