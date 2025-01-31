@@ -14,12 +14,13 @@ def change_labels(all_blocks):
   for i in range(len(all_blocks)):
     all_blocks[i] = (all_labels[i], all_blocks[i][1])
   return all_blocks
+
 def build_cfg(all_blocks):
   successors = {"entry": [], "exit": []}
   for block in all_blocks:
     successors[block[0]] = []
   # dummy entry block
-  successors["entry"] = all_blocks[0][0]
+  successors["entry"] = [all_blocks[0][0]]
   
   for i in range(len(all_blocks)):
     # last entry is ret -> successor = exit
@@ -35,10 +36,26 @@ def build_cfg(all_blocks):
       if(i == len(all_blocks) - 1):
         successors[all_blocks[i][0]] = ["exit"]
       else:
-        successors[all_blocks[i][0]] = [all_blocks[i + 1][0]]
-  
+        successors[all_blocks[i][0]] = [all_blocks[i + 1][0]]  
   return successors
+
+def remove_orphans(all_blocks, cfg):
+  visited = {}
+  for block in all_blocks:
+    visited[block[0]] = False
+    
+  for entry in cfg:
+    for successor in cfg[entry]:
+      visited[successor] = True 
+  
+  parsed_blocks = []
+  for block in all_blocks:
+    if visited[block[0]]:
+      parsed_blocks.append(block)
+  return parsed_blocks
 if __name__ == "__main__":
   filename = sys.argv[1]
   all_blocks = change_labels(blocks.blocks(filename))
-  print(build_cfg(all_blocks))
+  cfg = build_cfg(all_blocks)
+  print(cfg)
+  # print(remove_orphans(all_blocks, cfg))
