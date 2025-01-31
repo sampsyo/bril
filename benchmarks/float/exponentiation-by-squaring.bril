@@ -1,0 +1,65 @@
+@main {
+    x1: float = const -2.7;
+    n1: int = const 124;
+    x_to_n1 : float = call @exp_by_squaring_iterative x1 n1;
+    print x_to_n1;
+    x2: float = const .1218;
+    n2: int = const -150;
+    x_to_n2 : float = call @exp_by_squaring_iterative x2 n2;
+    print x_to_n2;
+}
+
+# adapted from https://en.wikipedia.org/wiki/Exponentiation_by_squaring#With_constant_auxiliary_memory
+@exp_by_squaring_iterative(x: float, n: int) : float {
+    zero : int = const 0;
+    one_float : float = const 1;
+    one_int : int = const 1;
+    two : int = const 2;
+
+    # if n < 0
+    lt0: bool = lt n zero;
+    br lt0 .negate .cont.1;
+    .negate:
+    x : float = fdiv one_float x;
+    n : int = sub zero n;
+    
+    # if n = 0
+    .cont.1:
+    is0 : bool = eq n zero;
+    br is0 .ret1 .cont.2;
+    .ret1:
+    ret one_float;
+    
+    # main section
+    .cont.2:
+    y : float = const 1;
+
+    # while n > 1 do
+    .while:
+    guard: bool = gt n one_int;
+    br guard .while.body .while.end;
+    
+    .while.body:
+        # if n is odd
+        half : int = div n two;
+        doublehalf : int = mul half two;
+        iseven : bool = eq doublehalf n;
+        isodd : bool = not iseven;
+        br isodd .isodd .cont.3;
+        .isodd:
+        y : float = fmul x y;
+        dec : int = const 1;
+        n : int = sub n dec;
+
+        # apply formula
+        .cont.3:
+        x : float = fmul x x;
+        n : int = div n two;
+    
+        jmp .while;
+    
+    # return x * y
+    .while.end:
+    result : float = fmul x y;
+    ret result;
+}
