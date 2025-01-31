@@ -1,0 +1,52 @@
+# ARGS: 6 3
+@permutation(n: int, k: int): int {
+  v1: int = id k;
+  v2: int = id n;
+  v3: bool = gt v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = const 0;
+  ret v4;
+.else.0:
+  v5: int = id n;
+  v6: int = call @factorial v5;
+  v7: int = id n;
+  v8: int = id k;
+  v9: int = sub v7 v8;
+  v10: int = call @factorial v9;
+  v11: int = div v6 v10;
+  ret v11;
+}
+@factorial(n: int): int {
+  v1: int = id n;
+  v2: int = const 1;
+  v3: int = sub v1 v2;
+  i: int = id v3;
+.for.cond.0:
+  v4: int = id i;
+  v5: int = const 0;
+  v6: bool = gt v4 v5;
+  br v6 .for.body.0 .for.end.0;
+.for.body.0:
+  v7: int = id n;
+  v8: int = id i;
+  v9: int = mul v7 v8;
+  n: int = id v9;
+  v10: int = id i;
+  v11: int = const 1;
+  v12: int = sub v10 v11;
+  i: int = id v12;
+  jmp .for.cond.0;
+.for.end.0:
+  v13: int = id n;
+  ret v13;
+}
+@main(n: int, k: int) {
+  v0: int = id n;
+  v1: int = id k;
+  res: int = call @permutation v0 v1;
+  res: int = id res;
+  v2: int = id res;
+  print v2;
+  v3: int = const 0;
+}
