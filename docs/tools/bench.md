@@ -78,6 +78,7 @@ The current benchmarks are:
 * `shufflesort`: Sorts a list by shuffling it until it is sorted.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
+* `sqrt_bin_search`: Uses a binary search to find the floor of the square root of an integer
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-check`: Compute the sum of [1, n] by both loop and formula, and check if the result is the same.
 * `sum-digits`: Compute the sum of the (base-10) digits of the input integer.
