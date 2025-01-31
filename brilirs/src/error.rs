@@ -59,8 +59,6 @@ pub enum InterpError {
   IoError(#[from] std::io::Error),
   #[error("value ${0} cannot be converted to char")]
   ToCharError(i64),
-  #[error("bitcasts must be between `int` and `float`")]
-  InvalidBitcastType,
   #[error("You probably shouldn't see this error, this is here to handle conversions between InterpError and PositionalError")]
   PositionalInterpErrorConversion(#[from] PositionalInterpError),
 }
