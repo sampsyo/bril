@@ -31,14 +31,14 @@ The current benchmarks are:
 * `euler`: Approximates [Euler's number][euler] using the Taylor series.
 * `fact`: Prints the factorial of *n*, computing it recursively.
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
-* `fastinvsqrt`: Uses the famous [Quake 3 Fast Inverse Square Root](https://en.wikipedia.org/wiki/Fast_inverse_square_root) algorithm to approximate 1 / sqrt(x). Requires an extension that provides `bits2float` and `float2bits`. Otherwise, use `lamefastinvsqrt`.
+* `fastinvsqrt`: Uses the famous [Quake 3 Fast Inverse Square Root](https://en.wikipedia.org/wiki/Fast_inverse_square_root) algorithm to approximate 1 / sqrt(x). Requires an extension that provides `bits2float` and `float2bits`. Otherwise, use `iterativefastinvsqrt`.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `function_call`: For benchmarking the overhead of simple function calls.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
-* `lamefastinvsqrt`: Uses the significantly more boring Newton's method to approximate 1 / sqrt(x), starting with 1 / x and iterating until the step becomes smaller than a specified precision. Works if the cooler `fastinvsqrt` is not an option.
+* `iterativefastinvsqrt`: Uses the significantly more boring Newton's method to approximate 1 / sqrt(x), starting with 1 / x and iterating until the step becomes smaller than a specified precision. Works if the cooler `fastinvsqrt` is not an option.
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
 * `loopfact`: Compute *n!* imperatively using a loop.
