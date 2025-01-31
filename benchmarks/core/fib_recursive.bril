@@ -1,0 +1,39 @@
+# ARGS: 10
+@main(n: int) {
+  v0: int = id n;
+  result: int = call @fib v0;
+  print result;
+}
+
+@fib(x: int): int {
+  v1: int = id x;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = const 0;
+  ret v4;
+.else.0:
+  v6: int = id x;
+  v7: int = const 1;
+  v8: bool = eq v6 v7;
+  br v8 .then.5 .else.5;
+.then.5:
+  v9: int = const 1;
+  ret v9;
+.else.5:
+  v10: int = id x;
+  v11: int = const 1;
+  v12: int = sub v10 v11;
+  f1: int = call @fib v12;
+  f1: int = id f1;
+  v13: int = id x;
+  v14: int = const 2;
+  v15: int = sub v13 v14;
+  f2: int = call @fib v15;
+  f2: int = id f2;
+  v16: int = id f1;
+  v17: int = id f2;
+  v18: int = add v16 v17;
+  ret v18;
+}
