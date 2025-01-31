@@ -519,29 +519,17 @@ fn execute_value_op<T: std::io::Write>(
       state.env.set(dest, res);
     }
     Float2Bits => {
-      let input = get_arg::<&Value>(&state.env, 0, args);
-
-      let (Value::Float(float), Type::Int) = (input, op_type) else {
-        panic!("Invalid bitcast");
-      };
-
+      let float = get_arg::<f64>(&state.env, 0, args);
       // https://users.rust-lang.org/t/i64-u64-mapping-revisited/109315
       // the to and from native endian stuff is a nop
       // if link dies try web archive
-      let uint = float.to_bits();
-      let int = i64::from_ne_bytes(uint.to_ne_bytes());
+      let int = i64::from_ne_bytes(float.to_ne_bytes());
       state.env.set(dest, Value::Int(int));
     }
     Bits2Float => {
-      let input = get_arg::<&Value>(&state.env, 0, args);
-
-      let (Value::Int(int), Type::Float) = (input, op_type) else {
-        panic!("Invalid bitcast");
-      };
-
+      let int = get_arg::<i64>(&state.env, 0, args);
       // see comment for Float2Bits
-      let uint = u64::from_ne_bytes(int.to_ne_bytes());
-      let float = f64::from_bits(uint);
+      let float = f64::from_ne_bytes(int.to_ne_bytes());
       state.env.set(dest, Value::Float(float));
     }
   }
