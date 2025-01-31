@@ -32,19 +32,14 @@ You will then have `brili`, which takes a Bril program as JSON on stdin and exec
 
 ### Text Format
 
-The parser & pretty printer for the human-editable text form of Bril are written for Python 3.
-To install them, you need [Flit][], so run this:
+The parser & pretty printer for the human-editable text form of Bril are in Python.
+A good way to install them is using [uv][].
+[Install uv][uv-install], then go to the `bril-txt` directory and type:
 
-    $ pip install --user flit
-
-Then, go to the `bril-txt` directory and use Flit to install symlinks to the tools:
-
-    $ flit install --symlink --user
+    $ uv tool install .
 
 The tools are called `bril2json` and `bril2txt`.
 They also take input on stdin and produce output on stdout.
-
-[flit]: https://flit.readthedocs.io/
 
 
 Tests
@@ -61,3 +56,5 @@ Then run all the tests by typing `make test`.
 [pip]: https://packaging.python.org/tutorials/installing-packages/
 [cs6120]: https://www.cs.cornell.edu/courses/cs6120/2020fa/
 [turnt]: https://github.com/cucapra/turnt
+[uv]: https://docs.astral.sh/uv/
+[uv-install]: https://docs.astral.sh/uv/getting-started/installation/

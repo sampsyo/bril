@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![warn(missing_docs)]
+#![warn(clippy::allow_attributes)]
 #![doc = include_str!("../README.md")]
-#![allow(clippy::module_name_repetitions)]
 
 #[doc(hidden)]
 pub mod cli;
@@ -22,7 +22,7 @@ use bril_rs::{
 
 use crate::error::BrildError;
 
-fn mangle_name(path: &Path, func_name: &String) -> String {
+fn mangle_name(path: &Path, func_name: &str) -> String {
     let mut parts = path.components();
     parts.next();
 
