@@ -1,0 +1,108 @@
+@main {
+  size: int = const 512;
+  arr: ptr<int> = alloc size;
+  call @fill_array arr size;
+  hash: int = call @fnv1a_hash arr size;
+  print hash;
+  free arr;
+}
+
+# FNV-1a hash function
+@fnv1a_hash(data: ptr<int>, size: int): int {
+  FNV_prime: int = const 16777619;
+  FNV_offset_basis: int = const 2166136261;
+  hash: int = id FNV_offset_basis;
+  one: int = const 1;
+  i: int = const 0;
+  loc: ptr<int> = id data;
+  continue: bool = lt i size;
+  br continue .loop .exit;
+.loop:
+  byte: int = load loc;
+  hash: int = call @XOR hash byte;
+  hash: int = mul hash FNV_prime;
+  loc: ptr<int> = ptradd loc one;
+  i: int = add i one;
+  continue: bool = lt i size;
+  br continue .loop .exit;
+.exit:
+  ret hash;
+}
+
+# Fills the array with values 0, 1. 2, ... (from bril/benchmarks/mem/adler32.bril)
+@fill_array(arr: ptr<int>, size:int) {
+  one: int = const 1;
+  curr: int = const 0;
+  loc: ptr<int> = id arr;
+.loop:
+  store loc curr;
+  loc: ptr<int> = ptradd loc one;
+  curr: int = add curr one;
+  continue: bool = lt curr size;
+  br continue .loop .exit;
+.exit:
+  nop;
+}
+
+# bitwise XOR (from bril/benchmarks/core/bitwise-ops.bril)
+@XOR(a: int, b:int): int{
+ and_val: int = call @AND a b;
+ or_val: int = call @OR a b;
+ ans: int = sub or_val and_val;
+ ret ans;
+}
+
+@OR(a: int, b: int): int{
+  oper: bool = const true;
+  v1: int = call @loop_subroutine a b oper;
+  ret v1;
+}
+
+@AND(a: int, b: int): int{
+  oper: bool = const false;
+  v1: int = call @loop_subroutine a b oper;
+  ret v1;
+}
+
+@loop_subroutine(a: int, b: int, c: bool): int{
+  i: int = const 0;
+  n: int = const 63;
+  one: int = const 1;
+  two: int = const 2;
+  ans: int = const 0;
+  to_add: int = const 1;
+.loop:
+  cond: bool = le i n;
+  br cond .here .end;
+.here:
+  mod2a: bool = call @mod2 a;
+  mod2b: bool = call @mod2 b;
+  cond_add: bool = and mod2a mod2b;
+  br c .doOr .stay;
+.doOr:
+  cond_add: bool = or mod2a mod2b;
+.stay:
+  br cond_add .add .end_loop;
+.add:
+  ans: int = add ans to_add;
+.end_loop:
+  a: int = div a two;
+  b: int = div b two;
+  to_add: int = mul to_add two;
+  i: int = add i one;
+  jmp .loop;
+.end:
+  ret ans;
+}
+
+@mod2(a: int): bool{ # if residue is 1 return true, else return false.
+  two: int = const 2;
+
+  tmp: int = div a two;
+  tmp2: int = mul tmp two;
+  tmp3: int = sub a tmp2;
+
+  one: int = const 1;
+  ans: bool = eq one tmp3;
+  ret ans;
+}

@@ -1,0 +1,33 @@
+# Montgomery reduction algorithm (REDC) for fast modular multiplication.
+# Example (from Wikipedia): to compute (7 * 15) % 17, where `n = 17`,
+# we convert 7 and 15 to Montgomery form `t` using a constant `r = 100`. 
+# In this example, we have `t = 12`. We then pick some `nn` s.t. 
+# `n * nn = -1 mod r`, and we pick `nn = 47`. We then run the following algo
+# to get the result `11`, which is the Montgomery form of `3 = (7 * 15) % 17`.
+# ARGS: 100 17 47 12 
+@main(r: int, n: int, nn: int, t: int) {
+  # Compute `m = ((t % r) * nn) % r`
+  tr: int = call @mod t r;
+  trnn: int = mul tr nn;
+  m: int = call @mod trnn r;
+  # Compute `t <- (t + mn) / r`
+  mn: int = mul m n;
+  tmn: int = add t mn;
+  t: int = div tmn r;
+  # if t >= N then { return t - n } else { return t }
+  b: bool = ge t n;
+  br b .then .else;
+.then:
+  res: int = sub t n;
+  print res;
+.else:
+  print t;
+}
+
+# Computes `x % y` by computing x - (y * (x / y))
+@mod(x: int, y: int): int {
+  q: int = div x y;
+  xq: int = mul y q;
+  result: int = sub x xq;
+  ret result; 
+}
