@@ -12,6 +12,7 @@ The current benchmarks are:
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
+* `binpow`: Recursive binary exponentiation. Implemented to be as close to tail-recursive as possible.
 * `birthday`: Simulation of the [birthday][birthday] paradox with an input of `n` people in a given room.
 * `bitwise-ops`: Computes the OR, AND, or XOR between two 64-bit integers. (Three modes: 0 = AND, 1 = OR, 2 = XOR)
 * `bitshift`: Computes the LEFTSHIFT and RIGHTSHIFT for any integer, also implements an efficient pow function for integers
