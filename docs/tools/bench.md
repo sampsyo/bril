@@ -24,6 +24,7 @@ The current benchmarks are:
 * `cholesky`: Perform Cholesky decomposition of a Hermitian and positive definite matrix. The result is validated by comparing with Python's `scipy.linalg.cholesky`.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `conjugate-gradient`: Uses conjugate gradients to solve `Ax=b` for any arbitrary positive semidefinite `A`.
+* `connected-components`: Compute and print each [connected component][component] in the [adjacency matrix][adj] of an undirected graph.
 * `1dconv`: Creates a kernel and array, performs a one-dimensional convolution operation, and prints out the values in the resulting array.
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `csrmv`: Multiply a sparse matrix in the [Compressed Sparse Row (CSR)][csr] format with a dense vector. The matrix and input vector are generated using a [Linear Feedback Shift Register](https://en.wikipedia.org/wiki/Linear-feedback_shift_register) random number generator.
@@ -111,6 +112,7 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [sievee]: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 [collatz]: https://en.wikipedia.org/wiki/Collatz_conjecture
 [catalan]: https://en.wikipedia.org/wiki/Catalan_number
+[component] : https://en.wikipedia.org/wiki/Component_(graph_theory)
 [ackermann]: https://en.wikipedia.org/wiki/Ackermann_function
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
 [matmul]: https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm#Iterative_algorithm
