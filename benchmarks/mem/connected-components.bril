@@ -1,0 +1,309 @@
+# This benchmark counts and prints the connected components in an undirected graph.
+# The graph is represented by an adjacency matrix of specified (8 x 8) dimensions.
+# Defines a stack interface with push and pop operations in memory
+# Utilizes stack representation in memory to assist in iterative depth-first search
+# Developed by Kabir Samsi (kas499)
+
+# Auxiliary function to print through the contents of an array in memory
+@print_through(arr : ptr<int>, size : int) {
+    one: int = const 1;
+    i: int = const 0;
+
+    .loop:
+        cond : bool = lt i size;
+        br cond .printmore .done;
+    .printmore:
+        idx: ptr<int> = ptradd arr i;
+        elem: int = load idx;
+        print elem;
+    .loopcheck:
+        i: int = add i one;
+        jmp .loop;
+    .done:
+        print; # Line break after full print
+        ret;
+}
+
+# Push an element to the top of a stack by copying over to a larger memory component
+@push(stack : ptr<int>, newnode : int, size : int) : ptr<int> {
+  zero : int = const 0;
+
+  empty : bool = eq size zero;
+  br empty .push_empty .push_nonempty;
+
+  # If the stack is empty, then it will be represented as [-1] per design. Just update the value.
+  .push_empty:
+    store stack newnode;
+    ret stack;
+
+  # Otherwise, extend the memory and prepend.
+  .push_nonempty:
+    one : int = const 1;
+    newsize : int = add size one;
+    result: ptr<int> = alloc newsize;
+
+    # Initialize and add new node to top of the stack
+    i : int = const 0;
+    write_idx: ptr<int> = ptradd result i;
+    store write_idx newnode;
+
+    # Access top of the current stack
+    read_idx: ptr<int> = ptradd stack i;
+    
+    # Set new insert position
+    i : int = add i one;
+
+    # And now just copy the rest of the array over
+    .copyloop:
+      cond: bool = lt i newsize;
+      br cond .copy .done;
+    .copy:
+      # Store stack's top element at new write index
+      top: int = load read_idx;
+      write_idx: ptr<int> = ptradd result i;
+      store write_idx top;
+
+      # Update read index to next element
+      read_idx: ptr<int> = ptradd stack i;
+
+    .loop_end: # Increment and return to loop head
+      i: int = add i one;
+      jmp .copyloop;
+      
+    .done: # Free the old stack and return the new one
+      free stack;
+      ret result;
+}
+
+# Pop an element from the top of a stack
+@pop(stack : ptr<int>, size : int) : ptr<int> {
+  one : int = const 1;
+
+  has_one : bool = eq size one;
+  br has_one .pop_one .pop_multiple;
+  
+  # If the stack has only one element, store a -1 at its index
+  .pop_one:
+    negone : int = const -1;
+    store stack negone;
+    ret stack;
+
+  # If it has multiple, treat like a normal pop operation
+  .pop_multiple:
+    newsize : int = sub size one;
+    result: ptr<int> = alloc newsize;
+
+    # Start copy pointer one ahead of start node, effectively popping it
+    i : int = const 1;
+
+    # Starting at index 1, copy the whole array over
+    .copyloop:
+      cond: bool = lt i size;
+      br cond .copy .done;
+    .copy:
+      # Load element in
+      read_idx: ptr<int> = ptradd stack i;
+      top: int = load read_idx;
+
+      # Store stack's top element at one before (overwriting the first element)
+      write_pos : int = sub i one;
+      write_idx: ptr<int> = ptradd result write_pos;
+      store write_idx top;
+
+    .loop_end: # Increment and return to loop head
+      i: int = add i one;
+      jmp .copyloop;
+      
+    .done: # Free the old stack and return the new one
+      free stack;
+      ret result;
+}
+
+# Find index of first unvisited node; return (length + 1) if none
+@first_unvisited (visited : ptr<int>, n : int) : int {
+  i : int = const 0;
+  zero : int = const 0;
+  one : int = const 1;
+
+  # Loop until we find an unvisited node or have gone through all elements
+  .loop:
+    offset : ptr<int> = ptradd visited i;
+    loaded : int = load offset;
+    bounds : bool = eq i n;
+    found : bool = eq loaded zero;
+    cond : bool = or bounds found;
+    br cond .terminate .continue;
+  .continue:
+    i : int = add i one;
+    jmp .loop;
+  .terminate:
+    ret i;
+}
+
+# DFS graph to compute connected components
+@dfs(graph: ptr<int>, n : int) : int {
+    
+    zero : int = const 0;
+    one : int = const 1;
+
+    # Mark first node as visited
+    visited : ptr<int> = alloc n;
+    
+    i : int = const 0;
+    .populate_visited:
+      cond : bool = lt i n;
+      br cond .keep_looping .rest;
+
+    .keep_looping:
+      offset : ptr<int> = ptradd visited i;
+      store offset zero;
+      i : int = add i one;
+      jmp .populate_visited;
+
+    .rest:
+    visited_count : int = const 0;
+    components : int = const 0;
+
+    # Iterate until every component is visited
+    .component_loop:
+      cond : bool = lt visited_count n;
+      br cond .dfs_init .end;
+
+      .dfs_init:
+        # Start by finding the next unvisited element
+        next_node : int = call @first_unvisited visited n;
+        
+        # Store the current component cluster
+        component_cluster : ptr<int> = alloc one;
+        store component_cluster next_node;
+        cluster_size : int = const 1;
+
+        visited_offset : ptr<int> = ptradd visited next_node;
+        store visited_offset one;
+        stack : ptr<int> = alloc one;
+        stack_size : int = const 1;
+        store stack next_node;
+        visited_count : int = add visited_count one;
+
+        .dfs_loop: # Keep running DFS while stack has elements
+
+        cond : bool = gt stack_size zero;
+        br cond .trav_loop .terminate;
+
+        .trav_loop:
+          # Pop from the top of the stack
+          top : int = load stack;
+          stack : ptr<int> = call @pop stack stack_size;
+          stack_size : int = sub stack_size one;
+          
+          # Add all neighbors to the top of the stack
+          i : int = const 0;
+          
+          # Iterate through each neighbor
+          .neighbor_loop:
+            iter_cond : bool = lt i n;
+            br iter_cond .iter .break;
+          .iter:
+            # Index and check if there is an edge.
+            row_idx : int = mul top n;
+            cell_idx : int = add row_idx i;
+            cell : ptr<int> = ptradd graph cell_idx;
+            cell_data : int = load cell;
+            
+            # Load data on whether neighbor has been visited previously
+            visited_cell : ptr<int> = ptradd visited i;
+            visited_data : int = load visited_cell;
+
+            # Check if neighbor, and if visited
+            is_neighbor : bool = eq cell_data one;
+            not_visited : bool = eq visited_data zero;
+            push_cond : bool = and is_neighbor not_visited;
+
+            br push_cond .push_stack .no_push;
+
+            # Mark new node as visited and add to stack
+            .push_stack:
+              stack : ptr<int> = call @push stack i stack_size;
+              stack_size : int = add stack_size one;
+              component_cluster : ptr<int> = call @push component_cluster i cluster_size;
+              cluster_size : int = add cluster_size one;
+              store visited_cell one;
+              visited_count : int = add visited_count one;
+
+            .no_push:
+              i : int = add i one;
+              jmp .neighbor_loop;
+
+          .break:
+            jmp .dfs_loop;
+
+        .terminate: #End single round of DFS and increment number of components
+          components : int = add components one;
+          free stack;
+          call @print_through component_cluster cluster_size;
+          free component_cluster;
+          jmp .component_loop;
+      
+      .end:
+        free visited;
+        ret components;
+}
+
+# Insert undirected edge from <from> to <to> (both directions in adjacency matrix)
+@insert_edge(graph : ptr<int>, from : int, to : int, size: int) {
+    one : int = const 1;
+    # Undirected edge (0, 5)
+    offset_count : int = mul from size;
+    offset_count : int = add offset_count to;
+    offset: ptr<int> = ptradd graph offset_count;
+    store offset one;
+
+    offset_count : int = mul to size;
+    offset_count : int = add offset_count from;
+    offset: ptr<int> = ptradd graph offset_count;
+    store offset one;
+}
+
+# Main block – Creates a graph with n nodes numbered 0...n-1.
+# Six edges are drawn in the graph.
+# Adding/removing/modifying edges in the graph can be done within @main.
+# ARGS: 8
+@main(nodes : int) {
+  dim : int = mul nodes nodes;
+  adj : ptr<int> = alloc dim;
+
+  # Node labels
+  zero : int = const 0;
+  one : int = const 1;
+  two : int = const 2;
+  three : int = const 3;
+  four : int = const 4;
+  five : int = const 5;
+  six : int = const 6;
+  seven : int = const 7;
+  
+  i : int = const 0;
+  .init_loop:
+    cond : bool = lt i dim;
+    br cond .continue .fill_edges;
+
+  .continue:
+    offset : ptr<int> = ptradd adj i;
+    store offset zero;
+    i : int = add i one;
+    jmp .init_loop;
+  
+  .fill_edges: # Now, insert the edges
+  
+    call @insert_edge adj zero five nodes; # Undirected edge (0, 5)
+    call @insert_edge adj one two nodes; # Undirected edge (1, 2)
+    call @insert_edge adj two three nodes; # Undirected edge (2, 3)
+    call @insert_edge adj one four nodes; # Undirected edge (1, 4)
+    call @insert_edge adj two four nodes; # Undirected edge (2, 4)
+    call @insert_edge adj six seven nodes; # Undirected edge (6, 7)
+
+  .compute_components:
+    components : int = call @dfs adj nodes;
+    free adj;
+    print components;
+}
