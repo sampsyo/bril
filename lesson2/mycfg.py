@@ -1,14 +1,13 @@
 import json
 import sys
 import graphviz
-from IPython.display import Image
 
 # CFG class
 class Node:
-    def __init__(self, name, current_instrs=None, successor_block=None):
+    def __init__(self, name, current_instrs=None, successor_blocks=None):
         self.name = name
         self.current_instrs = current_instrs if current_instrs is not None else []
-        self.successor_block = successor_block
+        self.successor_blocks = successor_blocks
 
     def __repr__(self):
         return f"Node({self.name}, instrs={self.current_instrs}, succ={self.successor_blocks})"
@@ -67,6 +66,7 @@ def connect_blocks(blocks):
 
     # Loop through blocks and assign successors
     for i, (block_name, instrs) in enumerate(blocks.items()):
+        
 
         # Initialize list to hold successors of current block
         successors = []
@@ -100,28 +100,31 @@ def displayCfg(cfg):
         
     # Add the edges between the blocks
     for block_name, content in cfg.items():
-        for succ in content.successors:
+        for succ in content.successor_blocks:
             graph.edge(block_name, succ)
 
     # Render the graph
-    graph.render('cfg_output', format='png', cleanup=True)
-    return Image(filename="cfg_output.png")
-
-   
-
+    output_file = "cfg_output.png"
+    graph.render(output_file, format="png", cleanup=True)
     
+    print(f"Control Flow Graph saved as {output_file}")  # Confirmation message 
 
 def mycfg():
+    print("r")
     prog = json.load(sys.stdin)
+    print("running")
     print(prog)
     print()
     print()
+    print("running1")
     # I leave the labels as instructions
     blocks = form_blocks(prog)
+    print("running2")
     for block in blocks.values():
         print(block)
-
+    print("running3")
     cfg = connect_blocks(blocks)
+    print("running4")
 
     print()
     print()
