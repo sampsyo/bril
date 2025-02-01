@@ -1,0 +1,215 @@
+# Credits to Patrick LaFontaine in his mat-mul.bril benchmark for rand, randarray,
+# and printarray functions
+
+# ARGS: 10 5 1
+@main (img_size: int, kernel_size: int, seed: int) {
+  # Define the image, kernel sizes 
+  img_size_sq: int = mul img_size img_size; # total entries in image array
+  kernel_size_sq: int = mul kernel_size kernel_size;  
+
+  # Calculate output matrix size
+  one: int = const 1;
+  output_rows: int = sub img_size kernel_size;
+  output_size: int = add output_rows one;
+  output_size_sq: int = mul output_size output_size;
+
+  # Initialize random number generator range
+  rng: ptr<int> = alloc one;
+  store rng seed;
+
+  # Generate the image, kernel
+  img: ptr<int> = call @randarray img_size_sq rng;
+  kernel: ptr<int> = call @randarray kernel_size_sq rng;
+
+  # Call the convolution function
+  output: ptr<int> = call @convolve img img_size kernel kernel_size output_size_sq;
+
+  # Print the image, kernel, and output matrix
+  call @printarray img_size_sq img;
+  call @printarray kernel_size_sq kernel;
+  call @printarray output_size_sq output;
+  
+  free img;
+  free kernel;
+  free output;
+  free rng;
+  ret;
+}
+
+@convolve(img: ptr<int>, img_size: int, kernel: ptr<int>, kernel_size: int, output_size_sq: int): ptr<int> {
+
+  cur_out_idx: int = const 0;
+  int1: int = const 1;
+  int2: int = const 2;
+
+  # Initialize output matrix
+  output: ptr<int> = alloc output_size_sq;
+
+  # Calculuate number of strides the kernel takes over the image
+  strides: int = sub img_size kernel_size;
+
+  # Calculate where to start in the image
+  start_row: int = div kernel_size int2; 
+
+  
+  # Loop through image matrix pixels
+  img_row: int = id start_row; # skip initial rows because we don't have border padding
+
+  # Calculate end row
+  img_end_row: int = add start_row strides;
+  
+  .loop1: 
+    b1: bool = le img_row img_end_row;  # loop as many times as strides we take
+    br b1 .body1 .done1;
+  .body1:
+    img_col: int = id start_row; # skip initial columns because we don't have border padding
+    .loop2:
+      b2: bool = le img_col img_end_row;  # loop as many times as strides we take
+      br b2 .body2 .done2;
+    .body2:
+      # Initialize variable to hold convolution sum
+      sum: int = const 0;
+
+      # Initializer current kernel row counter
+      cur_ker_row: int = const 0;
+
+      
+      # Iterate over kernel rows
+      .loop3:
+        b3: bool = lt cur_ker_row kernel_size;
+        br b3 .body3 .done3;
+      .body3: 
+
+        # Initializer current kernel col counter
+        cur_ker_col: int = const 0;
+
+        # Iterate over kernel columns
+        .loop4:
+         b4: bool = lt cur_ker_col kernel_size; # loop through values
+         br b4 .body4 .done4;
+
+        .body4:
+          # Calculate current pixel row.
+          cur_img_r: int = add img_row cur_ker_row;
+          cur_img_r: int = sub cur_img_r start_row;
+
+          # Calculate current pixel col.
+          cur_img_c: int = add img_col cur_ker_col;
+          cur_img_c: int = sub cur_img_c start_row;
+
+          # Calculate current pixel 1D index.
+          past_rows: int = mul cur_img_r img_size;
+          cur_img_idx: int = add past_rows cur_img_c;
+
+          # Load the current pixel.
+          loc: ptr<int> = ptradd img cur_img_idx;
+          pixel: int = load loc;
+
+          # Calculate index of current kernel position
+          past_rows: int = mul cur_ker_row kernel_size;
+          cur_ker_idx: int = add past_rows cur_ker_col;
+
+          # Load the current kernel value.
+          loc: ptr<int> = ptradd kernel cur_ker_idx;
+          cur_ker_val: int = load loc;
+
+          # Apply kernel to pixel
+          prod: int = mul pixel cur_ker_val;
+
+          # Accumulate
+          sum: int = add sum prod;
+
+          # Increment kernel col
+          cur_ker_col: int = add cur_ker_col int1;
+
+          jmp .loop4;
+
+        .done4:
+
+        # Increment kernel row
+        cur_ker_row: int = add cur_ker_row int1;
+
+        jmp .loop3;
+
+      .done3:
+
+      # Store result in output matrix
+      loc: ptr<int> = ptradd output cur_out_idx;
+      store loc sum;
+
+      # Increment index in output matrix
+      cur_out_idx: int = add cur_out_idx int1;
+
+      # Increment image column.
+      img_col: int = add img_col int1;
+
+      jmp .loop2;
+    .done2:
+
+    # Increment image row.
+    img_row: int = add img_row int1;
+
+    jmp .loop1;
+
+  .done1:
+
+  ret output;
+}
+
+# Use a linear congruential generator to generate random numbers.
+# `seq` is the state of the random number generator.
+# Returns a value between 0 and max
+@rand(seq: ptr<int>, max: int) : int {
+  a: int = const 25214903917;
+  c: int = const 11;
+  m: int = const 281474976710656;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  next: int = mul next m;
+  next: int = sub axpc next;
+  store seq next;
+  val: int = div next max;
+  val: int = mul val max;
+  val: int = sub next val;
+  ret val;
+}
+
+# Generates a random array of length `size`
+@randarray(size: int, rng: ptr<int>) : ptr<int> {
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  max: int = const 10;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  val: int = call @rand rng max;
+  loc: ptr<int> = ptradd arr i;
+  store loc val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# Prints an array
+@printarray(size: int, arr: ptr<int>) {
+  i: int = const 0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<int> = ptradd arr i;
+  val: int = load loc;
+  print val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}
