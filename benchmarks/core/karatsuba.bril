@@ -1,0 +1,123 @@
+# ARGS: 43210 98765
+@main(x: int, y: int) {
+  result: int = call @karatsuba x y;
+  print result;
+}
+
+# Implementation of https://en.wikipedia.org/wiki/Karatsuba_algorithm
+@karatsuba(x: int, y: int): int {
+  one: int = const 1;
+  two: int = const 2;
+  base: int = const 10;
+
+  x_digits: int = call @num_digits x;
+  y_digits: int = call @num_digits y;
+  x_1_digit: bool = eq x_digits one;
+  y_1_digit: bool = eq y_digits one;
+  cond: bool = or x_1_digit y_1_digit;
+  br cond .then .else;
+
+.then:
+  result: int = mul x y;
+  jmp .end;
+
+.else:
+  n: int = call @max x_digits y_digits;
+  n2: int = div n two;
+  pow_n2: int = call @pow base n2;
+
+  a: int = div x pow_n2;
+  b: int = call @mod x pow_n2;
+  c: int = div y pow_n2;
+  d: int = call @mod y pow_n2;
+
+  z0: int = call @karatsuba b d;
+  a_plus_b: int = add a b;
+  c_plus_d: int = add c d;
+  z1: int = call @karatsuba a_plus_b c_plus_d;
+  z2: int = call @karatsuba a c;
+
+  hi_shift_factor: int = mul n2 two;
+  hi_shift: int = call @pow base hi_shift_factor;
+  hi_shifted: int = mul z2 hi_shift;
+
+  mid: int = sub z1 z2;
+  mid: int = sub mid z0;
+  mid_shifted: int = mul mid pow_n2;
+
+  result: int = add hi_shifted mid_shifted;
+  result: int = add result z0;
+  jmp .end;
+
+.end:
+  ret result;
+}
+
+@num_digits(n: int): int {
+  one: int = const 1;
+  base: int = const 10;
+  digits: int = id one;
+  power: int = id one;
+
+.while.cond:
+  temp: int = div n power;
+  is_term: bool = lt temp base;
+  br is_term .while.finish .while.body;
+
+.while.body:
+  digits: int = add digits one;
+  power: int = mul power base;
+  jmp .while.cond;
+
+.while.finish:
+  ret digits;
+}
+
+@max(a: int, b: int): int {
+  cond: bool = gt a b;
+  br cond .then .else;
+
+.then:
+  ret a;
+
+.else:
+  ret b;
+}
+
+@mod(a: int, b: int): int {
+  c: int = div a b;
+  d: int = mul c b;
+  remainder: int = sub a d;
+  ret remainder;
+}
+
+# adapted from benchmarks/float/pow.bril to ints
+@pow(x: int, n: int): int {
+  v0: int = id x;
+  res: int = id v0;
+  v2: int = const 0;
+  _i: int = id v2;
+
+.for.cond.1:
+  v3: int = id _i;
+  v4: int = id n;
+  v5: int = const 1;
+  v6: int = sub v4 v5;
+  v7: bool = lt v3 v6;
+  br v7 .for.body.1 .for.end.1;
+
+.for.body.1:
+  v8: int = id res;
+  v9: int = id x;
+  v10: int = mul v8 v9;
+  res: int = id v10;
+  v11: int = id _i;
+  v12: int = const 1;
+  v13: int = add v11 v12;
+  _i: int = id v13;
+  jmp .for.cond.1;
+  
+.for.end.1:
+  v14: int = id res;
+  ret v14;
+}

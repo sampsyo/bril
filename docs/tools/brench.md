@@ -9,11 +9,11 @@ Set Up
 
 Brench is a Python tool.
 There is a `brench/` subdirectory in the Bril repository.
-Get [Flit][] and then type:
+Get [uv][] and then type:
 
-    $ flit install --symlink --user
+    $ uv tool install .
 
-[flit]: https://flit.readthedocs.io/
+[uv]: https://docs.astral.sh/uv/
 
 Configure
 ---------

@@ -257,5 +257,5 @@ let to_json =
   | Alloc (dest, arg) -> build_op ~op:"alloc" ~args:[ arg ] ~dest ()
   | Free arg -> build_op ~op:"free" ~args:[ arg ] ()
   | Load (dest, arg) -> build_op ~op:"load" ~args:[ arg ] ~dest ()
-  | Store (arg1, arg2) -> build_op ~op:"load" ~args:[ arg1; arg2 ] ()
+  | Store (arg1, arg2) -> build_op ~op:"store" ~args:[ arg1; arg2 ] ()
   | PtrAdd (dest, arg1, arg2) -> build_op ~op:"ptradd" ~args:[ arg1; arg2 ] ~dest ()
