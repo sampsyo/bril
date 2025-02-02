@@ -34,6 +34,7 @@ The current benchmarks are:
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `function_call`: For benchmarking the overhead of simple function calls.
+* `gebmm`: Perform binary matrix multiplication of two matrices represented by packed integer arguments.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
