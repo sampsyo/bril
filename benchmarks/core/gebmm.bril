@@ -15,7 +15,7 @@
 # 2791 * 57 = 188
 # So our arguments are
 # ARGS: 2791 57 4 3 2
-@main(a: int, b: int, dim1: int, dim2: int, dim3: int): int {
+@main(a: int, b: int, dim1: int, dim2: int, dim3: int) {
   # Loop over the rows of the first matrix
   one: int = const 1;
   i: int = const -1; # Row index
@@ -54,7 +54,6 @@
   jmp .col_loop;
 .return:
   print output;
-  ret output;
 }
 
 # Extract the i, j-th bit from a matrix m
