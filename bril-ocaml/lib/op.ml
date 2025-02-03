@@ -1,10 +1,10 @@
 open! Core
 
 module Make (M : sig
-  type t [@@deriving compare, equal, sexp_of]
+    type t [@@deriving compare, equal, sexp_of]
 
-  val by_name : (string * t) list
-end) =
+    val by_name : (string * t) list
+  end) =
 struct
   include M
 
@@ -27,6 +27,15 @@ module Binary = struct
       | Ge
       | And
       | Or
+      | FAdd
+      | FMul
+      | FSub
+      | FDiv
+      | FEq
+      | FLt
+      | FGt
+      | FLe
+      | FGe
     [@@deriving compare, equal, sexp_of]
 
     let by_name =
@@ -42,6 +51,15 @@ module Binary = struct
         ("ge", Ge);
         ("and", And);
         ("or", Or);
+        ("fadd", FAdd);
+        ("fmul", FMul);
+        ("fsub", FSub);
+        ("fdiv", FDiv);
+        ("feq", FEq);
+        ("flt", FLt);
+        ("fgt", FGt);
+        ("fle", FLe);
+        ("fge", FGe);
       ]
   end
 
@@ -67,10 +85,24 @@ module Binary = struct
     | Or -> Const.Bool (b1 || b2)
     | _ -> failwithf "[Op.Binary.fold]: type mismatch for operation %s %b %b" (to_string t) b1 b2 ()
 
+  let fold_float t f1 f2 =
+    match t with
+    | FAdd -> Const.Float (f1 +. f2)
+    | FMul -> Const.Float (f1 *. f2)
+    | FSub -> Const.Float (f1 -. f2)
+    | FDiv -> Const.Float (f1 /. f2)
+    | FEq -> Const.Bool (Float.( = ) f1 f2)
+    | FLt -> Const.Bool (Float.( < ) f1 f2)
+    | FGt -> Const.Bool (Float.( > ) f1 f2)
+    | FLe -> Const.Bool (Float.( <= ) f1 f2)
+    | FGe -> Const.Bool (Float.( >= ) f1 f2)
+    | _ -> failwithf "[Op.Binary.fold]: type mismatch for operation %s %f %f" (to_string t) f1 f2 ()
+
   let fold t v1 v2 =
     match (v1, v2) with
     | (Const.Int n1, Const.Int n2) -> fold_int t n1 n2
     | (Const.Bool b1, Const.Bool b2) -> fold_bool t b1 b2
+    | (Const.Float f1, Const.Float f2) -> fold_float t f1 f2
     | _ ->
       failwithf
         "[Op.Binary.fold]: type mismatch between arguments %s and %s"
