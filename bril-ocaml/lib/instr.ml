@@ -154,7 +154,8 @@ let of_json json =
         match json |> member "type" |> Bril_type.of_json with
         | IntType -> Const.Int (json |> member "value" |> to_int)
         | BoolType -> Const.Bool (json |> member "value" |> to_bool)
-        | FloatType -> Const.Float (json |> member "value" |> to_float)
+        | FloatType ->
+          Const.Float (json |> member "value" |> Yojson.Basic.to_string |> Float.of_string)
         | PtrType _ -> failwith "pointer is not supported in constants"
       in
       Const (dest (), const)
