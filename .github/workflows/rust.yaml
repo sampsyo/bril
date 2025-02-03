@@ -69,20 +69,13 @@ jobs:
             cache: pip
             cache-dependency-path: bril-txt/pyproject.toml
 
-      - name: Install Flit
-        run: pip install flit
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Install Python tools
-        run: cd bril-txt ; flit install --symlink
+        run: cd bril-txt ; uv tool install .
 
       - name: Install Turnt
-        # run: pip install turnt  # Use instead if pip turnt version >= 1.7
-        uses: actions/checkout@v4
-        with:
-          repository: cucapra/turnt
-          path: './turnt'
-      - name: Install Turnt part 2
-        run: flit install --symlink
-        working-directory: ./turnt
+        run: uv tool install turnt
 
       - name: Problem matcher
         run: echo '::add-matcher::.github/tap-matcher.json'

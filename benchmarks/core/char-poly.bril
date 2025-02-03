@@ -1,0 +1,196 @@
+# ARGS: 1 2 4 6 -1 10 -1 -2 8
+@main(n1: int, n2: int, n3: int, n4: int, n5: int, n6: int, n7: int, n8: int, n9: int) {
+    nine: int = const 9;
+    four: int = const 4;
+
+    # Pack the input elements into an array with a starting pointer
+    matrix: ptr<int> = call @pack nine n1 n2 n3 n4 n5 n6 n7 n8 n9;
+
+    array: ptr<int> = call @char_poly matrix;
+
+    # Print array
+    call @print_array array four;
+    free array;
+    ret;
+}
+
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int, n6: int, n7: int, n8: int, n9: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;
+
+    # Pack data into array manually. Cannot use loop because of the different var names.     
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n6;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n7;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n8;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n9;
+    ret array;
+}
+
+# Index matrix at row,col
+@matget(matrix: ptr<int>, r: int, c: int): int {
+  three: int = const 3;
+  trip_r: int = mul three r;
+  index: int = add c trip_r;
+  ptr: ptr<int> = ptradd matrix index;
+  res: int = load ptr;
+  ret res;
+}
+
+@mod(a :int, b :int) :int {
+  acc :int = div a b;
+  acc :int = mul b acc;
+  acc :int = sub a acc;
+  ret acc;
+}
+
+@det_2x2(a: int, b: int, c: int, d: int): int {
+    ad: int = mul a d;
+    bc: int = mul b c;
+    res: int = sub ad bc;
+    ret res;
+}
+
+@det(matrix :ptr<int>) :int {
+  two :int = const 2;
+  one :int = const 1;
+  zero :int = const 0;
+  det :int = const 0;
+  i :int = const 0;
+  three :int = const 3;
+
+.loop:
+  to_add :int = call @matget matrix zero i;
+  to_sub :int = id to_add; ## mat[0][i]
+  col :int = add i one;
+  col :int = call @mod col three; ## (i + 1) % 3
+  tmp :int = call @matget matrix one col;
+  to_add :int = mul to_add tmp;
+  tmp :int = call @matget matrix two col;
+  to_sub :int = mul to_sub tmp;
+
+  col :int = add i two;
+  col :int = call @mod col three; ## (i + 2) % 3;
+  tmp :int = call @matget matrix two col;
+  to_add :int = mul to_add tmp;
+  tmp :int = call @matget matrix one col;
+  to_sub :int = mul to_sub tmp;
+  det :int = add det to_add;
+  det :int = sub det to_sub;
+  i :int = add i one;
+  i_lt_three: bool = lt i three;
+  br i_lt_three .loop .done;
+.done:
+  ret det;
+}
+
+@trace(matrix: ptr<int>) : int {
+    zero: int = const 0;
+    one: int = const 1;
+    two: int = const 2;
+    val1: int = call @matget matrix zero zero;
+    val2: int = call @matget matrix one one;
+    val3: int = call @matget matrix two two;
+
+    sum1: int = add val1 val2;
+    sum2: int = add sum1 val3;
+    ret sum2;
+}
+
+@trace_adj(matrix: ptr<int>): int {
+    zero: int = const 0;
+    one: int = const 1;
+    two: int = const 2;
+
+    a_00: int = call @matget matrix zero zero;
+    a_01: int = call @matget matrix zero one;
+    a_02: int = call @matget matrix zero two;
+    a_10: int = call @matget matrix one zero;
+    a_11: int = call @matget matrix one one;
+    a_12: int = call @matget matrix one two;
+    a_20: int = call @matget matrix two zero;
+    a_21: int = call @matget matrix two one;
+    a_22: int = call @matget matrix two two;
+
+    val1: int = call @det_2x2 a_11 a_12 a_21 a_22;
+    val2: int = call @det_2x2 a_00 a_02 a_20 a_22;
+    val3: int = call @det_2x2 a_00 a_01 a_10 a_11;
+
+    sum1: int = add val1 val2;
+    sum2: int = add sum1 val3;
+    ret sum2;
+}
+
+
+# Given a 3x3 matrix A, its characteristic polynomial is:
+# x^3 - tr(A)x^2 + tr(adj(A))x - det(A) = 0
+
+@char_poly(matrix: ptr<int>) : ptr<int> {
+    neg_one: int = const -1;
+
+    cub_1: int = const 1;
+    cub: int = mul neg_one cub_1;
+    quad: int = call @trace matrix;
+    lin_1: int = call @trace_adj matrix;
+    lin: int = mul neg_one lin_1;
+    cons: int = call @det matrix;
+    free matrix;
+
+    one: int = const 1;
+    i: int = const 0;
+    four: int = const 4;
+    array: ptr<int> = alloc four;
+
+    # Pack data into array manually.
+    loc: ptr<int> = ptradd array i;
+    store loc cub;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc quad;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc lin;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc cons;
+    ret array;
+}
+
+@print_array(array: ptr<int>, size: int) {
+    i: int = const 0;
+    one: int = const 1;
+.loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+.body:
+    loc: ptr<int> = ptradd array i;
+    val: int = load loc;
+    print val;
+.loop_end:
+    i: int = add i one;
+    jmp .loop;
+.done:
+    ret;
+}

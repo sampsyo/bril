@@ -1,0 +1,126 @@
+## Ray intersection with an axis-aligned bounding box in 2D.
+## The bounding box is given by coordinates of its two corners: (x_min, y_min) and (x_max, y_max)
+## Ray is defined by its origin, direction (not necessarily unit length) and length t.
+
+# ARGS: 1 2 3 4 0 0 1 1 100
+@main (x_min: float, 
+       y_min: float,
+       x_max: float, 
+       y_max: float, 
+       x_ray_origin: float, 
+       y_ray_origin: float, 
+       x_ray_direction: float, 
+       y_ray_direction: float, 
+       t: float){
+  call @ray_bbox_inter x_min y_min x_max y_max x_ray_origin y_ray_origin x_ray_direction y_ray_direction t;
+}
+
+@ray_bbox_inter(x_min: float, 
+                y_min: float,
+                x_max: float, 
+                y_max: float, 
+                x_ray_origin: float, 
+                y_ray_origin: float, 
+                x_ray_direction: float, 
+                y_ray_direction: float, 
+                t: float) {
+
+  t_min: float = const 0;
+  t_max: float = id t;
+
+  t_x_min_num: float = fsub x_min x_ray_origin;
+  t_x_max_num: float = fsub x_max x_ray_origin;
+
+  t_x_min: float = fdiv t_x_min_num x_ray_direction;
+  t_x_max: float = fdiv t_x_max_num x_ray_direction;
+
+  cond1: bool = fgt t_x_min t_x_max;
+  br cond1 .case1 .case2;
+
+.case1:
+  cond11: bool = fgt t_x_max t_min;
+  br cond11 .case11 .donothing11;
+.case11:
+  t_min: float = id t_x_max;
+  jmp .endcase11;
+.donothing11:
+.endcase11:
+  cond12: bool = flt t_x_min t_max;
+  br cond12 .case12 .donothing12;
+.case12:
+  t_max: float = id t_x_min;
+  jmp .endcase12;
+.donothing12:
+.endcase12:
+  jmp .endpart1;
+
+.case2:
+  cond21: bool = fgt t_x_min t_min;
+  br cond21 .case21 .donothing21;
+.case21:
+  t_min: float = id t_x_min;
+  jmp .endcase21;
+.donothing21:
+.endcase21:
+  cond22: bool = flt t_x_max t_max;
+  br cond22 .case22 .donothing22;
+.case22:
+  t_max: float = id t_x_max;
+  jmp .endcase22;
+.donothing22:
+.endcase22:
+
+.endpart1:
+  t_y_min_num: float = fsub y_min y_ray_origin;
+  t_y_max_num: float = fsub y_max y_ray_origin;
+
+  t_y_min: float = fdiv t_y_min_num y_ray_direction;
+  t_y_max: float = fdiv t_y_max_num y_ray_direction;
+
+  cond3: bool = fgt t_y_min t_y_max;
+  br cond3 .case3 .case4;
+.case3:
+  cond31: bool = fgt t_y_max t_min;
+  br cond31 .case31 .donothing31;
+.case31:
+  t_min: float = id t_y_max;
+  jmp .endcase31;
+.donothing31:
+.endcase31:
+  cond32: bool = flt t_y_min t_max;
+  br cond32 .case32 .donothing32;
+.case32:
+  t_max: float = id t_y_min;
+  jmp .endcase32;
+.donothing32:
+.endcase32:
+  jmp .endpart2;
+
+.case4:
+  cond41: bool = fgt t_y_min t_min;
+  br cond41 .case41 .donothing41;
+.case41:
+  t_min: float = id t_y_min;
+  jmp .endcase41;
+.donothing41:
+.endcase41:
+  cond42: bool = flt t_y_max t_max;
+  br cond42 .case42 .donothing42;
+.case42:
+  t_max: float = id t_y_max;
+  jmp .endcase42;
+.donothing42:
+.endcase42:
+
+.endpart2:
+  finalcheck: bool = fgt t_min t_max;
+  br finalcheck .printfalse .printtrue;
+.printfalse:
+  falsebool: bool = const false;
+  print falsebool;
+  jmp .exit;
+.printtrue:
+  truebool: bool = const true;
+  print truebool;
+.exit:
+}

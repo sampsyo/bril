@@ -1,0 +1,156 @@
+@main {
+  v44: float = const 3.141592653589793238462643383279502884197;
+  pi: float = id v44;
+  v45: float = const 50;
+  degrees: float = id v45;
+  v46: float = id degrees;
+  v47: float = id pi;
+  v48: float = fmul v46 v47;
+  v49: float = const 180;
+  v50: float = fdiv v48 v49;
+  radians: float = id v50;
+  v51: float = id radians;
+  sine: float = call @cordic v51;
+  sine: float = id sine;
+  v52: float = id sine;
+  print v52;
+  v53: int = const 0;
+}
+@cordic(theta: float): float {
+  f0: float = const 0.78539816339744828000;
+  f1: float = const 0.46364760900080609000;
+  f2: float = const 0.24497866312686414000;
+  f3: float = const 0.12435499454676144000;
+  f4: float = const 0.06241880999595735000;
+  f5: float = const 0.03123983343026827700;
+  f6: float = const 0.01562372862047683100;
+  f7: float = const 0.00781234106010111110;
+  f8: float = const 0.00390623013196697180;
+  f9: float = const 0.00195312251647881880;
+  f10: float = const 0.00097656218955931946;
+  f11: float = const 0.00048828121119489829;
+  f12: float = const 0.00024414062014936177;
+  f13: float = const  0.00012207031189367021;
+  f14: float = const 0.00006103515617420877;
+  f15: float = const 0.00003051757811552610;
+  f16: float = const 0.00001525878906131576;
+  f17: float = const 0.00000762939453110197;
+  f18: float = const 0.00000381469726560650;
+  f19: float = const 0.00000190734863281019;
+  size: int = const 20;
+  zero: int = const 0;
+  one: int = const 1;
+
+  tbl: ptr<float> = alloc size;
+  index_ptr: ptr<float> = ptradd tbl zero;
+  store index_ptr f0;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f1;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f2;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f3;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f4;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f5;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f6;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f7;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f8;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f9;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f10;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f11;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f12;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f13;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f14;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f15;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f16;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f17;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f18;
+  index_ptr: ptr<float> = ptradd index_ptr one;
+  store index_ptr f19;
+
+  v0: float = const 1;
+  div: float = id v0;
+  v1: float = const 0;
+  cur_sine: float = id v1;
+  v2: float = const 0.60735;
+  cur_cosine: float = id v2;
+  v4: int = const 0;
+  i: int = id v4;
+.for.cond.3:
+  v5: int = id i;
+  v6: int = const 20;
+  v7: bool = lt v5 v6;
+  br v7 .for.body.3 .for.end.3;
+.for.body.3:
+  tbl_ptr: ptr<float> = ptradd tbl i;
+  tbl_i: float = load tbl_ptr;
+  v8: float = const 0;
+  sigma: float = id v8;
+  v10: float = id theta;
+  v11: float = const 0;
+  v12: bool = flt v10 v11;
+  br v12 .then.9 .else.9;
+.then.9:
+  v13: float = const 0;
+  v14: float = const 1;
+  v15: float = fsub v13 v14;
+  sigma: float = id v15;
+  jmp .endif.9;
+.else.9:
+  v16: float = const 1;
+  sigma: float = id v16;
+.endif.9:
+  v17: float = id cur_cosine;
+  tmp_cosine: float = id v17;
+  v18: float = id tmp_cosine;
+  v19: float = id sigma;
+  v20: float = id div;
+  v21: float = fmul v19 v20;
+  v22: float = id cur_sine;
+  v23: float = fmul v21 v22;
+  v24: float = fsub v18 v23;
+  cur_cosine: float = id v24;
+  v25: float = id tmp_cosine;
+  v26: float = id sigma;
+  v27: float = fmul v25 v26;
+  v28: float = id div;
+  v29: float = fmul v27 v28;
+  v30: float = id cur_sine;
+  v31: float = fadd v29 v30;
+  cur_sine: float = id v31;
+  v32: float = id theta;
+  v33: float = id sigma;
+  v34: float = const 200; # should be tbl[i]
+  v35: float = fmul v33 tbl_i;
+  v36: float = fsub v32 v35;
+  theta: float = id v36;
+  v37: float = id div;
+  v38: float = const 2;
+  v39: float = fdiv v37 v38;
+  div: float = id v39;
+  v40: int = id i;
+  v41: int = const 1;
+  v42: int = add v40 v41;
+  i: int = id v42;
+  jmp .for.cond.3;
+.for.end.3:
+  v43: float = id cur_sine;
+
+  free tbl;
+  ret v43;
+}
