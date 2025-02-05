@@ -85,6 +85,7 @@ The current benchmarks are:
 * `fitsinside`: Output whether or not a rectangle fits inside of another rectangle given the width and height lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
+* `rot13`: Prints the [rot13][rot13] substitution of a character (represented as an integer in the range 0 to 25).
 * `shufflesort`: Sorts a list by shuffling it until it is sorted.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
@@ -129,6 +130,7 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
+[rot13]: https://en.wikipedia.org/wiki/ROT13
 [primitive_root]: https://en.wikipedia.org/wiki/Primitive_root_modulo_n
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
 [palindrome]: https://en.wikipedia.org/wiki/Palindrome
