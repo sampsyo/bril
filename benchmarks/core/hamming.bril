@@ -1,0 +1,43 @@
+# ARGS: 12 6
+
+@lsb (val : int) : int {
+  two : int = const 2;
+  div : int = div val two;
+  mul : int = mul div two;
+  lsb : int = sub val mul;
+  ret lsb;
+}
+
+@hamm_lsb (a : int, b : int) : int {
+  zero : int = const 0;
+  one : int = const 1;
+  a_lsb : int = call @lsb a;
+  b_lsb : int = call @lsb b;
+  xor : int = add a_lsb b_lsb;
+  guard : bool = eq xor one;
+  br guard .if .else;
+.if:
+  ret one;
+.else:
+  ret zero;
+}
+
+@main (a : int, b : int) {
+  zero : int = const 0;
+  two : int = const 2;
+  dist : int = const 0;
+.while:
+  a_done : bool = eq a zero;
+  b_done : bool = eq b zero;
+  done : bool = and a_done b_done;
+  br done .end .body;
+.body:
+  hamm : int = call @hamm_lsb a b;
+  dist : int = add dist hamm;
+  a : int = div a two;
+  b : int = div b two;
+  jmp .while;
+.end:
+  print dist;
+  ret;
+}

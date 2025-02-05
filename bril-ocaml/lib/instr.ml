@@ -42,9 +42,9 @@ let to_string =
       ~f:(Fn.non String.is_empty)
     |> String.concat ~sep:" "
   | Ret arg ->
-    ( match arg with
+    (match arg with
     | Some arg -> sprintf "ret %s" arg
-    | None -> "ret" )
+    | None -> "ret")
   | Print args -> String.concat ~sep:" " ("print" :: args)
   | Nop -> "nop"
   | Phi (dest, alist) ->
@@ -148,12 +148,14 @@ let of_json json =
     let labels () = json |> member "labels" |> to_list_nonnull |> List.map ~f:to_string in
     let arg = List.nth_exn (args ()) in
     let label = List.nth_exn (labels ()) in
-    ( match json |> member "op" |> to_string with
+    (match json |> member "op" |> to_string with
     | "const" ->
       let const =
         match json |> member "type" |> Bril_type.of_json with
         | IntType -> Const.Int (json |> member "value" |> to_int)
         | BoolType -> Const.Bool (json |> member "value" |> to_bool)
+        | FloatType ->
+          Const.Float (json |> member "value" |> Yojson.Basic.to_string |> Float.of_string)
         | PtrType _ -> failwith "pointer is not supported in constants"
       in
       Const (dest (), const)
@@ -178,7 +180,7 @@ let of_json json =
     | "store" -> Store (arg 0, arg 1)
     | "load" -> Load (dest (), arg 0)
     | "ptradd" -> PtrAdd (dest (), arg 0, arg 1)
-    | op -> failwithf "invalid op: %s" op () )
+    | op -> failwithf "invalid op: %s" op ())
   | json -> failwithf "invalid label: %s" (json |> to_string) ()
 
 let to_json =
@@ -187,35 +189,36 @@ let to_json =
   in
   let build_op ?dest ?args ~op () =
     `Assoc
-      ( [ ("op", `String op) ]
-      @ ( match args with
+      ([ ("op", `String op) ]
+      @ (match args with
         | None -> []
-        | Some args -> [ ("args", `List (List.map args ~f:(fun a -> `String a))) ] )
+        | Some args -> [ ("args", `List (List.map args ~f:(fun a -> `String a))) ])
       @
       match dest with
       | None -> []
-      | Some dest -> dest_to_json dest )
+      | Some dest -> dest_to_json dest)
   in
   function
   | Label label -> `Assoc [ ("label", `String label) ]
   | Const (dest, const) ->
     `Assoc
-      ( [
-          ("op", `String "const");
-          ( "value",
-            match const with
-            | Int i -> `Int i
-            | Bool b -> `Bool b );
-        ]
-      @ dest_to_json dest )
+      ([
+         ("op", `String "const");
+         ( "value",
+           match const with
+           | Int i -> `Int i
+           | Bool b -> `Bool b
+           | Float f -> `Float f );
+       ]
+      @ dest_to_json dest)
   | Binary (dest, op, arg1, arg2) ->
     `Assoc
-      ( [ ("op", `String (Op.Binary.to_string op)); ("args", `List [ `String arg1; `String arg2 ]) ]
-      @ dest_to_json dest )
+      ([ ("op", `String (Op.Binary.to_string op)); ("args", `List [ `String arg1; `String arg2 ]) ]
+      @ dest_to_json dest)
   | Unary (dest, op, arg) ->
     `Assoc
-      ( [ ("op", `String (Op.Unary.to_string op)); ("args", `List [ `String arg ]) ]
-      @ dest_to_json dest )
+      ([ ("op", `String (Op.Unary.to_string op)); ("args", `List [ `String arg ]) ]
+      @ dest_to_json dest)
   | Jmp label -> `Assoc [ ("op", `String "jmp"); ("labels", `List [ `String label ]) ]
   | Br (arg, l1, l2) ->
     `Assoc
@@ -226,12 +229,12 @@ let to_json =
       ]
   | Call (dest, func_name, args) ->
     `Assoc
-      ( [
-          ("op", `String "call");
-          ("funcs", `List [ `String func_name ]);
-          ("args", `List (List.map args ~f:(fun arg -> `String arg)));
-        ]
-      @ Option.value_map dest ~default:[] ~f:dest_to_json )
+      ([
+         ("op", `String "call");
+         ("funcs", `List [ `String func_name ]);
+         ("args", `List (List.map args ~f:(fun arg -> `String arg)));
+       ]
+      @ Option.value_map dest ~default:[] ~f:dest_to_json)
   | Ret arg ->
     `Assoc
       [
@@ -243,12 +246,12 @@ let to_json =
   | Nop -> `Assoc [ ("op", `String "nop") ]
   | Phi (dest, alist) ->
     `Assoc
-      ( [
-          ("op", `String "phi");
-          ("labels", `List (List.map alist ~f:(fun (label, _) -> `String label)));
-          ("args", `List (List.map alist ~f:(fun (_, arg) -> `String arg)));
-        ]
-      @ dest_to_json dest )
+      ([
+         ("op", `String "phi");
+         ("labels", `List (List.map alist ~f:(fun (label, _) -> `String label)));
+         ("args", `List (List.map alist ~f:(fun (_, arg) -> `String arg)));
+       ]
+      @ dest_to_json dest)
   | Speculate -> `Assoc [ ("op", `String "speculate") ]
   | Commit -> `Assoc [ ("op", `String "commit") ]
   | Guard (arg, l) ->
@@ -257,5 +260,5 @@ let to_json =
   | Alloc (dest, arg) -> build_op ~op:"alloc" ~args:[ arg ] ~dest ()
   | Free arg -> build_op ~op:"free" ~args:[ arg ] ()
   | Load (dest, arg) -> build_op ~op:"load" ~args:[ arg ] ~dest ()
-  | Store (arg1, arg2) -> build_op ~op:"load" ~args:[ arg1; arg2 ] ()
+  | Store (arg1, arg2) -> build_op ~op:"store" ~args:[ arg1; arg2 ] ()
   | PtrAdd (dest, arg1, arg2) -> build_op ~op:"ptradd" ~args:[ arg1; arg2 ] ~dest ()

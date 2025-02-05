@@ -3,6 +3,7 @@ open! Core
 type t =
   | IntType
   | BoolType
+  | FloatType
   | PtrType of t
 [@@deriving compare, equal, sexp_of]
 

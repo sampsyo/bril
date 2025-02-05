@@ -13,6 +13,15 @@ module Binary : sig
     | Ge
     | And
     | Or
+    | FAdd
+    | FMul
+    | FSub
+    | FDiv
+    | FEq
+    | FLt
+    | FGt
+    | FLe
+    | FGe
   [@@deriving compare, equal, sexp_of]
 
   val is_op : string -> bool
