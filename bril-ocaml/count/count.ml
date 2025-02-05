@@ -14,7 +14,11 @@ let () =
           | Const ((_, bril_type), _)
           | Binary ((_, bril_type), _, _, _)
           | Unary ((_, bril_type), _, _)
-          | Call (Some (_, bril_type), _, _) ->
+          | Call (Some (_, bril_type), _, _)
+          | Phi ((_, bril_type), _)
+          | Alloc ((_, bril_type), _)
+          | Load ((_, bril_type), _)
+          | PtrAdd ((_, bril_type), _, _) ->
             (match bril_type with
             | IntType -> (ints + 1, bools, floats, ptrs)
             | BoolType -> (ints, bools + 1, floats, ptrs)
