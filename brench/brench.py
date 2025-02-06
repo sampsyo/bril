@@ -88,7 +88,9 @@ def brench(config_path, files, jobs):
 
     # Use configured file list, if none is specified via the CLI.
     if not files and 'benchmarks' in config:
-        files = glob.glob(config['benchmarks'], recursive=True)
+        if isinstance(config['benchmarks'], str):
+            files = [config['benchmarks']]
+        files = sum(glob.glob(file, recursive=True) for file in files)
 
     timeout = config.get('timeout', 5)
 
