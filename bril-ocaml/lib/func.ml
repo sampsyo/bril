@@ -43,17 +43,17 @@ let process_instrs instrs =
   let order = List.map blocks ~f:fst in
   let succs =
     List.mapi blocks ~f:(fun i (name, block) ->
-        let next =
-          match List.last_exn block with
-          | Jmp label -> [ label ]
-          | Br (_, l1, l2) -> [ l1; l2 ]
-          | Ret _ -> []
-          | _ ->
-            ( match List.nth blocks (i + 1) with
-            | None -> []
-            | Some (name, _) -> [ name ] )
-        in
-        (name, next))
+      let next =
+        match List.last_exn block with
+        | Jmp label -> [ label ]
+        | Br (_, l1, l2) -> [ l1; l2 ]
+        | Ret _ -> []
+        | _ ->
+          (match List.nth blocks (i + 1) with
+          | None -> []
+          | Some (name, _) -> [ name ])
+      in
+      (name, next))
     |> String.Map.of_alist_exn
   in
   let preds =
@@ -83,40 +83,40 @@ let of_json json =
 
 let to_json t =
   `Assoc
-    ( [
-        ("name", `String t.name);
-        ( "args",
-          `List
-            (List.map t.args ~f:(fun (name, bril_type) ->
-                 `Assoc [ ("name", `String name); ("type", Bril_type.to_json bril_type) ])) );
-        ("instrs", `List (instrs t |> List.map ~f:Instr.to_json));
-      ]
-    @ Option.value_map t.ret_type ~default:[] ~f:(fun t -> [ ("type", Bril_type.to_json t) ]) )
+    ([
+       ("name", `String t.name);
+       ( "args",
+         `List
+           (List.map t.args ~f:(fun (name, bril_type) ->
+              `Assoc [ ("name", `String name); ("type", Bril_type.to_json bril_type) ])) );
+       ("instrs", `List (instrs t |> List.map ~f:Instr.to_json));
+     ]
+    @ Option.value_map t.ret_type ~default:[] ~f:(fun t -> [ ("type", Bril_type.to_json t) ]))
 
 let to_string { name; args; ret_type; blocks; order; _ } =
   let header =
     sprintf
       "@%s%s%s {"
       name
-      ( match args with
+      (match args with
       | [] -> ""
       | args ->
         sprintf
           "(%s)"
-          ( List.map args ~f:(fun (name, bril_type) ->
-                sprintf "%s: %s" name (Bril_type.to_string bril_type))
-          |> String.concat ~sep:", " ) )
+          (List.map args ~f:(fun (name, bril_type) ->
+             sprintf "%s: %s" name (Bril_type.to_string bril_type))
+          |> String.concat ~sep:", "))
       (Option.value_map ret_type ~default:"" ~f:Bril_type.to_string)
   in
   let body =
     order
     |> List.concat_map ~f:(Map.find_exn blocks)
     |> List.map ~f:(fun instr ->
-           sprintf
-             ( match instr with
-             | Label _ -> "%s:"
-             | _ -> "  %s;" )
-             (Instr.to_string instr))
+      sprintf
+        (match instr with
+        | Label _ -> "%s:"
+        | _ -> "  %s;")
+        (Instr.to_string instr))
     |> String.concat ~sep:"\n"
   in
   sprintf "%s\n%s\n}" header body
@@ -139,9 +139,9 @@ module Dominance = struct
         ~init:(Map.map preds ~f:(const String.Set.empty))
         ~f:(fun ~key:vertex ~data:vertices succs ->
           Set.fold vertices ~init:succs ~f:(fun succs pred ->
-              Map.update succs pred ~f:(function
-                  | None -> String.Set.singleton vertex
-                  | Some vertices -> Set.add vertices vertex)))
+            Map.update succs pred ~f:(function
+              | None -> String.Set.singleton vertex
+              | Some vertices -> Set.add vertices vertex)))
 
     let dominators ?(strict = false) { order; preds; succs; _ } =
       let rec postorder (visited, vertices) vertex =
@@ -157,21 +157,21 @@ module Dominance = struct
       let rec compute dom =
         let new_dom =
           List.fold vertices ~init:dom ~f:(fun dom vertex ->
-              if String.equal vertex (List.hd_exn order) then dom
-              else
-                let inter =
-                  Map.find_exn preds vertex
-                  |> List.map ~f:(Map.find_exn dom)
-                  |> List.reduce ~f:Set.inter
-                  |> Option.value ~default:String.Set.empty
-                in
-                Map.set dom ~key:vertex ~data:(Set.add inter vertex))
+            if String.equal vertex (List.hd_exn order) then dom
+            else
+              let inter =
+                Map.find_exn preds vertex
+                |> List.map ~f:(Map.find_exn dom)
+                |> List.reduce ~f:Set.inter
+                |> Option.value ~default:String.Set.empty
+              in
+              Map.set dom ~key:vertex ~data:(Set.add inter vertex))
         in
         if String.Map.equal String.Set.equal dom new_dom then dom else compute new_dom
       in
       let init =
         List.mapi order ~f:(fun i vertex ->
-            (vertex, if i = 0 then String.Set.singleton vertex else String.Set.of_list vertices))
+          (vertex, if i = 0 then String.Set.singleton vertex else String.Set.of_list vertices))
         |> String.Map.of_alist_exn
       in
       compute init |> if strict then Map.mapi ~f:(fun ~key ~data -> Set.remove data key) else Fn.id
@@ -182,25 +182,24 @@ module Dominance = struct
       let dominators = dominators ~strict:true func in
       let preds =
         Map.map dominators ~f:(fun doms ->
-            Set.fold doms ~init:doms ~f:(fun doms dom ->
-                Set.diff doms (Map.find_exn dominators dom)))
+          Set.fold doms ~init:doms ~f:(fun doms dom -> Set.diff doms (Map.find_exn dominators dom)))
       in
       (preds, preds_to_succs preds)
 
     let frontier func =
       let dominated = dominated func in
       Map.map dominated ~f:(fun dominated ->
-          Set.fold dominated ~init:String.Set.empty ~f:(fun frontier vertex ->
-              Map.find_exn func.succs vertex
-              |> List.filter ~f:(Fn.non (Set.mem dominated))
-              |> String.Set.of_list
-              |> Set.union frontier))
+        Set.fold dominated ~init:String.Set.empty ~f:(fun frontier vertex ->
+          Map.find_exn func.succs vertex
+          |> List.filter ~f:(Fn.non (Set.mem dominated))
+          |> String.Set.of_list
+          |> Set.union frontier))
 
     let back_edges func =
       let dominators = dominators func in
       Map.mapi func.succs ~f:(fun ~key ~data ->
-          List.filter data ~f:(fun succ -> Set.mem (Map.find_exn dominators key) succ)
-          |> String.Set.of_list)
+        List.filter data ~f:(fun succ -> Set.mem (Map.find_exn dominators key) succ)
+        |> String.Set.of_list)
   end
 
   module Lists : S with type out := string list = struct
