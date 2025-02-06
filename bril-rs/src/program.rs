@@ -281,7 +281,11 @@ impl Display for Instruction {
                 #[cfg(feature = "position")]
                     pos: _,
             } => {
-                write!(f, "{dest}: {op_type} = {op}")?;
+                write!(f, "{dest}")?;
+                if let Some(op_type) = op_type {
+                    write!(f, ": {op_type}")?;
+                }
+                write!(f, " = {op}")?;
                 for func in funcs {
                     write!(f, " @{func}")?;
                 }

@@ -209,9 +209,15 @@ impl TryFrom<AbstractInstruction> for Instruction {
                 dest,
                 funcs,
                 labels,
-                op_type: op_type
-                    .try_into()
-                    .map_err(|e: ConversionError| e.add_pos(pos.clone()))?,
+                op_type: if let Some(op_type) = op_type {
+                    Some(
+                        op_type
+                            .try_into()
+                            .map_err(|e: ConversionError| e.add_pos(pos.clone()))?,
+                    )
+                } else {
+                    None
+                },
                 #[cfg(feature = "position")]
                 pos: pos.clone(),
                 op: op.parse().map_err(|e: ConversionError| e.add_pos(pos))?,
