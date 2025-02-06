@@ -1,0 +1,7 @@
+@main {
+  a: float = const 2;
+  b: float = const 3;
+  x: int   = const 4;
+  y: bool  = eq x x;
+  print a;
+}
