@@ -222,8 +222,8 @@ pub enum Instruction {
         #[serde(flatten, skip_serializing_if = "Option::is_none")]
         pos: Option<Position>,
         /// Type of variable
-        #[serde(rename = "type")]
-        op_type: Type,
+        #[serde(rename = "type", flatten, skip_serializing_if = "Option::is_none")]
+        op_type: Option<Type>,
     },
     /// <https://capra.cs.cornell.edu/bril/lang/syntax.html#effect-operation>
     Effect {
