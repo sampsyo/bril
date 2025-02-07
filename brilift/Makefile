@@ -19,7 +19,7 @@ release:
 
 .PHONY: test
 test: rt.o release
-	turnt -e brilift-aot -e brilift-jit $(TURNTARGS) $(TESTS)
+	turnt --diff -e brilift-aot -e brilift-jit $(TURNTARGS) $(TESTS)
 
 .PHONY: benchmark
 benchmark: rt.o release
