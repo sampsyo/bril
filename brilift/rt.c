@@ -26,6 +26,8 @@ void _bril_print_float(double f) {
         } else {
             printf("Infinity");
         }
+    } else if (f != 0 && fabs(log10(fabs(f))) >= 10) {
+        printf("%g", f);
     } else {
         printf("%.17lf", f);
     }
