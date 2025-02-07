@@ -594,7 +594,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     let args = instr.args || [];
     let values = args.map(function (i) {
       let val = get(state.env, i);
-      if (Object.is(-0, val)) { return "-0.00000000000000000" };
+      if (typeof val == "number" && Object.is(-0, val)) { return "-" + val.toFixed(17) };
+      if (typeof val == "number" && val != 0 && Math.abs(Math.log10( Math.abs(val))) >= 10) { return val.toExponential() }
       if (typeof val == "number") { return val.toFixed(17) } else {return val.toString()}}
     );
     console.log(...values);
