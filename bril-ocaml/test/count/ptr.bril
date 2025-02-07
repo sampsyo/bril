@@ -1,0 +1,33 @@
+@main {
+  one    : int           = const 1;
+  neg    : int           = const -1;
+  two    : int           = const 2;
+  ten    : int           = const 10;
+
+  ptr1   : ptr<int>      = alloc one;
+  ptr2   : ptr<int>      = alloc one;
+  ptrptr : ptr<ptr<int>> = alloc two;
+
+  store ptr1 ten;
+  store ptr2 two;
+
+  store ptrptr ptr1;
+  ptrptr : ptr<ptr<int>> = ptradd ptrptr one;
+  store ptrptr ptr2;
+  ptrptr : ptr<ptr<int>> = ptradd ptrptr neg;
+
+  newptr1 : ptr<int>      = load ptrptr;
+  newint1 : int           = load newptr1;
+  ptrptr  : ptr<ptr<int>> = ptradd ptrptr one;
+  newptr2 : ptr<int>      = load ptrptr;
+  newint2 : int           = load newptr2;
+  ptrptr  : ptr<ptr<int>> = ptradd ptrptr neg;
+
+  print newint1;
+  print newint2;
+
+  free newptr1;
+  free newptr2;
+  free ptrptr;
+}
+
