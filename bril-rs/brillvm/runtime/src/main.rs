@@ -7,19 +7,18 @@ use std::mem::size_of; */
 
 use core::ffi::{c_char, CStr};
 
-use libc_print::std_name::{print, println};
-
 #[no_mangle]
 pub extern "C" fn _bril_print_int(i: i64) {
-    print!("{}", i);
+    unsafe {
+        libc::printf(c"%lld".as_ptr().cast(), i);
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn _bril_print_bool(b: bool) {
-    if b {
-        print!("true")
-    } else {
-        print!("false")
+    let c_str = if b { c"true" } else { c"false" };
+    unsafe {
+        libc::printf(c_str.as_ptr().cast());
     }
 }
 
@@ -27,25 +26,41 @@ pub extern "C" fn _bril_print_bool(b: bool) {
 pub extern "C" fn _bril_print_float(f: f64) {
     if f.is_infinite() {
         if f.is_sign_negative() {
-            print!("-Infinity");
+            unsafe {
+                libc::printf(c"-Infinity".as_ptr().cast());
+            }
         } else {
-            print!("Infinity");
+            unsafe {
+                libc::printf(c"Infinity".as_ptr().cast());
+            }
         }
     } else if f.is_nan() {
-        print!("NaN");
+        unsafe {
+            libc::printf(c"NaN".as_ptr().cast());
+        }
+    } else if f != 0.0 && (f.abs() >= 1E10 || f.abs() <= 1E-10) {
+        unsafe {
+            libc::printf(c"%g".as_ptr().cast(), f);
+        }
     } else {
-        print!("{:.17}", f);
+        unsafe {
+            libc::printf(c"%.17lf".as_ptr().cast(), f);
+        }
     }
 }
 
 #[no_mangle]
 pub extern "C" fn _bril_print_sep() {
-    print!(" ");
+    unsafe {
+        libc::printf(c" ".as_ptr().cast());
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn _bril_print_end() {
-    println!();
+    unsafe {
+        libc::printf(c"\n".as_ptr().cast());
+    }
 }
 
 #[no_mangle]
