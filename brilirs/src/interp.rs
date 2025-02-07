@@ -199,7 +199,7 @@ impl fmt::Display for Value {
       Self::Float(v) if v.is_infinite() && v.is_sign_positive() => write!(f, "Infinity"),
       Self::Float(v) if v.is_infinite() && v.is_sign_negative() => write!(f, "-Infinity"),
       Self::Float(v) if v != &0.0 && v.abs().log10() >= 10.0 => {
-        f.write_str(format!("{v:e}").replace("e", "e+").as_str())
+        f.write_str(format!("{v:e}").replace('e', "e+").as_str())
       }
       Self::Float(v) if v != &0.0 && v.abs().log10() <= -10.0 => write!(f, "{v:e}"),
       Self::Float(v) => write!(f, "{v:.17}"),
@@ -218,7 +218,7 @@ fn optimized_val_output<T: std::io::Write>(out: &mut T, val: &Value) -> Result<(
     Value::Float(f) if f.is_infinite() && f.is_sign_negative() => out.write_all(b"-Infinity"),
     Value::Float(f) if f.is_nan() => out.write_all(b"NaN"),
     Value::Float(f) if f != &0.0 && f.abs().log10() >= 10.0 => {
-      out.write_all(format!("{f:e}").replace("e", "e+").as_bytes())
+      out.write_all(format!("{f:e}").replace('e', "e+").as_bytes())
     }
     Value::Float(f) if f != &0.0 && f.abs().log10() <= -10.0 => {
       out.write_all(format!("{f:e}").as_bytes())
