@@ -23,7 +23,7 @@ test: rt.o release
 
 .PHONY: benchmark
 benchmark: rt.o release
-	turnt -e brilift-aot -e brilift-jit $(TURNTARGS) $(BENCHMARKS)
+	turnt --diff -e brilift-aot -e brilift-jit $(TURNTARGS) $(BENCHMARKS)
 
 rt.o: rt.c
 	cc $(CFLAGS) -c -o $@ $^
