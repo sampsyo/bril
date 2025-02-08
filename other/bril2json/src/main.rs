@@ -3,13 +3,13 @@
 
 use std::{
     fs,
-    io::{self, stdout, IsTerminal},
+    io::{self},
     path::PathBuf,
 };
 
 use annotate_snippets::{Level, Renderer, Snippet};
 use argh::FromArgs;
-use bril2json::print_program;
+use bril2json::program_to_json;
 use bril_frontend::{lexer::Token, loc::Loc, logos::Logos, parser::Parser};
 use snafu::{whatever, OptionExt, ResultExt, Whatever};
 
@@ -77,7 +77,11 @@ fn main() -> Result<(), Whatever> {
         whatever!("Exiting due to errors");
     };
 
-    print_program(&program);
+    let json = program_to_json(&program);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json).expect("error with serde_json??")
+    );
 
     Ok(())
 }
