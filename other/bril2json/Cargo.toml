@@ -1,8 +1,10 @@
 [package]
 name = "bril2json"
+description = "Convert textual Bril to JSON"
 authors = ["Ethan Uppal"]
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
 
 [dependencies]
 bril-frontend = "0.2.1"
