@@ -11,7 +11,7 @@ use annotate_snippets::{Level, Renderer, Snippet};
 use argh::FromArgs;
 use bril2json::program_to_json;
 use bril_frontend::{lexer::Token, loc::Loc, logos::Logos, parser::Parser};
-use snafu::{whatever, OptionExt, ResultExt, Whatever};
+use snafu::{whatever, ResultExt, Whatever};
 
 /// converts Bril's textual representation to its canonical JSON form
 #[derive(FromArgs)]
