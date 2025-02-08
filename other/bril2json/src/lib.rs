@@ -14,6 +14,14 @@ impl<'a, Item: 'a, I: Iterator<Item = &'a Loc<Item>>> BrilFrontendAstMapExt<Item
     }
 }
 
+fn extract_label_name(name: &str) -> String {
+    name.chars().skip(1).collect()
+}
+
+fn extract_function_name(name: &str) -> String {
+    name.chars().skip(1).collect()
+}
+
 pub fn imported_function_to_json(imported_function: &ast::ImportedFunction) -> Value {
     json!({
         "name": *imported_function.name,
@@ -47,7 +55,7 @@ pub fn type_to_json(ty: &ast::Type) -> Value {
 
 pub fn label_to_json(label: &ast::Label) -> Value {
     json!({
-        "label": *label.name
+        "label": extract_label_name(&label.name)
     })
 }
 
@@ -109,15 +117,15 @@ pub fn decompose_value_operation(
             ast::ValueOperationOp::Alloc(size) => ("alloc", &[size], &[], &[]),
             ast::ValueOperationOp::Load(pointer) => ("load", &[pointer], &[], &[]),
             ast::ValueOperationOp::PtrAdd(pointer, offset) => {
-                ("ptrAdd", &[pointer, offset], &[], &[])
+                ("ptradd", &[pointer, offset], &[], &[])
             }
             ast::ValueOperationOp::Ceq(lhs, rhs) => ("ceq", &[lhs, rhs], &[], &[]),
             ast::ValueOperationOp::Clt(lhs, rhs) => ("clt", &[lhs, rhs], &[], &[]),
             ast::ValueOperationOp::Cle(lhs, rhs) => ("cle", &[lhs, rhs], &[], &[]),
             ast::ValueOperationOp::Cgt(lhs, rhs) => ("cgt", &[lhs, rhs], &[], &[]),
             ast::ValueOperationOp::Cge(lhs, rhs) => ("cge", &[lhs, rhs], &[], &[]),
-            ast::ValueOperationOp::Char2Int(value) => ("add", &[value], &[], &[]),
-            ast::ValueOperationOp::Int2Char(value) => ("add", &[value], &[], &[]),
+            ast::ValueOperationOp::Char2Int(value) => ("char2int", &[value], &[], &[]),
+            ast::ValueOperationOp::Int2Char(value) => ("int2char", &[value], &[], &[]),
         };
 
     (
@@ -128,9 +136,12 @@ pub fn decompose_value_operation(
             .collect(),
         functions
             .iter()
-            .map(|function| function.to_string())
+            .map(|function| extract_function_name(function))
             .collect(),
-        labels.iter().map(|label| label.name.to_string()).collect(),
+        labels
+            .iter()
+            .map(|label| extract_label_name(&label.name))
+            .collect(),
     )
 }
 
@@ -188,11 +199,11 @@ pub fn effect_operation_to_json(effect_operation: &ast::EffectOperation) -> Valu
         .collect::<Vec<_>>();
     let functions = functions
         .iter()
-        .map(|function| function.to_string())
+        .map(|function| extract_function_name(function))
         .collect::<Vec<_>>();
     let labels = labels
         .iter()
-        .map(|label| label.name.to_string())
+        .map(|label| extract_label_name(&label.name))
         .collect::<Vec<_>>();
 
     json!({
@@ -226,7 +237,12 @@ pub fn function_to_json(function: &ast::Function) -> Value {
     let parameters = function
         .parameters
         .iter()
-        .map(|parameter| type_to_json(&parameter.1.ty))
+        .map(|(name, type_annotation)| {
+            json!({
+                "name": **name,
+                "type":type_to_json(&type_annotation.ty)
+            })
+        })
         .collect::<Vec<_>>();
 
     let return_type = function
@@ -237,7 +253,7 @@ pub fn function_to_json(function: &ast::Function) -> Value {
     let body = function.body.iter().loc_map_to_vec(function_code_to_json);
 
     json!({
-        "name": *function.name,
+        "name": extract_function_name(&function.name),
         "args": parameters,
         "type": return_type,
         "instrs": body
