@@ -1,5 +1,4 @@
 // Copyright (C) 2024 Ethan Uppal.
-// SPDX-License-Identifier: MIT
 
 use bril_frontend::{ast, loc::Loc};
 use serde_json::{json, Value};

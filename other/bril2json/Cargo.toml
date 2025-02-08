@@ -5,6 +5,7 @@ authors = ["Ethan Uppal"]
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
+license = "GPL-3.0"
 
 [dependencies]
 bril-frontend = "0.2.1"
