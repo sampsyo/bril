@@ -20,9 +20,9 @@ pub extern "C" fn print_float(f: f64) {
             print!("Infinity");
         }
     } else if f != 0.0 && f.abs().log10() >= 10.0 {
-        print!("{}", format!("{f:e}").replace('e', "e+").as_str());
+        print!("{}", format!("{f:.6e}").replace('e', "e+").as_str());
     } else if f != 0.0 && f.abs().log10() <= -10.0 {
-        print!("{f:e}");
+        print!("{f:.6e}");
     } else {
         print!("{f:.17}");
     }
