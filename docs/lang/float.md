@@ -45,5 +45,10 @@ Printing
 
 The [core `print` operation](./core.md#miscellaneous) prints `float` values with 17 decimal digits of precision, including trailing zeros.
 (This is like using the `%.17lf` format specifier in C's `printf`.)
+Float values switch to printing with exponential notation when the exponent's
+magnitude is 10 or greater. This is printed with 6 decimal digits of precision
+including zeros
+and a `+` or `-` after `e` depending on the sign of the exponent. (This is
+equivalent to `%.6e` with C's `printf` when `f.abs().log10().abs >= 10`)
 Positive and negative zero, while they are equal according to `feq`, look different when printed.
 Not-a-number values are printed as `NaN`; infinite values are printed as the strings `Infinity` or `-Infinity`.
