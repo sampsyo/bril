@@ -40,7 +40,7 @@ pub extern "C" fn _bril_print_float(f: f64) {
         }
     } else if f != 0.0 && (f.abs() >= 1E10 || f.abs() <= 1E-10) {
         unsafe {
-            libc::printf(c"%.6e".as_ptr().cast(), f);
+            libc::printf(c"%.17e".as_ptr().cast(), f);
         }
     } else {
         unsafe {
