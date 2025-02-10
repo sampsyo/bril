@@ -91,7 +91,7 @@ def brench(config_path, files, jobs):
         files = config["benchmarks"]
         if isinstance(files, str):
             files = [files]
-        files = sum([glob.glob(f) for f in files], [])
+        files = sum([glob.glob(f, recursive=True) for f in files], [])
 
     timeout = config.get('timeout', 5)
 
