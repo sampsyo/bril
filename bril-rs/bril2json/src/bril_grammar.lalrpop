@@ -160,6 +160,7 @@ Ident: String = {
     <s : IDENT_TOKEN> => s.to_string(),
     "true" => "true".to_owned(),
     "false" => "false".to_owned(),
+    "from" => "from".to_owned(),
 }
 
 Args: ParsingArgs = {

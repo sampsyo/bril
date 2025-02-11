@@ -5,12 +5,18 @@
   print v0;
   print v1;
   print res;
-  # v2: float = const 1e6;
-  # v3: float = const 1E-6;
-  # v4: float = const -1E+6;
-  # v5: float = const +.11e12;
-  # print v2;
-  # print v3;
-  # print v4;
-  # print v5;
+  v2: float = const 1e6;
+  v3: float = const 1E-6;
+  v4: float = const -1E+6;
+  v5: float = const +.11e12;
+  print v2;
+  print v3;
+  print v4;
+  print v5;
+  v6: float = const 1e21;
+  v7: float = const 1e-21;
+  print v6;
+  print v7;
+  v8: float = const 1e5;
+  print v8;
 }
