@@ -1,4 +1,6 @@
 // Copyright (C) 2024 Ethan Uppal.
+//
+// SPDX-License-Identifier: MIT
 
 use std::{
     fs,

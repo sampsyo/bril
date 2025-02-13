@@ -58,9 +58,9 @@ checksum = "3a8241f3ebb85c056b509d4327ad0358fbbba6ffb340bf388f26350aeda225b1"
 
 [[package]]
 name = "bril-frontend"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9295326bd104f905198bdc7a0985b8e2da0d14bae71e56af51d278d99e27940"
+checksum = "707ba827fcc536784f32240137eee060b8719ca8357c03ac2a8b911c6987508e"
 dependencies = [
  "inform",
  "logos",

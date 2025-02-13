@@ -5,10 +5,10 @@ authors = ["Ethan Uppal"]
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
-license = "GPL-3.0"
+license = "MIT"
 
 [dependencies]
-bril-frontend = "0.2.1"
+bril-frontend = "0.2.2"
 annotate-snippets = "0.11.5"
 snafu = "0.8.5"
 argh = "0.1.13"
