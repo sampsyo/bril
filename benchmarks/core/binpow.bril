@@ -1,0 +1,37 @@
+# ARGS: 2 11
+@main(x: int, n: int) {
+  acc: int = const 1;
+  y: int = call @bin_pow x n acc;
+  print y;
+}
+
+@is_even(x: int): bool {
+  two: int = const 2;
+  half: int = div x two;
+  reconstruct: int = mul half two;
+  same: bool = eq x reconstruct;
+  ret same;
+}
+
+@bin_pow(x: int, n: int, acc: int): int {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  cond0: bool = eq n zero;
+  br cond0 .then.0 .else.0;
+.then.0:
+  ret acc;
+.else.0:
+  is_even: bool = call@is_even n;
+  br is_even .then.1 .else.1;
+.then.1:
+  x2: int = mul x x;
+  n2: int = div n two;
+  val: int = call @bin_pow x2 n2 acc;
+  ret val;
+.else.1:
+  n2: int = sub n one;
+  acc2: int = mul x acc;
+  val: int = call @bin_pow x n2 acc2;
+  ret val;
+}

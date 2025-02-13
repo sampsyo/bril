@@ -77,6 +77,7 @@ Depending on the opcode, the instruction might also have:
 * `args`, a list of strings: the arguments to the operation. These are names of variables.
 * `funcs`, a list of strings: any names of functions referenced by the instruction.
 * `labels`, a list of strings: any label names referenced by the instruction.
+* `value`, a number or boolean: the value, for a constant.
 
 There are three kinds of instructions: constants, value operations, and effect operations.
 

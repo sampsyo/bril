@@ -12,6 +12,7 @@ The current benchmarks are:
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
+* `binpow`: Recursive binary exponentiation. Implemented to be as close to tail-recursive as possible.
 * `birthday`: Simulation of the [birthday][birthday] paradox with an input of `n` people in a given room.
 * `bitwise-ops`: Computes the OR, AND, or XOR between two 64-bit integers. (Three modes: 0 = AND, 1 = OR, 2 = XOR)
 * `bitshift`: Computes the LEFTSHIFT and RIGHTSHIFT for any integer, also implements an efficient pow function for integers
@@ -23,6 +24,7 @@ The current benchmarks are:
 * `cholesky`: Perform Cholesky decomposition of a Hermitian and positive definite matrix. The result is validated by comparing with Python's `scipy.linalg.cholesky`.
 * `collatz`: Print the [Collatz][collatz] sequence starting at *n*. Note: it is not known whether this will terminate for all *n*.
 * `conjugate-gradient`: Uses conjugate gradients to solve `Ax=b` for any arbitrary positive semidefinite `A`.
+* `connected-components`: Compute and print each [connected component][component] in the [adjacency matrix][adj] of an undirected graph.
 * `1dconv`: Creates a kernel and array, performs a one-dimensional convolution operation, and prints out the values in the resulting array.
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `csrmv`: Multiply a sparse matrix in the [Compressed Sparse Row (CSR)][csr] format with a dense vector. The matrix and input vector are generated using a [Linear Feedback Shift Register](https://en.wikipedia.org/wiki/Linear-feedback_shift_register) random number generator.
@@ -40,10 +42,12 @@ The current benchmarks are:
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `fnv1-hash`: Compute the [Fowler-Noll-Vo hash function](https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function) of an integer array.
 * `function_call`: For benchmarking the overhead of simple function calls.
+* `gebmm`: Perform binary matrix multiplication of two matrices represented by packed integer arguments.
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `geometric-sum`: Calculate [Geometric Sum](https://en.wikipedia.org/wiki/Geometric_series) given first term, common ratio and number of terms.
 * `gol`: Print the next iteration for a matrix in [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
+* `hamming`: Computes the hamming distance between two integers.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
@@ -75,12 +79,14 @@ The current benchmarks are:
 * `quickselect`: Find the kth smallest element in an array using the quickselect algorithm.
 * `quicksort`: [Quicksort using the Lomuto partition scheme][qsort].
 * `quicksort-hoare`: Quicksort using [Hoare partioning][qsort-hoare] and median of three pivot selection.
+* `random-walk`: Perform a simple random walk on the integer lattice [`Z^d`][int_lattice]: that is, starting from the origin, repeatedly make a random move of length one in one of the lattice directions. The walk terminates after 100000 steps or upon returning to the start.
 * `ray-bbox-intersection`: Finds whether a ray intersects an axis-aligned bounding box.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
 * `fitsinside`: Output whether or not a rectangle fits inside of another rectangle given the width and height lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
+* `rot13`: Prints the [rot13][rot13] substitution of a character (represented as an integer in the range 0 to 25).
 * `shufflesort`: Sorts a list by shuffling it until it is sorted.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
@@ -109,6 +115,7 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [sievee]: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 [collatz]: https://en.wikipedia.org/wiki/Collatz_conjecture
 [catalan]: https://en.wikipedia.org/wiki/Catalan_number
+[component] : https://en.wikipedia.org/wiki/Component_(graph_theory)
 [ackermann]: https://en.wikipedia.org/wiki/Ackermann_function
 [newton]: https://en.wikipedia.org/wiki/Newton%27s_method
 [matmul]: https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm#Iterative_algorithm
@@ -124,6 +131,7 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [adler32]: https://en.wikipedia.org/wiki/Adler-32
 [uparrow]: https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation
 [riemann]: https://en.wikipedia.org/wiki/Riemann_sum
+[rot13]: https://en.wikipedia.org/wiki/ROT13
 [primitive_root]: https://en.wikipedia.org/wiki/Primitive_root_modulo_n
 [mandelbrot]: https://en.wikipedia.org/wiki/Mandelbrot_set
 [palindrome]: https://en.wikipedia.org/wiki/Palindrome
@@ -139,4 +147,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [montgomery]: https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
 [cordic]: https://en.wikipedia.org/wiki/CORDIC
+[int_lattice]: https://en.wikipedia.org/wiki/Integer_lattice
 

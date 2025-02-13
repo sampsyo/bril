@@ -1,7 +1,7 @@
 # Brilift only supports core Bril for now, so we select those tests &
 # benchmarks.
 TESTS := ../test/interp/core/*.bril ../test/interp/float/*.bril ../test/interp/mem/*.bril ../test/interp/mixed/*[!r].bril # A hack to exclude store-char.bril by excluding any file ending in r.bril
-BENCHMARKS := ../benchmarks/core/*.bril ../benchmarks/float/*.bril ../benchmarks/mem/*.bril ../benchmarks/mixed/*.bril
+BENCHMARKS := ../benchmarks/core/*.bril ../benchmarks/float/*.bril ../benchmarks/mem/*.bril ../benchmarks/mixed/*[!k].bril # A hack to exclude random_walk.bril because it uses the char extension
 
 CFLAGS := $(if $(TARGET),-target $(TARGET))
 BRILFLAGS := $(if $(TARGET),-t $(TARGET))
@@ -23,7 +23,7 @@ test: rt.o release
 
 .PHONY: benchmark
 benchmark: rt.o release
-	turnt -e brilift-aot -e brilift-jit $(TURNTARGS) $(BENCHMARKS)
+	turnt --diff -e brilift-aot -e brilift-jit $(TURNTARGS) $(BENCHMARKS)
 
 rt.o: rt.c
 	cc $(CFLAGS) -c -o $@ $^

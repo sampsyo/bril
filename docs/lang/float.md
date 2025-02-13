@@ -44,6 +44,8 @@ Printing
 --------
 
 The [core `print` operation](./core.md#miscellaneous) prints `float` values with 17 decimal digits of precision, including trailing zeros.
-(This is like using the `%.17lf` format specifier in C's `printf`.)
+For values with magnitude 10¹⁰, it uses exponential notation with suffixes like `e+12`.
+(In terms of C's `printf`, this is like using the `%.17lf` format specifier for small values and `%.17e` for large values, i.e., when `f.abs().log10().abs >= 10`.)
+
 Positive and negative zero, while they are equal according to `feq`, look different when printed.
 Not-a-number values are printed as `NaN`; infinite values are printed as the strings `Infinity` or `-Infinity`.

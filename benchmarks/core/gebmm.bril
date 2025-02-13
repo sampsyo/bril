@@ -1,0 +1,143 @@
+# Input arguments: a, b, dim1, dim2, dim3
+# Multiplies two matrices of dimensions dim1 x dim2 and dim2 x dim3
+# Entries of matrices are single bits and packed into integers
+# Data is stored in row-major order starting at the least significant bit
+# Undefined behavior if dim1 * dim2, dim2 * dim3, or dim1 * dim3 > 53
+
+# Example test input
+# 1 1 0   1 0   0 0
+# 0 0 1 * 0 1 = 1 1
+# 1 1 0   1 1   1 1
+# 1 0 1         0 1
+# In binary we get
+# 0b101011100111 * 0b111001 = 0b10111100
+# In decimal we get
+# 2791 * 57 = 188
+# So our arguments are
+# ARGS: 2791 57 4 3 2
+@main(a: int, b: int, dim1: int, dim2: int, dim3: int) {
+  # Loop over the rows of the first matrix
+  one: int = const 1;
+  i: int = const -1; # Row index
+  output: int = const 0;
+.row_loop:
+  j: int = const -1; # Reset the column index
+  i: int = add i one; # Increment the row index
+  i_lt_dim1: bool = lt i dim1;
+  br i_lt_dim1 .col_loop .return;
+  # Loop over the columns of the second matrix
+.col_loop:
+  k: int = const -1; # Reset the inner loop index
+  j: int = add j one; # Increment the column index
+  dot_product: int = const 0; # Reset the dot product
+  j_lt_dim3: bool = lt j dim3;
+  br j_lt_dim3 .inner_loop .row_loop;
+  # Multiply the i-th row of the first matrix with the j-th column of the second matrix
+.inner_loop:
+  k: int = add k one;
+  k_lt_dim2: bool = lt k dim2;
+  br k_lt_dim2 .multiply .end_col;
+.multiply:
+  a_bit: int = call @mat_bitsel a dim2 i k;
+  b_bit: int = call @mat_bitsel b dim3 k j;
+  a_bit_b_bit: int = mul a_bit b_bit;
+  dot_product: int = add dot_product a_bit_b_bit;
+  jmp .inner_loop;
+.end_col: # Finish the inner loop
+  # Place a 1 in the matrix if the dot product is odd
+  dot_product_odd: bool = call @is_odd dot_product;
+  br dot_product_odd .add_dp .col_loop; # Otherwise, no need to update, just continue
+.add_dp:
+  index: int = call @mat_packed_index i j dim3;
+  dp_bit: int = call @pow2 index;
+  output: int = add output dp_bit;
+  jmp .col_loop;
+.return:
+  print output;
+}
+
+# Extract the i, j-th bit from a matrix m
+@mat_bitsel(m: int, cols: int, i: int, j: int): int {
+  index: int = call @mat_packed_index i j cols;
+  ret_val: bool = call @bitsel m index;
+  br ret_val .ret_one .ret_zero;
+.ret_one:
+  one: int = const 1;
+  ret one;
+.ret_zero:
+  zero: int = const 0;
+  ret zero;
+}
+
+# Calculate the bit index of the i-th row and j-th column in a matrix
+@mat_packed_index(i: int, j: int, cols: int): int {
+  index: int = mul i cols;
+  index: int = add index j;
+  ret index;
+}
+
+# Calculate the power of 2^i
+# Naive implementation that loops i times
+@pow2(n: int): int {
+  one: int = const 1;
+  two: int = const 2;
+  i: int = const 0;
+  result: int = const 1;
+.loop:
+  i_lt_n: bool = lt i n;
+  br i_lt_n .multiply .return;
+.multiply:
+  result: int = mul result two;
+  i: int = add i one;
+  jmp .loop;
+.return:
+  ret result;
+}
+
+# Returns the i-th bit of m (either 1 or 0)
+@bitsel(m: int, i: int): bool {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+.loop:
+  # If i == 0, return the least significant bit
+  i_eq_zero: bool = eq i zero;
+  br i_eq_zero .return .divide;
+.divide:
+  # Divide m by 2 and then loop
+  m: int = div m two;
+  i: int = sub i one;
+  jmp .loop;
+.return:
+  m_bit: bool = call @is_odd m;
+  ret m_bit;
+}
+
+@abs(n: int): int {
+  zero: int = const 0;
+  is_neg: bool = lt n zero;
+  br is_neg .negative .positive;
+.negative:
+  n: int = sub zero n;
+.positive:
+  ret n;
+}
+
+@is_even(n: int): bool {
+  n0: int = call @abs n;
+  one: int = const 1;
+  two: int = const 2;
+  np1: int = add n0 one;
+  half: int = div n0 two;
+  np1_half: int = div np1 two;
+  # n is even if n / 2 == (n + 1) / 2
+  # due to integer division rules
+  ret_val: bool = eq half np1_half;
+  ret ret_val;
+}
+
+@is_odd(n: int): bool {
+  is_even: bool = call @is_even n;
+  ret_val: bool = not is_even;
+  ret ret_val;
+}
