@@ -51,6 +51,9 @@ def check_file(file):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("usage: python3 test.py <oracle> <file>...")
+        sys.exit(1)
     oracle = sys.argv[1]
     files = sys.argv[2:]
 

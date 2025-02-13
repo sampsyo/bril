@@ -81,7 +81,7 @@ fn main() -> Result<(), Whatever> {
     let json = program_to_json(&program);
     println!(
         "{}",
-        serde_json::to_string_pretty(&json).expect("error with serde_json??")
+        serde_json::to_string_pretty(&json).whatever_context("Failed to pretty-print JSON")?
     );
 
     Ok(())
