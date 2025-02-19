@@ -1,15 +1,22 @@
-import * as bril from './bril-ts/bril.ts';
-import {Signature, PolySignature, FuncType, OP_SIGS, TVar, BaseSignature, PolyType} from './bril-ts/types.ts';
-import {readStdin, unreachable} from './bril-ts/util.ts';
+import * as bril from "./bril-ts/bril.ts";
+import {
+  BaseSignature,
+  FuncType,
+  OP_SIGS,
+  PolySignature,
+  PolyType,
+  Signature,
+} from "./bril-ts/types.ts";
+import { readStdin, unreachable } from "./bril-ts/util.ts";
 
 /**
  * The JavaScript types of Bril constant values.
  */
-const CONST_TYPES: {[key: string]: string} = {
-  'int': 'number',
-  'float': 'number',
-  'bool': 'boolean',
-  'char': 'string'
+const CONST_TYPES: { [key: string]: string } = {
+  "int": "number",
+  "float": "number",
+  "bool": "boolean",
+  "char": "string",
 };
 
 type VarEnv = Map<bril.Ident, bril.Type>;
@@ -70,13 +77,18 @@ function err(msg: string, pos: bril.Position | undefined) {
  * Set the type of variable `id` to `type` in `env`, checking for conflicts
  * with the old type for the variable.
  */
-function addType(env: VarEnv, id: bril.Ident, type: bril.Type, pos: bril.Position | undefined) {
-  let oldType = env.get(id);
+function addType(
+  env: VarEnv,
+  id: bril.Ident,
+  type: bril.Type,
+  pos: bril.Position | undefined,
+) {
+  const oldType = env.get(id);
   if (oldType) {
     if (!typeEq(oldType, type)) {
       err(
         `new type ${type} for ${id} conflicts with old type ${oldType}`,
-        pos
+        pos,
       );
     }
   } else {
@@ -94,8 +106,8 @@ function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
   }
 
   // Do we have a type variable to look up?
-  if (typeof type === 'object' && 'tv' in type) {
-    let res = tenv.get(type.tv);
+  if (typeof type === "object" && "tv" in type) {
+    const res = tenv.get(type.tv);
     if (res) {
       return res;
     } else {
@@ -104,8 +116,8 @@ function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
   }
 
   // Do we need to recursively look up inside this type?
-  if (typeof type === 'object' && 'ptr' in type) {
-    return {ptr: typeLookup(type.ptr, tenv)};
+  if (typeof type === "object" && "ptr" in type) {
+    return { ptr: typeLookup(type.ptr, tenv) };
   }
 
   return type;
@@ -120,7 +132,7 @@ function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
 function typeEq(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
   // Shall we bind a type variable in b?
   b = typeLookup(b, tenv);
-  if (typeof b === "object" && 'tv' in b) {
+  if (typeof b === "object" && "tv" in b) {
     if (!tenv) {
       throw `got type variable ${b.tv} but no type environment`;
     }
@@ -145,7 +157,7 @@ function typeFmt(t: PolyType): string {
   if (typeof t === "string") {
     return t;
   } else if (typeof t === "object") {
-    if ('tv' in t) {
+    if ("tv" in t) {
       return t.tv;
     } else {
       return `ptr<${typeFmt(t.ptr)}>`;
@@ -161,26 +173,33 @@ function typeFmt(t: PolyType): string {
  * we try unify the quantified type. `name` optionally gives a name for the
  * operation to use in error messages; otherwise, we use `instr`'s opcode.
  */
-function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignature, name?: string) {
+function checkSig(
+  env: Env,
+  instr: bril.Operation,
+  psig: Signature | PolySignature,
+  name?: string,
+) {
   name = name ?? instr.op;
 
   // Are we handling a polymorphic signature?
   let sig: BaseSignature<PolyType>;
-  let tenv: TypeEnv = new Map();
-  if ('tvar' in psig) {
+  const tenv: TypeEnv = new Map();
+  if ("tvar" in psig) {
     sig = psig.sig;
   } else {
     sig = psig;
   }
 
   // Check destination type.
-  if ('type' in instr) {
+  if ("type" in instr) {
     if (sig.dest) {
       if (!typeEq(instr.type, sig.dest, tenv)) {
         err(
-          `result type of ${name} should be ${typeFmt(typeLookup(sig.dest, tenv))}, ` +
-          `but found ${typeFmt(instr.type)}`,
-          instr.pos
+          `result type of ${name} should be ${
+            typeFmt(typeLookup(sig.dest, tenv))
+          }, ` +
+            `but found ${typeFmt(instr.type)}`,
+          instr.pos,
         );
       }
     } else {
@@ -189,22 +208,24 @@ function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignatu
   } else {
     if (sig.dest) {
       err(
-        `missing result type ${typeFmt(typeLookup(sig.dest, tenv))} for ${name}`,
-        instr.pos
+        `missing result type ${
+          typeFmt(typeLookup(sig.dest, tenv))
+        } for ${name}`,
+        instr.pos,
       );
     }
   }
 
   // Check arguments.
-  let args = instr.args ?? [];
+  const args = instr.args ?? [];
   if (args.length !== sig.args.length) {
     err(
       `${name} expects ${sig.args.length} args, not ${args.length}`,
-      instr.pos
+      instr.pos,
     );
   } else {
     for (let i = 0; i < args.length; ++i) {
-      let argType = env.vars.get(args[i]);
+      const argType = env.vars.get(args[i]);
       if (!argType) {
         err(`${args[i]} (arg ${i}) undefined`, instr.pos);
         continue;
@@ -212,20 +233,23 @@ function checkSig(env: Env, instr: bril.Operation, psig: Signature | PolySignatu
       if (!typeEq(argType, sig.args[i], tenv)) {
         err(
           `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
-          `should have type ${typeFmt(typeLookup(sig.args[i], tenv))}`,
-          instr.pos
+            `should have type ${typeFmt(typeLookup(sig.args[i], tenv))}`,
+          instr.pos,
         );
       }
     }
   }
 
   // Check labels.
-  let labs = instr.labels ?? [];
-  let labCount = sig.labels ?? 0;
+  const labs = instr.labels ?? [];
+  const labCount = sig.labels ?? 0;
   if (labs.length !== labCount) {
-    err(`${instr.op} needs ${labCount} labels; found ${labs.length}`, instr.pos);
+    err(
+      `${instr.op} needs ${labCount} labels; found ${labs.length}`,
+      instr.pos,
+    );
   } else {
-    for (let lab of labs) {
+    for (const lab of labs) {
       if (!env.labels.has(lab)) {
         err(`label .${lab} undefined`, instr.pos);
       }
@@ -238,21 +262,21 @@ type CheckFunc = (env: Env, instr: bril.Operation) => void;
 /**
  * Special-case logic for checking some special functions.
  */
-const INSTR_CHECKS: {[key: string]: CheckFunc} = {
-  print: (env, instr) => {
-    if ('type' in instr) {
+const INSTR_CHECKS: { [key: string]: CheckFunc } = {
+  print: (_env, instr) => {
+    if ("type" in instr) {
       err(`print should have no result type`, instr.pos);
     }
   },
 
   call: (env, instr) => {
-    let funcs = instr.funcs ?? [];
+    const funcs = instr.funcs ?? [];
     if (funcs.length !== 1) {
       err(`call should have one function, not ${funcs.length}`, instr.pos);
       return;
     }
 
-    let funcType = env.funcs.get(funcs[0]);
+    const funcType = env.funcs.get(funcs[0]);
     if (!funcType) {
       err(`function @${funcs[0]} undefined`, instr.pos);
       return;
@@ -266,14 +290,14 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
   },
 
   ret: (env, instr) => {
-    let args = instr.args ?? [];
+    const args = instr.args ?? [];
     if (env.ret) {
       if (args.length === 0) {
         err(`missing return value in function with return type`, instr.pos);
       } else if (args.length !== 1) {
         err(`cannot return multiple values`, instr.pos);
       } else {
-        checkSig(env, instr, {args: [env.ret]});
+        checkSig(env, instr, { args: [env.ret] });
       }
     } else {
       if (args.length !== 0) {
@@ -284,33 +308,35 @@ const INSTR_CHECKS: {[key: string]: CheckFunc} = {
   },
 
   phi: (env, instr) => {
-    let args = instr.args ?? [];
-    if (!('type' in instr)) {
+    const args = instr.args ?? [];
+    if (!("type" in instr)) {
       err(`phi needs a result type`, instr.pos);
       return;
     }
 
     // Construct a signature with uniform argument types.
-    let argTypes: bril.Type[] = [];
+    const argTypes: bril.Type[] = [];
     for (let i = 0; i < args.length; ++i) {
       argTypes.push(instr.type);
     }
-    checkSig(env, instr, {args: argTypes, dest: instr.type, labels: args.length});
+    checkSig(env, instr, {
+      args: argTypes,
+      dest: instr.type,
+      labels: args.length,
+    });
   },
 };
 
 function checkOp(env: Env, instr: bril.Operation) {
-  let args = instr.args ?? [];
-
   // Check for special cases.
-  let check_func = INSTR_CHECKS[instr.op];
+  const check_func = INSTR_CHECKS[instr.op];
   if (check_func) {
     check_func(env, instr);
     return;
   }
 
   // General case: use the operation's signature.
-  let sig = OP_SIGS[instr.op];
+  const sig = OP_SIGS[instr.op];
   if (!sig) {
     err(`unknown opcode ${instr.op}`, instr.pos);
     return;
@@ -319,47 +345,48 @@ function checkOp(env: Env, instr: bril.Operation) {
 }
 
 function checkConst(instr: bril.Constant) {
-  if (!(instr as any)) {
+  if (Object.hasOwn(instr, "type")) {
     err(`const missing type`, instr!.pos);
     return;
   }
 
-  if (typeof instr.type !== 'string') {
+  if (typeof instr.type !== "string") {
     err(`const of non-primitive type ${typeFmt(instr.type)}`, instr.pos);
     return;
   }
 
-  let valType = CONST_TYPES[instr.type];
+  const valType = CONST_TYPES[instr.type];
   if (!valType) {
     err(`unknown const type ${typeFmt(instr.type)}`, instr.pos);
     return;
   }
 
+  // deno-lint-ignore valid-typeof
   if (typeof instr.value !== valType) {
     err(
       `const value ${instr.value} does not match type ${typeFmt(instr.type)}`,
-      instr.pos
+      instr.pos,
     );
   }
 }
 
 function checkFunc(funcs: FuncEnv, func: bril.Function) {
-  let vars: VarEnv = new Map();
-  let labels = new Set<bril.Ident>();
+  const vars: VarEnv = new Map();
+  const labels = new Set<bril.Ident>();
 
   // Initilize the type environment with the arguments.
   if (func.args) {
-    for (let arg of func.args) {
+    for (const arg of func.args) {
       addType(vars, arg.name, arg.type, func.pos);
     }
   }
 
   // Gather up all the types of the local variables and all the label names.
-  if (func.instrs){
-    for (let instr of func.instrs) {
-      if ('dest' in instr) {
+  if (func.instrs) {
+    for (const instr of func.instrs) {
+      if ("dest" in instr) {
         addType(vars, instr.dest, instr.type, instr.pos);
-      } else if ('label' in instr) {
+      } else if ("label" in instr) {
         if (labels.has(instr.label)) {
           err(`multiply defined label .${instr.label}`, instr.pos);
         } else {
@@ -369,12 +396,12 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
     }
 
     // Check each instruction.
-    for (let instr of func.instrs) {
-      if ('op' in instr) {
-        if (instr.op === 'const') {
+    for (const instr of func.instrs) {
+      if ("op" in instr) {
+        if (instr.op === "const") {
           checkConst(instr);
         } else {
-          checkOp({vars, labels, funcs, ret: func.type}, instr);
+          checkOp({ vars, labels, funcs, ret: func.type }, instr);
         }
       }
     }
@@ -383,23 +410,25 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
 
 function checkProg(prog: bril.Program) {
   // Gather up function types.
-  let funcEnv: FuncEnv = new Map();
-  for (let func of prog.functions) {
+  const funcEnv: FuncEnv = new Map();
+  for (const func of prog.functions) {
     funcEnv.set(func.name, {
       ret: func.type,
-      args: func.args?.map(a => a.type) ?? [],
+      args: func.args?.map((a) => a.type) ?? [],
     });
   }
 
   // Check each function.
-  for (let func of prog.functions) {
+  for (const func of prog.functions) {
     checkFunc(funcEnv, func);
 
     // The @main function must not return anything.
-    if (func.name === 'main') {
+    if (func.name === "main") {
       if (func.type) {
-        err(`@main must have no return type; found ${typeFmt(func.type)}`,
-            func.pos);
+        err(
+          `@main must have no return type; found ${typeFmt(func.type)}`,
+          func.pos,
+        );
       }
     }
   }
@@ -409,7 +438,7 @@ async function main() {
   if (Deno.args[0]) {
     CHECK_FILE = Deno.args[0];
   }
-  let prog = JSON.parse(await readStdin()) as bril.Program;
+  const prog = JSON.parse(await readStdin()) as bril.Program;
   checkProg(prog);
   if (ERRORS) {
     Deno.exit(1);
