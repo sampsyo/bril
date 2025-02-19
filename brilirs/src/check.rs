@@ -262,6 +262,38 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value {
+      op: ValueOps::Bits2Float,
+      args,
+      dest,
+      funcs,
+      labels,
+      pos: _,
+      op_type,
+    } => {
+      check_num_args(1, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      check_asmt_type(get_type(env, 0, args)?, &Type::Int)?;
+      check_asmt_type(op_type, &Type::Float)?;
+      update_env(env, dest, op_type)
+    }
+    Instruction::Value {
+      op: ValueOps::Float2Bits,
+      args,
+      dest,
+      funcs,
+      labels,
+      pos: _,
+      op_type,
+    } => {
+      check_num_args(1, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      check_asmt_type(get_type(env, 0, args)?, &Type::Float)?;
+      check_asmt_type(op_type, &Type::Int)?;
+      update_env(env, dest, op_type)
+    }
+    Instruction::Value {
       op: ValueOps::Call,
       dest,
       op_type,
