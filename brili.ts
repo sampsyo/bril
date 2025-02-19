@@ -139,7 +139,8 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   store: 2,
   load: 1,
   ptradd: 2,
-  phi: null,
+  phi: 0,
+  upsilon: 2,
   speculate: 0,
   guard: 1,
   commit: 0,
@@ -337,9 +338,8 @@ type State = {
   // For profiling: a total count of the number of instructions executed.
   icount: bigint;
 
-  // For SSA (phi-node) execution: keep track of recently-seen labels.j
-  curlabel: string | null;
-  lastlabel: string | null;
+  // For SSA: the values of "shadow" variables set by upsilon instructions.
+  ssaEnv: Env;
 
   // For speculation: the state at the point where speculation began.
   specparent: State | null;
@@ -386,8 +386,7 @@ function evalCall(instr: bril.Operation, state: State): Action {
     heap: state.heap,
     funcs: state.funcs,
     icount: state.icount,
-    lastlabel: null,
-    curlabel: null,
+    ssaEnv: new Map(),
     specparent: null, // Speculation not allowed.
   };
   const retVal = evalFunc(func, newState);
@@ -723,32 +722,27 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       return NEXT;
     }
 
+    case "upsilon": {
+      const shadowVal = getArgument(instr, state.env, 1);
+      const shadowDest = instr.args![0];
+      state.ssaEnv.set(shadowDest, shadowVal);
+      return NEXT;
+    }
+
     case "phi": {
-      const labels = instr.labels || [];
-      const args = instr.args || [];
-      if (labels.length != args.length) {
-        throw error(`phi node has unequal numbers of labels and args`);
+      if (instr.args && instr.args.length) {
+        throw error(`phi should have zero arguments`);
       }
-      if (!state.lastlabel) {
-        throw error(`phi node executed with no last label`);
-      }
-      const idx = labels.indexOf(state.lastlabel);
-      if (idx === -1) {
-        // Last label not handled. Leave uninitialized.
-        state.env.delete(instr.dest);
+
+      // Get the "shadow" value for the destination variable.
+      const val = state.ssaEnv.get(instr.dest);
+      if (val === undefined) {
+        throw error(`phi without corresponding upsilon for ${instr.dest}`);
       } else {
-        // Copy the right argument (including an undefined one).
-        if (!instr.args || idx >= instr.args.length) {
-          throw error(`phi node needed at least ${idx + 1} arguments`);
-        }
-        const src = instr.args[idx];
-        const val = state.env.get(src);
-        if (val === undefined) {
-          state.env.delete(instr.dest);
-        } else {
-          state.env.set(instr.dest, val);
-        }
+        state.env.set(instr.dest, val);
+        state.ssaEnv.delete(instr.dest); // Consume the shadow value (enforce SSU).
       }
+
       return NEXT;
     }
 
@@ -858,8 +852,7 @@ function evalFunc(func: bril.Function, state: State): Value | null {
           // count "aborted" instructions.
           Object.assign(state, {
             env: state.specparent.env,
-            lastlabel: state.specparent.lastlabel,
-            curlabel: state.specparent.curlabel,
+            ssaEnv: state.specparent.ssaEnv,
             specparent: state.specparent.specparent,
           });
           break;
@@ -885,10 +878,6 @@ function evalFunc(func: bril.Function, state: State): Value | null {
           throw error(`label ${action.label} not found`);
         }
       }
-    } else if ("label" in line) {
-      // Update CFG tracking for SSA phi nodes.
-      state.lastlabel = state.curlabel;
-      state.curlabel = line.label;
     }
   }
 
@@ -996,8 +985,7 @@ function evalProg(prog: bril.Program) {
     heap,
     env: newEnv,
     icount: BigInt(0),
-    lastlabel: null,
-    curlabel: null,
+    ssaEnv: new Map(),
     specparent: null,
   };
   evalFunc(main, state);
