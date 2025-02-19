@@ -10,6 +10,6 @@ export async function readStdin(): Promise<string> {
   return buf;
 }
 
-export function unreachable(x: never): never {
+export function unreachable(_: never): never {
   throw "impossible case reached";
 }

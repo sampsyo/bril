@@ -15,7 +15,7 @@ export type PrimType = "int" | "bool" | "float" | "char";
 /**
  * Parameterized types. (We only have pointers for now.)
  */
-export type ParamType = {ptr: Type};
+export type ParamType = { ptr: Type };
 
 /**
  * Value types.
@@ -25,7 +25,7 @@ export type Type = PrimType | ParamType;
 /**
  * An (always optional) source code position.
  */
-export type Position = {row: number, col: number};
+export type Position = { row: number; col: number };
 
 /**
  * Common fields in any operation.
@@ -37,6 +37,7 @@ interface Op {
   pos?: Position;
 }
 
+// deno-fmt-ignore
 /**
  * An instruction that does not produce any result.
  */
@@ -46,6 +47,7 @@ export interface EffectOperation extends Op {
     "speculate" | "guard" | "commit";
 }
 
+// deno-fmt-ignore
 /**
  * An operation that produces a value and places its result in the
  * destination variable.
@@ -58,7 +60,7 @@ export interface ValueOperation extends Op {
       "load" | "ptradd" | "alloc" |
       "fadd" | "fmul" | "fsub" | "fdiv" |
       "feq" | "flt" | "fle" | "fgt" | "fge" |
-      "ceq" | "clt" | "cle" | "cgt" | "cge" | 
+      "ceq" | "clt" | "cle" | "cgt" | "cge" |
       "char2int" | "int2char" |
       "phi";
   dest: Ident;
@@ -80,7 +82,6 @@ export interface Constant {
   type: Type;
   pos?: Position;
 }
-
 
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
