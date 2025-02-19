@@ -2,29 +2,31 @@ import * as ts from "https://esm.sh/typescript@5.7.3";
 import * as bril from "./bril-ts/bril.ts";
 import { Builder } from "./bril-ts/builder.ts";
 
+// deno-fmt-ignore
 const opTokens = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
-  [ts.SyntaxKind.PlusToken, ["add", "int"]],
-  [ts.SyntaxKind.AsteriskToken, ["mul", "int"]],
-  [ts.SyntaxKind.MinusToken, ["sub", "int"]],
-  [ts.SyntaxKind.SlashToken, ["div", "int"]],
-  [ts.SyntaxKind.LessThanToken, ["lt", "bool"]],
-  [ts.SyntaxKind.LessThanEqualsToken, ["le", "bool"]],
-  [ts.SyntaxKind.GreaterThanToken, ["gt", "bool"]],
-  [ts.SyntaxKind.GreaterThanEqualsToken, ["ge", "bool"]],
-  [ts.SyntaxKind.EqualsEqualsToken, ["eq", "bool"]],
+  [ts.SyntaxKind.PlusToken,               ["add", "int"]],
+  [ts.SyntaxKind.AsteriskToken,           ["mul", "int"]],
+  [ts.SyntaxKind.MinusToken,              ["sub", "int"]],
+  [ts.SyntaxKind.SlashToken,              ["div", "int"]],
+  [ts.SyntaxKind.LessThanToken,           ["lt", "bool"]],
+  [ts.SyntaxKind.LessThanEqualsToken,     ["le", "bool"]],
+  [ts.SyntaxKind.GreaterThanToken,        ["gt", "bool"]],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  ["ge", "bool"]],
+  [ts.SyntaxKind.EqualsEqualsToken,       ["eq", "bool"]],
   [ts.SyntaxKind.EqualsEqualsEqualsToken, ["eq", "bool"]],
 ]);
 
+// deno-fmt-ignore
 const opTokensFloat = new Map<ts.SyntaxKind, [bril.ValueOpCode, bril.Type]>([
-  [ts.SyntaxKind.PlusToken, ["fadd", "float"]],
-  [ts.SyntaxKind.AsteriskToken, ["fmul", "float"]],
-  [ts.SyntaxKind.MinusToken, ["fsub", "float"]],
-  [ts.SyntaxKind.SlashToken, ["fdiv", "float"]],
-  [ts.SyntaxKind.LessThanToken, ["flt", "bool"]],
-  [ts.SyntaxKind.LessThanEqualsToken, ["fle", "bool"]],
-  [ts.SyntaxKind.GreaterThanToken, ["fgt", "bool"]],
-  [ts.SyntaxKind.GreaterThanEqualsToken, ["fge", "bool"]],
-  [ts.SyntaxKind.EqualsEqualsToken, ["feq", "bool"]],
+  [ts.SyntaxKind.PlusToken,               ["fadd", "float"]],
+  [ts.SyntaxKind.AsteriskToken,           ["fmul", "float"]],
+  [ts.SyntaxKind.MinusToken,              ["fsub", "float"]],
+  [ts.SyntaxKind.SlashToken,              ["fdiv", "float"]],
+  [ts.SyntaxKind.LessThanToken,           ["flt", "bool"]],
+  [ts.SyntaxKind.LessThanEqualsToken,     ["fle", "bool"]],
+  [ts.SyntaxKind.GreaterThanToken,        ["fgt", "bool"]],
+  [ts.SyntaxKind.GreaterThanEqualsToken,  ["fge", "bool"]],
+  [ts.SyntaxKind.EqualsEqualsToken,       ["feq", "bool"]],
   [ts.SyntaxKind.EqualsEqualsEqualsToken, ["feq", "bool"]],
 ]);
 
