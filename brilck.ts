@@ -345,7 +345,7 @@ function checkOp(env: Env, instr: bril.Operation) {
 }
 
 function checkConst(instr: bril.Constant) {
-  if (Object.hasOwn(instr, "type")) {
+  if (!Object.hasOwn(instr, "type")) {
     err(`const missing type`, instr!.pos);
     return;
   }
