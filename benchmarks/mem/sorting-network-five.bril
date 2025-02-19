@@ -1,0 +1,148 @@
+# Optimal sorting network for a list containing 5 elements.
+# Input: a list with 5 elements
+# Output: a list with the same 5 elements in ascending order
+
+# @pack and @print_array are ripped (almost) directly from Jiajie Li's bubblesort benchmark
+
+@pack(n1: int, n2: int, n3: int, n4: int, n5: int) : ptr<int> {
+  one: int = const 1;
+  i: int = const 0;
+  size: int = const 5;
+  array: ptr<int> = alloc size;
+  # Pack data into array manually. Cannot use loop because of the different var name.     
+  loc: ptr<int> = ptradd array i;
+  store loc n1;
+  i: int = add i one;
+  loc: ptr<int> = ptradd array i;
+  store loc n2;
+  i: int = add i one;        
+  loc: ptr<int> = ptradd array i;
+  store loc n3;
+  i: int = add i one;        
+  loc: ptr<int> = ptradd array i;
+  store loc n4;
+  i: int = add i one;        
+  loc: ptr<int> = ptradd array i;
+  store loc n5;
+  ret array;
+}
+
+@print_array(array: ptr<int>, size: int) {
+  i: int = const 0;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  loc: ptr<int> = ptradd array i;
+  val: int = load loc;
+  print val;
+.loop_end:
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}
+
+@compare_and_swap(array: ptr<int>, l: int, r: int) {
+  v0: ptr<int> = id array;
+  v1: int = id l;
+  v2: ptr<int> = ptradd v0 v1;
+  v3: int = load v2;
+  left: int = id v3;
+  v4: ptr<int> = id array;
+  v5: int = id r;
+  v6: ptr<int> = ptradd v4 v5;
+  v7: int = load v6;
+  right: int = id v7;
+  v9: int = id right;
+  v10: int = id left;
+  v11: bool = lt v9 v10;
+  br v11 .then.8 .else.8;
+.then.8:
+  v12: ptr<int> = id array;
+  v13: int = id l;
+  v14: ptr<int> = ptradd v12 v13;
+  v15: int = id right;
+  store v14 v15;
+  v16: int = const 0;
+  v17: ptr<int> = id array;
+  v18: int = id r;
+  v19: ptr<int> = ptradd v17 v18;
+  v20: int = id left;
+  store v19 v20;
+  v21: int = const 0;
+  jmp .endif.8;
+.else.8:
+.endif.8:
+}
+
+@sorting_network_five(array: ptr<int>) {
+  v0: int = const 0;
+  zero: int = id v0;
+  v1: int = const 1;
+  one: int = id v1;
+  v2: int = const 2;
+  two: int = id v2;
+  v3: int = const 3;
+  three: int = id v3;
+  v4: int = const 4;
+  four: int = id v4;
+  v5: ptr<int> = id array;
+  v6: int = id zero;
+  v7: int = id three;
+  call @compare_and_swap v5 v6 v7;
+  v8: int = const 0;
+  v9: ptr<int> = id array;
+  v10: int = id one;
+  v11: int = id four;
+  call @compare_and_swap v9 v10 v11;
+  v12: int = const 0;
+  v13: ptr<int> = id array;
+  v14: int = id zero;
+  v15: int = id two;
+  call @compare_and_swap v13 v14 v15;
+  v16: int = const 0;
+  v17: ptr<int> = id array;
+  v18: int = id one;
+  v19: int = id three;
+  call @compare_and_swap v17 v18 v19;
+  v20: int = const 0;
+  v21: ptr<int> = id array;
+  v22: int = id zero;
+  v23: int = id one;
+  call @compare_and_swap v21 v22 v23;
+  v24: int = const 0;
+  v25: ptr<int> = id array;
+  v26: int = id two;
+  v27: int = id four;
+  call @compare_and_swap v25 v26 v27;
+  v28: int = const 0;
+  v29: ptr<int> = id array;
+  v30: int = id one;
+  v31: int = id two;
+  call @compare_and_swap v29 v30 v31;
+  v32: int = const 0;
+  v33: ptr<int> = id array;
+  v34: int = id three;
+  v35: int = id four;
+  call @compare_and_swap v33 v34 v35;
+  v36: int = const 0;
+  v37: ptr<int> = id array;
+  v38: int = id two;
+  v39: int = id three;
+  call @compare_and_swap v37 v38 v39;
+  v40: int = const 0;
+}
+
+# ARGS: 3 10 1 9 7
+@main(n1: int, n2: int, n3: int, n4: int, n5: int) {
+  array: ptr<int> = call @pack n1 n2 n3 n4 n5;
+
+  call @sorting_network_five array;
+
+  size: int = const 5;
+  call @print_array array size;
+
+  free array;
+}
