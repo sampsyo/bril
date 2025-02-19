@@ -153,14 +153,14 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
         const call = expr as ts.CallExpression;
         const callText = call.expression.getText();
         if (callText === "console.log") {
-          const values = call.arguments.map(emitExpr);
+          const values: bril.ValueInstruction[] = call.arguments.map(emitExpr);
           builder.buildEffect("print", values.map((v) => v.dest));
           return builder.buildInt(0); // Expressions must produce values.
         } else if (memoryBuiltins[callText]) {
           return memoryBuiltins[callText](call);
         } else {
           // Recursively translate arguments.
-          const values = call.arguments.map(emitExpr);
+          const values: bril.ValueInstruction[] = call.arguments.map(emitExpr);
 
           // Check if effect statement, i.e., a call that is not a subexpression
           if (call.parent.kind === ts.SyntaxKind.ExpressionStatement) {
@@ -345,31 +345,31 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
   > = {
     "mem.alloc": (call) => {
       const type = brilType(call, checker);
-      const values = call.arguments.map(emitExpr);
+      const values: bril.ValueInstruction[] = call.arguments.map(emitExpr);
       return builder.buildValue("alloc", type, values.map((v) => v.dest));
     },
 
     "mem.store": (call) => {
-      const values = call.arguments.map(emitExpr);
+      const values: bril.ValueInstruction[] = call.arguments.map(emitExpr);
       builder.buildEffect("store", values.map((v) => v.dest));
       return builder.buildInt(0); // Expressions must produce values.
     },
 
     "mem.load": (call) => {
       const type = brilType(call, checker);
-      const values = call.arguments.map(emitExpr);
+      const values: bril.ValueInstruction[] = call.arguments.map(emitExpr);
       return builder.buildValue("load", type, values.map((v) => v.dest));
     },
 
     "mem.free": (call) => {
-      const values = call.arguments.map(emitExpr);
+      const values: bril.ValueInstruction[] = call.arguments.map(emitExpr);
       builder.buildEffect("free", values.map((v) => v.dest));
       return builder.buildInt(0);
     },
 
     "mem.ptradd": (call) => {
       const type = brilType(call, checker);
-      const values = call.arguments.map(emitExpr);
+      const values: bril.ValueInstruction[] = call.arguments.map(emitExpr);
       return builder.buildValue("ptradd", type, values.map((v) => v.dest));
     },
   };
