@@ -141,6 +141,7 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   ptradd: 2,
   phi: 0,
   upsilon: 2,
+  undef: 0,
   speculate: 0,
   guard: 1,
   commit: 0,
@@ -158,13 +159,18 @@ type Pointer = {
   type: bril.Type;
 };
 
-type Value = boolean | bigint | Pointer | number | string;
+const UNDEF = Symbol("undef");
+
+type Value = boolean | bigint | Pointer | number | string | typeof UNDEF;
 type Env = Map<bril.Ident, Value>;
 
 /**
  * Check whether a run-time value matches the given static type.
  */
 function typeCheck(val: Value, typ: bril.Type): boolean {
+  if (val === UNDEF) {
+    return true;
+  }
   if (typ === "int") {
     return typeof val === "bigint";
   } else if (typ === "bool") {
@@ -318,9 +324,8 @@ function getFunc(instr: bril.Operation, index: number): bril.Ident {
  * communicates control-flow actions back to the top-level interpreter loop.
  */
 type Action =
-  | { "action": "next" }
-  | // Normal execution: just proceed to next instruction.
-  { "action": "jump"; "label": bril.Ident }
+  | { "action": "next" } // Normal execution: just proceed to next instruction.
+  | { "action": "jump"; "label": bril.Ident }
   | { "action": "end"; "ret": Value | null }
   | { "action": "speculate" }
   | { "action": "commit" }
@@ -743,6 +748,11 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         state.ssaEnv.delete(instr.dest); // Consume the shadow value (enforce SSU).
       }
 
+      return NEXT;
+    }
+
+    case "undef": {
+      state.env.set(instr.dest, UNDEF);
       return NEXT;
     }
 

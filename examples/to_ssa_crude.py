@@ -84,7 +84,7 @@ def func_to_ssa(func):
             prelude.insert(0, undef)
         upsilon = {
             "op": "upsilon",
-            "args": [local_name(var, entry), var],
+            "args": [local_name(entry, var), var],
         }
         prelude.append(upsilon)
     func["instrs"][:0] = prelude
