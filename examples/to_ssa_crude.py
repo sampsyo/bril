@@ -20,17 +20,22 @@ def get_types(func):
     return types
 
 
-def local_name(block_name, var_name):
-    return f"{block_name}_{var_name}"
+def local_name(block_name, var_name, index=0):
+    if index:
+        return f"{var_name}_{block_name}_{index}"
+    else:
+        return f"{var_name}_{block_name}"
 
 
 def block_to_ssa(block, block_name, succ_names, var_types):
     # Replace all variables with local names.
+    version = {v: 0 for v in var_types}
     for instr in block:
-        if 'dest' in instr:
-            instr['dest'] = local_name(block_name, instr['dest'])
         if 'args' in instr:
-            instr['args'] = [local_name(block_name, a) for a in instr['args']]
+            instr['args'] = [local_name(block_name, a, version[a]) for a in instr['args']]
+        if 'dest' in instr:
+            version[instr['dest']] += 1
+            instr['dest'] = local_name(block_name, instr['dest'], version[instr['dest']])
 
     # Add phis to the top.
     for var, type in var_types.items():
@@ -42,7 +47,7 @@ def block_to_ssa(block, block_name, succ_names, var_types):
         for var in var_types:
             upsilon = {"op": "upsilon", "args": [
                 local_name(succ, var),
-                local_name(block_name, var),
+                local_name(block_name, var, version[var]),
             ]}
             block.insert(-1, upsilon)
 
