@@ -1,18 +1,56 @@
 @main {
+  done: bool = undef;
+  x: int = undef;
+  zero: int = undef;
+  one: int = undef;
+  upsilon one.entry one;
+  upsilon zero.entry zero;
+  upsilon x.entry x;
+  upsilon done.entry done;
 .entry:
-  one.0: int = const 1;
-  zero.0: int = const 0;
-  x.0: int = const 5;
+  done.entry: bool = phi;
+  x.entry: int = phi;
+  zero.entry: int = phi;
+  one.entry: int = phi;
+  one.entry.1: int = const 1;
+  zero.entry.1: int = const 0;
+  x.entry.1: int = const 5;
+  upsilon one.loop one.entry.1;
+  upsilon zero.loop zero.entry.1;
+  upsilon x.loop x.entry.1;
+  upsilon done.loop done.entry;
   jmp .loop;
 .loop:
-  x.1: int = phi x.0 x.2 .entry .br;
-  done.0: bool = phi __undefined done.1 .entry .br;
-  x.2: int = sub x.1 one.0;
-  done.1: bool = eq x.2 zero.0;
+  done.loop: bool = phi;
+  x.loop: int = phi;
+  zero.loop: int = phi;
+  one.loop: int = phi;
+  x.loop.1: int = sub x.loop one.loop;
+  done.loop.1: bool = eq x.loop.1 zero.loop;
+  upsilon one.br one.loop;
+  upsilon zero.br zero.loop;
+  upsilon x.br x.loop.1;
+  upsilon done.br done.loop.1;
   jmp .br;
 .br:
-  br done.1 .exit .loop;
+  done.br: bool = phi;
+  x.br: int = phi;
+  zero.br: int = phi;
+  one.br: int = phi;
+  upsilon one.exit one.br;
+  upsilon zero.exit zero.br;
+  upsilon x.exit x.br;
+  upsilon done.exit done.br;
+  upsilon one.loop one.br;
+  upsilon zero.loop zero.br;
+  upsilon x.loop x.br;
+  upsilon done.loop done.br;
+  br done.br .exit .loop;
 .exit:
-  print x.2;
+  done.exit: bool = phi;
+  x.exit: int = phi;
+  zero.exit: int = phi;
+  one.exit: int = phi;
+  print x.exit;
   ret;
 }
