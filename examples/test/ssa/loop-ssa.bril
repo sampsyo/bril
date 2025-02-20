@@ -1,15 +1,45 @@
 @main {
+  cond: bool = undef;
+  max: int = undef;
+  i: int = undef;
+  upsilon i.entry i;
+  upsilon max.entry max;
+  upsilon cond.entry cond;
 .entry:
-    i.1: int = const 1;
-    jmp .loop;
+  cond.entry: bool = phi;
+  max.entry: int = phi;
+  i.entry: int = phi;
+  i.entry.1: int = const 1;
+  upsilon i.loop i.entry.1;
+  upsilon max.loop max.entry;
+  upsilon cond.loop cond.entry;
+  jmp .loop;
 .loop:
-    i.2: int = phi .entry i.1 .body i.3;
-    max: int = const 10;
-    cond: bool = lt i.2 max;
-    br cond .body .exit;
+  cond.loop: bool = phi;
+  max.loop: int = phi;
+  i.loop: int = phi;
+  max.loop.1: int = const 10;
+  cond.loop.1: bool = lt i.loop max.loop.1;
+  upsilon i.body i.loop;
+  upsilon max.body max.loop.1;
+  upsilon cond.body cond.loop.1;
+  upsilon i.exit i.loop;
+  upsilon max.exit max.loop.1;
+  upsilon cond.exit cond.loop.1;
+  br cond.loop.1 .body .exit;
 .body:
-    i.3: int = add i.2 i.2;
-    jmp .loop;
+  cond.body: bool = phi;
+  max.body: int = phi;
+  i.body: int = phi;
+  i.body.1: int = add i.body i.body;
+  upsilon i.loop i.body.1;
+  upsilon max.loop max.body;
+  upsilon cond.loop cond.body;
+  jmp .loop;
 .exit:
-    print i.2;
+  cond.exit: bool = phi;
+  max.exit: int = phi;
+  i.exit: int = phi;
+  print i.exit;
+  ret;
 }
