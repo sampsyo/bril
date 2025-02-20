@@ -73,15 +73,18 @@ def func_to_ssa(func):
     # Reassemble the CFG for output.
     func["instrs"] = reassemble(blocks)
 
-    # "Bootstrap" with upsilons for the entry.
+    # "Bootstrap" with upsilons for the entry. The initial values come from
+    # function argument or are undefined.
     entry = next(iter(blocks.keys()))
     arg_names = [a["name"] for a in func.get("args", [])]
     prelude = []
     for var in var_types:
-        src = var if var in arg_names else "undef"
+        if var not in arg_names:
+            undef = {"op": "undef", "dest": var, "type": var_types[var]}
+            prelude.insert(0, undef)
         upsilon = {
             "op": "upsilon",
-            "args": [local_name(var, entry), src],
+            "args": [local_name(var, entry), var],
         }
         prelude.append(upsilon)
     func["instrs"][:0] = prelude
