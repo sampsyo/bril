@@ -21,9 +21,9 @@ def get_types(func):
 
 def local_name(block_name, var_name, index=0):
     if index:
-        return f"{var_name}_{block_name}_{index}"
+        return f"{var_name}.{block_name}.{index}"
     else:
-        return f"{var_name}_{block_name}"
+        return f"{var_name}.{block_name}"
 
 
 def block_to_ssa(block, block_name, succ_names, var_types):
