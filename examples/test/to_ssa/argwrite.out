@@ -1,12 +1,26 @@
 @main(a: int) {
+  cond: bool = undef;
+  upsilon a.b1 a;
+  upsilon cond.b1 cond;
 .b1:
-  cond.0: bool = const true;
-  br cond.0 .here .there;
+  cond.b1: bool = phi;
+  a.b1: int = phi;
+  cond.b1.1: bool = const true;
+  upsilon a.here a.b1;
+  upsilon cond.here cond.b1.1;
+  upsilon a.there a.b1;
+  upsilon cond.there cond.b1.1;
+  br cond.b1.1 .here .there;
 .here:
-  a.0: int = const 5;
+  cond.here: bool = phi;
+  a.here: int = phi;
+  a.here.1: int = const 5;
+  upsilon a.there a.here.1;
+  upsilon cond.there cond.here;
   jmp .there;
 .there:
-  a.1: int = phi a a.0 .b1 .here;
-  print a.1;
+  cond.there: bool = phi;
+  a.there: int = phi;
+  print a.there;
   ret;
 }

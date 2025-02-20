@@ -1,1 +1,7 @@
+[envs.is_ssa]
 command = "bril2json < {filename} | python3 ../../is_ssa.py"
+
+[envs.crude]
+command = "bril2json < {filename} | python3 ../../to_ssa_crude.py | bril2txt"
+output."ssa.bril" = "-"
+default = false

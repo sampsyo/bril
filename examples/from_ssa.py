@@ -1,47 +1,44 @@
 import json
 import sys
 
-from cfg import block_map, add_terminators, add_entry, reassemble
-from form_blocks import form_blocks
+
+def get_phi_types(func):
+    """Collect the type for every phi-node."""
+    types = {}
+    for instr in func["instrs"]:
+        if instr.get("op") == "phi":
+            types[instr["dest"]] = instr["type"]
+    return types
 
 
 def func_from_ssa(func):
-    blocks = block_map(form_blocks(func['instrs']))
-    add_entry(blocks)
-    add_terminators(blocks)
+    types = get_phi_types(func)
 
-    # Replace each phi-node.
-    for block in blocks.values():
-        # Insert copies for each phi.
-        for instr in block:
-            if instr.get('op') == 'phi':
-                dest = instr['dest']
-                type = instr['type']
-                for i, label in enumerate(instr['labels']):
-                    var = instr['args'][i]
+    out_instrs = []
+    for instr in func["instrs"]:
+        if instr.get("op") == "upsilon":
+            # Upsilons become copies.
+            copy = {
+                "op": "id",
+                "dest": instr["args"][0],
+                "type": types[instr["args"][0]],
+                "args": [instr["args"][1]],
+            }
+            out_instrs.append(copy)
+        elif instr.get("op") == "phi":
+            # Phis become no-ops.
+            continue
+        else:
+            out_instrs.append(instr)
 
-                    # Insert a copy in the predecessor block, before the
-                    # terminator.
-                    pred = blocks[label]
-                    pred.insert(-1, {
-                        'op': 'id',
-                        'type': type,
-                        'args': [var],
-                        'dest': dest,
-                    })
-
-        # Remove all phis.
-        new_block = [i for i in block if i.get('op') != 'phi']
-        block[:] = new_block
-
-    func['instrs'] = reassemble(blocks)
+    func["instrs"] = out_instrs
 
 
 def from_ssa(bril):
-    for func in bril['functions']:
+    for func in bril["functions"]:
         func_from_ssa(func)
     return bril
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(json.dumps(from_ssa(json.load(sys.stdin)), indent=2, sort_keys=True))

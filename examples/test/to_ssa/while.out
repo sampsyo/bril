@@ -1,19 +1,54 @@
 @main(a: int) {
+  one: int = undef;
+  is_term: bool = undef;
+  zero: int = undef;
+  upsilon a.entry1 a;
+  upsilon zero.entry1 zero;
+  upsilon is_term.entry1 is_term;
+  upsilon one.entry1 one;
 .entry1:
+  one.entry1: int = phi;
+  is_term.entry1: bool = phi;
+  zero.entry1: int = phi;
+  a.entry1: int = phi;
+  upsilon a.while.cond a.entry1;
+  upsilon zero.while.cond zero.entry1;
+  upsilon is_term.while.cond is_term.entry1;
+  upsilon one.while.cond one.entry1;
   jmp .while.cond;
 .while.cond:
-  zero.0: int = phi __undefined zero.1 .entry1 .while.body;
-  one.0: int = phi __undefined one.1 .entry1 .while.body;
-  is_term.0: bool = phi __undefined is_term.1 .entry1 .while.body;
-  a.0: int = phi a a.1 .entry1 .while.body;
-  zero.1: int = const 0;
-  is_term.1: bool = eq a.0 zero.1;
-  br is_term.1 .while.finish .while.body;
+  one.while.cond: int = phi;
+  is_term.while.cond: bool = phi;
+  zero.while.cond: int = phi;
+  a.while.cond: int = phi;
+  zero.while.cond.1: int = const 0;
+  is_term.while.cond.1: bool = eq a.while.cond zero.while.cond.1;
+  upsilon a.while.finish a.while.cond;
+  upsilon zero.while.finish zero.while.cond.1;
+  upsilon is_term.while.finish is_term.while.cond.1;
+  upsilon one.while.finish one.while.cond;
+  upsilon a.while.body a.while.cond;
+  upsilon zero.while.body zero.while.cond.1;
+  upsilon is_term.while.body is_term.while.cond.1;
+  upsilon one.while.body one.while.cond;
+  br is_term.while.cond.1 .while.finish .while.body;
 .while.body:
-  one.1: int = const 1;
-  a.1: int = sub a.0 one.1;
+  one.while.body: int = phi;
+  is_term.while.body: bool = phi;
+  zero.while.body: int = phi;
+  a.while.body: int = phi;
+  one.while.body.1: int = const 1;
+  a.while.body.1: int = sub a.while.body one.while.body.1;
+  upsilon a.while.cond a.while.body.1;
+  upsilon zero.while.cond zero.while.body;
+  upsilon is_term.while.cond is_term.while.body;
+  upsilon one.while.cond one.while.body.1;
   jmp .while.cond;
 .while.finish:
-  print a.0;
+  one.while.finish: int = phi;
+  is_term.while.finish: bool = phi;
+  zero.while.finish: int = phi;
+  a.while.finish: int = phi;
+  print a.while.finish;
   ret;
 }
