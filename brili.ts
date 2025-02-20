@@ -168,9 +168,6 @@ type Env = Map<bril.Ident, Value>;
  * Check whether a run-time value matches the given static type.
  */
 function typeCheck(val: Value, typ: bril.Type): boolean {
-  if (val === UNDEF) {
-    return true;
-  }
   if (typ === "int") {
     return typeof val === "bigint";
   } else if (typ === "bool") {
