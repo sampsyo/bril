@@ -65,12 +65,26 @@ def func_to_ssa(func):
     add_terminators(blocks)
     succ = {name: successors(block[-1]) for name, block in blocks.items()}
 
+    # Rename all variables within the block and insert upsilon/phi.
     var_types = get_types(func)
     for name, block in blocks.items():
         block_to_ssa(block, name, succ[name], var_types)
 
     # Reassemble the CFG for output.
     func["instrs"] = reassemble(blocks)
+
+    # "Bootstrap" with upsilons for the entry.
+    entry = next(iter(blocks.keys()))
+    arg_names = [a["name"] for a in func.get("args", [])]
+    prelude = []
+    for var in var_types:
+        src = var if var in arg_names else "undef"
+        upsilon = {
+            "op": "upsilon",
+            "args": [local_name(var, entry), src],
+        }
+        prelude.append(upsilon)
+    func["instrs"][:0] = prelude
 
 
 def to_ssa(bril):
