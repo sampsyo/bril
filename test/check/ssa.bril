@@ -1,13 +1,24 @@
 @main {
 .a:
   x: int = const 4;
+  upsilon z x;
   jmp .c;
 .b:
   y: int = const 2;
+  upsilon z y;
   jmp .c;
 .c:
-  z1: int = phi .a x .b y;
-  z2: float = phi .a x .b y;
-  z3: int = phi .a x y;
-  z3: int = phi .a x .b;
+  z: int = phi;
+  z: float = phi;
+  z: int = phi x;
+}
+
+@more {
+  b: int = const 1;
+  c: int = const 2;
+  d: float = const 3.14;
+
+  upsilon;
+  a: int = upsilon b c;
+  upsilon b d;
 }
