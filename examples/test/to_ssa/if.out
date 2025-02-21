@@ -1,15 +1,33 @@
 @main(cond: bool) {
+  a: int = undef;
+  upsilon cond.entry cond;
+  upsilon a.entry a;
 .entry:
-  a.0: int = const 47;
-  br cond .left .right;
+  a.entry: int = phi;
+  cond.entry: bool = phi;
+  a.entry.1: int = const 47;
+  upsilon cond.left cond.entry;
+  upsilon a.left a.entry.1;
+  upsilon cond.right cond.entry;
+  upsilon a.right a.entry.1;
+  br cond.entry .left .right;
 .left:
-  a.2: int = add a.0 a.0;
+  a.left: int = phi;
+  cond.left: bool = phi;
+  a.left.1: int = add a.left a.left;
+  upsilon cond.exit cond.left;
+  upsilon a.exit a.left.1;
   jmp .exit;
 .right:
-  a.3: int = mul a.0 a.0;
+  a.right: int = phi;
+  cond.right: bool = phi;
+  a.right.1: int = mul a.right a.right;
+  upsilon cond.exit cond.right;
+  upsilon a.exit a.right.1;
   jmp .exit;
 .exit:
-  a.1: int = phi a.2 a.3 .left .right;
-  print a.1;
+  a.exit: int = phi;
+  cond.exit: bool = phi;
+  print a.exit;
   ret;
 }

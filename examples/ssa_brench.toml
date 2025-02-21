@@ -1,18 +1,15 @@
 extract = 'total_dyn_inst: (\d+)'
-benchmarks = '../benchmarks/*.bril'
+benchmarks = '../benchmarks/core/*.bril'
+timeout = 30
 
 [runs.baseline]
-pipeline = [
-    "bril2json",
-    "python tdce.py tdce+",
-    "brili -p {args}",
-]
+pipeline = ["bril2json", "python tdce.py tdce+", "brili -p {args}"]
 
 [runs.ssa]
 pipeline = [
     "bril2json",
     "python tdce.py tdce+",
-    "python to_ssa.py",
+    "python to_ssa_crude.py",
     "python tdce.py tdce+",
     "brili -p {args}",
 ]
@@ -21,7 +18,7 @@ pipeline = [
 pipeline = [
     "bril2json",
     "python tdce.py tdce+",
-    "python to_ssa.py",
+    "python to_ssa_crude.py",
     "python tdce.py tdce+",
     "python from_ssa.py",
     "python tdce.py tdce+",
