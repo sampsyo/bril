@@ -1,0 +1,5 @@
+@main {
+  x: int = undef;
+  y: int = const 2;
+  z: int = add x y;
+}
