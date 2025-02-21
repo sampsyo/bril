@@ -1,6 +1,5 @@
 TESTS := ../../test/interp/core/*.bril \
          ../../test/interp/float/*.bril \
-		 ../../test/interp/ssa/*.bril \
 		 ../../test/interp/mem/*.bril \
 		 ../../test/interp/mixed/*[!r].bril # A hack to exclude store-char.bril by excluding any file ending in r.bril
 

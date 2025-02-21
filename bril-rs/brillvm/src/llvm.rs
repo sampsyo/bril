@@ -6,7 +6,7 @@ use inkwell::{
     context::Context,
     module::Module,
     types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
-    values::{BasicValue, BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
+    values::{BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
     AddressSpace, FloatPredicate, IntPredicate,
 };
 
@@ -1038,7 +1038,7 @@ fn build_instruction<'a, 'b>(
                 args,
             );
         }
-        Instruction::Value {
+        /* Instruction::Value {
             args,
             dest,
             funcs: _,
@@ -1095,7 +1095,7 @@ fn build_instruction<'a, 'b>(
                     ),
                 )
                 .unwrap();
-        }
+        } */
         Instruction::Value {
             args,
             dest,
