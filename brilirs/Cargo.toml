@@ -2,7 +2,7 @@
 name = "brilirs"
 version = "0.1.0"
 authors = ["Wil Thomason <wil.thomason@gmail.com>"]
-edition = "2021"
+edition = "2024"
 description = "A fast interpreter for the Bril language written in Rust"
 readme = "README.md"
 repository = "https://github.com/sampsyo/bril"

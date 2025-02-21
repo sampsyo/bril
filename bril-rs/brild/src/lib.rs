@@ -10,15 +10,15 @@ pub mod cli;
 pub mod error;
 
 use std::collections::HashMap;
-use std::fs::{canonicalize, File};
+use std::fs::{File, canonicalize};
 use std::hash::BuildHasher;
 use std::path::{Path, PathBuf};
 
-use bril2json::parse_abstract_program_from_read;
 use bril_rs::{
-    load_abstract_program_from_read, AbstractCode, AbstractFunction, AbstractInstruction,
-    AbstractProgram, ImportedFunction,
+    AbstractCode, AbstractFunction, AbstractInstruction, AbstractProgram, ImportedFunction,
+    load_abstract_program_from_read,
 };
+use bril2json::parse_abstract_program_from_read;
 
 use crate::error::BrildError;
 
@@ -217,7 +217,7 @@ pub fn do_import<S: BuildHasher>(
             Some(_) | None => {
                 return Err(BrildError::MissingOrUnknownFileExtension(
                     canonical_path.clone(),
-                ))
+                ));
             }
         };
 
