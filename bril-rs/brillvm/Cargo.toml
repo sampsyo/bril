@@ -20,7 +20,7 @@ inkwell = { version = "0.5", features = ["llvm18-0"] }
 
 [dependencies.bril-rs]
 path = ".."
-features = ["float", "ssa", "memory"]
+features = ["float", "memory"]
 
 # Need to set a default `main` to build `rt` bin
 [[bin]]
