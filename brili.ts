@@ -633,6 +633,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       const args = instr.args || [];
       const values = args.map(function (i) {
         const val = get(state.env, i);
+        if (val === UNDEF) {
+          throw error(`print of undefined value`);
+        }
         if (typeof val == "number") {
           if (Object.is(-0.0, val)) return "-" + val.toFixed(17);
           else if (val != 0.0 && Math.abs(Math.log10(Math.abs(val))) >= 10) {
