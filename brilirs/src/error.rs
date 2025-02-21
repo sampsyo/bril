@@ -19,8 +19,6 @@ pub enum InterpError {
   MissingLabel(String),
   #[error("no main function defined, doing nothing")]
   NoMainFunction,
-  #[error("phi node has unequal numbers of labels and args")]
-  UnequalPhiNode,
   #[error("char must have one character")]
   NotOneChar,
   #[error("multiple functions of the same name found")]
@@ -47,8 +45,8 @@ pub enum InterpError {
   FuncNotFound(String),
   #[error("undefined variable `{0}`")]
   VarUndefined(String),
-  #[error("Label `{0}` for phi node not found")]
-  PhiMissingLabel(String),
+  #[error("phi without corresponding upsilon")]
+  PhiWithoutUpsilon,
   #[error("unspecified pointer type `{0:?}`")]
   ExpectedPointerType(bril_rs::Type), // found type
   #[error("Expected type `{0:?}` for function argument, found `{1:?}`")]
