@@ -458,7 +458,10 @@ impl CompileEnv<'_> {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
                     builder.ins().call(self.rt_refs[RTFunc::Free], &[ptr_arg]);
                 }
-                bril::EffectOps::Speculate | bril::EffectOps::Commit | bril::EffectOps::Guard => {
+                bril::EffectOps::Speculate
+                | bril::EffectOps::Commit
+                | bril::EffectOps::Guard
+                | bril::EffectOps::Upsilon => {
                     unimplemented!()
                 }
             },
@@ -557,6 +560,7 @@ impl CompileEnv<'_> {
                     builder.def_var(self.vars[dest], res);
                 }
                 bril::ValueOps::Phi
+                | bril::ValueOps::Undef
                 | bril::ValueOps::Ceq
                 | bril::ValueOps::Clt
                 | bril::ValueOps::Cgt
