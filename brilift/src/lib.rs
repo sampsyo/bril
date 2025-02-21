@@ -1,7 +1,7 @@
 mod rt;
 pub mod translator;
 
-use crate::translator::{find_func, Translator};
+use crate::translator::{Translator, find_func};
 use bril_rs as bril;
 use bril_rs::Program;
 use cranelift_jit::JITModule;

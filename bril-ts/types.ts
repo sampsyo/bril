@@ -124,6 +124,20 @@ export const OP_SIGS: { [key: string]: Signature | PolySignature } = {
   "commit": { args: [] },
   "guard": { args: ["bool"], labels: 1 },
 
+  // SSA.
+  "upsilon": {
+    tvar: { tv: "T" },
+    sig: { args: [{ tv: "T" }, { tv: "T" }] },
+  },
+  "phi": {
+    tvar: { tv: "T" },
+    sig: { args: [], dest: { tv: "T" } },
+  },
+  "undef": {
+    tvar: { tv: "T" },
+    sig: { args: [], dest: { tv: "T" } },
+  },
+
   // Character.
   "ceq": { args: ["char", "char"], dest: "bool" },
   "clt": { args: ["char", "char"], dest: "bool" },

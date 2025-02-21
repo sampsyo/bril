@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fs::canonicalize;
 use std::path::PathBuf;
 
-use bril_rs::{load_abstract_program, output_abstract_program, AbstractProgram};
+use bril_rs::{AbstractProgram, load_abstract_program, output_abstract_program};
 use brild::{cli::Cli, do_import, error::BrildError, handle_program};
 
 fn main() -> Result<(), BrildError> {
