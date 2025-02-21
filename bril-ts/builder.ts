@@ -1,4 +1,4 @@
-import * as bril from './bril.ts';
+import * as bril from "./bril.ts";
 
 /**
  * A utility for building up Bril programs.
@@ -18,9 +18,9 @@ export class Builder {
   buildFunction(name: string, args: bril.Argument[], type?: bril.Type) {
     let func: bril.Function;
     if (type === undefined) {
-      func = {name: name, instrs: [], args: args};
+      func = { name: name, instrs: [], args: args };
     } else {
-      func = {name: name, instrs: [], args: args, type: type};
+      func = { name: name, instrs: [], args: args, type: type };
     }
     this.program.functions.push(func);
     this.curFunction = func;
@@ -32,11 +32,16 @@ export class Builder {
    * Build an operation instruction that produces a result. If the name is
    * omitted, a fresh variable is chosen automatically.
    */
-  buildValue(op: bril.ValueOpCode, type: bril.Type,
-             args: string[], funcs?: string[], labels?: string[],
-             dest?: string) {
+  buildValue(
+    op: bril.ValueOpCode,
+    type: bril.Type,
+    args: string[],
+    funcs?: string[],
+    labels?: string[],
+    dest?: string,
+  ) {
     dest = dest || this.freshVar();
-    let instr: bril.ValueOperation = { op, dest, type, args, funcs, labels };
+    const instr: bril.ValueOperation = { op, dest, type, args, funcs, labels };
     this.insert(instr);
     return instr;
   }
@@ -44,9 +49,13 @@ export class Builder {
   /**
    * Build a non-value-producing (side-effecting) operation instruction.
    */
-  buildEffect(op: bril.EffectOpCode,
-              args: string[], funcs?: string[], labels?: string[]) {
-    let instr: bril.EffectOperation = { op, args, funcs, labels };
+  buildEffect(
+    op: bril.EffectOpCode,
+    args: string[],
+    funcs?: string[],
+    labels?: string[],
+  ) {
+    const instr: bril.EffectOperation = { op, args, funcs, labels };
     this.insert(instr);
     return instr;
   }
@@ -55,12 +64,24 @@ export class Builder {
    * Build a function call operation. If a type is specified, the call
    * produces a return value.
    */
-  buildCall(func: string, args: string[],
-            type: bril.Type, dest?: string): bril.ValueOperation;
-  buildCall(func: string, args: string[],
-            type?: undefined, dest?: string): bril.EffectOperation;
-  buildCall(func: string, args: string[],
-            type?: bril.Type, dest?: string): bril.Operation {
+  buildCall(
+    func: string,
+    args: string[],
+    type: bril.Type,
+    dest?: string,
+  ): bril.ValueOperation;
+  buildCall(
+    func: string,
+    args: string[],
+    type?: undefined,
+    dest?: string,
+  ): bril.EffectOperation;
+  buildCall(
+    func: string,
+    args: string[],
+    type?: bril.Type,
+    dest?: string,
+  ): bril.Operation {
     if (type) {
       return this.buildValue("call", type, args, [func], undefined, dest);
     } else {
@@ -73,7 +94,7 @@ export class Builder {
    */
   buildConst(value: bril.Value, type: bril.Type, dest?: string) {
     dest = dest || this.freshVar();
-    let instr: bril.Constant = { op: "const", value, dest, type };
+    const instr: bril.Constant = { op: "const", value, dest, type };
     this.insert(instr);
     return instr;
   }
@@ -110,7 +131,7 @@ export class Builder {
    * Add a label to the function at the current position.
    */
   buildLabel(name: string) {
-    let label = {label: name};
+    const label = { label: name };
     this.insert(label);
   }
 
@@ -130,31 +151,32 @@ export class Builder {
    */
   getLastInstr(): bril.Instruction | undefined {
     if (!this.curFunction) {
-      return undefined
+      return undefined;
     }
 
     if (!this.curFunction.instrs) {
-      return undefined
+      return undefined;
     }
 
     if (this.curFunction.instrs.length === 0) {
-      return undefined
+      return undefined;
     }
 
-    const last_instr : bril.Instruction | bril.Label = this.curFunction.instrs[this.curFunction.instrs.length - 1];
+    const last_instr: bril.Instruction | bril.Label =
+      this.curFunction.instrs[this.curFunction.instrs.length - 1];
 
-    if ('label' in last_instr) {
-      return undefined
+    if ("label" in last_instr) {
+      return undefined;
     }
 
-    return last_instr
+    return last_instr;
   }
 
   /**
    * Generate an unused variable name.
    */
   freshVar() {
-    let out = 'v' + this.nextFresh.toString();
+    const out = "v" + this.nextFresh.toString();
     this.nextFresh += 1;
     return out;
   }
@@ -163,7 +185,7 @@ export class Builder {
    * Generate an unused suffix.
    */
   freshSuffix() {
-    let out = '.' + this.nextFresh.toString();
+    const out = "." + this.nextFresh.toString();
     this.nextFresh += 1;
     return out;
   }
