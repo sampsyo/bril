@@ -55,7 +55,7 @@ fn mangle_instr(code: AbstractCode, name_resolution_map: &HashMap<String, String
                 .map(|f| {
                     name_resolution_map
                         .get(&f)
-                        .expect("Could not find name for {f}")
+                        .unwrap_or_else(|| panic!("Could not find name for {f}"))
                         .clone()
                 })
                 .collect(),
@@ -78,7 +78,7 @@ fn mangle_instr(code: AbstractCode, name_resolution_map: &HashMap<String, String
                 .map(|f| {
                     name_resolution_map
                         .get(&f)
-                        .expect("Could not find name for {f}")
+                        .unwrap_or_else(|| panic!("Could not find name for {f}"))
                         .clone()
                 })
                 .collect(),
