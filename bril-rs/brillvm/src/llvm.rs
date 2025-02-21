@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use inkwell::{
+    AddressSpace, FloatPredicate, IntPredicate,
     basic_block::BasicBlock,
     builder::Builder,
     context::Context,
     module::Module,
     types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
     values::{BasicValueEnum, FloatValue, FunctionValue, IntValue, PointerValue},
-    AddressSpace, FloatPredicate, IntPredicate,
 };
 
 use bril_rs::{
@@ -106,7 +106,9 @@ impl<'a, 'b> Heap<'a, 'b> {
                 "`{}` had type `{}` but is now being assigned type `{}`",
                 name, result.ty, ty
             );
-            unimplemented!("brillvm does not currently support variables within a function having different types. Implementing this might require a control flow analysis? Feel free to try and implement this.")
+            unimplemented!(
+                "brillvm does not currently support variables within a function having different types. Implementing this might require a control flow analysis? Feel free to try and implement this."
+            )
         }
         result
     }

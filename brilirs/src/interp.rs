@@ -1,7 +1,7 @@
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
-use bril2json::escape_control_chars;
 use bril_rs::Instruction;
+use bril2json::escape_control_chars;
 
 use fxhash::FxHashMap;
 
@@ -724,7 +724,7 @@ fn parse_args(
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Bool,
                 (*inputs.get(index).unwrap()).to_string(),
-              ))
+              ));
             }
             Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
           };
@@ -736,7 +736,7 @@ fn parse_args(
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Int,
                 (*inputs.get(index).unwrap()).to_string(),
-              ))
+              ));
             }
             Ok(i) => env.set(*arg_as_num, Value::Int(i)),
           };
@@ -748,7 +748,7 @@ fn parse_args(
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Float,
                 (*inputs.get(index).unwrap()).to_string(),
-              ))
+              ));
             }
             Ok(f) => env.set(*arg_as_num, Value::Float(f)),
           };

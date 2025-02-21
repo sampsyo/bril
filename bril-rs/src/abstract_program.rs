@@ -1,7 +1,7 @@
 use std::fmt::{self, Display, Formatter};
 use std::marker::PhantomData;
 
-use crate::{program::Literal, ConstOps};
+use crate::{ConstOps, program::Literal};
 
 #[cfg(feature = "position")]
 use crate::program::Position;
