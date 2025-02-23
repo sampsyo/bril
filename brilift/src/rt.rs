@@ -1,17 +1,17 @@
 use std::alloc;
 use std::mem::size_of;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn print_int(i: i64) {
     print!("{i}");
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn print_bool(b: bool) {
     print!("{b}");
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn print_float(f: f64) {
     if f.is_infinite() {
         if f < 0.0 {
@@ -28,12 +28,12 @@ pub extern "C" fn print_float(f: f64) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn print_sep() {
     print!(" ");
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn print_end() {
     println!();
 }
@@ -41,7 +41,7 @@ pub extern "C" fn print_end() {
 const ALIGN: usize = 8;
 const EXTRA_SIZE: usize = size_of::<usize>();
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn mem_alloc(count: i64, bytes: i64) -> *mut u8 {
     // The logical size of the allocation.
     let payload_size: usize = (count * bytes).try_into().unwrap();
@@ -56,7 +56,7 @@ pub extern "C" fn mem_alloc(count: i64, bytes: i64) -> *mut u8 {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn mem_free(ptr: *mut u8) {
     // `ptr` points at the payload, which is immediately preceded by the size (which does not
     // include the size of the size itself).

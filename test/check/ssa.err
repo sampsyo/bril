@@ -1,4 +1,5 @@
-10:3: x has type int, but arg 0 for phi should have type float
-10:3: y has type int, but arg 1 for phi should have type float
-11:3: phi needs 2 labels; found 1
-12:3: phi needs 1 labels; found 2
+12:3: new type float for z conflicts with old type int
+13:3: phi expects 0 args, not 1
+21:3: upsilon expects 2 args, not 0
+22:3: upsilon should have no result type
+23:3: d has type float, but arg 1 for upsilon should have type int

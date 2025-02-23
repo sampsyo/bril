@@ -1,16 +1,44 @@
 @main {
+  b: int = undef;
+  a: int = undef;
+  cond: bool = undef;
+  upsilon cond.b1 cond;
+  upsilon a.b1 a;
+  upsilon b.b1 b;
 .b1:
-  cond.0: bool = const true;
-  br cond.0 .true .false;
+  b.b1: int = phi;
+  a.b1: int = phi;
+  cond.b1: bool = phi;
+  cond.b1.1: bool = const true;
+  upsilon cond.true cond.b1.1;
+  upsilon a.true a.b1;
+  upsilon b.true b.b1;
+  upsilon cond.false cond.b1.1;
+  upsilon a.false a.b1;
+  upsilon b.false b.b1;
+  br cond.b1.1 .true .false;
 .true:
-  a.0: int = const 0;
+  b.true: int = phi;
+  a.true: int = phi;
+  cond.true: bool = phi;
+  a.true.1: int = const 0;
+  upsilon cond.zexit cond.true;
+  upsilon a.zexit a.true.1;
+  upsilon b.zexit b.true;
   jmp .zexit;
 .false:
-  b.0: int = const 1;
+  b.false: int = phi;
+  a.false: int = phi;
+  cond.false: bool = phi;
+  b.false.1: int = const 1;
+  upsilon cond.zexit cond.false;
+  upsilon a.zexit a.false;
+  upsilon b.zexit b.false.1;
   jmp .zexit;
 .zexit:
-  b.1: int = phi b.0 __undefined .false .true;
-  a.1: int = phi __undefined a.0 .false .true;
-  print a.1;
+  b.zexit: int = phi;
+  a.zexit: int = phi;
+  cond.zexit: bool = phi;
+  print a.zexit;
   ret;
 }

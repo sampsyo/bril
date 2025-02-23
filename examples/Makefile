@@ -1,5 +1,5 @@
 .PHONY: all
-all: ssa_plot.png
+all: ssa_plot.svg
 
 ssa_results.csv: ssa_brench.toml
 	brench $^ > $@
@@ -7,5 +7,5 @@ ssa_results.csv: ssa_brench.toml
 %.norm.csv: %.csv
 	python normalize.py < $^ > $@
 
-ssa_plot.png: ssa_plot.json ssa_results.norm.csv
-	vl2png $< > $@
+ssa_plot.svg: ssa_plot.json ssa_results.norm.csv
+	npx vl2svg $< > $@

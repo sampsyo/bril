@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use bril_rs::{conversion::PositionalConversionError, Position};
+use bril_rs::{Position, conversion::PositionalConversionError};
 use std::error::Error;
 use thiserror::Error;
 
@@ -19,8 +19,6 @@ pub enum InterpError {
   MissingLabel(String),
   #[error("no main function defined, doing nothing")]
   NoMainFunction,
-  #[error("phi node has unequal numbers of labels and args")]
-  UnequalPhiNode,
   #[error("char must have one character")]
   NotOneChar,
   #[error("multiple functions of the same name found")]
@@ -47,8 +45,8 @@ pub enum InterpError {
   FuncNotFound(String),
   #[error("undefined variable `{0}`")]
   VarUndefined(String),
-  #[error("Label `{0}` for phi node not found")]
-  PhiMissingLabel(String),
+  #[error("phi without corresponding upsilon")]
+  PhiWithoutUpsilon,
   #[error("unspecified pointer type `{0:?}`")]
   ExpectedPointerType(bril_rs::Type), // found type
   #[error("Expected type `{0:?}` for function argument, found `{1:?}`")]
@@ -59,7 +57,9 @@ pub enum InterpError {
   IoError(#[from] std::io::Error),
   #[error("value ${0} cannot be converted to char")]
   ToCharError(i64),
-  #[error("You probably shouldn't see this error, this is here to handle conversions between InterpError and PositionalError")]
+  #[error(
+    "You probably shouldn't see this error, this is here to handle conversions between InterpError and PositionalError"
+  )]
   PositionalInterpErrorConversion(#[from] PositionalInterpError),
 }
 

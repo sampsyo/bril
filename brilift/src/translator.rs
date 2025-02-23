@@ -2,15 +2,15 @@ use crate::rt;
 use bril_rs as bril;
 use core::mem;
 use cranelift_codegen::entity::EntityRef;
-use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::InstBuilder;
+use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::settings::Configurable;
 use cranelift_codegen::{ir, isa, settings};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_jit::{JITBuilder, JITModule};
-use cranelift_module::{default_libcall_names, Module};
+use cranelift_module::{Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
-use enum_map::{enum_map, Enum, EnumMap};
+use enum_map::{Enum, EnumMap, enum_map};
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
@@ -458,7 +458,10 @@ impl CompileEnv<'_> {
                     let ptr_arg = builder.use_var(self.vars[&args[0]]);
                     builder.ins().call(self.rt_refs[RTFunc::Free], &[ptr_arg]);
                 }
-                bril::EffectOps::Speculate | bril::EffectOps::Commit | bril::EffectOps::Guard => {
+                bril::EffectOps::Speculate
+                | bril::EffectOps::Commit
+                | bril::EffectOps::Guard
+                | bril::EffectOps::Upsilon => {
                     unimplemented!()
                 }
             },
@@ -557,6 +560,7 @@ impl CompileEnv<'_> {
                     builder.def_var(self.vars[dest], res);
                 }
                 bril::ValueOps::Phi
+                | bril::ValueOps::Undef
                 | bril::ValueOps::Ceq
                 | bril::ValueOps::Clt
                 | bril::ValueOps::Cgt
@@ -1059,7 +1063,7 @@ impl Translator<JITModule> {
     pub unsafe fn run(&mut self, func_id: cranelift_module::FuncId, args: &[bril::Literal]) {
         let func_ptr = self.get_func_ptr(func_id);
         let arg_ptrs = Self::val_ptrs(args);
-        let func = mem::transmute::<*const u8, fn(*const *const u8) -> ()>(func_ptr);
+        let func = unsafe { mem::transmute::<*const u8, fn(*const *const u8) -> ()>(func_ptr) };
         func(arg_ptrs.as_ptr());
     }
 }

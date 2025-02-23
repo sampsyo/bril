@@ -2,7 +2,7 @@
 name = "brillvm"
 version = "0.1.0"
 authors = ["Patrick LaFontaine <32135464+Pat-Lafon@users.noreply.github.com>"]
-edition = "2021"
+edition = "2024"
 description = "A compiler for Bril into LLVM IR"
 readme = "README.md"
 repository = "https://github.com/sampsyo/bril"
@@ -20,7 +20,7 @@ inkwell = { version = "0.5", features = ["llvm18-0"] }
 
 [dependencies.bril-rs]
 path = ".."
-features = ["float", "ssa", "memory"]
+features = ["float", "memory"]
 
 # Need to set a default `main` to build `rt` bin
 [[bin]]

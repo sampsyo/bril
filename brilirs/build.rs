@@ -16,8 +16,8 @@ fn main() -> Result<(), Error> {
 fn create_cli_completions() -> Result<(), Error> {
   use clap::CommandFactory;
   use clap_complete::{
-    shells::{Bash, Elvish, Fish, PowerShell, Zsh},
     Generator,
+    shells::{Bash, Elvish, Fish, PowerShell, Zsh},
   };
   use std::{env, path::PathBuf};
   // Waiting on https://github.com/rust-lang/cargo/issues/5457 / https://github.com/rust-lang/cargo/issues/6790 to clean this up

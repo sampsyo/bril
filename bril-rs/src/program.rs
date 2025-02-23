@@ -367,6 +367,9 @@ pub enum EffectOps {
     /// <https://capra.cs.cornell.edu/bril/lang/spec.html#operations>
     #[cfg(feature = "speculate")]
     Guard,
+    /// <https://capra.cs.cornell.edu/bril/lang/ssa2.html#operations>
+    #[cfg(feature = "ssa")]
+    Upsilon,
 }
 
 impl Display for EffectOps {
@@ -388,6 +391,8 @@ impl Display for EffectOps {
             Self::Commit => write!(f, "commit"),
             #[cfg(feature = "speculate")]
             Self::Guard => write!(f, "guard"),
+            #[cfg(feature = "ssa")]
+            Self::Upsilon => write!(f, "upsilon"),
         }
     }
 }
@@ -413,6 +418,8 @@ impl FromStr for EffectOps {
             "commit" => Self::Commit,
             #[cfg(feature = "speculate")]
             "guard" => Self::Guard,
+            #[cfg(feature = "ssa")]
+            "upsilon" => Self::Upsilon,
             e => Err(ConversionError::InvalidEffectOps(e.to_string()))?,
         })
     }
@@ -450,9 +457,12 @@ pub enum ValueOps {
     Call,
     /// <https://capra.cs.cornell.edu/bril/lang/core.html#miscellaneous>
     Id,
-    /// <https://capra.cs.cornell.edu/bril/lang/ssa.html#operations>
+    /// <https://capra.cs.cornell.edu/bril/lang/ssa2.html#operations>
     #[cfg(feature = "ssa")]
     Phi,
+    /// <https://capra.cs.cornell.edu/bril/lang/ssa2.html#operations>
+    #[cfg(feature = "ssa")]
+    Undef,
     /// <https://capra.cs.cornell.edu/bril/lang/float.html#operations>
     #[cfg(feature = "float")]
     Fadd,
@@ -537,6 +547,8 @@ impl Display for ValueOps {
             Self::Id => write!(f, "id"),
             #[cfg(feature = "ssa")]
             Self::Phi => write!(f, "phi"),
+            #[cfg(feature = "ssa")]
+            Self::Undef => write!(f, "undef"),
             #[cfg(feature = "float")]
             Self::Fadd => write!(f, "fadd"),
             #[cfg(feature = "float")]
@@ -604,6 +616,8 @@ impl FromStr for ValueOps {
             "sub" => Self::Sub,
             #[cfg(feature = "ssa")]
             "phi" => Self::Phi,
+            #[cfg(feature = "ssa")]
+            "undef" => Self::Undef,
             #[cfg(feature = "float")]
             "fadd" => Self::Fadd,
             #[cfg(feature = "float")]

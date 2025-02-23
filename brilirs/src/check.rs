@@ -55,11 +55,11 @@ fn update_env<'a>(
   }
 }
 
-fn get_type<'a>(
-  env: &'a FxHashMap<&'a str, &'a Type>,
+fn get_type<'a, 'b>(
+  env: &'a FxHashMap<&'a str, &'b Type>,
   index: usize,
   args: &[String],
-) -> Result<&'a &'a Type, InterpError> {
+) -> Result<&'a &'b Type, InterpError> {
   if index >= args.len() {
     return Err(InterpError::BadNumArgs(index, args.len()));
   }
@@ -336,13 +336,24 @@ fn type_check_instruction<'a>(
       labels,
       pos: _,
     } => {
-      if args.len() != labels.len() {
-        return Err(InterpError::UnequalPhiNode);
-      }
+      check_num_args(0, args)?;
       check_num_funcs(0, funcs)?;
-      // Phi nodes are a little weird with their args and there has been some discussion on an _undefined var name in #108
-      // Instead, we are going to assign the type we expect to all of the args and this will trigger an error if any of these args ends up being a different type.
-      args.iter().try_for_each(|a| update_env(env, a, op_type))?;
+      check_num_labels(0, labels)?;
+
+      update_env(env, dest, op_type)
+    }
+    Instruction::Value {
+      op: ValueOps::Undef,
+      dest,
+      op_type,
+      args,
+      funcs,
+      labels,
+      pos: _,
+    } => {
+      check_num_args(0, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
 
       update_env(env, dest, op_type)
     }
@@ -528,6 +539,19 @@ fn type_check_instruction<'a>(
       check_num_labels(0, labels)?;
       get_ptr_type(get_type(env, 0, args)?)?;
       Ok(())
+    }
+    Instruction::Effect {
+      op: EffectOps::Upsilon,
+      args,
+      funcs,
+      labels,
+      pos: _,
+    } => {
+      check_num_args(2, args)?;
+      check_num_funcs(0, funcs)?;
+      check_num_labels(0, labels)?;
+      let ty1 = get_type(env, 1, args)?;
+      update_env(env, &args[0], ty1)
     }
     Instruction::Effect {
       op: EffectOps::Speculate | EffectOps::Guard | EffectOps::Commit,

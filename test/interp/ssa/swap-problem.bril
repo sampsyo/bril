@@ -1,0 +1,26 @@
+@main {
+  i: int = const 5;
+  one: int = const 1;
+  zero: int = const 0;
+
+.l0:
+  x0: int = const 0;
+  y0: int = const 1;
+  upsilon x1 x0;
+  upsilon y1 y0;
+  jmp .l1;
+
+.l1:
+  x1: int = phi;
+  y1: int = phi;
+  print x1 y1;
+
+  cond: bool = gt i zero;
+  i: int = sub i one;
+
+  upsilon x1 y1;
+  upsilon y1 x1;
+  br cond .l1 .end;
+
+.end:
+}
