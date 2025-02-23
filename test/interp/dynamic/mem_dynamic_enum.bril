@@ -1,0 +1,94 @@
+# Num constructor for int
+@num_int(x:int) : ptr<any> {
+    size: int = const 2;
+    one: int = const 1;
+    num_p: ptr<any> = alloc size;
+
+    # Tag
+    tag: int = const 0;
+    store num_p tag;
+
+    # Data
+    num_p2: ptr<any> = ptradd num_p one;
+    store num_p2 x;
+
+    ret num_p;
+}
+
+# Num constructor for float
+@num_float(x:float) : ptr<any> {
+    size: int = const 2;
+    one: int = const 1;
+    num_p: ptr<any> = alloc size;
+
+    # Tag
+    tag: int = const 1;
+    store num_p tag;
+
+    # Data
+    num_p2: ptr<any> = ptradd num_p one;
+    store num_p2 x;
+
+    ret num_p;
+}
+
+@num_plus_1(x: ptr<any>) :ptr<any> {
+    zero_tag : int = const 0;
+    one : int = const 1;
+    fone : float = const 1;
+    data_ptr: ptr<any> = ptradd x one;
+
+    # Load tag
+    tag : int = load x;
+
+    # Branch on tag
+    cond : bool = eq tag zero_tag;
+    br cond .int_case .float_case;
+
+.int_case:
+    data_i: int = load data_ptr;
+    data_i: int = add data_i one;
+    store data_ptr data_i;
+    jmp .end;
+.float_case:
+    data_f: float = load data_ptr;
+    data_f: float = fadd data_f fone;
+    store data_ptr data_f;
+.end:
+    ret x;
+}
+
+# Num destructor for int
+@int_num(x:ptr<any>) : int {
+    one : int = const 1;
+    data_ptr: ptr<any> = ptradd x one;
+    data_i: int = load data_ptr;
+    ret data_i;
+}
+
+# Num destructor for float
+@float_num(x:ptr<any>) : float {
+    one : int = const 1;
+    data_ptr: ptr<any> = ptradd x one;
+    data_f: float = load data_ptr;
+    ret data_f;
+}
+
+@main {
+    data_int : int = const 41;
+    data_float : float = const 41;
+
+    num_int : ptr<any> = call @num_int data_int;
+    num_float : ptr<any> = call @num_float data_float;
+
+    num_int : ptr<any> = call @num_plus_1 num_int;
+    num_float : ptr<any> = call @num_plus_1 num_float;
+
+    data_int : int = call @int_num num_int;
+    data_float : float = call @float_num num_float;
+
+    free num_int;
+    free num_float;
+
+    print data_int data_float;
+}
