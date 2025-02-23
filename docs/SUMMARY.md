@@ -13,6 +13,7 @@
     - [Speculative Execution](lang/spec.md)
     - [Import](lang/import.md)
     - [Character](lang/char.md)
+    - [Bit Casting](lang/bitcast.md)
 - [Tools](tools/README.md)
     - [Interpreter](tools/interp.md)
     - [Text Representation](tools/text.md)

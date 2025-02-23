@@ -334,9 +334,9 @@ fn execute_value_op<T: std::io::Write>(
   shadow_env: &mut HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
-    Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
-    Undef,
+    Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
+    Fge, Fgt, Fle, Float2Bits, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or,
+    Phi, PtrAdd, Sub, Undef,
   };
   match op {
     Add => {
@@ -522,6 +522,20 @@ fn execute_value_op<T: std::io::Write>(
       let arg1 = get_arg::<i64>(&state.env, 1, args);
       let res = Value::Pointer(arg0.add(arg1));
       state.env.set(dest, res);
+    }
+    Float2Bits => {
+      let float = get_arg::<f64>(&state.env, 0, args);
+      // https://users.rust-lang.org/t/i64-u64-mapping-revisited/109315
+      // the to and from native endian stuff is a nop
+      // if link dies try web archive
+      let int = i64::from_ne_bytes(float.to_ne_bytes());
+      state.env.set(dest, Value::Int(int));
+    }
+    Bits2Float => {
+      let int = get_arg::<i64>(&state.env, 0, args);
+      // see comment for Float2Bits
+      let float = f64::from_ne_bytes(int.to_ne_bytes());
+      state.env.set(dest, Value::Float(float));
     }
   }
   Ok(())

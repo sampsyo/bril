@@ -1,0 +1,6 @@
+@main() {
+  as_int: int = const 4591870180066957722;
+  as_float: float = bits2float as_int;
+  back_to_int: int = float2bits as_float;
+  print as_int as_float back_to_int;
+}

@@ -520,6 +520,12 @@ pub enum ValueOps {
     /// <https://capra.cs.cornell.edu/bril/lang/memory.html#operations>
     #[cfg(feature = "memory")]
     PtrAdd,
+    /// <https://capra.cs.cornell.edu/bril/lang/bitcast.html#operations>
+    #[cfg(feature = "bitcast")]
+    Float2Bits,
+    /// <https://capra.cs.cornell.edu/bril/lang/bitcast.html#operations>
+    #[cfg(feature = "bitcast")]
+    Bits2Float,
 }
 
 impl Display for ValueOps {
@@ -581,6 +587,10 @@ impl Display for ValueOps {
             Self::Load => write!(f, "load"),
             #[cfg(feature = "memory")]
             Self::PtrAdd => write!(f, "ptradd"),
+            #[cfg(feature = "bitcast")]
+            Self::Float2Bits => write!(f, "float2bits"),
+            #[cfg(feature = "bitcast")]
+            Self::Bits2Float => write!(f, "bits2float"),
         }
     }
 }
@@ -646,6 +656,10 @@ impl FromStr for ValueOps {
             "load" => Self::Load,
             #[cfg(feature = "memory")]
             "ptradd" => Self::PtrAdd,
+            #[cfg(feature = "bitcast")]
+            "bits2float" => Self::Bits2Float,
+            #[cfg(feature = "bitcast")]
+            "float2bits" => Self::Float2Bits,
             v => Err(ConversionError::InvalidValueOps(v.to_string()))?,
         })
     }

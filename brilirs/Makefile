@@ -5,6 +5,7 @@ TESTS := ../test/check/*.bril \
 ../test/interp*/char*/*.bril \
 ../test/interp*/mixed/*.bril \
 ../test/interp/ssa*/*.bril \
+../test/interp/bitcast/*.bril
 
 #../test/spec*/*.bril \
 

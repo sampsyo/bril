@@ -100,6 +100,10 @@ export const OP_SIGS: { [key: string]: Signature | PolySignature } = {
   "fle": { args: ["float", "float"], dest: "bool" },
   "fge": { args: ["float", "float"], dest: "bool" },
 
+  // Bitcasting.
+  "float2bits": { args: ["float"], dest: "int" },
+  "bits2float": { args: ["int"], dest: "float" },
+
   // Memory.
   "alloc": {
     tvar: { tv: "T" },
