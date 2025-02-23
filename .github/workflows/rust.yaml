@@ -28,6 +28,7 @@ name: Workflow checks for rust code
 
 env:
   LLVM_VERSION: 18.0
+  RUST_VERSION: 1.85.0
 
 jobs:
   test:
@@ -50,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ env.RUST_VERSION }}
 
       - name: Install LLVM and Clang
         if: matrix.needs_llvm
@@ -95,7 +96,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ env.RUST_VERSION }}
+          components: clippy, rustfmt
 
       - name: Install LLVM and Clang
         if: matrix.path == 'bril-rs/brillvm/Cargo.toml'

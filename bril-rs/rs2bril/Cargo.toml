@@ -2,7 +2,7 @@
 name = "rs2bril"
 version = "0.1.0"
 authors = ["Patrick LaFontaine <32135464+Pat-Lafon@users.noreply.github.com>"]
-edition = "2021"
+edition = "2024"
 description = "A compiler for Rust into Bril"
 readme = "README.md"
 repository = "https://github.com/sampsyo/bril"

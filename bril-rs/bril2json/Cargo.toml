@@ -2,7 +2,7 @@
 name = "bril2json"
 version = "0.1.0"
 authors = ["Patrick LaFontaine <32135464+Pat-Lafon@users.noreply.github.com>"]
-edition = "2021"
+edition = "2024"
 description = "A rust parser of the Bril language text representation"
 readme = "README.md"
 repository = "https://github.com/sampsyo/bril"

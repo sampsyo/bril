@@ -5,16 +5,16 @@ use std::mem::size_of; */
 #![no_std]
 #![no_main]
 
-use core::ffi::{c_char, CStr};
+use core::ffi::{CStr, c_char};
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _bril_print_int(i: i64) {
     unsafe {
         libc::printf(c"%lld".as_ptr().cast(), i);
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _bril_print_bool(b: bool) {
     let c_str = if b { c"true" } else { c"false" };
     unsafe {
@@ -22,7 +22,7 @@ pub extern "C" fn _bril_print_bool(b: bool) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _bril_print_float(f: f64) {
     if f.is_infinite() {
         if f.is_sign_negative() {
@@ -49,21 +49,21 @@ pub extern "C" fn _bril_print_float(f: f64) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _bril_print_sep() {
     unsafe {
         libc::printf(c" ".as_ptr().cast());
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn _bril_print_end() {
     unsafe {
         libc::printf(c"\n".as_ptr().cast());
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn _bril_parse_int(arg: *const c_char) -> i64 {
     let c_str = unsafe { CStr::from_ptr(arg) };
@@ -71,7 +71,7 @@ pub unsafe extern "C" fn _bril_parse_int(arg: *const c_char) -> i64 {
     r_str.parse::<i64>().unwrap()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn _bril_parse_bool(arg: *const c_char) -> bool {
     let c_str = unsafe { CStr::from_ptr(arg) };
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn _bril_parse_bool(arg: *const c_char) -> bool {
     r_str.parse::<bool>().unwrap()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn _bril_parse_float(arg: *const c_char) -> f64 {
     let c_str = unsafe { CStr::from_ptr(arg) };

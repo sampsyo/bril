@@ -1,7 +1,7 @@
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
-use bril2json::escape_control_chars;
 use bril_rs::Instruction;
+use bril2json::escape_control_chars;
 
 use fxhash::FxHashMap;
 
@@ -11,6 +11,7 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use std::cmp::max;
+use std::collections::HashMap;
 use std::fmt;
 
 // The Environment is the data structure used to represent the stack of the program.
@@ -329,13 +330,13 @@ fn execute_value_op<T: std::io::Write>(
   op: bril_rs::ValueOps,
   dest: usize,
   args: &[usize],
-  labels: &[String],
   funcs: &[usize],
-  last_label: Option<&String>,
+  shadow_env: &mut HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
     Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
+    Undef,
   };
   match op {
     Add => {
@@ -499,17 +500,13 @@ fn execute_value_op<T: std::io::Write>(
 
       state.env.set(dest, result);
     }
-    Phi => match last_label {
-      None => return Err(InterpError::NoLastLabel),
-      Some(last_label) => {
-        let arg = labels
-          .iter()
-          .position(|l| l == last_label)
-          .ok_or_else(|| InterpError::PhiMissingLabel(last_label.to_string()))
-          .map(|i| get_arg::<Value>(&state.env, i, args))?;
-        state.env.set(dest, arg);
-      }
+    Phi => match shadow_env.remove(&dest) {
+      Some(v) => state.env.set(dest, v),
+      None => return Err(InterpError::PhiWithoutUpsilon),
     },
+    Undef => {
+      state.env.set(dest, Value::Uninitialized);
+    }
     Alloc => {
       let arg0 = get_arg::<i64>(&state.env, 0, args);
       let res = state.heap.alloc(arg0)?;
@@ -539,9 +536,10 @@ fn execute_effect_op<T: std::io::Write>(
   // There are two output variables where values are stored to effect the loop execution.
   next_block_idx: &mut Option<usize>,
   result: &mut Option<Value>,
+  shadow_env: &mut HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::EffectOps::{
-    Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store,
+    Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store, Upsilon,
   };
   match op {
     Jump => {
@@ -594,6 +592,10 @@ fn execute_effect_op<T: std::io::Write>(
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       state.heap.free(arg0)?;
     }
+    Upsilon => {
+      let arg = get_arg::<Value>(&state.env, 1, args);
+      shadow_env.insert(args[0], arg);
+    }
     Speculate | Commit | Guard => unimplemented!(),
   }
   Ok(())
@@ -603,8 +605,7 @@ fn execute<'a, T: std::io::Write>(
   state: &mut State<'a, T>,
   func: &'a BBFunction,
 ) -> Result<Option<Value>, PositionalInterpError> {
-  let mut last_label;
-  let mut current_label = None;
+  let mut shadow_env = HashMap::new();
   let mut curr_block_idx = 0;
   // A possible return value
   let mut result = None;
@@ -615,8 +616,6 @@ fn execute<'a, T: std::io::Write>(
     let curr_numified_instrs = &curr_block.numified_instrs;
     // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
     state.instruction_count += curr_instrs.len();
-    last_label = current_label;
-    current_label = curr_block.label.as_ref();
 
     // A place to store the next block that will be jumped to if specified by an instruction
     let mut next_block_idx = None;
@@ -656,7 +655,7 @@ fn execute<'a, T: std::io::Write>(
           dest: _,
           op_type: _,
           args: _,
-          labels,
+          labels: _,
           funcs: _,
           pos,
         } => {
@@ -665,9 +664,8 @@ fn execute<'a, T: std::io::Write>(
             *op,
             numified_code.dest.unwrap(),
             &numified_code.args,
-            labels,
             &numified_code.funcs,
-            last_label,
+            &mut shadow_env,
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -686,6 +684,7 @@ fn execute<'a, T: std::io::Write>(
             curr_block,
             &mut next_block_idx,
             &mut result,
+            &mut shadow_env,
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
@@ -725,7 +724,7 @@ fn parse_args(
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Bool,
                 (*inputs.get(index).unwrap()).to_string(),
-              ))
+              ));
             }
             Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
           };
@@ -737,7 +736,7 @@ fn parse_args(
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Int,
                 (*inputs.get(index).unwrap()).to_string(),
-              ))
+              ));
             }
             Ok(i) => env.set(*arg_as_num, Value::Int(i)),
           };
@@ -749,7 +748,7 @@ fn parse_args(
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Float,
                 (*inputs.get(index).unwrap()).to_string(),
-              ))
+              ));
             }
             Ok(f) => env.set(*arg_as_num, Value::Float(f)),
           };
