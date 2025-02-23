@@ -683,6 +683,10 @@ pub enum Type {
     #[cfg(feature = "memory")]
     #[serde(rename = "ptr")]
     Pointer(Box<Self>),
+    /// <https://capra.cs.cornell.edu/bril/lang/dynamic.html#types>]
+    #[cfg(feature = "dynamic")]
+    #[serde(rename = "any")]
+    Any,
 }
 
 impl Display for Type {
@@ -696,6 +700,8 @@ impl Display for Type {
             Self::Char => write!(f, "char"),
             #[cfg(feature = "memory")]
             Self::Pointer(tpe) => write!(f, "ptr<{tpe}>"),
+            #[cfg(feature = "dynamic")]
+            Self::Any => write!(f, "any"),
         }
     }
 }
@@ -711,6 +717,8 @@ impl FromStr for Type {
             "float" => Ok(Self::Float),
             #[cfg(feature = "char")]
             "char" => Ok(Self::Char),
+            #[cfg(feature = "dynamic")]
+            "any" => Ok(Self::Any),
             _ => Err(ConversionError::InvalidPrimitive(s.to_string())),
         }
     }
