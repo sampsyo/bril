@@ -334,9 +334,9 @@ fn execute_value_op<T: std::io::Write>(
   shadow_env: &mut HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
-    Add, Alloc, And, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq, Fge, Fgt,
-    Fle, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or, Phi, PtrAdd, Sub,
-    Undef, Bits2float, Float2bits,
+    Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
+    Fge, Fgt, Fle, Float2Bits, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or,
+    Phi, PtrAdd, Sub, Undef,
   };
   match op {
     Add => {
