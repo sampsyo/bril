@@ -31,7 +31,17 @@ itoa = "1.0"
 [dependencies.bril-rs]
 version = "0.1.0"
 path = "../bril-rs"
-features = ["memory", "float", "ssa", "speculate", "position", "import", "char", "bitcast"]
+features = [
+    "memory",
+    "float",
+    "ssa",
+    "speculate",
+    "dynamic",
+    "position",
+    "import",
+    "char",
+    "bitcast",
+]
 
 [dependencies.bril2json]
 version = "0.1.0"

@@ -777,6 +777,7 @@ fn parse_args(
               Ok(())
             },
           ),
+        bril_rs::Type::Any => unreachable!(),
       })?;
     Ok(env)
   }
