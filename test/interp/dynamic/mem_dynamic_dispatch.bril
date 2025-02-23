@@ -24,7 +24,7 @@
     ret;
 
 .call_my_print_2:
-    data : float = load args;
+    data : any = load args;
     call @my_print_2 data;
     ret;
 .end:
