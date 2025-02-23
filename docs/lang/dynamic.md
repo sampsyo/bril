@@ -34,6 +34,8 @@ v: any = const 4;
 b: bool = and v v; # Attempting to use an int as a bool
 ```
 
+The `main` function cannot have any arguments with the `any` type.
+
 Interactions with float extension
 ----------------------------------
 
