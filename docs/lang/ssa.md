@@ -1,10 +1,19 @@
 # Static Single Assignment (SSA) Form (Old Version)
 
+<div class="warning">
+
+This is the old version of the Bril SSA extension.
+It is deprecated, and the [reference interpreter](../tools/interp.md) does not support it.
+For new development, please use the [new "get/set" SSA extension][ssa2].
+
+</div>
+
 This language extension lets you represent Bril programs in [static single assignment (SSA)][ssa] form.
 As in the standard definition, an SSA-form Bril program contains only one assignment per variable, globally—that is, variables within a function cannot be reassigned.
 This extension adds ϕ-nodes to the language.
 
 [ssa]: https://en.wikipedia.org/wiki/Static_single_assignment_form
+[ssa2]: ./ssa2.md
 
 Operations
 ----------
@@ -41,8 +50,3 @@ Here's a small example:
 
 A `phi` instruction is sensitive to the incoming CFG edge that execution took to arrive at the current block.
 The `phi` instruction in this program, for example, gets its value from `a` if control came from the `.top` block and `b` if control came from the `.here` block.
-
-The [reference interpreter](../tools/interp.md) does not support this SSA extension, which probably means it is deprecated.
-It instead only supports the [new "Pizlo form" SSA extension][ssa2].
-
-[ssa2]: ./ssa2.md
