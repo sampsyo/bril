@@ -60,7 +60,7 @@ print i a f; # `4 4 4.00000000000000000`
 Interactions with memory extension
 ----------------------------------
 
-The memory extension expects `a uniformly-typed region of values` which is
+The memory extension expects "a uniformly-typed region of values" which is
 enforced at runtime. The dynamic extension modestly relaxes this restriction by
 allowing arrays with a base type of `any` like `ptr<any>` or `ptr<ptr<any>>`.
 This enables heterogeneous arrays at runtime.
