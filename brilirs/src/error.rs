@@ -13,7 +13,7 @@ pub enum InterpError {
   MemLeak,
   #[error("Trying to load from uninitialized memory")]
   UsingUninitializedMemory,
-  #[error("phi node executed with no last label")]
+  #[error("get node executed with no last label")]
   NoLastLabel,
   #[error("Could not find label: {0}")]
   MissingLabel(String),
@@ -45,8 +45,8 @@ pub enum InterpError {
   FuncNotFound(String),
   #[error("undefined variable `{0}`")]
   VarUndefined(String),
-  #[error("phi without corresponding upsilon")]
-  PhiWithoutUpsilon,
+  #[error("get without corresponding set")]
+  GetWithoutSet,
   #[error("unspecified pointer type `{0:?}`")]
   ExpectedPointerType(bril_rs::Type), // found type
   #[error("Expected type `{0:?}` for function argument, found `{1:?}`")]

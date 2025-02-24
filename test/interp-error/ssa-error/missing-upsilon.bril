@@ -1,3 +1,3 @@
 @main {
-  x: int = phi;
+  x: int = get;
 }

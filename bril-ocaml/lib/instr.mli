@@ -15,7 +15,7 @@ type t =
   | Ret of arg option
   | Print of arg list
   | Nop
-  | Phi of Dest.t * (label * arg) list
+  | Get of Dest.t * (label * arg) list
   | Speculate
   | Commit
   | Guard of arg * label

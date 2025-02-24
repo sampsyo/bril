@@ -336,7 +336,7 @@ fn execute_value_op<T: std::io::Write>(
   use bril_rs::ValueOps::{
     Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
     Fge, Fgt, Fle, Float2Bits, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or,
-    Phi, PtrAdd, Sub, Undef,
+    Get, PtrAdd, Sub, Undef,
   };
   match op {
     Add => {
@@ -500,9 +500,9 @@ fn execute_value_op<T: std::io::Write>(
 
       state.env.set(dest, result);
     }
-    Phi => match shadow_env.remove(&dest) {
+    Get => match shadow_env.remove(&dest) {
       Some(v) => state.env.set(dest, v),
-      None => return Err(InterpError::PhiWithoutUpsilon),
+      None => return Err(InterpError::GetWithoutSet),
     },
     Undef => {
       state.env.set(dest, Value::Uninitialized);
@@ -553,7 +553,7 @@ fn execute_effect_op<T: std::io::Write>(
   shadow_env: &mut HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::EffectOps::{
-    Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store, Upsilon,
+    Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store, Set,
   };
   match op {
     Jump => {
@@ -606,7 +606,7 @@ fn execute_effect_op<T: std::io::Write>(
       let arg0 = get_arg::<&Pointer>(&state.env, 0, args);
       state.heap.free(arg0)?;
     }
-    Upsilon => {
+    Set => {
       let arg = get_arg::<Value>(&state.env, 1, args);
       shadow_env.insert(args[0], arg);
     }

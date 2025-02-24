@@ -1045,7 +1045,7 @@ fn build_instruction<'a, 'b>(
             dest,
             funcs: _,
             labels,
-            op: ValueOps::Phi,
+            op: ValueOps::Get,
             op_type,
         } => {
             let name = fresh.fresh_var();
@@ -1054,23 +1054,23 @@ fn build_instruction<'a, 'b>(
                 .map(|l| block_map_get(context, llvm_func, block_map, l))
                 .collect::<Vec<_>>();
 
-            // Phi nodes must always go before all other instructions
-            // Note, this changes the order of user provided phi nodes
-            // If this bril code follows LLVM's phi node restrictions, then
+            // Get nodes must always go before all other instructions
+            // Note, this changes the order of user provided get nodes
+            // If this bril code follows LLVM's get node restrictions, then
             // there should be no observable sideeffects
             let current_block = builder.get_insert_block().unwrap();
             if let Some(instruction) = current_block.get_first_instruction() {
                 builder.position_before(&instruction);
             }
 
-            let phi = builder
+            let get = builder
                 .build_phi(context.ptr_type(AddressSpace::default()), &name)
                 .unwrap();
 
             let pointers = args.iter().map(|a| heap.get(a).ptr).collect::<Vec<_>>();
 
-            // The phi node is a little non-standard since we can't load in values from the stack before the phi instruction. Instead, the phi instruction will be over stack locations which will then be loaded into the corresponding output location.
-            phi.add_incoming(
+            // The get node is a little non-standard since we can't load in values from the stack before the get instruction. Instead, the get instruction will be over stack locations which will then be loaded into the corresponding output location.
+            get.add_incoming(
                 pointers
                     .iter()
                     .zip(blocks.iter())
@@ -1091,7 +1091,7 @@ fn build_instruction<'a, 'b>(
                         builder,
                         &WrappedPointer {
                             ty: op_type.clone(),
-                            ptr: phi.as_basic_value().into_pointer_value(),
+                            ptr: get.as_basic_value().into_pointer_value(),
                         },
                         &fresh.fresh_var(),
                     ),

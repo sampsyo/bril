@@ -1,5 +1,5 @@
 12:3: new type float for z conflicts with old type int
-13:3: phi expects 0 args, not 1
-21:3: upsilon expects 2 args, not 0
-22:3: upsilon should have no result type
-23:3: d has type float, but arg 1 for upsilon should have type int
+13:3: get expects 0 args, not 1
+21:3: set expects 2 args, not 0
+22:3: set should have no result type
+23:3: d has type float, but arg 1 for set should have type int

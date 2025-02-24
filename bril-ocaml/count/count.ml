@@ -15,7 +15,7 @@ let () =
           | Binary ((_, bril_type), _, _, _)
           | Unary ((_, bril_type), _, _)
           | Call (Some (_, bril_type), _, _)
-          | Phi ((_, bril_type), _)
+          | Get ((_, bril_type), _)
           | Alloc ((_, bril_type), _)
           | Load ((_, bril_type), _)
           | PtrAdd ((_, bril_type), _, _) ->

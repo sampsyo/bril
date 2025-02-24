@@ -1,78 +1,78 @@
 @func: int {
   n: int = undef;
-  upsilon n.b1 n;
+  set n.b1 n;
 .b1:
-  n.b1: int = phi;
+  n.b1: int = get;
   n.b1.1: int = const 5;
   ret n.b1.1;
 }
 @loop(infinite: bool, print: bool) {
   v: int = undef;
-  upsilon infinite.entry infinite;
-  upsilon print.entry print;
-  upsilon v.entry v;
+  set infinite.entry infinite;
+  set print.entry print;
+  set v.entry v;
 .entry:
-  v.entry: int = phi;
-  print.entry: bool = phi;
-  infinite.entry: bool = phi;
-  upsilon infinite.loop.header infinite.entry;
-  upsilon print.loop.header print.entry;
-  upsilon v.loop.header v.entry;
+  v.entry: int = get;
+  print.entry: bool = get;
+  infinite.entry: bool = get;
+  set infinite.loop.header infinite.entry;
+  set print.loop.header print.entry;
+  set v.loop.header v.entry;
   jmp .loop.header;
 .loop.header:
-  v.loop.header: int = phi;
-  print.loop.header: bool = phi;
-  infinite.loop.header: bool = phi;
-  upsilon infinite.loop.body infinite.loop.header;
-  upsilon print.loop.body print.loop.header;
-  upsilon v.loop.body v.loop.header;
-  upsilon infinite.loop.end infinite.loop.header;
-  upsilon print.loop.end print.loop.header;
-  upsilon v.loop.end v.loop.header;
+  v.loop.header: int = get;
+  print.loop.header: bool = get;
+  infinite.loop.header: bool = get;
+  set infinite.loop.body infinite.loop.header;
+  set print.loop.body print.loop.header;
+  set v.loop.body v.loop.header;
+  set infinite.loop.end infinite.loop.header;
+  set print.loop.end print.loop.header;
+  set v.loop.end v.loop.header;
   br infinite.loop.header .loop.body .loop.end;
 .loop.body:
-  v.loop.body: int = phi;
-  print.loop.body: bool = phi;
-  infinite.loop.body: bool = phi;
-  upsilon infinite.loop.print infinite.loop.body;
-  upsilon print.loop.print print.loop.body;
-  upsilon v.loop.print v.loop.body;
-  upsilon infinite.loop.next infinite.loop.body;
-  upsilon print.loop.next print.loop.body;
-  upsilon v.loop.next v.loop.body;
+  v.loop.body: int = get;
+  print.loop.body: bool = get;
+  infinite.loop.body: bool = get;
+  set infinite.loop.print infinite.loop.body;
+  set print.loop.print print.loop.body;
+  set v.loop.print v.loop.body;
+  set infinite.loop.next infinite.loop.body;
+  set print.loop.next print.loop.body;
+  set v.loop.next v.loop.body;
   br print.loop.body .loop.print .loop.next;
 .loop.print:
-  v.loop.print: int = phi;
-  print.loop.print: bool = phi;
-  infinite.loop.print: bool = phi;
+  v.loop.print: int = get;
+  print.loop.print: bool = get;
+  infinite.loop.print: bool = get;
   v.loop.print.1: int = call @func;
   print v.loop.print.1;
-  upsilon infinite.loop.next infinite.loop.print;
-  upsilon print.loop.next print.loop.print;
-  upsilon v.loop.next v.loop.print.1;
+  set infinite.loop.next infinite.loop.print;
+  set print.loop.next print.loop.print;
+  set v.loop.next v.loop.print.1;
   jmp .loop.next;
 .loop.next:
-  v.loop.next: int = phi;
-  print.loop.next: bool = phi;
-  infinite.loop.next: bool = phi;
-  upsilon infinite.loop.header infinite.loop.next;
-  upsilon print.loop.header print.loop.next;
-  upsilon v.loop.header v.loop.next;
+  v.loop.next: int = get;
+  print.loop.next: bool = get;
+  infinite.loop.next: bool = get;
+  set infinite.loop.header infinite.loop.next;
+  set print.loop.header print.loop.next;
+  set v.loop.header v.loop.next;
   jmp .loop.header;
 .loop.end:
-  v.loop.end: int = phi;
-  print.loop.end: bool = phi;
-  infinite.loop.end: bool = phi;
+  v.loop.end: int = get;
+  print.loop.end: bool = get;
+  infinite.loop.end: bool = get;
   ret;
 }
 @main {
   print: bool = undef;
   infinite: bool = undef;
-  upsilon infinite.b1 infinite;
-  upsilon print.b1 print;
+  set infinite.b1 infinite;
+  set print.b1 print;
 .b1:
-  print.b1: bool = phi;
-  infinite.b1: bool = phi;
+  print.b1: bool = get;
+  infinite.b1: bool = get;
   infinite.b1.1: bool = const false;
   print.b1.1: bool = const true;
   call @loop infinite.b1.1 print.b1.1;

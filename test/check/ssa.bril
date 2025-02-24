@@ -1,16 +1,16 @@
 @main {
 .a:
   x: int = const 4;
-  upsilon z x;
+  set z x;
   jmp .c;
 .b:
   y: int = const 2;
-  upsilon z y;
+  set z y;
   jmp .c;
 .c:
-  z: int = phi;
-  z: float = phi;
-  z: int = phi x;
+  z: int = get;
+  z: float = get;
+  z: int = get x;
 }
 
 @more {
@@ -18,7 +18,7 @@
   c: int = const 2;
   d: float = const 3.14;
 
-  upsilon;
-  a: int = upsilon b c;
-  upsilon b d;
+  set;
+  a: int = set b c;
+  set b d;
 }
