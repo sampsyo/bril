@@ -188,7 +188,7 @@
 }
 
 
-@get(p : int) : int {
+@phi(p : int) : int {
     one : int = const 1;
     q : int = sub p one;
     ret q;
@@ -198,7 +198,7 @@
 @main(p : int) {
   zero : int = const 0;
   one : int = const 1;
-  phi_p : int = call @get p;
+  phi_p : int = call @phi p;
   count_result : ptr<int> = alloc one;
   prime_factors : ptr<int> = call @prime_factors phi_p count_result;
   num_factors : int = load count_result;
