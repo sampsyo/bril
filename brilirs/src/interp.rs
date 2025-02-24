@@ -335,8 +335,8 @@ fn execute_value_op<T: std::io::Write>(
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
-    Fge, Fgt, Fle, Float2Bits, Flt, Fmul, Fsub, Ge, Gt, Id, Int2char, Le, Load, Lt, Mul, Not, Or,
-    Get, PtrAdd, Sub, Undef,
+    Fge, Fgt, Fle, Float2Bits, Flt, Fmul, Fsub, Ge, Get, Gt, Id, Int2char, Le, Load, Lt, Mul, Not,
+    Or, PtrAdd, Sub, Undef,
   };
   match op {
     Add => {
@@ -553,7 +553,7 @@ fn execute_effect_op<T: std::io::Write>(
   shadow_env: &mut HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::EffectOps::{
-    Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Speculate, Store, Set,
+    Branch, Call, Commit, Free, Guard, Jump, Nop, Print, Return, Set, Speculate, Store,
   };
   match op {
     Jump => {
