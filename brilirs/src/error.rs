@@ -13,7 +13,7 @@ pub enum InterpError {
   MemLeak,
   #[error("Trying to load from uninitialized memory")]
   UsingUninitializedMemory,
-  #[error("get node executed with no last label")]
+  #[error("phi node executed with no last label")]
   NoLastLabel,
   #[error("Could not find label: {0}")]
   MissingLabel(String),
