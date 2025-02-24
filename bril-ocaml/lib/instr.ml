@@ -15,7 +15,7 @@ type t =
   | Ret of arg option
   | Print of arg list
   | Nop
-  | Get of Dest.t * (label * arg) list
+  | Phi of Dest.t * (label * arg) list
   | Speculate
   | Commit
   | Guard of arg * label
@@ -47,7 +47,7 @@ let to_string =
     | None -> "ret")
   | Print args -> String.concat ~sep:" " ("print" :: args)
   | Nop -> "nop"
-  | Get (dest, alist) ->
+  | Phi (dest, alist) ->
     sprintf
       "%s phi %s"
       (dest_to_string dest)
@@ -65,7 +65,7 @@ let dest = function
   | Const (dest, _)
   | Binary (dest, _, _, _)
   | Unary (dest, _, _)
-  | Get (dest, _)
+  | Phi (dest, _)
   | Alloc (dest, _)
   | PtrAdd (dest, _, _)
   | Load (dest, _) ->
@@ -90,7 +90,7 @@ let set_dest dest t =
   | (Binary (_, op, arg1, arg2), Some dest) -> Binary (dest, op, arg1, arg2)
   | (Unary (_, op, arg), Some dest) -> Unary (dest, op, arg)
   | (Call (_, f, args), dest) -> Call (dest, f, args)
-  | (Get (_, params), Some dest) -> Get (dest, params)
+  | (Phi (_, params), Some dest) -> Phi (dest, params)
   | (Alloc (_, arg), Some dest) -> Alloc (dest, arg)
   | (Load (_, arg), Some dest) -> Load (dest, arg)
   | (PtrAdd (_, a1, a2), Some dest) -> PtrAdd (dest, a1, a2)
@@ -114,7 +114,7 @@ let args = function
   | Load ((_ : Dest.t), arg) -> [ arg ]
   | PtrAdd ((_ : Dest.t), arg1, arg2) -> [ arg1; arg2 ]
   | Ret arg -> Option.value_map arg ~default:[] ~f:List.return
-  | Get ((_ : Dest.t), label_and_args) -> List.map label_and_args ~f:snd
+  | Phi ((_ : Dest.t), label_and_args) -> List.map label_and_args ~f:snd
   | (Nop | Speculate | Commit | Label _ | Const (_, _) | Jmp _) as instr ->
     failwithf "Cannot call [args] on %s" (to_string instr) ()
 
@@ -171,7 +171,7 @@ let of_json json =
     | "ret" -> Ret (if List.is_empty (args ()) then None else Some (arg 0))
     | "print" -> Print (args ())
     | "nop" -> Nop
-    | "phi" -> Get (dest (), List.zip_exn (labels ()) (args ()))
+    | "phi" -> Phi (dest (), List.zip_exn (labels ()) (args ()))
     | "speculate" -> Speculate
     | "commit" -> Commit
     | "guard" -> Guard (arg 0, label 0)
@@ -244,7 +244,7 @@ let to_json =
   | Print args ->
     `Assoc [ ("op", `String "print"); ("args", `List (List.map args ~f:(fun arg -> `String arg))) ]
   | Nop -> `Assoc [ ("op", `String "nop") ]
-  | Get (dest, alist) ->
+  | Phi (dest, alist) ->
     `Assoc
       ([
          ("op", `String "phi");
