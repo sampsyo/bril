@@ -4,7 +4,7 @@
 
 This is the old version of the Bril SSA extension.
 It is deprecated, and the [reference interpreter](../tools/interp.md) does not support it.
-For new development, please use the [new "get/set" SSA extension][ssa2].
+For new development, please use the [new "set/get" SSA extension][ssa2].
 
 </div>
 
