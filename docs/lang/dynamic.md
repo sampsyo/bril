@@ -8,7 +8,7 @@ There are two types of intended use of this extension:
 - Giving an escape hatch to valid Bril programs whose dynamic typing can be
   rejected by a conservative type analysis
 - Frontend users who want to compile down higher-level programming abstractions
-  into Bril(structs, enums, dynamic dispatch, (limited)higher-order functions)
+  into Bril (structs, enums, dynamic dispatch, (limited) higher-order functions).
 
 Types
 -----
