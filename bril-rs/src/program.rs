@@ -369,7 +369,7 @@ pub enum EffectOps {
     Guard,
     /// <https://capra.cs.cornell.edu/bril/lang/ssa2.html#operations>
     #[cfg(feature = "ssa")]
-    Upsilon,
+    Set,
 }
 
 impl Display for EffectOps {
@@ -392,7 +392,7 @@ impl Display for EffectOps {
             #[cfg(feature = "speculate")]
             Self::Guard => write!(f, "guard"),
             #[cfg(feature = "ssa")]
-            Self::Upsilon => write!(f, "upsilon"),
+            Self::Set => write!(f, "set"),
         }
     }
 }
@@ -419,7 +419,7 @@ impl FromStr for EffectOps {
             #[cfg(feature = "speculate")]
             "guard" => Self::Guard,
             #[cfg(feature = "ssa")]
-            "upsilon" => Self::Upsilon,
+            "set" => Self::Set,
             e => Err(ConversionError::InvalidEffectOps(e.to_string()))?,
         })
     }
@@ -459,7 +459,7 @@ pub enum ValueOps {
     Id,
     /// <https://capra.cs.cornell.edu/bril/lang/ssa2.html#operations>
     #[cfg(feature = "ssa")]
-    Phi,
+    Get,
     /// <https://capra.cs.cornell.edu/bril/lang/ssa2.html#operations>
     #[cfg(feature = "ssa")]
     Undef,
@@ -546,7 +546,7 @@ impl Display for ValueOps {
             Self::Call => write!(f, "call"),
             Self::Id => write!(f, "id"),
             #[cfg(feature = "ssa")]
-            Self::Phi => write!(f, "phi"),
+            Self::Get => write!(f, "get"),
             #[cfg(feature = "ssa")]
             Self::Undef => write!(f, "undef"),
             #[cfg(feature = "float")]
@@ -615,7 +615,7 @@ impl FromStr for ValueOps {
             "id" => Self::Id,
             "sub" => Self::Sub,
             #[cfg(feature = "ssa")]
-            "phi" => Self::Phi,
+            "get" => Self::Get,
             #[cfg(feature = "ssa")]
             "undef" => Self::Undef,
             #[cfg(feature = "float")]

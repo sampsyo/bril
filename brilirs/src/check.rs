@@ -328,7 +328,7 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value {
-      op: ValueOps::Phi,
+      op: ValueOps::Get,
       dest,
       op_type,
       args,
@@ -541,7 +541,7 @@ fn type_check_instruction<'a>(
       Ok(())
     }
     Instruction::Effect {
-      op: EffectOps::Upsilon,
+      op: EffectOps::Set,
       args,
       funcs,
       labels,

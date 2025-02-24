@@ -2,16 +2,16 @@
 @main(cond: bool) {
 .top:
   a: int = const 5;
-  upsilon c a;
-  upsilon d a;
+  set c a;
+  set d a;
   br cond .here .there;
 .here:
   b: int = const 7;
-  upsilon c b;
-  upsilon d b;
+  set c b;
+  set d b;
 .there:
-  c: int = phi;
-  d: int = phi;
+  c: int = get;
+  d: int = get;
   print c;
   print d;
 }

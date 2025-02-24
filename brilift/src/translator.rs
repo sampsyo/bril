@@ -461,7 +461,7 @@ impl CompileEnv<'_> {
                 bril::EffectOps::Speculate
                 | bril::EffectOps::Commit
                 | bril::EffectOps::Guard
-                | bril::EffectOps::Upsilon => {
+                | bril::EffectOps::Set => {
                     unimplemented!()
                 }
             },
@@ -559,7 +559,7 @@ impl CompileEnv<'_> {
                     let res = builder.ins().iadd(orig_ptr, offset_val);
                     builder.def_var(self.vars[dest], res);
                 }
-                bril::ValueOps::Phi
+                bril::ValueOps::Get
                 | bril::ValueOps::Undef
                 | bril::ValueOps::Ceq
                 | bril::ValueOps::Clt

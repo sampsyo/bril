@@ -45,8 +45,8 @@ pub enum InterpError {
   FuncNotFound(String),
   #[error("undefined variable `{0}`")]
   VarUndefined(String),
-  #[error("phi without corresponding upsilon")]
-  PhiWithoutUpsilon,
+  #[error("get without corresponding set")]
+  GetWithoutSet,
   #[error("unspecified pointer type `{0:?}`")]
   ExpectedPointerType(bril_rs::Type), // found type
   #[error("Expected type `{0:?}` for function argument, found `{1:?}`")]

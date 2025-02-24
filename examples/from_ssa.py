@@ -2,22 +2,22 @@ import json
 import sys
 
 
-def get_phi_types(func):
-    """Collect the type for every phi-node."""
+def get_types(func):
+    """Collect the type for every `get` instruction."""
     types = {}
     for instr in func["instrs"]:
-        if instr.get("op") == "phi":
+        if instr.get("op") == "get":
             types[instr["dest"]] = instr["type"]
     return types
 
 
 def func_from_ssa(func):
-    types = get_phi_types(func)
+    types = get_types(func)
 
     out_instrs = []
     for instr in func["instrs"]:
-        if instr.get("op") == "upsilon":
-            # Upsilons become copies.
+        if instr.get("op") == "set":
+            # Sets become copies.
             copy = {
                 "op": "id",
                 "dest": instr["args"][0],
@@ -25,8 +25,8 @@ def func_from_ssa(func):
                 "args": [instr["args"][1]],
             }
             out_instrs.append(copy)
-        elif instr.get("op") == "phi":
-            # Phis become no-ops.
+        elif instr.get("op") == "get":
+            # Gets become no-ops.
             continue
         else:
             out_instrs.append(instr)

@@ -129,11 +129,11 @@ export const OP_SIGS: { [key: string]: Signature | PolySignature } = {
   "guard": { args: ["bool"], labels: 1 },
 
   // SSA.
-  "upsilon": {
+  "set": {
     tvar: { tv: "T" },
     sig: { args: [{ tv: "T" }, { tv: "T" }] },
   },
-  "phi": {
+  "get": {
     tvar: { tv: "T" },
     sig: { args: [], dest: { tv: "T" } },
   },

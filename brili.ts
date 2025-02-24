@@ -139,8 +139,8 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   store: 2,
   load: 1,
   ptradd: 2,
-  phi: 0,
-  upsilon: 2,
+  get: 0,
+  set: 2,
   undef: 0,
   speculate: 0,
   guard: 1,
@@ -340,7 +340,7 @@ type State = {
   // For profiling: a total count of the number of instructions executed.
   icount: bigint;
 
-  // For SSA: the values of "shadow" variables set by upsilon instructions.
+  // For SSA: the values of "shadow" variables set by set instructions.
   ssaEnv: Env;
 
   // For speculation: the state at the point where speculation began.
@@ -727,22 +727,22 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       return NEXT;
     }
 
-    case "upsilon": {
+    case "set": {
       const shadowVal = getArgument(instr, state.env, 1);
       const shadowDest = instr.args![0];
       state.ssaEnv.set(shadowDest, shadowVal);
       return NEXT;
     }
 
-    case "phi": {
+    case "get": {
       if (instr.args && instr.args.length) {
-        throw error(`phi should have zero arguments`);
+        throw error(`get should have zero arguments`);
       }
 
       // Get the "shadow" value for the destination variable.
       const val = state.ssaEnv.get(instr.dest);
       if (val === undefined) {
-        throw error(`phi without corresponding upsilon for ${instr.dest}`);
+        throw error(`get without corresponding set for ${instr.dest}`);
       } else {
         state.env.set(instr.dest, val);
         state.ssaEnv.delete(instr.dest); // Consume the shadow value (enforce SSU).
