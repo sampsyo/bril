@@ -30,7 +30,7 @@ def get_gets(blocks, df, defs):
         for d in v_defs_list:
             for block in df[d]:
                 # Add a `get`...
-                if v not in gets[block]:  # ..unless we already did.
+                if v not in gets[block]:  # ...unless we already did.
                     gets[block].add(v)
                     if block not in v_defs_list:
                         v_defs_list.append(block)
@@ -72,10 +72,10 @@ def ssa_rename(blocks, gets, succ, domtree, args):
         for s in succ[block]:
             for p in gets[s]:
                 if stack[p]:
-                    sets[block].append((s, stack[p][0]))
+                    sets[block].append((s, p, stack[p][0]))
                 else:
                     # The variable is not defined on this path. TK
-                    sets[block].append((s, "__undefined"))
+                    sets[block].append((s, p, "__undefined"))
 
         # Recursive calls.
         for b in sorted(domtree[block]):
@@ -94,10 +94,10 @@ def ssa_rename(blocks, gets, succ, domtree, args):
 def insert_sets_and_gets(blocks, sets, get_dests, types):
     for block, instrs in blocks.items():
         # Add `set`s to the bottom of the block.
-        for succ, val in sets[block]:
+        for succ, old_var, val in sets[block]:
             set_inst = {
                 "op": "set",
-                "args": ["TKTK", val],
+                "args": [get_dests[succ][old_var], val],
             }
             instrs.append(set_inst)
 
