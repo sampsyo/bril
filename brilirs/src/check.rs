@@ -43,10 +43,6 @@ fn update_env<'a>(
   dest: &'a str,
   typ: &'a Type,
 ) -> Result<(), InterpError> {
-  #[expect(
-    clippy::option_if_let_else,
-    reason = "https://github.com/rust-lang/rust-clippy/issues/8346"
-  )]
   if typ == &Type::Any {
     env.insert(dest, typ);
     Ok(())

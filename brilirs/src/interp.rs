@@ -1,7 +1,7 @@
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
-use bril_rs::Instruction;
 use bril2json::escape_control_chars;
+use bril_rs::Instruction;
 
 use fxhash::FxHashMap;
 
@@ -768,7 +768,6 @@ fn parse_args(
           };
           Ok(())
         }
-        bril_rs::Type::Pointer(..) => unreachable!(),
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
           .map_or_else(
             || Err(InterpError::NotOneChar),
@@ -777,7 +776,7 @@ fn parse_args(
               Ok(())
             },
           ),
-        bril_rs::Type::Any => unreachable!(),
+        bril_rs::Type::Pointer(..) | bril_rs::Type::Any => unreachable!(),
       })?;
     Ok(env)
   }
