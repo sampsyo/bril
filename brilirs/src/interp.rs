@@ -768,7 +768,6 @@ fn parse_args(
           };
           Ok(())
         }
-        bril_rs::Type::Pointer(..) => unreachable!(),
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())
           .map_or_else(
             || Err(InterpError::NotOneChar),
@@ -777,6 +776,7 @@ fn parse_args(
               Ok(())
             },
           ),
+        bril_rs::Type::Pointer(..) | bril_rs::Type::Any => unreachable!(),
       })?;
     Ok(env)
   }

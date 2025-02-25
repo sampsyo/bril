@@ -26,6 +26,7 @@ position = []
 import = []
 char = []
 bitcast = []
+dynamic = []
 
 [[example]]
 name = "bril2txt"
