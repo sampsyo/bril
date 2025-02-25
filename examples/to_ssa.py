@@ -99,7 +99,7 @@ def insert_sets_and_gets(blocks, sets, get_dests, types):
                 "op": "set",
                 "args": [get_dests[succ][old_var], val],
             }
-            instrs.append(set_inst)
+            instrs.insert(-1, set_inst)  # Before the terminator.
 
         # Add `get`s to the top of the block.
         for old_var, new_var in get_dests[block].items():
