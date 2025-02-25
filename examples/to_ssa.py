@@ -96,7 +96,7 @@ def ssa_rename(blocks, gets, succ, domtree, args):
 def insert_sets_and_gets(blocks, sets, get_dests, types):
     for block, instrs in blocks.items():
         # Add `set`s to the bottom of the block.
-        for succ, old_var, val in sets[block]:
+        for succ, old_var, val in sorted(sets[block]):
             if val == UNDEF:
                 # Create an undefined value for this `set`.
                 val = f"{old_var}.{block}"
@@ -113,7 +113,7 @@ def insert_sets_and_gets(blocks, sets, get_dests, types):
             instrs.insert(-1, set_inst)  # Before the terminator.
 
         # Add `get`s to the top of the block.
-        for old_var, new_var in get_dests[block].items():
+        for old_var, new_var in sorted(get_dests[block].items()):
             get_inst = {
                 "op": "get",
                 "dest": new_var,
