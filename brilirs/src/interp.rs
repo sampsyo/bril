@@ -1,7 +1,7 @@
 use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
 use crate::error::{InterpError, PositionalInterpError};
-use bril2json::escape_control_chars;
 use bril_rs::Instruction;
+use bril2json::escape_control_chars;
 
 use fxhash::FxHashMap;
 
