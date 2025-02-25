@@ -1,0 +1,23 @@
+@main {
+.entry:
+  done.init: bool = undef;
+  one.0: int = const 1;
+  zero.0: int = const 0;
+  x.0: int = const 5;
+  set done.0 done.init;
+  set x.1 x.0;
+  jmp .loop;
+.loop:
+  x.1: int = get;
+  done.0: bool = get;
+  x.2: int = sub x.1 one.0;
+  done.1: bool = eq x.2 zero.0;
+  jmp .br;
+.br:
+  set done.0 done.1;
+  set x.1 x.2;
+  br done.1 .exit .loop;
+.exit:
+  print x.2;
+  ret;
+}

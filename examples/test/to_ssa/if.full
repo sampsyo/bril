@@ -1,0 +1,17 @@
+@main(cond: bool) {
+.entry:
+  a.0: int = const 47;
+  br cond .left .right;
+.left:
+  a.2: int = add a.0 a.0;
+  set a.1 a.2;
+  jmp .exit;
+.right:
+  a.3: int = mul a.0 a.0;
+  set a.1 a.3;
+  jmp .exit;
+.exit:
+  a.1: int = get;
+  print a.1;
+  ret;
+}

@@ -1,0 +1,26 @@
+@main {
+.entry:
+  max.init: int = undef;
+  cond.init: bool = undef;
+  i.0: int = const 1;
+  set cond.0 cond.init;
+  set i.1 i.0;
+  set max.0 max.init;
+  jmp .loop;
+.loop:
+  max.0: int = get;
+  i.1: int = get;
+  cond.0: bool = get;
+  max.1: int = const 10;
+  cond.1: bool = lt i.1 max.1;
+  br cond.1 .body .exit;
+.body:
+  i.2: int = add i.1 i.1;
+  set cond.0 cond.1;
+  set i.1 i.2;
+  set max.0 max.1;
+  jmp .loop;
+.exit:
+  print i.1;
+  ret;
+}
