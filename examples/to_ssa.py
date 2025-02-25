@@ -6,6 +6,8 @@ from cfg import block_map, successors, add_terminators, add_entry, reassemble
 from form_blocks import form_blocks
 from dom import get_dom, dom_fronts, dom_tree
 
+UNDEF = "__undefined__"
+
 
 def def_blocks(blocks):
     """Get a map from variable names to defining blocks."""
@@ -74,8 +76,8 @@ def ssa_rename(blocks, gets, succ, domtree, args):
                 if stack[p]:
                     sets[block].append((s, p, stack[p][0]))
                 else:
-                    # The variable is not defined on this path. TK
-                    sets[block].append((s, p, "__undefined"))
+                    # The variable is not defined on this path.
+                    sets[block].append((s, p, UNDEF))
 
         # Recursive calls.
         for b in sorted(domtree[block]):
@@ -95,6 +97,15 @@ def insert_sets_and_gets(blocks, sets, get_dests, types):
     for block, instrs in blocks.items():
         # Add `set`s to the bottom of the block.
         for succ, old_var, val in sets[block]:
+            if val == UNDEF:
+                # Create an undefined value for this `set`.
+                val = f"{old_var}.{block}"
+                undef = {
+                    "op": "undef",
+                    "type": types[old_var],
+                    "dest": val,
+                }
+                instrs.insert(-1, undef)
             set_inst = {
                 "op": "set",
                 "args": [get_dests[succ][old_var], val],
