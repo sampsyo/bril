@@ -1,17 +1,17 @@
 @main {
 .b1:
+  b.init: int = undef;
+  a.init: int = undef;
   cond.0: bool = const true;
   br cond.0 .true .false;
 .true:
   a.0: int = const 0;
   set a.1 a.0;
-  b.true: int = undef;
-  set b.1 b.true;
+  set b.1 b.init;
   jmp .zexit;
 .false:
   b.0: int = const 1;
-  a.false: int = undef;
-  set a.1 a.false;
+  set a.1 a.init;
   set b.1 b.0;
   jmp .zexit;
 .zexit:

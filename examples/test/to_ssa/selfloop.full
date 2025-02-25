@@ -1,10 +1,10 @@
 @main {
 .entry:
+  done.init: bool = undef;
   one.0: int = const 1;
   zero.0: int = const 0;
   x.0: int = const 5;
-  done.entry: bool = undef;
-  set done.0 done.entry;
+  set done.0 done.init;
   set x.1 x.0;
   jmp .loop;
 .loop:

@@ -5,8 +5,8 @@
 }
 @loop(infinite: bool, print: bool) {
 .entry:
-  v.entry: int = undef;
-  set v.0 v.entry;
+  v.init: int = undef;
+  set v.0 v.init;
   jmp .loop.header;
 .loop.header:
   v.0: int = get;

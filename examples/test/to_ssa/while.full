@@ -1,12 +1,12 @@
 @main(a: int) {
 .entry1:
+  zero.init: int = undef;
+  one.init: int = undef;
+  is_term.init: bool = undef;
   set a.0 a;
-  is_term.entry1: bool = undef;
-  set is_term.0 is_term.entry1;
-  one.entry1: int = undef;
-  set one.0 one.entry1;
-  zero.entry1: int = undef;
-  set zero.0 zero.entry1;
+  set is_term.0 is_term.init;
+  set one.0 one.init;
+  set zero.0 zero.init;
   jmp .while.cond;
 .while.cond:
   zero.0: int = get;

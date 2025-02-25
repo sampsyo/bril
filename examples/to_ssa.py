@@ -6,8 +6,6 @@ from cfg import block_map, successors, add_terminators, add_entry, reassemble
 from form_blocks import form_blocks
 from dom import get_dom, dom_fronts, dom_tree
 
-UNDEF = "__undefined__"
-
 
 def def_blocks(blocks):
     """Get a map from variable names to defining blocks."""
@@ -43,6 +41,7 @@ def ssa_rename(blocks, gets, succ, domtree, args):
     stack = defaultdict(list, {v: [v] for v in args})
     get_dests = {b: {p: "" for p in gets[b]} for b in blocks}
     sets = {b: [] for b in blocks}
+    inits = {}
     counters = defaultdict(int)
 
     def _push_fresh(var):
@@ -50,6 +49,14 @@ def ssa_rename(blocks, gets, succ, domtree, args):
         counters[var] += 1
         stack[var].insert(0, fresh)
         return fresh
+
+    def _peek(var):
+        if stack[var]:
+            return stack[var][0]
+        else:
+            init_name = f"{var}.init"
+            inits[var] = init_name
+            return init_name
 
     def _rename(block):
         # Save stacks.
@@ -63,7 +70,7 @@ def ssa_rename(blocks, gets, succ, domtree, args):
         for instr in blocks[block]:
             # Rename arguments in normal instructions.
             if "args" in instr:
-                new_args = [stack[arg][0] for arg in instr["args"]]
+                new_args = [_peek(arg) for arg in instr["args"]]
                 instr["args"] = new_args
 
             # Rename destinations.
@@ -73,11 +80,7 @@ def ssa_rename(blocks, gets, succ, domtree, args):
         # Add `set` instructions to send values to each successor.
         for s in succ[block]:
             for p in gets[s]:
-                if stack[p]:
-                    sets[block].append((s, p, stack[p][0]))
-                else:
-                    # The variable is not defined on this path.
-                    sets[block].append((s, p, UNDEF))
+                sets[block].append((s, p, _peek(p)))
 
         # Recursive calls.
         for b in sorted(domtree[block]):
@@ -90,22 +93,13 @@ def ssa_rename(blocks, gets, succ, domtree, args):
     entry = list(blocks.keys())[0]
     _rename(entry)
 
-    return sets, get_dests
+    return sets, get_dests, inits
 
 
 def insert_sets_and_gets(blocks, sets, get_dests, types):
     for block, instrs in blocks.items():
         # Add `set`s to the bottom of the block.
         for succ, old_var, val in sorted(sets[block]):
-            if val == UNDEF:
-                # Create an undefined value for this `set`.
-                val = f"{old_var}.{block}"
-                undef = {
-                    "op": "undef",
-                    "type": types[old_var],
-                    "dest": val,
-                }
-                instrs.insert(-1, undef)
             set_inst = {
                 "op": "set",
                 "args": [get_dests[succ][old_var], val],
@@ -120,6 +114,16 @@ def insert_sets_and_gets(blocks, sets, get_dests, types):
                 "type": types[old_var],
             }
             instrs.insert(0, get_inst)
+
+
+def insert_inits(entry, inits, types):
+    for old_var, init_var in sorted(inits.items()):
+        undef = {
+            "op": "undef",
+            "type": types[old_var],
+            "dest": init_var,
+        }
+        entry.insert(0, undef)
 
 
 def get_types(func):
@@ -146,8 +150,11 @@ def func_to_ssa(func):
     arg_names = {a["name"] for a in func["args"]} if "args" in func else set()
 
     gets = get_gets(blocks, df, defs)
-    sets, get_dests = ssa_rename(blocks, gets, succ, dom_tree(dom), arg_names)
+    sets, get_dests, inits = ssa_rename(
+        blocks, gets, succ, dom_tree(dom), arg_names
+    )
     insert_sets_and_gets(blocks, sets, get_dests, types)
+    insert_inits(next(iter(blocks.values())), inits, types)
 
     func["instrs"] = reassemble(blocks)
 
