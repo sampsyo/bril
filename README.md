@@ -47,9 +47,9 @@ Tests
 
 There are some tests in the `test/` directory.
 They use [Turnt][], which lets us write the expected output for individual commands.
-Install it with [pip][]:
+Install it with [uv][]:
 
-    $ pip install --user turnt
+    $ uv tool install turnt
 
 Then run all the tests by typing `make test`.
 
