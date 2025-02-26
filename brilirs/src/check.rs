@@ -31,7 +31,7 @@ const fn check_num_labels(expected: usize, labels: &[String]) -> Result<(), Inte
 }
 
 fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(), InterpError> {
-  if expected == actual {
+  if expected == actual || expected == &bril_rs::Type::Any || actual == &bril_rs::Type::Any {
     Ok(())
   } else {
     Err(InterpError::BadAsmtType(expected.clone(), actual.clone()))
@@ -43,11 +43,10 @@ fn update_env<'a>(
   dest: &'a str,
   typ: &'a Type,
 ) -> Result<(), InterpError> {
-  #[expect(
-    clippy::option_if_let_else,
-    reason = "https://github.com/rust-lang/rust-clippy/issues/8346"
-  )]
-  if let Some(current_typ) = env.get(dest) {
+  if typ == &Type::Any {
+    env.insert(dest, typ);
+    Ok(())
+  } else if let Some(current_typ) = env.get(dest) {
     check_asmt_type(current_typ, typ)
   } else {
     env.insert(dest, typ);

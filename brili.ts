@@ -178,6 +178,8 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
     return Object.hasOwnProperty.call(val, "loc");
   } else if (typ === "char") {
     return typeof val === "string";
+  } else if (typ === "any") {
+    return true;
   }
   throw error(`unknown type ${typ}`);
 }
@@ -186,7 +188,9 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
  * Check whether the types are equal.
  */
 function typeCmp(lhs: bril.Type, rhs: bril.Type): boolean {
-  if (lhs === "int" || lhs == "bool" || lhs == "float" || lhs == "char") {
+  if (lhs === "any" || rhs === "any") {
+    return true;
+  } else if (lhs === "int" || lhs == "bool" || lhs == "float" || lhs == "char") {
     return lhs == rhs;
   } else {
     if (typeof rhs === "object" && Object.hasOwn(rhs, "ptr")) {
