@@ -39,6 +39,7 @@ The current benchmarks are:
 * `exponentiation-by-squaring`: Fast iterative computation of large integer powers using [exponentiation by squaring][exp_by_squaring].
 * `fact`: Prints the factorial of *n*, computing it recursively.
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
+* `fastinvsqrt`: Uses the famous [Quake 3 Fast Inverse Square Root](https://en.wikipedia.org/wiki/Fast_inverse_square_root) algorithm to approximate 1 / sqrt(x). Requires an extension that provides `bits2float` and `float2bits`. Otherwise, use `iterativefastinvsqrt`.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `fnv1-hash`: Compute the [Fowler-Noll-Vo hash function](https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function) of an integer array.
@@ -50,6 +51,7 @@ The current benchmarks are:
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `hamming`: Computes the hamming distance between two integers.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
+* `iterativefastinvsqrt`: Uses the significantly more boring Newton's method to approximate 1 / sqrt(x), starting with 1 / x and iterating until the step becomes smaller than a specified precision. Works if the cooler `fastinvsqrt` is not an option.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
