@@ -1,0 +1,48 @@
+@my_print_1(x:int) {
+    print x x;
+}
+
+@my_print_2(x:float) {
+    print x;
+    print x;
+}
+
+@func_dispatch(f: int, args: ptr<any>) {
+    one : int = const 1;
+    two : int = const 2;
+
+    cond1 : bool = eq f one;
+
+    br cond1 .call_my_print_1 .next;
+.next:
+    cond2 : bool = eq f two;
+    br cond2 .call_my_print_2 .end;
+
+.call_my_print_1:
+    data : int = load args;
+    call @my_print_1 data;
+    ret;
+
+.call_my_print_2:
+    data : any = load args;
+    call @my_print_2 data;
+    ret;
+.end:
+    ret;
+}
+
+@main() {
+    one : int = const 1;
+    two : float = const 2.0;
+    func1 : int = id one;
+    func2 : int = const 2;
+
+    args : ptr<any> = alloc one;
+    store args one;
+
+    call @func_dispatch func1 args;
+    store args two;
+    call @func_dispatch func2 args;
+
+    free args;
+}

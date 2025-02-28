@@ -1,0 +1,6 @@
+@main() {
+i: int = const 4;
+a: any = const 4;
+f: float = const 4;
+print i a f; # `4 4 4.00000000000000000`
+}

@@ -14,6 +14,7 @@
     - [Import](lang/import.md)
     - [Character](lang/char.md)
     - [Bit Casting](lang/bitcast.md)
+    - [Dynamic](lang/dynamic.md)
 - [Tools](tools/README.md)
     - [Interpreter](tools/interp.md)
     - [Text Representation](tools/text.md)

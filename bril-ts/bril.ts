@@ -10,7 +10,7 @@ export type Ident = string;
 /**
  * Primitive types.
  */
-export type PrimType = "int" | "bool" | "float" | "char";
+export type PrimType = "int" | "bool" | "float" | "char" | "any";
 
 /**
  * Parameterized types. (We only have pointers for now.)
