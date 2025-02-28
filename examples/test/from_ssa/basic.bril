@@ -1,0 +1,6 @@
+@main() {
+  y: int = const 42;
+  set x y;
+  x: int = get;
+  print x;
+}
