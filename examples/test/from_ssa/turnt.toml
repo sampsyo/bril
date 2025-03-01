@@ -1,0 +1,5 @@
+[envs.orig]
+command = "bril2json < {filename} | brili {args}"
+
+[envs.from_ssa]
+command = "bril2json < {filename} | python3 ../../from_ssa.py | brili {args}"

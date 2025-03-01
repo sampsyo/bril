@@ -11,24 +11,35 @@ def get_types(func):
     return types
 
 
+def shadow(name):
+    return f'shadow.{name}'
+
+
 def func_from_ssa(func):
     types = get_types(func)
 
     out_instrs = []
     for instr in func["instrs"]:
         if instr.get("op") == "set":
-            # Sets become copies.
+            # Sets become copies into shadow variables.
             copy = {
                 "op": "id",
-                "dest": instr["args"][0],
+                "dest": shadow(instr["args"][0]),
                 "type": types[instr["args"][0]],
                 "args": [instr["args"][1]],
             }
             out_instrs.append(copy)
         elif instr.get("op") == "get":
-            # Gets become no-ops.
-            continue
+            # Gets become copies out of shadow variables.
+            copy = {
+                "op": "id",
+                "dest": instr["dest"],
+                "type": instr["type"],
+                "args": [shadow(instr["dest"])],
+            }
+            out_instrs.append(copy)
         else:
+            # Preserve other instructions.
             out_instrs.append(instr)
 
     func["instrs"] = out_instrs
