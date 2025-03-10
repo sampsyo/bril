@@ -1,0 +1,98 @@
+# Implementation based off of: https://stackoverflow.com/questions/11644441/fast-inverse-square-root-on-x64
+# double invsqrtQuake( double number )
+#   {
+#       double y = number;
+#       double x2 = y * 0.5;
+#       std::int64_t i = *(std::int64_t *) &y;
+#       // The magic number is for doubles is from https://cs.uwaterloo.ca/~m32rober/rsqrt.pdf
+#       i = 0x5fe6eb50c7b537a9 - (i >> 1);
+#       y = *(double *) &i;
+#       y = y * (1.5 - (x2 * y * y));   // 1st iteration
+#       //      y  = y * ( 1.5 - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+#       return y;
+#   }
+#   Don't @ me about code style; I took the above code verbatim
+
+# ARGS: 2
+# this then computes 1/sqrt(2) approximately, so it should be around 0.7 since
+# sqrt(2) is 1.14
+@main(y: float) {
+  one_half: float = const 0.5;
+  one: int = const 1;
+  one_and_half: float = const 1.5;
+  magic: int = const 6910469410427058089;
+
+  x2: float = fmul y one_half;
+  i: int = float2bits y;
+  i2: int = call @RIGHTSHIFT i one;
+  i3: int = sub magic i2;
+  y2: float = bits2float i3;
+
+  y3: float = fmul y2 y2;
+  y4: float = fmul x2 y3;
+  y5: float = fsub one_and_half y4;
+  y6: float = fmul y2 y5;
+
+  print y6;
+}
+
+# from bitshift.bril:
+
+@pow(x: int, n: int): int {
+  v1: int = id n;
+  v2: int = const 1;
+  v3: bool = eq v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = id x;
+  ret v4;
+.else.0:
+  v5: int = id x;
+  v6: int = id n;
+  v7: int = const 2;
+  v8: int = div v6 v7;
+  half: int = call @pow v5 v8;
+  half: int = id half;
+  v9: int = id half;
+  v10: int = id half;
+  v11: int = mul v9 v10;
+  half2: int = id v11;
+  v13: int = id n;
+  v14: int = const 2;
+  v15: int = call @mod v13 v14;
+  v16: int = const 1;
+  v17: bool = eq v15 v16;
+  br v17 .then.12 .else.12;
+.then.12:
+  v18: int = id half2;
+  v19: int = id x;
+  v20: int = mul v18 v19;
+  ans: int = id v20;
+  jmp .endif.12;
+.else.12:
+  v21: int = id half2;
+  ans: int = id v21;
+.endif.12:
+  v22: int = id ans;
+  ret v22;
+}
+@mod(a: int, b: int): int {
+  v0: int = id a;
+  v1: int = id a;
+  v2: int = id b;
+  v3: int = div v1 v2;
+  v4: int = id b;
+  v5: int = mul v3 v4;
+  v6: int = sub v0 v5;
+  ret v6;
+}
+@RIGHTSHIFT(x: int, step: int): int {
+  v0: int = const 2;
+  v1: int = id step;
+  p: int = call @pow v0 v1;
+  p: int = id p;
+  v2: int = id x;
+  v3: int = id p;
+  v4: int = div v2 v3;
+  ret v4;
+}
