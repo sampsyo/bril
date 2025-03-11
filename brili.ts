@@ -749,7 +749,6 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         throw error(`get without corresponding set for ${instr.dest}`);
       } else {
         state.env.set(instr.dest, val);
-        state.ssaEnv.delete(instr.dest); // Consume the shadow value (enforce SSU).
       }
 
       return NEXT;

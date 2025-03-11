@@ -1,0 +1,16 @@
+@main() {
+  one: int = const 1;
+  set shadow one;
+  main.cond: bool = const true;
+  set cond main.cond;
+.test:
+  cond: bool = get;
+  shadow: int = get;
+  br cond .false .end;
+.false:
+  false.cond: bool = const false;
+  set cond false.cond;
+  jmp .test;
+.end:
+  print shadow;
+}
