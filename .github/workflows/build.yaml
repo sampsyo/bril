@@ -21,9 +21,6 @@ jobs:
       - uses: actions/setup-python@v4
         with:
             python-version: '3.11'
-            cache: pip
-            cache-dependency-path: bril-txt/pyproject.toml
-
       - name: TypeScript check
         run: deno check brili.ts brilck.ts ts2bril.ts
 
@@ -55,9 +52,6 @@ jobs:
       - uses: actions/setup-python@v4
         with:
             python-version: '3.11'
-            cache: pip
-            cache-dependency-path: bril-txt/pyproject.toml
-
       - name: Install brilck
         run: deno install brilck.ts
 
