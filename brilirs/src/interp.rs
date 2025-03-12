@@ -331,7 +331,7 @@ fn execute_value_op<T: std::io::Write>(
   dest: usize,
   args: &[usize],
   funcs: &[usize],
-  shadow_env: &mut HashMap<usize, Value>,
+  shadow_env: &HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
@@ -679,7 +679,7 @@ fn execute<'a, T: std::io::Write>(
             numified_code.dest.unwrap(),
             &numified_code.args,
             &numified_code.funcs,
-            &mut shadow_env,
+            &shadow_env,
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
