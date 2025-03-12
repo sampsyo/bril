@@ -331,7 +331,7 @@ fn execute_value_op<T: std::io::Write>(
   dest: usize,
   args: &[usize],
   funcs: &[usize],
-  shadow_env: &mut HashMap<usize, Value>,
+  shadow_env: &HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
     Add, Alloc, And, Bits2Float, Call, Ceq, Cge, Cgt, Char2int, Cle, Clt, Div, Eq, Fadd, Fdiv, Feq,
@@ -500,8 +500,8 @@ fn execute_value_op<T: std::io::Write>(
 
       state.env.set(dest, result);
     }
-    Get => match shadow_env.remove(&dest) {
-      Some(v) => state.env.set(dest, v),
+    Get => match shadow_env.get(&dest) {
+      Some(v) => state.env.set(dest, *v),
       None => return Err(InterpError::GetWithoutSet),
     },
     Undef => {
@@ -679,7 +679,7 @@ fn execute<'a, T: std::io::Write>(
             numified_code.dest.unwrap(),
             &numified_code.args,
             &numified_code.funcs,
-            &mut shadow_env,
+            &shadow_env,
           )
           .map_err(|e| e.add_pos(pos.clone()))?;
         }
