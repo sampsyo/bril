@@ -14,6 +14,7 @@ BENCHMARKS := ../benchmarks/core/*.bril \
 ../benchmarks/float/*.bril \
 ../benchmarks/mem/*.bril \
 ../benchmarks/mixed/*.bril \
+../benchmarks/mixed/brilirs-only/*.bril \
 
 LONGBENCHMARKS := ../benchmarks/long/*.bril \
 ../benchmarks/core/ackermann.bril \
