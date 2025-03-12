@@ -500,8 +500,8 @@ fn execute_value_op<T: std::io::Write>(
 
       state.env.set(dest, result);
     }
-    Get => match shadow_env.remove(&dest) {
-      Some(v) => state.env.set(dest, v),
+    Get => match shadow_env.get(&dest) {
+      Some(v) => state.env.set(dest, *v),
       None => return Err(InterpError::GetWithoutSet),
     },
     Undef => {
