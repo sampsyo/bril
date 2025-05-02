@@ -11,6 +11,14 @@ class ThreadHandle {
   }
 }
 
+type ThreadRecord = {
+  promise: Promise<void>;
+  resolve: () => void;
+  reject: (e: unknown) => void;
+};
+
+const threadTable = new Map<number, ThreadRecord>();
+
 /* global counter + book-keeping for finished "threads" */
 let nextTid = 1;
 const finishedThreads = new Set<number>();
@@ -275,10 +283,15 @@ function checkArgs(instr: bril.Operation, count: number) {
   }
 }
 
+/* Type guard helper*/
+function isPointer(v: Value): v is Pointer {
+  return typeof v === "object" && v !== null && "loc" in v && "type" in v;
+}
+
 function getPtr(instr: bril.Operation, env: Env, index: number): Pointer {
   const val = getArgument(instr, env, index);
-  if (typeof val !== "object" || val instanceof BigInt) {
-    throw `${instr.op} argument ${index} must be a Pointer`;
+  if (!isPointer(val)) {
+    throw error(`${instr.op} argument ${index} must be a Pointer`);
   }
   return val;
 }
@@ -375,7 +388,7 @@ type State = {
 /**
  * Interpet a call instruction.
  */
-function evalCall(instr: bril.Operation, state: State): Action {
+async function evalCall(instr: bril.Operation, state: State): Promise<Action> {
   // Which function are we calling?
   const funcName = getFunc(instr, 0);
   const func = findFunc(funcName, state.funcs);
@@ -416,7 +429,7 @@ function evalCall(instr: bril.Operation, state: State): Action {
     ssaEnv: new Map(),
     specparent: null, // Speculation not allowed.
   };
-  const retVal = evalFunc(func, newState);
+  const retVal = await evalFunc(func, newState);
   state.icount = newState.icount;
 
   // Dynamically check the function's return value and type.
@@ -461,13 +474,19 @@ function evalCall(instr: bril.Operation, state: State): Action {
   return NEXT;
 }
 
+// Helper to reconstruct full program
+
+function findProg(funcs: readonly bril.Function[]): bril.Program {
+  return { functions: [...funcs] };
+}
+
 /**
  * Interpret an instruction in a given environment, possibly updating the
  * environment. If the instruction branches to a new label, return that label;
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, state: State): Action {
+async function evalInstr(instr: bril.Instruction, state: State): Promise<Action> {
   state.icount += BigInt(1);
 
   // Check that we have the right number of arguments.
@@ -705,7 +724,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
 
     case "call": {
-      return evalCall(instr, state);
+      return await evalCall(instr, state);
     }
 
     case "alloc": {
@@ -858,6 +877,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       /* Prepare fresh env for the spawned function */
       const newEnv: Env = new Map();
       const params = calleeDef.args ?? [];
+      const argVars = (instr.args ?? []).slice(); //copy
       const argVals = (instr.args ?? []).map(a => get(state.env, a));
       if (params.length !== argVals.length) {
         throw error(`spawn: arity mismatch for @${callee}`);
@@ -866,22 +886,40 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         newEnv.set(params[i].name, argVals[i]);
       }
 
-      /* Run the function synchronously (stub)*/
-      const subState: State = {
-        env: newEnv,
-        heap: state.heap,
-        funcs: state.funcs,
-        icount: state.icount,
-        ssaEnv: new Map(),
-        specparent: null,
-      }
-
-      evalFunc(calleeDef, subState);
-      state.icount = subState.icount; // prop profiling count
-
-      /* Produce a fresh thread handle */
+      // fresh thread id - promise pair
       const tid = nextTid++;
-      finishedThreads.add(tid);
+      let resolve!: () => void, reject!: (e: unknown) => void;
+      const promise = new Promise<void>((res, rej) => { resolve = res; reject = rej; });
+      threadTable.set(tid, { promise, resolve, reject });
+
+      // launch worker
+      const worker = new Worker(
+        new URL("./bril-ts/brili_worker.ts", import.meta.url).href,
+        { type: "module" },
+      );
+
+      worker.onmessage = (ev) => {
+        const m = ev.data;
+        if (m?.kind === "done" && m.tid === tid) {
+          resolve();
+          worker.terminate();
+        } else if (m?.kind === "error" && m.tid === tid) {
+          reject(new Error(m.message));
+          worker.terminate();
+        }
+      };
+
+      worker.onerror = (e) => { reject(e); worker.terminate(); }
+
+      worker.postMessage({
+        kind: "start",
+        prog: findProg(state.funcs),
+        func: callee,
+        args: argVals,
+        tid,
+      });
+
+      // return handle
       state.env.set(instr.dest, new ThreadHandle(tid));
       return NEXT;
     }
@@ -895,9 +933,13 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         throw error("join expects a thread handle");
       }
 
-      if (!finishedThreads.has(handle.id)) {
-        throw error("attempt to join on unfinished stub thread (logic error)");
-      }
+      const rec = threadTable.get(handle.id);
+      if (!rec) throw error("join on unknown thread");
+
+      // block the interp until this worker resolves
+      // async-unfriendly code --> "busy-wait" with Deno's event
+      // loop by suspending execution until the promise settles
+      await rec.promise;
       return NEXT;
     }
   }
@@ -905,12 +947,12 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
   throw error(`unhandled opcode ${instr.op}`);
 }
 
-function evalFunc(func: bril.Function, state: State): Value | null {
+async function evalFunc(func: bril.Function, state: State): Promise<Value | null> {
   for (let i = 0; i < func.instrs.length; ++i) {
     const line = func.instrs[i];
     if ("op" in line) {
       // Run an instruction.
-      const action = evalInstr(line, state);
+      const action = await evalInstr(line, state);
 
       // Take the prescribed action.
       switch (action.action) {
@@ -1048,7 +1090,7 @@ function parseMainArguments(expected: bril.Argument[], args: string[]): Env {
   return newEnv;
 }
 
-function evalProg(prog: bril.Program) {
+async function evalProg(prog: bril.Program): Promise<void> {
   const heap = new Heap<Value>();
   const main = findFunc("main", prog.functions);
   if (main === null) {
@@ -1077,7 +1119,7 @@ function evalProg(prog: bril.Program) {
     ssaEnv: new Map(),
     specparent: null,
   };
-  evalFunc(main, state);
+  await evalFunc(main, state);
 
   if (!heap.isEmpty()) {
     throw error(
@@ -1090,10 +1132,36 @@ function evalProg(prog: bril.Program) {
   }
 }
 
+/**
+ * Run a single Bril fuction in the current thread, re-using an already 
+ * allocated heap
+ * The caller is responsible for providing an environment that maps the callee's
+ * parameters to concrete argument values
+ * 
+ * Used by Web Workers to execute a spawned function
+ */
+export async function runBrilFunction(
+  prog: bril.Program,
+  funcName: string,
+  env: Map<bril.Ident, Value>,
+  heap: Heap<Value>,
+): Promise<void> {
+  const func = findFunc(funcName, prog.functions);
+  const state: State = {
+    funcs: prog.functions,
+    heap,
+    env,
+    icount: BigInt(0),
+    ssaEnv: new Map(),
+    specparent: null,
+  };
+  await evalFunc(func, state);
+}
+
 async function main() {
   try {
     const prog = JSON.parse(await readStdin()) as bril.Program;
-    evalProg(prog);
+    await evalProg(prog);
   } catch (e) {
     if (e instanceof BriliError) {
       console.error(`error: ${e.message}`);
@@ -1104,4 +1172,9 @@ async function main() {
   }
 }
 
-main();
+// only run the CLI when this file is the ** entry point **
+// deno-lint-ignore ban-ts-comment
+// @ts-ignore: Deno adds `main` at runtime
+if (import.meta.main) {
+  main();
+}
