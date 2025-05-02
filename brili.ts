@@ -2,6 +2,20 @@ import * as bril from "./bril-ts/bril.ts";
 import { readStdin, unreachable } from "./bril-ts/util.ts";
 
 /**
+ * Opaque handle returned by `spawn` and consumed by `join`
+ */
+class ThreadHandle {
+  constructor(readonly id: number) { }
+  toString() {
+    return `<thread ${this.id}>`;
+  }
+}
+
+/* global counter + book-keeping for finished "threads" */
+let nextTid = 1;
+const finishedThreads = new Set<number>();
+
+/**
  * An interpreter error to print to the console.
  */
 class BriliError extends Error {
@@ -152,6 +166,8 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   cge: 2,
   char2int: 1,
   int2char: 1,
+  spawn: null, // any # of args after the callee function
+  join: 1,
 };
 
 type Pointer = {
@@ -161,7 +177,7 @@ type Pointer = {
 
 const UNDEF = Symbol("undef");
 
-type Value = boolean | bigint | Pointer | number | string | typeof UNDEF;
+type Value = boolean | bigint | Pointer | number | string | ThreadHandle | typeof UNDEF;
 type Env = Map<bril.Ident, Value>;
 
 /**
@@ -178,7 +194,10 @@ function typeCheck(val: Value, typ: bril.Type): boolean {
     return Object.hasOwnProperty.call(val, "loc");
   } else if (typ === "char") {
     return typeof val === "string";
-  } else if (typ === "any") {
+  } else if (typ === "thread") {
+    return val instanceof ThreadHandle;
+  }
+  else if (typ === "any") {
     return true;
   }
   throw error(`unknown type ${typ}`);
@@ -192,7 +211,10 @@ function typeCmp(lhs: bril.Type, rhs: bril.Type): boolean {
     return true;
   } else if (lhs === "int" || lhs == "bool" || lhs == "float" || lhs == "char") {
     return lhs == rhs;
-  } else {
+  } else if (lhs === "thread" || rhs === "thread") {
+    return lhs === rhs;
+  }
+  else {
     if (typeof rhs === "object" && Object.hasOwn(rhs, "ptr")) {
       return typeCmp(lhs.ptr, rhs.ptr);
     } else {
@@ -270,8 +292,7 @@ function getArgument(
   const args = instr.args || [];
   if (args.length <= index) {
     throw error(
-      `${instr.op} expected at least ${
-        index + 1
+      `${instr.op} expected at least ${index + 1
       } arguments; got ${args.length}`,
     );
   }
@@ -645,7 +666,10 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
           else if (val != 0.0 && Math.abs(Math.log10(Math.abs(val))) >= 10) {
             return val.toExponential(17);
           } else return val.toFixed(17);
-        } else return val.toString();
+        } else if (val instanceof ThreadHandle) {
+          return val.toString();
+        }
+        else return val.toString();
       });
       console.log(...values);
       return NEXT;
@@ -822,6 +846,58 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       }
       const val = String.fromCodePoint(Number(i));
       state.env.set(instr.dest, val);
+      return NEXT;
+    }
+
+    case "spawn": {
+      /* Operand 0 in `funcs` is the callee; remaining `args` are the variable 
+      names  whose *values become parameters*/
+      const callee = getFunc(instr, 0);
+      const calleeDef = findFunc(callee, state.funcs);
+
+      /* Prepare fresh env for the spawned function */
+      const newEnv: Env = new Map();
+      const params = calleeDef.args ?? [];
+      const argVals = (instr.args ?? []).map(a => get(state.env, a));
+      if (params.length !== argVals.length) {
+        throw error(`spawn: arity mismatch for @${callee}`);
+      }
+      for (let i = 0; i < params.length; i++) {
+        newEnv.set(params[i].name, argVals[i]);
+      }
+
+      /* Run the function synchronously (stub)*/
+      const subState: State = {
+        env: newEnv,
+        heap: state.heap,
+        funcs: state.funcs,
+        icount: state.icount,
+        ssaEnv: new Map(),
+        specparent: null,
+      }
+
+      evalFunc(calleeDef, subState);
+      state.icount = subState.icount; // prop profiling count
+
+      /* Produce a fresh thread handle */
+      const tid = nextTid++;
+      finishedThreads.add(tid);
+      state.env.set(instr.dest, new ThreadHandle(tid));
+      return NEXT;
+    }
+
+    case "join": {
+      const tidVar = instr.args?.[0];
+      if (!tidVar) throw error("join expects 1 argument");
+
+      const handle = get(state.env, tidVar);
+      if (!(handle instanceof ThreadHandle)) {
+        throw error("join expects a thread handle");
+      }
+
+      if (!finishedThreads.has(handle.id)) {
+        throw error("attempt to join on unfinished stub thread (logic error)");
+      }
       return NEXT;
     }
   }
