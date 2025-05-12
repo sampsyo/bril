@@ -1,5 +1,5 @@
 // types that specify binary encoding of WASM types
-type U32 = number; // just treat this like a u32 ig i fucking hate typescriptttttt
+type U32 = number;
 
 enum NumTypeEnc {
   i32 = 0x7F,
