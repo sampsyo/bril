@@ -1,0 +1,72 @@
+# benchmarks/concurrency/parallel_dot.bril
+
+@dot(p1: ptr<int>, p2: ptr<int>, lo: int, hi: int, out: ptr<int>): void {
+  sum: int  = const 0;
+  i:   int  = id lo;
+  one: int  = const 1;
+
+.loop:
+  cond: bool = lt i hi;
+  br cond .body .done;
+
+.body:
+  l1:   ptr<int> = ptradd p1 i;
+  v1:   int      = load l1;
+  l2:   ptr<int> = ptradd p2 i;
+  v2:   int      = load l2;
+  prod: int      = mul v1 v2;
+  sum = add sum prod;
+  i = add i one;
+  jmp .loop;
+
+.done:
+  store out sum;
+  ret;
+}
+
+@main(): void {
+  one:   int = const 1;
+  size:  int      = const 4;
+  p1:    ptr<int> = alloc size;
+  p2:    ptr<int> = alloc size;
+  out1:  ptr<int> = alloc one;
+  out2:  ptr<int> = alloc one;
+
+  # init p1[]=1, p2[]=2
+  i0:    int = const 0;
+  two:   int = const 2;
+
+.init:
+  c0: bool = lt i0 size;
+  br c0 .body0 .done0;
+
+.body0:
+  loc1: ptr<int> = ptradd p1 i0;
+  store loc1 one;
+  loc2: ptr<int> = ptradd p2 i0;
+  store loc2 two;
+  i0 = add i0 one;
+  jmp .init;
+
+.done0:
+  z:     int    = const 0;
+  store out1 z;
+  store out2 z;
+
+  half:  int    = const 2;
+  t1:    thread = spawn @dot p1 p2 z       half out1;
+  t2:    thread = spawn @dot p1 p2 half    size out2;
+  join t1;
+  join t2;
+
+  r1:    int    = load out1;
+  r2:    int    = load out2;
+  r:     int    = add r1 r2;
+  print r;
+
+  free p1;
+  free p2;
+  free out1;
+  free out2;
+  ret;
+}

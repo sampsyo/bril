@@ -1,0 +1,121 @@
+# LCG pseudo‐random generator (needed by randarray)
+@rand(seq: ptr<int>, max: int) : int {
+  a: int = const 25214903917;
+  c: int = const 11;
+  m: int = const 281474976710656;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  nextm: int = mul next m;
+  rem: int = sub axpc nextm;
+  store seq rem;
+  val: int = div rem max;
+  valm: int = mul val max;
+  out: int = sub rem valm;
+  ret out;
+}
+
+# Parallel matrix multiplication (split rows 0..half, half..size)
+@matmul_range(size:int, arr1: ptr<int>, arr2: ptr<int>, dest: ptr<int>, r_lo:int, r_hi:int): void {
+  one: int = const 1;
+  col: int = const 0;
+.row_loop:
+  cond_r: bool = lt r_lo r_hi;
+  br cond_r .row_body .row_done;
+.row_body:
+  col: int = const 0;
+.col_loop:
+  cond_c: bool = lt col size;
+  br cond_c .col_body .col_done;
+.col_body:
+  sum: int = const 0;
+  i: int = const 0;
+.sum_loop:
+  cond_s: bool = lt i size;
+  br cond_s .sum_body .sum_done;
+.sum_body:
+  lidx: int = mul r_lo size;
+  lidx: int = add lidx i;
+  lv: ptr<int> = ptradd arr1 lidx;
+  v1: int = load lv;
+  ridx: int = mul i size;
+  ridx: int = add ridx col;
+  rv: ptr<int> = ptradd arr2 ridx;
+  v2: int = load rv;
+  prod: int = mul v1 v2;
+  sum: int = add sum prod;        # accumulate back into sum
+  i: int = add i one;
+  jmp .sum_loop;
+.sum_done:
+  idx: int = mul r_lo size;
+  idx: int = add idx col;
+  loc: ptr<int> = ptradd dest idx;
+  store loc sum;
+  col: int = add col one;
+  jmp .col_loop;
+.col_done:
+  r_lo: int = add r_lo one;
+  jmp .row_loop;
+.row_done:
+  ret;
+}
+
+# Rand‐array to generate initial matrices
+@randarray(size: int, rng: ptr<int>): ptr<int> {
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  max: int = const 1000;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  v: int = call @rand rng max;
+  loc: ptr<int> = ptradd arr i;
+  store loc v;
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+@main(): void {
+  size: int = const 100;
+  seed: int = const 42;
+  one: int = const 1;
+  rng: ptr<int> = alloc one;
+  store rng seed;
+  sq: int = mul size size;
+  arr1: ptr<int> = call @randarray sq rng;
+  arr2: ptr<int> = call @randarray sq rng;
+  dest: ptr<int> = alloc sq;
+
+  half: int = const 50;
+  zero: int = const 0;
+  # launch two threads for rows [0,half) and [half,size)
+  t1: thread = spawn @matmul_range size arr1 arr2 dest zero half;
+  t2: thread = spawn @matmul_range size arr1 arr2 dest half size;
+  join t1;
+  join t2;
+
+  # optional checksum
+  csum: int = const 0;
+  idx: int = const 0;
+.cs_loop:
+  cond_c: bool = lt idx sq;
+  br cond_c .cs_body .cs_done;
+.cs_body:
+  loc2: ptr<int> = ptradd dest idx;
+  v: int = load loc2;
+  csum: int = add csum v;         # accumulate checksum
+  idx: int = add idx one;
+  jmp .cs_loop;
+.cs_done:
+  print csum;
+  free arr1;
+  free arr2;
+  free dest;
+  free rng;
+  ret;
+}

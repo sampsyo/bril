@@ -1,0 +1,36 @@
+@add_range(p: ptr<int>, lo:int, hi:int): void {
+  i:int = id lo;
+  one:int = const 1;
+.loop:
+  c: bool = le i hi;
+  br c .body .done;
+.body:
+  acc:int = load p;
+  acc:int = add acc i;
+  store p acc;
+  i:int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}
+
+@main(): void {
+  one: int = const 1;
+  cell:ptr<int> = alloc one;
+  z:int = const 0;
+  store cell z;
+
+  lo:int = const 1;
+  mid:int = const 50000;
+  hi:int = const 100000;
+
+  t1:thread = spawn @add_range cell lo mid;
+  t2:thread = spawn @add_range cell mid hi;
+  join t1;
+  join t2;
+
+  r:int = load cell;
+  print r; # 1..100000 = 5000050000
+  free cell;
+  ret;
+}

@@ -44,3 +44,12 @@ output."bench.json" = "../bench.json"
 default = false
 command = "bril2json < {filename} | ../fastbril/build/fastbrili {args}"
 output.out = "-"
+
+[envs.brili-conc]
+command = 'bril2json < {filename} | deno run -A ../brili.ts {args}'
+output.out  = "-"
+
+[envs.brili-seq]
+command = 'bril2json < {filename} | deno run -A ../brili.ts --no-workers {args}'
+output.out = "-"
+

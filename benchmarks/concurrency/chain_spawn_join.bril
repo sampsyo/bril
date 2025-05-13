@@ -1,0 +1,9 @@
+@noop(): void { ret; }
+
+@main(): void {
+  a:int = const 0;
+  t: thread = spawn @noop;
+  join t;
+  print a;
+  ret;
+}

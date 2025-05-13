@@ -1,6 +1,13 @@
 import * as bril from "./bril-ts/bril.ts";
 import { readStdin, unreachable } from "./bril-ts/util.ts";
 
+// tiny flag parser
+const NO_WORKERS = Deno.args.includes("--no-workers");
+if (NO_WORKERS) {
+  // remove the flag so the rest of the code still sees just program args
+  Deno.args.splice(Deno.args.indexOf("--no-workers"), 1);
+}
+
 /**
  * Opaque handle returned by `spawn` and consumed by `join`
  */
@@ -34,13 +41,22 @@ function handleHeapRequest(m: any) {
         break;
       }
       case "load":
-        res = globalHeap.read(new Key(base, offset));
+        res = globalHeap.read(
+          new Key(m.base as number, m.offset as number)
+        );
         break;
       case "store":
-        globalHeap.write(new Key(base, offset), value);
+        globalHeap.write(
+          new Key(m.base as number, m.offset as number),
+          m.value
+        );
+        res = null;
         break;
       case "free":
-        globalHeap.free(new Key(base, offset));
+        globalHeap.free(
+          new Key(m.base as number, m.offset as number)
+        );
+        res = null;
         break;
       default:
         throw error(`unknown heap op ${op}`);
@@ -923,33 +939,43 @@ async function evalInstr(instr: bril.Instruction, state: State): Promise<Action>
       const promise = new Promise<void>((res, rej) => { resolve = res; reject = rej });
       threadTable.set(tid, { promise, resolve, reject, used: false });
 
-      /* launch worker */
-      const worker = new Worker(
-        new URL("./bril-ts/brili_worker.ts", import.meta.url).href,
-        { type: "module" },
-      );
-      workerPorts.set(tid, worker);
-
-      worker.onmessage = (ev) => {
-        const m = ev.data;
-        if (m?.kind === "heap_req") { handleHeapRequest(m); return; }
-        if (m?.kind === "done" && m.tid === tid) {
-          resolve(); worker.terminate(); workerPorts.delete(tid); return;
+      if (NO_WORKERS) {
+        // ---- sequential fallback ---------------------------------
+        try {
+          await runBrilFunction(findProg(state.funcs), calleeName, newEnv, state.heap);
+          resolve();           // immediately mark thread "done"
+        } catch (e) {
+          reject(e);
         }
-        if (m?.kind === "error" && m.tid === tid) {
-          reject(new Error(m.message)); worker.terminate(); workerPorts.delete(tid);
-        }
-      };
-      worker.onerror = (e) => { reject(e); worker.terminate(); workerPorts.delete(tid); };
+      } else {
 
-      worker.postMessage({
-        kind: "start",
-        prog: { functions: [...state.funcs] },
-        func: calleeName,
-        args: argVals,
-        tid,
-      });
+        /* launch worker */
+        const worker = new Worker(
+          new URL("./bril-ts/brili_worker.ts", import.meta.url).href,
+          { type: "module" },
+        );
+        workerPorts.set(tid, worker);
 
+        worker.onmessage = (ev) => {
+          const m = ev.data;
+          if (m?.kind === "heap_req") { handleHeapRequest(m); return; }
+          if (m?.kind === "done" && m.tid === tid) {
+            resolve(); worker.terminate(); workerPorts.delete(tid); return;
+          }
+          if (m?.kind === "error" && m.tid === tid) {
+            reject(new Error(m.message)); worker.terminate(); workerPorts.delete(tid);
+          }
+        };
+        //worker.onerror = (e) => { reject(e); worker.terminate(); workerPorts.delete(tid); };
+
+        worker.postMessage({
+          kind: "start",
+          prog: { functions: [...state.funcs] },
+          func: calleeName,
+          args: argVals,
+          tid,
+        });
+      }
       state.env.set(vinstr.dest, new ThreadHandle(tid));
       return NEXT;
     }
