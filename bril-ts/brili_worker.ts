@@ -1,49 +1,62 @@
-// Lightweight runtime that a web worker runs to execute a spawned thread
-// It imports the og interpreter as a module
+/* Lightweight runtime executed inside each web-worker */
 
-import {
-  runBrilFunction,
-} from "../brili.ts";
+/// <reference lib="webworker" />
+
+import { runBrilFunction, Key } from "../brili.ts";
 import * as bril from "./bril.ts";
-import { Heap } from "../brili.ts";
 
-// message protocol -----------------------------------------------------------------------
-// Parent => worker: {kind: "start", prog: Program, func: string, args: any[], tid: number}
-// Worked => parent: {kind: "done", tid: number}
+/* The main thread fills this when it sends the start message */
+let tid = -1;
+
+/* ───────── Heap proxy class ───────── */
+
+class HeapProxy<X> {
+  private next = 1;
+  private wait = new Map<number, (v: any) => void>();
+
+  private req(op: string, pay: Record<string, unknown>): Promise<any> {
+    const id = this.next++;
+    return new Promise((resolve) => {
+      this.wait.set(id, resolve);
+      (self as DedicatedWorkerGlobalScope).postMessage({ kind: "heap_req", id, op, workerTid: tid, ...pay });
+    });
+  }
+  alloc(n: number) { return this.req("alloc", { amt: n }); }
+  read(k: Key) { return this.req("load", { base: k.base, offset: k.offset }); }
+  write(k: Key, v: X) { return this.req("store", { base: k.base, offset: k.offset, value: v }); }
+  free(k: Key) { return this.req("free", { base: k.base, offset: k.offset }); }
+
+  handle(msg: any) {
+    if (msg?.kind === "heap_res" || msg?.kind === "heap_err") {
+      const fn = this.wait.get(msg.id); if (fn) { fn(msg.value); this.wait.delete(msg.id); }
+    }
+  }
+}
+const sharedHeap = new HeapProxy<any>();
+
+/* ───────── message handler ───────── */
 
 self.onmessage = async (ev: MessageEvent) => {
-  const msg = ev.data;
+  const msg = ev.data as any;
+  /* heap responses are handled by the proxy */
+  sharedHeap.handle(msg);
+
   if (msg?.kind !== "start") return;
 
-  const { prog, func, args, tid } = msg as {
-    prog: bril.Program;
-    func: string;
-    args: any[];
-    tid: number;
-  };
+  tid = msg.tid;
+  const prog = msg.prog as bril.Program;
+  const func = msg.func as string;
+  const args = msg.args as any[];
 
-  // build an Env from formal parameters & args
+  /* build callee env */
   const callee = prog.functions.find(f => f.name === func)!;
   const env = new Map<bril.Ident, any>();
   (callee.args ?? []).forEach((p, i) => env.set(p.name, args[i]));
 
-  // NOTE to self --> every worker gets its own private heap rn!!
-  const heap = new Heap<any>();
-
   try {
-    await runBrilFunction(prog, func, env, heap);
-    // sanity check: all mem freed??
-    if (!heap.isEmpty()) {
-      const msg = `worker tid=${tid} exited with unfreed heap blocks`;
-      self.postMessage({ kind: "error", tid, message: msg });
-      // still throw error so worker's own console gets stack
-      throw new Error(msg);
-    }
-    // success --> notify parent
-    self.postMessage({ kind: "done", tid });
+    await runBrilFunction(prog, func, env, sharedHeap as any);
+    (self as DedicatedWorkerGlobalScope).postMessage({ kind: "done", tid });
   } catch (e) {
-    // bubble the error up to parent
-    self.postMessage({ kind: "error", tid, message: String(e) });
-    throw e;
+    (self as DedicatedWorkerGlobalScope).postMessage({ kind: "error", tid, message: String(e) });
   }
 };

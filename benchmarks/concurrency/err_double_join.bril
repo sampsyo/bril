@@ -1,0 +1,8 @@
+@f(): void { ret; }
+
+@main(): void {
+  t: thread = spawn @f;
+  join t;
+  join t;        # second join is illegal
+  ret;
+}

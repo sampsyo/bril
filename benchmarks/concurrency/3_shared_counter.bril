@@ -1,0 +1,24 @@
+@inc(p: ptr<int>): void {
+  v : int = load p;
+  one: int = const 1;
+  nv : int = add v one;
+  store p nv;
+  ret;
+}
+
+@main(): void {
+  one: int = const 1;
+  cell: ptr<int> = alloc one;
+  z   : int = const 0;
+  store cell z;
+
+  t1: thread = spawn @inc cell;
+  join t1;
+  t2: thread = spawn @inc cell;
+  join t2;
+
+  out: int = load cell;
+  print out;
+  free cell;
+  ret;
+}
