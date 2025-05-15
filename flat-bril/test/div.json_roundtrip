@@ -1,0 +1,41 @@
+{
+  "functions": [
+    {
+      "args": [],
+      "instrs": [
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "int",
+          "value": 9
+        },
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "int",
+          "value": -20
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "res",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

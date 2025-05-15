@@ -1,0 +1,590 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "in",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "index",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "not_finished",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "label": "for.cond"
+        },
+        {
+          "args": [
+            "not_finished"
+          ],
+          "funcs": [],
+          "labels": [
+            "for.body",
+            "for.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body"
+        },
+        {
+          "args": [
+            "ten",
+            "index"
+          ],
+          "dest": "power",
+          "funcs": [
+            "pow"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "in",
+            "power"
+          ],
+          "dest": "d",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "d",
+            "zero"
+          ],
+          "dest": "check",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "check"
+          ],
+          "funcs": [],
+          "labels": [
+            "if.true",
+            "if.false"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.true"
+        },
+        {
+          "dest": "not_finished",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "if.false"
+        },
+        {
+          "args": [
+            "index",
+            "one"
+          ],
+          "dest": "index",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end"
+        },
+        {
+          "args": [
+            "index",
+            "one"
+          ],
+          "dest": "exp",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "in",
+            "exp"
+          ],
+          "dest": "is_palindrome",
+          "funcs": [
+            "palindrome"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_palindrome"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "base",
+          "type": "int"
+        },
+        {
+          "name": "exp",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "res",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "not_finished",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "label": "for.cond.pow"
+        },
+        {
+          "args": [
+            "not_finished"
+          ],
+          "funcs": [],
+          "labels": [
+            "for.body.pow",
+            "for.end.pow"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.pow"
+        },
+        {
+          "args": [
+            "exp",
+            "zero"
+          ],
+          "dest": "finished",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "finished"
+          ],
+          "funcs": [],
+          "labels": [
+            "if.true.pow",
+            "if.false.pow"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.true.pow"
+        },
+        {
+          "dest": "not_finished",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.cond.pow"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "if.false.pow"
+        },
+        {
+          "args": [
+            "res",
+            "base"
+          ],
+          "dest": "res",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "exp",
+            "one"
+          ],
+          "dest": "exp",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.cond.pow"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.pow"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "pow",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "in",
+          "type": "int"
+        },
+        {
+          "name": "len",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "is_palindrome",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "len",
+            "zero"
+          ],
+          "dest": "check",
+          "funcs": [],
+          "labels": [],
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "check"
+          ],
+          "funcs": [],
+          "labels": [
+            "if.true.palindrome",
+            "if.false.palindrome"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.true.palindrome"
+        },
+        {
+          "dest": "is_palindrome",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "if.end.palindrome"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "if.false.palindrome"
+        },
+        {
+          "args": [
+            "ten",
+            "len"
+          ],
+          "dest": "power",
+          "funcs": [
+            "pow"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "in",
+            "power"
+          ],
+          "dest": "left",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "in",
+            "ten"
+          ],
+          "dest": "v1",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1",
+            "ten"
+          ],
+          "dest": "v2",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "in",
+            "v2"
+          ],
+          "dest": "right",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "left",
+            "right"
+          ],
+          "dest": "is_equal",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_equal"
+          ],
+          "funcs": [],
+          "labels": [
+            "if.true.mirror",
+            "if.false.mirror"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.true.mirror"
+        },
+        {
+          "args": [
+            "power",
+            "left"
+          ],
+          "dest": "temp",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "in",
+            "temp"
+          ],
+          "dest": "temp",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "temp",
+            "right"
+          ],
+          "dest": "temp",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "temp",
+            "ten"
+          ],
+          "dest": "next_in",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "len",
+            "two"
+          ],
+          "dest": "next_len",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "next_in",
+            "next_len"
+          ],
+          "dest": "is_palindrome",
+          "funcs": [
+            "palindrome"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "if.end.palindrome"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "if.false.mirror"
+        },
+        {
+          "dest": "is_palindrome",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "if.end.palindrome"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "if.end.palindrome"
+        },
+        {
+          "args": [
+            "is_palindrome"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "palindrome",
+      "type": "bool"
+    }
+  ]
+}

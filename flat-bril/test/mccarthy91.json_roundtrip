@@ -1,0 +1,155 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "eleven",
+          "op": "const",
+          "type": "int",
+          "value": 11
+        },
+        {
+          "dest": "hundred",
+          "op": "const",
+          "type": "int",
+          "value": 100
+        },
+        {
+          "args": [
+            "n",
+            "hundred"
+          ],
+          "dest": "big",
+          "funcs": [],
+          "labels": [],
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "big"
+          ],
+          "funcs": [],
+          "labels": [
+            "big",
+            "small"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "big"
+        },
+        {
+          "args": [
+            "n",
+            "ten"
+          ],
+          "dest": "tmp",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "label": "small"
+        },
+        {
+          "args": [
+            "n",
+            "eleven"
+          ],
+          "dest": "tmp",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp"
+          ],
+          "dest": "tmp",
+          "funcs": [
+            "mccarthy91"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp"
+          ],
+          "dest": "tmp",
+          "funcs": [
+            "mccarthy91"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "mccarthy91",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "result",
+          "funcs": [
+            "mccarthy91"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

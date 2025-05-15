@@ -1,0 +1,251 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "modulus",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n",
+            "modulus"
+          ],
+          "dest": "result",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "modulus"
+          ],
+          "dest": "multiple",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "multiple"
+          ],
+          "dest": "remainder",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "remainder"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "n",
+            "two"
+          ],
+          "dest": "bit",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "bit"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "lsb",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n",
+            "n"
+          ],
+          "dest": "result",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "square",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "p",
+          "type": "int"
+        },
+        {
+          "name": "q",
+          "type": "int"
+        },
+        {
+          "name": "seed",
+          "type": "int"
+        },
+        {
+          "name": "sequence_length",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "p",
+            "q"
+          ],
+          "dest": "modulus",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "dest": "start",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "sequence_length"
+          ],
+          "dest": "end",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "loop.branch"
+        },
+        {
+          "args": [
+            "start",
+            "end"
+          ],
+          "dest": "cond",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "loop.body",
+            "loop.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "loop.body"
+        },
+        {
+          "args": [
+            "seed"
+          ],
+          "dest": "squared",
+          "funcs": [
+            "square"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "squared",
+            "modulus"
+          ],
+          "dest": "seed",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "seed"
+          ],
+          "dest": "least_significant_bit",
+          "funcs": [
+            "lsb"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "least_significant_bit"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "start",
+            "one"
+          ],
+          "dest": "start",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop.branch"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "loop.end"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "x",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v1",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "f",
+          "funcs": [
+            "fac"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "f"
+          ],
+          "dest": "f",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "f"
+          ],
+          "dest": "v2",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "dest": "v3",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v1",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "v3",
+          "funcs": [],
+          "labels": [],
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "funcs": [],
+          "labels": [
+            "then.0",
+            "else.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.0"
+        },
+        {
+          "dest": "v4",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "endif.0"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.0"
+        },
+        {
+          "label": "endif.0"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v5",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v6",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v7",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v6",
+            "v7"
+          ],
+          "dest": "v8",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v8"
+          ],
+          "dest": "v9",
+          "funcs": [
+            "fac"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5",
+            "v9"
+          ],
+          "dest": "v10",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v10"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "dest": "v11",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "fac",
+      "type": "int"
+    }
+  ]
+}

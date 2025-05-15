@@ -1,0 +1,41 @@
+{
+  "functions": [
+    {
+      "args": [],
+      "instrs": [
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "somewhere"
+          ],
+          "op": "jmp"
+        },
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "label": "somewhere"
+        },
+        {
+          "args": [
+            "v"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

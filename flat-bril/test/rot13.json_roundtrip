@@ -1,0 +1,117 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "aed",
+          "funcs": [
+            "rot"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "aed"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "thirteen",
+          "op": "const",
+          "type": "int",
+          "value": 13
+        },
+        {
+          "dest": "twenty_six",
+          "op": "const",
+          "type": "int",
+          "value": 26
+        },
+        {
+          "args": [
+            "n",
+            "thirteen"
+          ],
+          "dest": "shifted",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "shifted",
+            "twenty_six"
+          ],
+          "dest": "over",
+          "funcs": [],
+          "labels": [],
+          "op": "ge",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "over"
+          ],
+          "funcs": [],
+          "labels": [
+            "if",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if"
+        },
+        {
+          "args": [
+            "shifted",
+            "twenty_six"
+          ],
+          "dest": "shifted",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "shifted"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "rot",
+      "type": "int"
+    }
+  ]
+}

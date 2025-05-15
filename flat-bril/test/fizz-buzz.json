@@ -1,0 +1,478 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "index",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.0"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "v2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2",
+            "input"
+          ],
+          "dest": "v4",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "labels": [
+            "for.body.0",
+            "for.end.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.0"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "v5",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v6",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [
+            "v5",
+            "v6"
+          ],
+          "dest": "v7",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v7"
+          ],
+          "dest": "div3",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "div3"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [
+            "v8",
+            "v9"
+          ],
+          "dest": "v10",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "v11",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v10",
+            "v11"
+          ],
+          "dest": "v12",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v12"
+          ],
+          "dest": "isFizz",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v14",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "args": [
+            "v13",
+            "v14"
+          ],
+          "dest": "v15",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15"
+          ],
+          "dest": "div5",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "div5"
+          ],
+          "dest": "v16",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v17",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "args": [
+            "v16",
+            "v17"
+          ],
+          "dest": "v18",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "v19",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v18",
+            "v19"
+          ],
+          "dest": "v20",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v20"
+          ],
+          "dest": "isBuzz",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "isFizz"
+          ],
+          "dest": "v22",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v22"
+          ],
+          "labels": [
+            "then.21",
+            "else.21"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.21"
+        },
+        {
+          "args": [
+            "isBuzz"
+          ],
+          "dest": "v24",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v24"
+          ],
+          "labels": [
+            "then.23",
+            "else.23"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.23"
+        },
+        {
+          "dest": "v25",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "v26",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v25",
+            "v26"
+          ],
+          "dest": "v27",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v27"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v28",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "labels": [
+            "endif.23"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.23"
+        },
+        {
+          "dest": "v29",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "v30",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "v29",
+            "v30"
+          ],
+          "dest": "v31",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v31"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v32",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "endif.23"
+        },
+        {
+          "labels": [
+            "endif.21"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.21"
+        },
+        {
+          "args": [
+            "isBuzz"
+          ],
+          "dest": "v34",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v34"
+          ],
+          "labels": [
+            "then.33",
+            "else.33"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.33"
+        },
+        {
+          "dest": "v35",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "v36",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [
+            "v35",
+            "v36"
+          ],
+          "dest": "v37",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v37"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v38",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "labels": [
+            "endif.33"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.33"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "v39",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v39"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v40",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "endif.33"
+        },
+        {
+          "label": "endif.21"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "v41",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v42",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v41",
+            "v42"
+          ],
+          "dest": "v43",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v43"
+          ],
+          "dest": "index",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.0"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.0"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+# ARGS: 101
+@main(input: int) {
+  v1: int = const 1;
+  index: int = id v1;
+.for.cond.0:
+  v2: int = id index;
+  v4: bool = lt v2 input;
+  br v4 .for.body.0 .for.end.0;
+.for.body.0:
+  v5: int = id index;
+  v6: int = const 3;
+  v7: int = div v5 v6;
+  div3: int = id v7;
+  v8: int = id div3;
+  v9: int = const 3;
+  v10: int = mul v8 v9;
+  v11: int = id index;
+  v12: bool = eq v10 v11;
+  isFizz: bool = id v12;
+  v13: int = id index;
+  v14: int = const 5;
+  v15: int = div v13 v14;
+  div5: int = id v15;
+  v16: int = id div5;
+  v17: int = const 5;
+  v18: int = mul v16 v17;
+  v19: int = id index;
+  v20: bool = eq v18 v19;
+  isBuzz: bool = id v20;
+  v22: bool = id isFizz;
+  br v22 .then.21 .else.21;
+.then.21:
+  v24: bool = id isBuzz;
+  br v24 .then.23 .else.23;
+.then.23:
+  v25: int = const 0;
+  v26: int = const 1;
+  v27: int = sub v25 v26;
+  print v27;
+  v28: int = const 0;
+  jmp .endif.23;
+.else.23:
+  v29: int = const 0;
+  v30: int = const 2;
+  v31: int = sub v29 v30;
+  print v31;
+  v32: int = const 0;
+.endif.23:
+  jmp .endif.21;
+.else.21:
+  v34: bool = id isBuzz;
+  br v34 .then.33 .else.33;
+.then.33:
+  v35: int = const 0;
+  v36: int = const 3;
+  v37: int = sub v35 v36;
+  print v37;
+  v38: int = const 0;
+  jmp .endif.33;
+.else.33:
+  v39: int = id index;
+  print v39;
+  v40: int = const 0;
+.endif.33:
+.endif.21:
+  v41: int = id index;
+  v42: int = const 1;
+  v43: int = add v41 v42;
+  index: int = id v43;
+  jmp .for.cond.0;
+.for.end.0:
+}

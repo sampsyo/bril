@@ -1,0 +1,284 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "val",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "val",
+            "two"
+          ],
+          "dest": "div",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "div",
+            "two"
+          ],
+          "dest": "mul",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "val",
+            "mul"
+          ],
+          "dest": "lsb",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "lsb"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "lsb",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "a_lsb",
+          "funcs": [
+            "lsb"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "b_lsb",
+          "funcs": [
+            "lsb"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a_lsb",
+            "b_lsb"
+          ],
+          "dest": "xor",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "xor",
+            "one"
+          ],
+          "dest": "guard",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "guard"
+          ],
+          "labels": [
+            "if",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "hamm_lsb",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "dist",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "while"
+        },
+        {
+          "args": [
+            "a",
+            "zero"
+          ],
+          "dest": "a_done",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b",
+            "zero"
+          ],
+          "dest": "b_done",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "a_done",
+            "b_done"
+          ],
+          "dest": "done",
+          "op": "and",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "done"
+          ],
+          "labels": [
+            "end",
+            "body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "body"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "hamm",
+          "funcs": [
+            "hamm_lsb"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "dist",
+            "hamm"
+          ],
+          "dest": "dist",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "two"
+          ],
+          "dest": "a",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "two"
+          ],
+          "dest": "b",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "while"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "dist"
+          ],
+          "op": "print"
+        },
+        {
+          "op": "ret"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

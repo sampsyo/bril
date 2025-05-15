@@ -1,0 +1,195 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "base",
+          "type": "int"
+        },
+        {
+          "name": "exp",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "out",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "exp",
+            "one"
+          ],
+          "dest": "end",
+          "funcs": [],
+          "labels": [],
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "funcs": [],
+          "labels": [
+            "ret",
+            "body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "body"
+        },
+        {
+          "args": [
+            "out",
+            "base"
+          ],
+          "dest": "out",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "exp",
+            "one"
+          ],
+          "dest": "exp",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "ret"
+        },
+        {
+          "args": [
+            "out"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "pow",
+      "type": "int"
+    },
+    {
+      "args": [],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "sixtytwo",
+          "op": "const",
+          "type": "int",
+          "value": 62
+        },
+        {
+          "args": [
+            "two",
+            "sixtytwo"
+          ],
+          "dest": "half",
+          "funcs": [
+            "pow"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "half"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "args": [
+            "half",
+            "one"
+          ],
+          "dest": "smaller",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "half",
+            "smaller"
+          ],
+          "dest": "maxint",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "maxint"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "args": [
+            "maxint",
+            "one"
+          ],
+          "dest": "overflow",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "overflow"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

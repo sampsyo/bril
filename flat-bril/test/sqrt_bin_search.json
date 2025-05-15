@@ -1,0 +1,347 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "min_guess",
+          "type": "int"
+        },
+        {
+          "name": "max_guess",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "min_guess"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "v2",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "dest": "min_plus_1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "min_plus_1"
+          ],
+          "dest": "v4",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "max_guess"
+          ],
+          "dest": "v5",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v4",
+            "v5"
+          ],
+          "dest": "v6",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v6"
+          ],
+          "labels": [
+            "then.3",
+            "else.3"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.3"
+        },
+        {
+          "args": [
+            "min_guess"
+          ],
+          "dest": "v7",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v7"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v8",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "op": "ret"
+        },
+        {
+          "label": "else.3"
+        },
+        {
+          "args": [
+            "min_guess"
+          ],
+          "dest": "v9",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "max_guess"
+          ],
+          "dest": "v10",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v9",
+            "v10"
+          ],
+          "dest": "v11",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "dest": "sum_bounds",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sum_bounds"
+          ],
+          "dest": "v12",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v13",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "v12",
+            "v13"
+          ],
+          "dest": "v14",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v14"
+          ],
+          "dest": "mid",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mid"
+          ],
+          "dest": "v15",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mid"
+          ],
+          "dest": "v16",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15",
+            "v16"
+          ],
+          "dest": "v17",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v17"
+          ],
+          "dest": "mid_squared",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mid_squared"
+          ],
+          "dest": "v19",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v20",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v19",
+            "v20"
+          ],
+          "dest": "v21",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v21"
+          ],
+          "labels": [
+            "then.18",
+            "else.18"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.18"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v22",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mid"
+          ],
+          "dest": "v23",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "max_guess"
+          ],
+          "dest": "v24",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v22",
+            "v23",
+            "v24"
+          ],
+          "funcs": [
+            "main"
+          ],
+          "op": "call"
+        },
+        {
+          "dest": "v25",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "labels": [
+            "endif.18"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.18"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v26",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "min_guess"
+          ],
+          "dest": "v27",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mid"
+          ],
+          "dest": "v28",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v26",
+            "v27",
+            "v28"
+          ],
+          "funcs": [
+            "main"
+          ],
+          "op": "call"
+        },
+        {
+          "dest": "v29",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "endif.18"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

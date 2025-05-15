@@ -1,0 +1,386 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "sum",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "digits",
+          "funcs": [
+            "getDigits"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "tmp",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "tmp",
+            "zero"
+          ],
+          "dest": "b",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "labels": [
+            "body",
+            "done"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "body"
+        },
+        {
+          "args": [
+            "tmp",
+            "ten"
+          ],
+          "dest": "digit",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "digit",
+            "digits"
+          ],
+          "dest": "pow",
+          "funcs": [
+            "power"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sum",
+            "pow"
+          ],
+          "dest": "sum",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp",
+            "ten"
+          ],
+          "dest": "tmp",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "done"
+        },
+        {
+          "args": [
+            "input",
+            "sum"
+          ],
+          "dest": "res",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "n",
+            "ten"
+          ],
+          "dest": "div",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "div",
+            "zero"
+          ],
+          "dest": "cond",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "then",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "div"
+          ],
+          "dest": "rec",
+          "funcs": [
+            "getDigits"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "rec",
+            "one"
+          ],
+          "dest": "res",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "getDigits",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "q",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "q"
+          ],
+          "dest": "aq",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "aq"
+          ],
+          "dest": "mod",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mod"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "base",
+          "type": "int"
+        },
+        {
+          "name": "exp",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "res",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "exp",
+            "zero"
+          ],
+          "dest": "b",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "labels": [
+            "done",
+            "body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "body"
+        },
+        {
+          "args": [
+            "res",
+            "base"
+          ],
+          "dest": "res",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "exp",
+            "one"
+          ],
+          "dest": "exp",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "done"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "power",
+      "type": "int"
+    }
+  ]
+}

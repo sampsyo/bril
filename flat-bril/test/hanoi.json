@@ -1,0 +1,148 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "disks",
+          "type": "int"
+        },
+        {
+          "name": "src",
+          "type": "int"
+        },
+        {
+          "name": "dst",
+          "type": "int"
+        },
+        {
+          "name": "spare",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "disks",
+            "zero"
+          ],
+          "dest": "pos",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "pos"
+          ],
+          "labels": [
+            "then",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "disks",
+            "one"
+          ],
+          "dest": "above",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "above",
+            "src",
+            "spare",
+            "dst"
+          ],
+          "funcs": [
+            "hanoi"
+          ],
+          "op": "call"
+        },
+        {
+          "args": [
+            "src",
+            "dst"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "above",
+            "spare",
+            "dst",
+            "src"
+          ],
+          "funcs": [
+            "hanoi"
+          ],
+          "op": "call"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "op": "ret"
+        }
+      ],
+      "name": "hanoi"
+    },
+    {
+      "args": [
+        {
+          "name": "disks",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "src",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "dst",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "spare",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "disks",
+            "src",
+            "dst",
+            "spare"
+          ],
+          "funcs": [
+            "hanoi"
+          ],
+          "op": "call"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

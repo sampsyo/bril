@@ -1,0 +1,567 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        },
+        {
+          "name": "c",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b",
+            "c"
+          ],
+          "funcs": [
+            "quadratic"
+          ],
+          "op": "call"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.0"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v3",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v4",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v3",
+            "v4"
+          ],
+          "dest": "v5",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2",
+            "v5"
+          ],
+          "dest": "v6",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v6"
+          ],
+          "labels": [
+            "for.body.0",
+            "for.end.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.0"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v9",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v8",
+            "v9"
+          ],
+          "dest": "v10",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v11",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v10",
+            "v11"
+          ],
+          "dest": "v12",
+          "op": "ge",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v12"
+          ],
+          "labels": [
+            "then.7",
+            "else.7"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.7"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v13"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else.7"
+        },
+        {
+          "label": "endif.7"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v14",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v15",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v14",
+            "v15"
+          ],
+          "dest": "v16",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v16"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.0"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.0"
+        },
+        {
+          "dest": "v17",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v17"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "sqrt",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        },
+        {
+          "name": "c",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "v2",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "dest": "v3",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v4",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v3",
+            "v4"
+          ],
+          "dest": "v5",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "c"
+          ],
+          "dest": "v6",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5",
+            "v6"
+          ],
+          "dest": "v7",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2",
+            "v7"
+          ],
+          "dest": "v8",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v8"
+          ],
+          "dest": "s",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v10",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v9",
+            "v10"
+          ],
+          "dest": "v11",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "dest": "d",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v12",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v12",
+            "v13"
+          ],
+          "dest": "v14",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "s"
+          ],
+          "dest": "v15",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15"
+          ],
+          "dest": "v16",
+          "funcs": [
+            "sqrt"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v14",
+            "v16"
+          ],
+          "dest": "v17",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v17"
+          ],
+          "dest": "r1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v18",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v19",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v18",
+            "v19"
+          ],
+          "dest": "v20",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "s"
+          ],
+          "dest": "v21",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v21"
+          ],
+          "dest": "v22",
+          "funcs": [
+            "sqrt"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v20",
+            "v22"
+          ],
+          "dest": "v23",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v23"
+          ],
+          "dest": "r2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "r1"
+          ],
+          "dest": "v24",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "d"
+          ],
+          "dest": "v25",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v24",
+            "v25"
+          ],
+          "dest": "v26",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v26"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v27",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "r2"
+          ],
+          "dest": "v28",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "d"
+          ],
+          "dest": "v29",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v28",
+            "v29"
+          ],
+          "dest": "v30",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v30"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v31",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "name": "quadratic"
+    }
+  ]
+}

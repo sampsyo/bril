@@ -1,0 +1,95 @@
+# Bitwise Operator Library
+# Supports AND, OR, XOR. 0 for and, 1 for OR, 2+ for XOR
+# ARGS: 7 15 0
+
+@mod2(a: int): bool{ # if residue is 1 return true, else return false.
+  two: int = const 2;
+ 
+  tmp: int = div a two;
+  tmp2: int = mul tmp two;
+  tmp3: int = sub a tmp2;
+  
+  one: int = const 1;
+  ans: bool = eq one tmp3;
+  ret ans;
+}
+
+# for 0 <= i <= 63, check if numbers are divisible by two; if so, mark that as true, bitwise and/or, then add 
+
+@loop_subroutine(a: int, b: int, c: bool): int{
+  i: int = const 0;
+  n: int = const 63;
+  one: int = const 1;
+  two: int = const 2;
+  ans: int = const 0;
+  to_add: int = const 1;
+.loop:
+  cond: bool = le i n;
+  br cond .here .end;
+.here:
+  mod2a: bool = call @mod2 a;
+  mod2b: bool = call @mod2 b;
+  cond_add: bool = and mod2a mod2b;
+  br c .doOr .stay;
+.doOr:
+  cond_add: bool = or mod2a mod2b;
+.stay:
+  br cond_add .add .end_loop;
+.add:
+  ans: int = add ans to_add;
+.end_loop:
+  a: int = div a two;
+  b: int = div b two;
+  to_add: int = mul to_add two;
+  i: int = add i one;
+  jmp .loop;
+.end:
+  ret ans;
+}
+
+@OR(a: int, b: int): int{
+  oper: bool = const true;
+  v1: int = call @loop_subroutine a b oper;
+  ret v1;
+}
+
+@AND(a: int, b: int): int{
+  oper: bool = const false;
+  v1: int = call @loop_subroutine a b oper;
+  ret v1;
+}
+
+@XOR(a: int, b:int): int{
+ and_val: int = call @AND a b;
+ or_val: int = call @OR a b;
+ ans: int = sub or_val and_val;
+ ret ans;
+}
+
+@main(a: int, b: int, c: int){
+  one: int = const 1;
+  zero: int = const 0; 
+
+  sel: int = sub c one;
+
+  ans: int = id zero; 
+
+  less: bool = lt sel zero;
+  equal: bool = eq sel zero;
+  greater: bool = gt sel zero; 
+
+  br less .and_op .useless_lbl;
+.useless_lbl:
+  br equal .or_op .xor_op;
+
+.and_op:
+  ans: int = call @AND a b;
+  jmp .end;
+.or_op:
+  ans: int = call @OR a b;
+  jmp .end;
+.xor_op:
+  ans: int = call @XOR a b;
+.end:  
+  print ans;
+}

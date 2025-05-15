@@ -1,0 +1,309 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "result",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "begin"
+        },
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "digit",
+          "funcs": [
+            "peel_last_digit"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "input",
+            "ten"
+          ],
+          "dest": "input",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "digit"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "label": "check_result"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "dest": "processed",
+          "funcs": [
+            "is_single_digit"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "processed"
+          ],
+          "funcs": [],
+          "labels": [
+            "check_done",
+            "process_result"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "process_result"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "dest": "r0",
+          "funcs": [
+            "peel_last_digit"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "ten"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "r0"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "check_result"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "check_done"
+        },
+        {
+          "args": [
+            "input",
+            "zero"
+          ],
+          "dest": "done",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "done"
+          ],
+          "funcs": [],
+          "labels": [
+            "done",
+            "begin"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "done"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "input",
+            "ten"
+          ],
+          "dest": "divided",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "divided",
+            "ten"
+          ],
+          "dest": "mul_by_ten",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mul_by_ten",
+            "zero"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "is_single_digit",
+      "type": "bool"
+    },
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "ten",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "input",
+            "ten"
+          ],
+          "dest": "div_by_ten",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "div_by_ten",
+            "ten"
+          ],
+          "dest": "mul_by_ten",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "input",
+            "mul_by_ten"
+          ],
+          "dest": "last_digit",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "last_digit"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "peel_last_digit",
+      "type": "int"
+    }
+  ]
+}

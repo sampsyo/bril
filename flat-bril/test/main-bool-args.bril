@@ -1,0 +1,12 @@
+# ARGS: true
+@main(b: bool) {
+    br b .here .there;
+.here:
+    v: int = const 1;
+    print v;
+    ret;
+.there:
+    v: int = const 2;
+    print v;
+    ret;
+}

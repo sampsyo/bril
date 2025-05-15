@@ -1,0 +1,177 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "op1",
+          "type": "int"
+        },
+        {
+          "name": "op2",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "vc0",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "op1"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "op2"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "cmp.val"
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "v2",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "labels": [
+            "if.1",
+            "else.1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.1"
+        },
+        {
+          "args": [
+            "v1",
+            "v0"
+          ],
+          "dest": "v3",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop.bound"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.1"
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "v3",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop.bound"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "loop.bound"
+        },
+        {
+          "args": [
+            "v3",
+            "vc0"
+          ],
+          "dest": "v4",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "labels": [
+            "program.end",
+            "update.val"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "update.val"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "labels": [
+            "if.2",
+            "else.2"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.2"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "cmp.val"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.2"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "cmp.val"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "program.end"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

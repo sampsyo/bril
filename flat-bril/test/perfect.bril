@@ -1,0 +1,33 @@
+# ARGS: 496
+@main(input: int) {
+  n: int = id input;
+  v0: int = const 0;
+  v1: int = const 1;
+  v2: int = const 2;
+  sum: int = id v1;
+  i: int = id v2;
+  result: int = id v1;
+.for.cond.1:
+  ii: int = mul i i;
+  comp: bool = gt ii n;
+  br comp .for.end .for.body;
+.for.body:
+  qut: int = div n i;
+  mpt: int = mul qut i;
+  dif: int = sub n mpt;
+  comp1: bool = eq dif v0;
+  br comp1 .if.body .for.incre;
+ .if.body:
+  sum: int = add sum i;
+  sum: int = add sum qut;
+.for.incre:
+  i: int = add i v1;
+  jmp .for.cond.1;
+.for.end:
+  comp2: bool = eq sum n;
+  br comp2 .if.success .if.failure.end;
+  .if.success:
+   result: int = id v0;
+  .if.failure.end:
+  print result;
+}

@@ -1,0 +1,366 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "label": "for.outer.init"
+        },
+        {
+          "dest": "t0",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "a",
+            "t0"
+          ],
+          "dest": "t1",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "t1"
+          ],
+          "labels": [
+            "true",
+            "false"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "true"
+        },
+        {
+          "dest": "t2",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "labels": [
+            "for.outer.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "false"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "t2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.outer.cond"
+        },
+        {
+          "args": [
+            "t2",
+            "b"
+          ],
+          "dest": "t3",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "t3"
+          ],
+          "labels": [
+            "for.outer.body",
+            "for.outer.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.outer.body"
+        },
+        {
+          "dest": "t4",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "t4",
+            "t4"
+          ],
+          "dest": "t5",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "label": "for.inner.init"
+        },
+        {
+          "dest": "t6",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "t7",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "label": "for.inner.cond"
+        },
+        {
+          "args": [
+            "t2",
+            "t7"
+          ],
+          "dest": "t8",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "t6",
+            "t8"
+          ],
+          "dest": "t9",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "t9"
+          ],
+          "labels": [
+            "for.inner.body",
+            "for.inner.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.inner.body"
+        },
+        {
+          "args": [
+            "t2",
+            "t6"
+          ],
+          "dest": "t10",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "dest": "t11",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "t10",
+            "t11"
+          ],
+          "dest": "t12",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "t12"
+          ],
+          "labels": [
+            "if.inner.body",
+            "if.inner.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.inner.body"
+        },
+        {
+          "dest": "t13",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "t14",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "t13",
+            "t14"
+          ],
+          "dest": "t5",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "labels": [
+            "for.inner.end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "if.inner.end"
+        },
+        {
+          "dest": "t15",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "t15",
+            "t6"
+          ],
+          "dest": "t6",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.inner.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.inner.end"
+        },
+        {
+          "dest": "t16",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "t6",
+            "t16"
+          ],
+          "dest": "t6",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "t5"
+          ],
+          "labels": [
+            "if.outer.body",
+            "if.outer.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.outer.body"
+        },
+        {
+          "args": [
+            "t2"
+          ],
+          "op": "print"
+        },
+        {
+          "label": "if.outer.end"
+        },
+        {
+          "dest": "t17",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "t2",
+            "t17"
+          ],
+          "dest": "t2",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.outer.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.outer.end"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "t1",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "t1"
+          ],
+          "dest": "t2",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "t2"
+          ],
+          "dest": "t3",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "t3"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    }
+  ]
+}

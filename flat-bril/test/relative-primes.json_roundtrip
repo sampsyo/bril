@@ -1,0 +1,759 @@
+{
+  "functions": [
+    {
+      "args": [],
+      "instrs": [
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "int",
+          "value": 20
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "a",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v1",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "funcs": [
+            "relative_primes"
+          ],
+          "labels": [],
+          "op": "call"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v0",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v1",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "v2",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2",
+            "v1"
+          ],
+          "dest": "v3",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v0",
+            "v3"
+          ],
+          "dest": "v4",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v1",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v2",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "v3",
+          "funcs": [],
+          "labels": [],
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "funcs": [],
+          "labels": [
+            "then.0",
+            "else.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.0"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v4",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "dest": "tmp",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v5",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5"
+          ],
+          "dest": "a",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp"
+          ],
+          "dest": "v6",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v6"
+          ],
+          "dest": "b",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "endif.0"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.0"
+        },
+        {
+          "label": "endif.0"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v8",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v8",
+            "v9"
+          ],
+          "dest": "v10",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v10"
+          ],
+          "funcs": [],
+          "labels": [
+            "then.7",
+            "else.7"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.7"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v11",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "endif.7"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.7"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v13",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v14",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v13",
+            "v14"
+          ],
+          "dest": "v15",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v15"
+          ],
+          "funcs": [],
+          "labels": [
+            "then.12",
+            "else.12"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.12"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v16",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v16"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "endif.12"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.12"
+        },
+        {
+          "label": "endif.12"
+        },
+        {
+          "label": "endif.7"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v17",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v18",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v17",
+            "v18"
+          ],
+          "dest": "remainder",
+          "funcs": [
+            "mod"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "remainder"
+          ],
+          "dest": "remainder",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v19",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "remainder"
+          ],
+          "dest": "v20",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v19",
+            "v20"
+          ],
+          "dest": "g",
+          "funcs": [
+            "gcd"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "g"
+          ],
+          "dest": "g",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "g"
+          ],
+          "dest": "v21",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v21"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "gcd",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v1",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "b",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.0"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v2",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v3",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v2",
+            "v3"
+          ],
+          "dest": "v4",
+          "funcs": [],
+          "labels": [],
+          "op": "ge",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "funcs": [],
+          "labels": [
+            "for.body.0",
+            "for.end.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.0"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "v5",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v6",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5",
+            "v6"
+          ],
+          "dest": "g",
+          "funcs": [
+            "gcd"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "g"
+          ],
+          "dest": "g",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "g"
+          ],
+          "dest": "v8",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v8",
+            "v9"
+          ],
+          "dest": "v10",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v10"
+          ],
+          "funcs": [],
+          "labels": [
+            "then.7",
+            "else.7"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.7"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v11",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "dest": "v12",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "endif.7"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.7"
+        },
+        {
+          "label": "endif.7"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "v13",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v14",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v13",
+            "v14"
+          ],
+          "dest": "v15",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15"
+          ],
+          "dest": "b",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.cond.0"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.0"
+        }
+      ],
+      "name": "relative_primes"
+    }
+  ]
+}

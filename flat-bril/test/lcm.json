@@ -1,0 +1,230 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "y",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "y"
+          ],
+          "dest": "greater",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "y"
+          ],
+          "dest": "v4",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "labels": [
+            "then.1",
+            "else.1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.1"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "greater",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "endif.1"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.1"
+        },
+        {
+          "label": "endif.1"
+        },
+        {
+          "label": "foreverloop"
+        },
+        {
+          "args": [
+            "greater",
+            "x"
+          ],
+          "dest": "modX",
+          "funcs": [
+            "getMod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "greater",
+            "y"
+          ],
+          "dest": "modY",
+          "funcs": [
+            "getMod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "modX",
+            "zero"
+          ],
+          "dest": "xZero",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "modY",
+            "zero"
+          ],
+          "dest": "yZero",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "xZero",
+            "yZero"
+          ],
+          "dest": "bothZero",
+          "op": "and",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "bothZero"
+          ],
+          "labels": [
+            "then.2",
+            "else.2"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.2"
+        },
+        {
+          "args": [
+            "greater"
+          ],
+          "op": "print"
+        },
+        {
+          "labels": [
+            "loopend"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.2"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "greater",
+            "one"
+          ],
+          "dest": "greater",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "foreverloop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "loopend"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "val",
+          "type": "int"
+        },
+        {
+          "name": "mod",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "val",
+            "mod"
+          ],
+          "dest": "divisor",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "divisor",
+            "mod"
+          ],
+          "dest": "multiple",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "val",
+            "multiple"
+          ],
+          "dest": "rem",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "rem"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "getMod",
+      "type": "int"
+    }
+  ]
+}

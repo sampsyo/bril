@@ -1,0 +1,170 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "base",
+          "type": "int"
+        },
+        {
+          "name": "exp",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "out",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "exp",
+            "one"
+          ],
+          "dest": "end",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "end"
+          ],
+          "labels": [
+            "ret",
+            "body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "body"
+        },
+        {
+          "args": [
+            "out",
+            "base"
+          ],
+          "dest": "out",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "exp",
+            "one"
+          ],
+          "dest": "exp",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "ret"
+        },
+        {
+          "args": [
+            "out"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "pow",
+      "type": "int"
+    },
+    {
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "sixtytwo",
+          "op": "const",
+          "type": "int",
+          "value": 62
+        },
+        {
+          "args": [
+            "two",
+            "sixtytwo"
+          ],
+          "dest": "half",
+          "funcs": [
+            "pow"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "half"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "half",
+            "one"
+          ],
+          "dest": "smaller",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "half",
+            "smaller"
+          ],
+          "dest": "maxint",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "maxint"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "maxint",
+            "one"
+          ],
+          "dest": "overflow",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "overflow"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

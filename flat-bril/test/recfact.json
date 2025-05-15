@@ -1,0 +1,215 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "x",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "f",
+          "funcs": [
+            "fac"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "f"
+          ],
+          "dest": "f",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "f"
+          ],
+          "dest": "v2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v3",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "v3",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "labels": [
+            "then.0",
+            "else.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.0"
+        },
+        {
+          "dest": "v4",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "op": "ret"
+        },
+        {
+          "labels": [
+            "endif.0"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.0"
+        },
+        {
+          "label": "endif.0"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v5",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v6",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v7",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v6",
+            "v7"
+          ],
+          "dest": "v8",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v8"
+          ],
+          "dest": "v9",
+          "funcs": [
+            "fac"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5",
+            "v9"
+          ],
+          "dest": "v10",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v10"
+          ],
+          "dest": "result",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "dest": "v11",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "fac",
+      "type": "int"
+    }
+  ]
+}

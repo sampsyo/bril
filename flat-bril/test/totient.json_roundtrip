@@ -1,0 +1,395 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "tot",
+          "funcs": [
+            "totient"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tot"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "p",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "for.set.cond"
+        },
+        {
+          "args": [
+            "p",
+            "p"
+          ],
+          "dest": "pp",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "pp",
+            "n"
+          ],
+          "dest": "cond",
+          "funcs": [],
+          "labels": [],
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "funcs": [],
+          "labels": [
+            "for.set.body",
+            "for.set.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.set.body"
+        },
+        {
+          "args": [
+            "n",
+            "p"
+          ],
+          "dest": "npmod",
+          "funcs": [
+            "mod"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "npmod",
+            "zero"
+          ],
+          "dest": "if_cond",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "if_cond"
+          ],
+          "funcs": [],
+          "labels": [
+            "if_lbl",
+            "else_lbl"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if_lbl"
+        },
+        {
+          "label": "while.set.cond"
+        },
+        {
+          "args": [
+            "n",
+            "p"
+          ],
+          "dest": "npmod",
+          "funcs": [
+            "mod"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "npmod",
+            "zero"
+          ],
+          "dest": "while_cond",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "while_cond"
+          ],
+          "funcs": [],
+          "labels": [
+            "while.body",
+            "while.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "while.body"
+        },
+        {
+          "args": [
+            "n",
+            "p"
+          ],
+          "dest": "npdiv",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "npdiv"
+          ],
+          "dest": "n",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "while.set.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "while.end"
+        },
+        {
+          "args": [
+            "result",
+            "p"
+          ],
+          "dest": "resdiv",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "resdiv"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "label": "else_lbl"
+        },
+        {
+          "args": [
+            "p",
+            "one"
+          ],
+          "dest": "p",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.set.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.set.end"
+        },
+        {
+          "args": [
+            "n",
+            "one"
+          ],
+          "dest": "final_if_cond",
+          "funcs": [],
+          "labels": [],
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "final_if_cond"
+          ],
+          "funcs": [],
+          "labels": [
+            "final_if_label",
+            "final_else_label"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "final_if_label"
+        },
+        {
+          "args": [
+            "result",
+            "n"
+          ],
+          "dest": "resdiv",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "resdiv"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "label": "final_else_label"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "totient",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "ad",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "ad"
+          ],
+          "dest": "mad",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "mad"
+          ],
+          "dest": "ans",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    }
+  ]
+}

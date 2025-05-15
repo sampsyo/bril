@@ -1,0 +1,383 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "k",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "k"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "v3",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "labels": [
+            "then.0",
+            "else.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.0"
+        },
+        {
+          "dest": "v4",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else.0"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v5",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5"
+          ],
+          "dest": "v6",
+          "funcs": [
+            "factorial"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v7",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "k"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v7",
+            "v8"
+          ],
+          "dest": "v9",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v9"
+          ],
+          "dest": "v10",
+          "funcs": [
+            "factorial"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v6",
+            "v10"
+          ],
+          "dest": "v11",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "permutation",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "v3",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.0"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v4",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v5",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v4",
+            "v5"
+          ],
+          "dest": "v6",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v6"
+          ],
+          "labels": [
+            "for.body.0",
+            "for.end.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.0"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v7",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v7",
+            "v8"
+          ],
+          "dest": "v9",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v9"
+          ],
+          "dest": "n",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v10",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v11",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v10",
+            "v11"
+          ],
+          "dest": "v12",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v12"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.0"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.0"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v13"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "factorial",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "k",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "k"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "res",
+          "funcs": [
+            "permutation"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "dest": "res",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "dest": "v2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v3",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

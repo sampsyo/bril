@@ -1,0 +1,792 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        },
+        {
+          "name": "dim1",
+          "type": "int"
+        },
+        {
+          "name": "dim2",
+          "type": "int"
+        },
+        {
+          "name": "dim3",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": -1
+        },
+        {
+          "dest": "output",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "row_loop"
+        },
+        {
+          "dest": "j",
+          "op": "const",
+          "type": "int",
+          "value": -1
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "dim1"
+          ],
+          "dest": "i_lt_dim1",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "i_lt_dim1"
+          ],
+          "labels": [
+            "col_loop",
+            "return"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "col_loop"
+        },
+        {
+          "dest": "k",
+          "op": "const",
+          "type": "int",
+          "value": -1
+        },
+        {
+          "args": [
+            "j",
+            "one"
+          ],
+          "dest": "j",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "dest": "dot_product",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "j",
+            "dim3"
+          ],
+          "dest": "j_lt_dim3",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "j_lt_dim3"
+          ],
+          "labels": [
+            "inner_loop",
+            "row_loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "inner_loop"
+        },
+        {
+          "args": [
+            "k",
+            "one"
+          ],
+          "dest": "k",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "k",
+            "dim2"
+          ],
+          "dest": "k_lt_dim2",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "k_lt_dim2"
+          ],
+          "labels": [
+            "multiply",
+            "end_col"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "multiply"
+        },
+        {
+          "args": [
+            "a",
+            "dim2",
+            "i",
+            "k"
+          ],
+          "dest": "a_bit",
+          "funcs": [
+            "mat_bitsel"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "dim3",
+            "k",
+            "j"
+          ],
+          "dest": "b_bit",
+          "funcs": [
+            "mat_bitsel"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a_bit",
+            "b_bit"
+          ],
+          "dest": "a_bit_b_bit",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "dot_product",
+            "a_bit_b_bit"
+          ],
+          "dest": "dot_product",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "inner_loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end_col"
+        },
+        {
+          "args": [
+            "dot_product"
+          ],
+          "dest": "dot_product_odd",
+          "funcs": [
+            "is_odd"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "dot_product_odd"
+          ],
+          "labels": [
+            "add_dp",
+            "col_loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "add_dp"
+        },
+        {
+          "args": [
+            "i",
+            "j",
+            "dim3"
+          ],
+          "dest": "index",
+          "funcs": [
+            "mat_packed_index"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "dest": "dp_bit",
+          "funcs": [
+            "pow2"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "output",
+            "dp_bit"
+          ],
+          "dest": "output",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "col_loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "return"
+        },
+        {
+          "args": [
+            "output"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "m",
+          "type": "int"
+        },
+        {
+          "name": "cols",
+          "type": "int"
+        },
+        {
+          "name": "i",
+          "type": "int"
+        },
+        {
+          "name": "j",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "i",
+            "j",
+            "cols"
+          ],
+          "dest": "index",
+          "funcs": [
+            "mat_packed_index"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "m",
+            "index"
+          ],
+          "dest": "ret_val",
+          "funcs": [
+            "bitsel"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "ret_val"
+          ],
+          "labels": [
+            "ret_one",
+            "ret_zero"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "ret_one"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "ret_zero"
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mat_bitsel",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "i",
+          "type": "int"
+        },
+        {
+          "name": "j",
+          "type": "int"
+        },
+        {
+          "name": "cols",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "i",
+            "cols"
+          ],
+          "dest": "index",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "index",
+            "j"
+          ],
+          "dest": "index",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "index"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mat_packed_index",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "result",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "i",
+            "n"
+          ],
+          "dest": "i_lt_n",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "i_lt_n"
+          ],
+          "labels": [
+            "multiply",
+            "return"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "multiply"
+        },
+        {
+          "args": [
+            "result",
+            "two"
+          ],
+          "dest": "result",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "return"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "pow2",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "m",
+          "type": "int"
+        },
+        {
+          "name": "i",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "i",
+            "zero"
+          ],
+          "dest": "i_eq_zero",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "i_eq_zero"
+          ],
+          "labels": [
+            "return",
+            "divide"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "divide"
+        },
+        {
+          "args": [
+            "m",
+            "two"
+          ],
+          "dest": "m",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "return"
+        },
+        {
+          "args": [
+            "m"
+          ],
+          "dest": "m_bit",
+          "funcs": [
+            "is_odd"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "m_bit"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "bitsel",
+      "type": "bool"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "n",
+            "zero"
+          ],
+          "dest": "is_neg",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_neg"
+          ],
+          "labels": [
+            "negative",
+            "positive"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "negative"
+        },
+        {
+          "args": [
+            "zero",
+            "n"
+          ],
+          "dest": "n",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "label": "positive"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "abs",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "n0",
+          "funcs": [
+            "abs"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "n0",
+            "one"
+          ],
+          "dest": "np1",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n0",
+            "two"
+          ],
+          "dest": "half",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "np1",
+            "two"
+          ],
+          "dest": "np1_half",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "half",
+            "np1_half"
+          ],
+          "dest": "ret_val",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "ret_val"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "is_even",
+      "type": "bool"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "is_even",
+          "funcs": [
+            "is_even"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_even"
+          ],
+          "dest": "ret_val",
+          "op": "not",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "ret_val"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "is_odd",
+      "type": "bool"
+    }
+  ]
+}

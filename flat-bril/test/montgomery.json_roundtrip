@@ -1,0 +1,209 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "r",
+          "type": "int"
+        },
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "nn",
+          "type": "int"
+        },
+        {
+          "name": "t",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "t",
+            "r"
+          ],
+          "dest": "tr",
+          "funcs": [
+            "mod"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tr",
+            "nn"
+          ],
+          "dest": "trnn",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "trnn",
+            "r"
+          ],
+          "dest": "m",
+          "funcs": [
+            "mod"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "m",
+            "n"
+          ],
+          "dest": "mn",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "t",
+            "mn"
+          ],
+          "dest": "tmn",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmn",
+            "r"
+          ],
+          "dest": "t",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "t",
+            "n"
+          ],
+          "dest": "b",
+          "funcs": [],
+          "labels": [],
+          "op": "ge",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "funcs": [],
+          "labels": [
+            "then",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then"
+        },
+        {
+          "args": [
+            "t",
+            "n"
+          ],
+          "dest": "res",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "t"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "y",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x",
+            "y"
+          ],
+          "dest": "q",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y",
+            "q"
+          ],
+          "dest": "xq",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "xq"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    }
+  ]
+}

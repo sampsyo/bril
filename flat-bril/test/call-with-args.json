@@ -1,0 +1,88 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "x",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "y",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "x",
+            "y"
+          ],
+          "dest": "z",
+          "funcs": [
+            "add2"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "z"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "y",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x",
+            "y"
+          ],
+          "dest": "w",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "dest": "y",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "args": [
+            "w"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "w"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "add2",
+      "type": "int"
+    }
+  ]
+}

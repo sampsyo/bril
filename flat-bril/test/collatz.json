@@ -1,0 +1,161 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "three",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "labels": [
+            "print"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "cond"
+        },
+        {
+          "args": [
+            "x",
+            "one"
+          ],
+          "dest": "eq_one",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eq_one"
+          ],
+          "labels": [
+            "end",
+            "loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "x",
+            "two"
+          ],
+          "dest": "half",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "half",
+            "two"
+          ],
+          "dest": "doublehalf",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "doublehalf"
+          ],
+          "dest": "even",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "even"
+          ],
+          "labels": [
+            "even",
+            "odd"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "even"
+        },
+        {
+          "args": [
+            "x",
+            "two"
+          ],
+          "dest": "x",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "print"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "odd"
+        },
+        {
+          "args": [
+            "x",
+            "three"
+          ],
+          "dest": "x",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "one"
+          ],
+          "dest": "x",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "label": "print"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "op": "print"
+        },
+        {
+          "labels": [
+            "cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "op": "ret"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

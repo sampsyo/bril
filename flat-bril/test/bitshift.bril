@@ -1,0 +1,79 @@
+# ARGS: 3 5 10000 4
+@pow(x: int, n: int): int {
+  v1: int = id n;
+  v2: int = const 1;
+  v3: bool = eq v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = id x;
+  ret v4;
+.else.0:
+  v5: int = id x;
+  v6: int = id n;
+  v7: int = const 2;
+  v8: int = div v6 v7;
+  half: int = call @pow v5 v8;
+  half: int = id half;
+  v9: int = id half;
+  v10: int = id half;
+  v11: int = mul v9 v10;
+  half2: int = id v11;
+  v13: int = id n;
+  v14: int = const 2;
+  v15: int = call @mod v13 v14;
+  v16: int = const 1;
+  v17: bool = eq v15 v16;
+  br v17 .then.12 .else.12;
+.then.12:
+  v18: int = id half2;
+  v19: int = id x;
+  v20: int = mul v18 v19;
+  ans: int = id v20;
+  jmp .endif.12;
+.else.12:
+  v21: int = id half2;
+  ans: int = id v21;
+.endif.12:
+  v22: int = id ans;
+  ret v22;
+}
+@mod(a: int, b: int): int {
+  v0: int = id a;
+  v1: int = id a;
+  v2: int = id b;
+  v3: int = div v1 v2;
+  v4: int = id b;
+  v5: int = mul v3 v4;
+  v6: int = sub v0 v5;
+  ret v6;
+}
+@LEFTSHIFT(x: int, step: int): int {
+  v0: int = const 2;
+  v1: int = id step;
+  p: int = call @pow v0 v1;
+  p: int = id p;
+  v2: int = id x;
+  v3: int = id p;
+  v4: int = mul v2 v3;
+  ret v4;
+}
+@RIGHTSHIFT(x: int, step: int): int {
+  v0: int = const 2;
+  v1: int = id step;
+  p: int = call @pow v0 v1;
+  p: int = id p;
+  v2: int = id x;
+  v3: int = id p;
+  v4: int = div v2 v3;
+  ret v4;
+}
+@main(a: int, b: int, c: int, d: int) {
+  v2: int = id a;
+  v3: int = id b;
+  ans1: int = call @LEFTSHIFT v2 v3;
+  print ans1;
+  v4: int = id c;
+  v5: int = id d;
+  ans2: int = call @RIGHTSHIFT v4 v5;
+  print ans2;
+}

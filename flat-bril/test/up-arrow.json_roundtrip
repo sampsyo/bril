@@ -1,0 +1,220 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "arrows",
+          "type": "int"
+        },
+        {
+          "name": "repeats",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n",
+            "arrows",
+            "repeats"
+          ],
+          "dest": "ans",
+          "funcs": [
+            "up_arrow"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "num",
+          "type": "int"
+        },
+        {
+          "name": "arrows",
+          "type": "int"
+        },
+        {
+          "name": "repeats",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "num"
+          ],
+          "dest": "ans",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loopstart"
+        },
+        {
+          "args": [
+            "i",
+            "repeats"
+          ],
+          "dest": "keepgoing",
+          "funcs": [],
+          "labels": [],
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "keepgoing"
+          ],
+          "funcs": [],
+          "labels": [
+            "loopbody",
+            "endloop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "loopbody"
+        },
+        {
+          "args": [
+            "arrows",
+            "one"
+          ],
+          "dest": "base_case",
+          "funcs": [],
+          "labels": [],
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "base_case"
+          ],
+          "funcs": [],
+          "labels": [
+            "base",
+            "arrowsgreaterthan1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "base"
+        },
+        {
+          "args": [
+            "ans",
+            "num"
+          ],
+          "dest": "ans",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "finally"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "arrowsgreaterthan1"
+        },
+        {
+          "args": [
+            "arrows",
+            "one"
+          ],
+          "dest": "new_arrows",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "num",
+            "new_arrows",
+            "ans"
+          ],
+          "dest": "ans",
+          "funcs": [
+            "up_arrow"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "label": "finally"
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "loopstart"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "endloop"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "up_arrow",
+      "type": "int"
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "res",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "non",
+          "op": "const",
+          "type": "int",
+          "value": -1
+        },
+        {
+          "dest": "zer",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "n",
+            "zer"
+          ],
+          "dest": "nlz",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "nlz"
+          ],
+          "labels": [
+            "neg",
+            "begin"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "neg"
+        },
+        {
+          "args": [
+            "n",
+            "non"
+          ],
+          "dest": "n",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "label": "begin"
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "i"
+          ],
+          "dest": "isq",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "isq",
+            "n"
+          ],
+          "dest": "sqgt",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "sqgt"
+          ],
+          "labels": [
+            "end",
+            "check"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "check"
+        },
+        {
+          "args": [
+            "n",
+            "i"
+          ],
+          "dest": "m",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "m",
+            "zer"
+          ],
+          "dest": "eqz",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eqz"
+          ],
+          "labels": [
+            "body",
+            "begin"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "body"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "res",
+            "i"
+          ],
+          "dest": "res",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "i"
+          ],
+          "dest": "d",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "d",
+            "i"
+          ],
+          "dest": "deqi",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "deqi"
+          ],
+          "labels": [
+            "begin",
+            "then"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then"
+        },
+        {
+          "args": [
+            "d"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "res",
+            "d"
+          ],
+          "dest": "res",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "begin"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "dividend",
+          "type": "int"
+        },
+        {
+          "name": "divisor",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "dividend",
+            "divisor"
+          ],
+          "dest": "quot",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "divisor",
+            "quot"
+          ],
+          "dest": "prod",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "dividend",
+            "prod"
+          ],
+          "dest": "diff",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "diff"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    }
+  ]
+}

@@ -1,0 +1,360 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "k",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n",
+            "k"
+          ],
+          "dest": "final",
+          "funcs": [
+            "combo"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "final"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "k",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "n",
+            "zero"
+          ],
+          "dest": "nneg",
+          "funcs": [],
+          "labels": [],
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "k",
+            "zero"
+          ],
+          "dest": "kneg",
+          "funcs": [],
+          "labels": [],
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "nneg",
+            "kneg"
+          ],
+          "dest": "eitherneg",
+          "funcs": [],
+          "labels": [],
+          "op": "or",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "eitherneg"
+          ],
+          "funcs": [],
+          "labels": [
+            "negatives",
+            "natural"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "negatives"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "label": "natural"
+        },
+        {
+          "args": [
+            "k",
+            "zero"
+          ],
+          "dest": "kzero",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "kzero"
+          ],
+          "funcs": [],
+          "labels": [
+            "zeroes",
+            "positive"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "zeroes"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "label": "positive"
+        },
+        {
+          "args": [
+            "n",
+            "k"
+          ],
+          "dest": "nltk",
+          "funcs": [],
+          "labels": [],
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "nltk"
+          ],
+          "funcs": [],
+          "labels": [
+            "negatives",
+            "valid"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "valid"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "nfac",
+          "funcs": [
+            "factorial"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "k"
+          ],
+          "dest": "kfac",
+          "funcs": [
+            "factorial"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "k"
+          ],
+          "dest": "nmink",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "nmink"
+          ],
+          "dest": "nkfac",
+          "funcs": [
+            "factorial"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "kfac",
+            "nkfac"
+          ],
+          "dest": "comboden",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "nfac",
+            "comboden"
+          ],
+          "dest": "combo",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "combo"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "combo",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "x",
+            "one"
+          ],
+          "dest": "basee",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "basee"
+          ],
+          "funcs": [],
+          "labels": [
+            "base",
+            "recurs"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "base"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "label": "recurs"
+        },
+        {
+          "args": [
+            "x",
+            "one"
+          ],
+          "dest": "oneless",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "oneless"
+          ],
+          "dest": "stepback",
+          "funcs": [
+            "factorial"
+          ],
+          "labels": [],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "stepback"
+          ],
+          "dest": "fact",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "fact"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        }
+      ],
+      "name": "factorial",
+      "type": "int"
+    }
+  ]
+}

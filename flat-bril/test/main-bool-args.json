@@ -1,0 +1,61 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "b",
+          "type": "bool"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "b"
+          ],
+          "labels": [
+            "here",
+            "there"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "here"
+        },
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v"
+          ],
+          "op": "print"
+        },
+        {
+          "op": "ret"
+        },
+        {
+          "label": "there"
+        },
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "v"
+          ],
+          "op": "print"
+        },
+        {
+          "op": "ret"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

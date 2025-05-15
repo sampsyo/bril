@@ -1,0 +1,159 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "b0",
+          "type": "bool"
+        },
+        {
+          "name": "b1",
+          "type": "bool"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "start"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "x_0_2"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "args": [
+            "x_1_2"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [],
+          "op": "ret"
+        },
+        {
+          "label": "l_1_3"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "l_1_2"
+        },
+        {
+          "dest": "x_1_2",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "l_1_3"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "l_1_1"
+        },
+        {
+          "dest": "x_1_1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "l_1_3"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "l_0_3"
+        },
+        {
+          "args": [
+            "b1"
+          ],
+          "funcs": [],
+          "labels": [
+            "l_1_1",
+            "l_1_2"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "l_0_2"
+        },
+        {
+          "dest": "x_0_2",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "l_0_3"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "l_0_1"
+        },
+        {
+          "dest": "x_0_1",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "l_0_3"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "start"
+        },
+        {
+          "args": [
+            "b0"
+          ],
+          "funcs": [],
+          "labels": [
+            "l_0_1",
+            "l_0_2"
+          ],
+          "op": "br"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

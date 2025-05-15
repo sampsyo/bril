@@ -1,0 +1,225 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "total",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.1"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v3",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v2",
+            "v3"
+          ],
+          "dest": "v4",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "labels": [
+            "for.body.1",
+            "for.end.1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.1"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v5",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v6",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "v5",
+            "v6"
+          ],
+          "dest": "v7",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v7"
+          ],
+          "dest": "tenth",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "tenth"
+          ],
+          "dest": "v10",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v9",
+            "v10"
+          ],
+          "dest": "v11",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v8",
+            "v11"
+          ],
+          "dest": "v12",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v12"
+          ],
+          "dest": "currentDigit",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "total"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "currentDigit"
+          ],
+          "dest": "v14",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v13",
+            "v14"
+          ],
+          "dest": "v15",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15"
+          ],
+          "dest": "total",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tenth"
+          ],
+          "dest": "v16",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v16"
+          ],
+          "dest": "n",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.1"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.1"
+        },
+        {
+          "args": [
+            "total"
+          ],
+          "dest": "v17",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v17"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v18",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

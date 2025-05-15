@@ -1,0 +1,226 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "n",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "dest": "notdone",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "label": "for.cond.3"
+        },
+        {
+          "args": [
+            "notdone"
+          ],
+          "dest": "v4",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "funcs": [],
+          "labels": [
+            "for.body.3",
+            "for.end.3"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.3"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v5",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5",
+            "v1"
+          ],
+          "dest": "a",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "v1"
+          ],
+          "dest": "floor",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v5",
+            "floor"
+          ],
+          "dest": "remainder",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "v1"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "remainder"
+          ],
+          "dest": "result",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "n",
+          "funcs": [],
+          "labels": [],
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "v0"
+          ],
+          "dest": "comp1",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "comp1"
+          ],
+          "funcs": [],
+          "labels": [
+            "if.body",
+            "for.incre"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.body"
+        },
+        {
+          "dest": "notdone",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.cond.3"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.incre"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "for.cond.3"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.3"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

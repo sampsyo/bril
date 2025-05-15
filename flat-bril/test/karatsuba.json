@@ -1,0 +1,768 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "y",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x",
+            "y"
+          ],
+          "dest": "result",
+          "funcs": [
+            "karatsuba"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "y",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "base",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "x_digits",
+          "funcs": [
+            "num_digits"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "dest": "y_digits",
+          "funcs": [
+            "num_digits"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x_digits",
+            "one"
+          ],
+          "dest": "x_1_digit",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "y_digits",
+            "one"
+          ],
+          "dest": "y_1_digit",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "x_1_digit",
+            "y_1_digit"
+          ],
+          "dest": "cond",
+          "op": "or",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "then",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then"
+        },
+        {
+          "args": [
+            "x",
+            "y"
+          ],
+          "dest": "result",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "x_digits",
+            "y_digits"
+          ],
+          "dest": "n",
+          "funcs": [
+            "max"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "two"
+          ],
+          "dest": "n2",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "base",
+            "n2"
+          ],
+          "dest": "pow_n2",
+          "funcs": [
+            "pow"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "pow_n2"
+          ],
+          "dest": "a",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "pow_n2"
+          ],
+          "dest": "b",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y",
+            "pow_n2"
+          ],
+          "dest": "c",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y",
+            "pow_n2"
+          ],
+          "dest": "d",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "d"
+          ],
+          "dest": "z0",
+          "funcs": [
+            "karatsuba"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "a_plus_b",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "c",
+            "d"
+          ],
+          "dest": "c_plus_d",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a_plus_b",
+            "c_plus_d"
+          ],
+          "dest": "z1",
+          "funcs": [
+            "karatsuba"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "c"
+          ],
+          "dest": "z2",
+          "funcs": [
+            "karatsuba"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n2",
+            "two"
+          ],
+          "dest": "hi_shift_factor",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "base",
+            "hi_shift_factor"
+          ],
+          "dest": "hi_shift",
+          "funcs": [
+            "pow"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "z2",
+            "hi_shift"
+          ],
+          "dest": "hi_shifted",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "z1",
+            "z2"
+          ],
+          "dest": "mid",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mid",
+            "z0"
+          ],
+          "dest": "mid",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mid",
+            "pow_n2"
+          ],
+          "dest": "mid_shifted",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "hi_shifted",
+            "mid_shifted"
+          ],
+          "dest": "result",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "result",
+            "z0"
+          ],
+          "dest": "result",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "karatsuba",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "base",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "digits",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "power",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "while.cond"
+        },
+        {
+          "args": [
+            "n",
+            "power"
+          ],
+          "dest": "temp",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "temp",
+            "base"
+          ],
+          "dest": "is_term",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_term"
+          ],
+          "labels": [
+            "while.finish",
+            "while.body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "while.body"
+        },
+        {
+          "args": [
+            "digits",
+            "one"
+          ],
+          "dest": "digits",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "power",
+            "base"
+          ],
+          "dest": "power",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "while.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "while.finish"
+        },
+        {
+          "args": [
+            "digits"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "num_digits",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "cond",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "then",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "max",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "c",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "c",
+            "b"
+          ],
+          "dest": "d",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "d"
+          ],
+          "dest": "remainder",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "remainder"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "res",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "dest": "_i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.1"
+        },
+        {
+          "args": [
+            "_i"
+          ],
+          "dest": "v3",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v4",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v5",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v4",
+            "v5"
+          ],
+          "dest": "v6",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v3",
+            "v6"
+          ],
+          "dest": "v7",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v7"
+          ],
+          "labels": [
+            "for.body.1",
+            "for.end.1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.1"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v9",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v8",
+            "v9"
+          ],
+          "dest": "v10",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v10"
+          ],
+          "dest": "res",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "_i"
+          ],
+          "dest": "v11",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v12",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v11",
+            "v12"
+          ],
+          "dest": "v13",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v13"
+          ],
+          "dest": "_i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.1"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.1"
+        },
+        {
+          "args": [
+            "res"
+          ],
+          "dest": "v14",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v14"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "pow",
+      "type": "int"
+    }
+  ]
+}

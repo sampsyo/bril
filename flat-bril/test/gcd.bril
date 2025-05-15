@@ -1,0 +1,40 @@
+# GCD: Greatest Common Divisor
+# Euclidean algorithm
+
+# input: two positive integer - op1, op2
+# output: one positive integer - gcd(op1, op2)
+
+# ARGS: 4 20
+@main (op1: int, op2: int) {
+  # const
+  vc0: int = const 0;
+  # take two input ops, first iteration
+  v0: int = id op1;
+  v1: int = id op2;
+.cmp.val:
+  v2: bool = lt v0 v1;
+  br v2 .if.1 .else.1;
+.if.1:
+  v3: int = sub v1 v0;
+  jmp .loop.bound;
+.else.1:
+  v3: int = sub v0 v1;
+  jmp .loop.bound;
+  # check results
+.loop.bound:
+  v4: bool = eq v3 vc0;
+  br v4 .program.end .update.val;
+.update.val:
+  br v2 .if.2 .else.2;
+  # update v1
+.if.2:
+  v1: int = id v3;
+  jmp .cmp.val;
+  # update v0
+.else.2:
+  v0: int = id v3;
+  jmp .cmp.val;
+  # print out the results
+.program.end:
+  print v1;
+}

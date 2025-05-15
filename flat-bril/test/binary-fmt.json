@@ -1,0 +1,157 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "funcs": [
+            "printBinary"
+          ],
+          "op": "call"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "n",
+            "zero"
+          ],
+          "dest": "cond",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "end",
+            "rec"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "rec"
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "n",
+            "two"
+          ],
+          "dest": "v0",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "two"
+          ],
+          "dest": "v1",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "funcs": [
+            "printBinary"
+          ],
+          "op": "call"
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "op": "print"
+        },
+        {
+          "label": "end"
+        }
+      ],
+      "name": "printBinary"
+    },
+    {
+      "args": [
+        {
+          "name": "a0",
+          "type": "int"
+        },
+        {
+          "name": "a1",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a0",
+            "a1"
+          ],
+          "dest": "v0",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v0",
+            "a1"
+          ],
+          "dest": "v1",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a0",
+            "v1"
+          ],
+          "dest": "v2",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    }
+  ]
+}

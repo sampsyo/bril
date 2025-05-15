@@ -1,0 +1,31 @@
+# ARGS: 8
+@main(input: int) {
+  x: int = id input;
+  v1: int = id x;
+  f: int = call @fac v1;
+  f: int = id f;
+  v2: int = id f;
+  print v2;
+  v3: int = const 0;
+}
+@fac(x: int): int {
+  v1: int = id x;
+  v2: int = const 1;
+  v3: bool = le v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = const 1;
+  ret v4;
+  jmp .endif.0;
+.else.0:
+.endif.0:
+  v5: int = id x;
+  v6: int = id x;
+  v7: int = const 1;
+  v8: int = sub v6 v7;
+  v9: int = call @fac v8;
+  v10: int = mul v5 v9;
+  result: int = id v10;
+  v11: int = id result;
+  ret v11;
+}

@@ -1,0 +1,17 @@
+# ARGS: 10
+# Compute the char shifted forward by 13 (0-indexed)
+@main(input: int) {
+  aed: int = call @rot input;
+  print aed;
+}
+@rot(n: int):int{
+  thirteen: int = const 13;
+  twenty_six: int = const 26;
+  shifted: int = add n thirteen;
+  over: bool = ge shifted twenty_six;
+  br over .if .else;
+.if:
+  shifted: int = sub shifted twenty_six;
+.else:
+  ret shifted;
+}

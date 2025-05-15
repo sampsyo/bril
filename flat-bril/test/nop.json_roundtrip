@@ -1,0 +1,33 @@
+{
+  "functions": [
+    {
+      "args": [],
+      "instrs": [
+        {
+          "op": "nop"
+        },
+        {
+          "dest": "v",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "op": "nop"
+        },
+        {
+          "args": [
+            "v"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "op": "nop"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "first",
+          "funcs": [
+            "sum_by_loop"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "second",
+          "funcs": [
+            "sum_by_formula"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "first",
+            "second"
+          ],
+          "dest": "isSame",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "first"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "second"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "isSame"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "sum",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "for_start"
+        },
+        {
+          "args": [
+            "i",
+            "n"
+          ],
+          "dest": "con",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "con"
+          ],
+          "labels": [
+            "for",
+            "end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for"
+        },
+        {
+          "args": [
+            "sum",
+            "i"
+          ],
+          "dest": "sum",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for_start"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "sum"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "sum_by_loop",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "one",
+            "n"
+          ],
+          "dest": "n_1",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n_1",
+            "n"
+          ],
+          "dest": "multi",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "multi",
+            "two"
+          ],
+          "dest": "sum",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sum"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "sum_by_formula",
+      "type": "int"
+    }
+  ]
+}

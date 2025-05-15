@@ -1,0 +1,226 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "n",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v0",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "sum",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "dest": "result",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.1"
+        },
+        {
+          "args": [
+            "i",
+            "i"
+          ],
+          "dest": "ii",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ii",
+            "n"
+          ],
+          "dest": "comp",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "comp"
+          ],
+          "labels": [
+            "for.end",
+            "for.body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body"
+        },
+        {
+          "args": [
+            "n",
+            "i"
+          ],
+          "dest": "qut",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "qut",
+            "i"
+          ],
+          "dest": "mpt",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "mpt"
+          ],
+          "dest": "dif",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "dif",
+            "v0"
+          ],
+          "dest": "comp1",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "comp1"
+          ],
+          "labels": [
+            "if.body",
+            "for.incre"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.body"
+        },
+        {
+          "args": [
+            "sum",
+            "i"
+          ],
+          "dest": "sum",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sum",
+            "qut"
+          ],
+          "dest": "sum",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "label": "for.incre"
+        },
+        {
+          "args": [
+            "i",
+            "v1"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.1"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end"
+        },
+        {
+          "args": [
+            "sum",
+            "n"
+          ],
+          "dest": "comp2",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "comp2"
+          ],
+          "labels": [
+            "if.success",
+            "if.failure.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if.success"
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "result",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "if.failure.end"
+        },
+        {
+          "args": [
+            "result"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

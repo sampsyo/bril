@@ -1,0 +1,584 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "a",
+            "two"
+          ],
+          "dest": "tmp",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp",
+            "two"
+          ],
+          "dest": "tmp2",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "tmp2"
+          ],
+          "dest": "tmp3",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "one",
+            "tmp3"
+          ],
+          "dest": "ans",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod2",
+      "type": "bool"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        },
+        {
+          "name": "c",
+          "type": "bool"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "n",
+          "op": "const",
+          "type": "int",
+          "value": 63
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "ans",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "to_add",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "i",
+            "n"
+          ],
+          "dest": "cond",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "here",
+            "end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "here"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "dest": "mod2a",
+          "funcs": [
+            "mod2"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "mod2b",
+          "funcs": [
+            "mod2"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "mod2a",
+            "mod2b"
+          ],
+          "dest": "cond_add",
+          "op": "and",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "c"
+          ],
+          "labels": [
+            "doOr",
+            "stay"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "doOr"
+        },
+        {
+          "args": [
+            "mod2a",
+            "mod2b"
+          ],
+          "dest": "cond_add",
+          "op": "or",
+          "type": "bool"
+        },
+        {
+          "label": "stay"
+        },
+        {
+          "args": [
+            "cond_add"
+          ],
+          "labels": [
+            "add",
+            "end_loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "add"
+        },
+        {
+          "args": [
+            "ans",
+            "to_add"
+          ],
+          "dest": "ans",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "label": "end_loop"
+        },
+        {
+          "args": [
+            "a",
+            "two"
+          ],
+          "dest": "a",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "two"
+          ],
+          "dest": "b",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "to_add",
+            "two"
+          ],
+          "dest": "to_add",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i",
+            "one"
+          ],
+          "dest": "i",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "loop"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "loop_subroutine",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "oper",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "args": [
+            "a",
+            "b",
+            "oper"
+          ],
+          "dest": "v1",
+          "funcs": [
+            "loop_subroutine"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "OR",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "oper",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "a",
+            "b",
+            "oper"
+          ],
+          "dest": "v1",
+          "funcs": [
+            "loop_subroutine"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "AND",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "and_val",
+          "funcs": [
+            "AND"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "or_val",
+          "funcs": [
+            "OR"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "or_val",
+            "and_val"
+          ],
+          "dest": "ans",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "XOR",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        },
+        {
+          "name": "c",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "c",
+            "one"
+          ],
+          "dest": "sel",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "ans",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sel",
+            "zero"
+          ],
+          "dest": "less",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "sel",
+            "zero"
+          ],
+          "dest": "equal",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "sel",
+            "zero"
+          ],
+          "dest": "greater",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "less"
+          ],
+          "labels": [
+            "and_op",
+            "useless_lbl"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "useless_lbl"
+        },
+        {
+          "args": [
+            "equal"
+          ],
+          "labels": [
+            "or_op",
+            "xor_op"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "and_op"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "ans",
+          "funcs": [
+            "AND"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "or_op"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "ans",
+          "funcs": [
+            "OR"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "end"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "xor_op"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "ans",
+          "funcs": [
+            "XOR"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "label": "end"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

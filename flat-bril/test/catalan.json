@@ -1,0 +1,210 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "input",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "input"
+          ],
+          "dest": "catn",
+          "funcs": [
+            "catalan"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "catn"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "n",
+            "zero"
+          ],
+          "dest": "guard0",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "guard0"
+          ],
+          "labels": [
+            "if",
+            "else"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "if"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "sum",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "dest": "idx",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "one"
+          ],
+          "dest": "n",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "label": "while"
+        },
+        {
+          "args": [
+            "idx",
+            "n"
+          ],
+          "dest": "guard1",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "guard1"
+          ],
+          "labels": [
+            "while.body",
+            "while.end"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "while.body"
+        },
+        {
+          "args": [
+            "n",
+            "idx"
+          ],
+          "dest": "n2",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "idx"
+          ],
+          "dest": "v1",
+          "funcs": [
+            "catalan"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n2"
+          ],
+          "dest": "v2",
+          "funcs": [
+            "catalan"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "elti",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sum",
+            "elti"
+          ],
+          "dest": "sum",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "idx",
+            "one"
+          ],
+          "dest": "idx",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "while"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "while.end"
+        },
+        {
+          "args": [
+            "sum"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "catalan",
+      "type": "int"
+    }
+  ]
+}

@@ -1,0 +1,349 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v2",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "ans",
+          "funcs": [
+            "count_path"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ans"
+          ],
+          "dest": "v3",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v4",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        },
+        {
+          "name": "y",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "v3",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "labels": [
+            "then.0",
+            "else.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.0"
+        },
+        {
+          "dest": "v4",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else.0"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "dest": "v6",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v7",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v6",
+            "v7"
+          ],
+          "dest": "v8",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v8"
+          ],
+          "labels": [
+            "then.5",
+            "else.5"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.5"
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v9"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else.5"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v10",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v11",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v10",
+            "v11"
+          ],
+          "dest": "v12",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v12",
+            "v13"
+          ],
+          "dest": "v14",
+          "funcs": [
+            "count_path"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v15",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "dest": "v16",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v17",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v16",
+            "v17"
+          ],
+          "dest": "v18",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15",
+            "v18"
+          ],
+          "dest": "v19",
+          "funcs": [
+            "count_path"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v14",
+            "v19"
+          ],
+          "dest": "v20",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v21",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v22",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v21",
+            "v22"
+          ],
+          "dest": "v23",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "dest": "v24",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v25",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v24",
+            "v25"
+          ],
+          "dest": "v26",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v23",
+            "v26"
+          ],
+          "dest": "v27",
+          "funcs": [
+            "count_path"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v20",
+            "v27"
+          ],
+          "dest": "v28",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v28"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "count_path",
+      "type": "int"
+    }
+  ]
+}

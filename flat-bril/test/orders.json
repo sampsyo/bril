@@ -1,0 +1,530 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "a",
+            "zero"
+          ],
+          "dest": "is_neg",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_neg"
+          ],
+          "labels": [
+            "mul_neg_one",
+            "abs_res"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "mul_neg_one"
+        },
+        {
+          "dest": "neg_one",
+          "op": "const",
+          "type": "int",
+          "value": -1
+        },
+        {
+          "args": [
+            "a",
+            "neg_one"
+          ],
+          "dest": "a",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "label": "abs_res"
+        },
+        {
+          "args": [
+            "a"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "abs",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "q",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "q"
+          ],
+          "dest": "aq",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "aq"
+          ],
+          "dest": "mod",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mod"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "mod",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "label": "while.cond"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "mod",
+          "funcs": [
+            "mod"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "mod",
+            "zero"
+          ],
+          "dest": "is_term",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_term"
+          ],
+          "labels": [
+            "while.finish",
+            "while.body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "while.body"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "dest": "a",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mod"
+          ],
+          "dest": "b",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "while.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "while.finish"
+        },
+        {
+          "args": [
+            "b"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "gcd",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "a",
+            "zero"
+          ],
+          "dest": "a_is_zero",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "a_is_zero"
+          ],
+          "labels": [
+            "check_b",
+            "is_good"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "check_b"
+        },
+        {
+          "args": [
+            "b",
+            "zero"
+          ],
+          "dest": "b_is_zero",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "b_is_zero"
+          ],
+          "labels": [
+            "special_case",
+            "is_good"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "special_case"
+        },
+        {
+          "args": [
+            "zero"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "is_good"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "ab",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ab"
+          ],
+          "dest": "ab",
+          "funcs": [
+            "abs"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "gcdab",
+          "funcs": [
+            "gcd"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ab",
+            "gcdab"
+          ],
+          "dest": "lcm",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "lcm"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "lcm",
+      "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "u",
+          "type": "int"
+        },
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "use_lcm",
+          "type": "bool"
+        }
+      ],
+      "instrs": [
+        {
+          "label": "for.cond"
+        },
+        {
+          "args": [
+            "u",
+            "n"
+          ],
+          "dest": "is_term",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "is_term"
+          ],
+          "labels": [
+            "for.finish",
+            "for.body"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body"
+        },
+        {
+          "args": [
+            "use_lcm"
+          ],
+          "labels": [
+            "lcm",
+            "gcd"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "lcm"
+        },
+        {
+          "args": [
+            "u",
+            "n"
+          ],
+          "dest": "lcm",
+          "funcs": [
+            "lcm"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "lcm",
+            "u"
+          ],
+          "dest": "ordu",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.body.print"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "gcd"
+        },
+        {
+          "args": [
+            "u",
+            "n"
+          ],
+          "dest": "gcdun",
+          "funcs": [
+            "gcd"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n",
+            "gcdun"
+          ],
+          "dest": "ordu",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "label": "for.body.print"
+        },
+        {
+          "args": [
+            "u",
+            "ordu"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "u",
+            "one"
+          ],
+          "dest": "u",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.finish"
+        },
+        {
+          "op": "ret"
+        }
+      ],
+      "name": "orders"
+    },
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        },
+        {
+          "name": "use_lcm",
+          "type": "bool"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "u",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "n",
+          "funcs": [
+            "abs"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "zero",
+            "u"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "u",
+            "n",
+            "use_lcm"
+          ],
+          "funcs": [
+            "orders"
+          ],
+          "op": "call"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

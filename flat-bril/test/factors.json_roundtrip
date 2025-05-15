@@ -1,0 +1,171 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "num",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "zer",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "fac",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "label": "loopcheck"
+        },
+        {
+          "args": [
+            "one",
+            "num"
+          ],
+          "dest": "ispos",
+          "funcs": [],
+          "labels": [],
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "ispos"
+          ],
+          "funcs": [],
+          "labels": [
+            "loopbody",
+            "loopend"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "loopbody"
+        },
+        {
+          "args": [
+            "num",
+            "fac"
+          ],
+          "dest": "quo",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "quo",
+            "fac"
+          ],
+          "dest": "tmp",
+          "funcs": [],
+          "labels": [],
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "num",
+            "tmp"
+          ],
+          "dest": "mod",
+          "funcs": [],
+          "labels": [],
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "mod",
+            "zer"
+          ],
+          "dest": "iszero",
+          "funcs": [],
+          "labels": [],
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "iszero"
+          ],
+          "funcs": [],
+          "labels": [
+            "ifyes",
+            "ifno"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "ifyes"
+        },
+        {
+          "args": [
+            "fac"
+          ],
+          "funcs": [],
+          "labels": [],
+          "op": "print"
+        },
+        {
+          "args": [
+            "num",
+            "fac"
+          ],
+          "dest": "num",
+          "funcs": [],
+          "labels": [],
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "loopcheck"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "ifno"
+        },
+        {
+          "args": [
+            "fac",
+            "one"
+          ],
+          "dest": "fac",
+          "funcs": [],
+          "labels": [],
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [],
+          "funcs": [],
+          "labels": [
+            "loopcheck"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "loopend"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

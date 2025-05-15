@@ -1,0 +1,26 @@
+# ARGS: false false
+@main(b0: bool, b1: bool) {
+    jmp .start;
+  .end:
+    print x_0_2;
+    print x_1_2;
+    ret;
+  .l_1_3:
+    jmp .end;
+  .l_1_2:
+    x_1_2 : int = const 0;
+    jmp .l_1_3;
+  .l_1_1:
+    x_1_1 : int = const 1;
+    jmp .l_1_3;
+  .l_0_3:
+    br b1 .l_1_1 .l_1_2;
+  .l_0_2:
+    x_0_2 : int = const 2;
+    jmp .l_0_3;
+  .l_0_1:
+    x_0_1 : int = const 3;
+    jmp .l_0_3;
+  .start:
+    br b0 .l_0_1 .l_0_2;
+}

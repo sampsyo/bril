@@ -1,0 +1,300 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "tmp0",
+          "funcs": [
+            "is_decreasing"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "tmp0"
+          ],
+          "dest": "tmp",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "tmp"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "tmp",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "tmp1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "tmp2",
+          "op": "const",
+          "type": "int",
+          "value": -1
+        },
+        {
+          "args": [
+            "tmp1",
+            "tmp2"
+          ],
+          "dest": "tmp3",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp3"
+          ],
+          "dest": "prev",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "label4"
+        },
+        {
+          "dest": "tmp7",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "tmp",
+            "tmp7"
+          ],
+          "dest": "tmp8",
+          "op": "gt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "tmp8"
+          ],
+          "labels": [
+            "label5",
+            "label6"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "label5"
+        },
+        {
+          "args": [
+            "tmp"
+          ],
+          "dest": "tmp9",
+          "funcs": [
+            "last_digit"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp9"
+          ],
+          "dest": "digit",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "digit",
+            "prev"
+          ],
+          "dest": "tmp10",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "tmp10"
+          ],
+          "labels": [
+            "label11",
+            "label12"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "label11"
+        },
+        {
+          "dest": "tmp14",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "tmp14"
+          ],
+          "op": "ret"
+        },
+        {
+          "labels": [
+            "label13"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "label12"
+        },
+        {
+          "labels": [
+            "label13"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "label13"
+        },
+        {
+          "args": [
+            "digit"
+          ],
+          "dest": "prev",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "tmp15",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "tmp",
+            "tmp15"
+          ],
+          "dest": "tmp16",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp16"
+          ],
+          "dest": "tmp",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "label4"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "label6"
+        },
+        {
+          "dest": "tmp17",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "args": [
+            "tmp17"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "is_decreasing",
+      "type": "bool"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "tmp18",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "x",
+            "tmp18"
+          ],
+          "dest": "tmp19",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "dest": "tmp20",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "args": [
+            "tmp19",
+            "tmp20"
+          ],
+          "dest": "tmp21",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x",
+            "tmp21"
+          ],
+          "dest": "tmp22",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "tmp22"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "last_digit",
+      "type": "int"
+    }
+  ]
+}

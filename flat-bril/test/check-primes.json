@@ -1,0 +1,501 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v2"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.1"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v3",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "n"
+          ],
+          "dest": "v4",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v3",
+            "v4"
+          ],
+          "dest": "v5",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v5"
+          ],
+          "labels": [
+            "for.body.1",
+            "for.end.1"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.1"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v6",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v6"
+          ],
+          "dest": "isPrime",
+          "funcs": [
+            "checkPrime"
+          ],
+          "op": "call",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "isPrime"
+          ],
+          "dest": "isPrime",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "isPrime"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v8"
+          ],
+          "labels": [
+            "then.7",
+            "else.7"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.7"
+        },
+        {
+          "dest": "v9",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v9"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v10",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "labels": [
+            "endif.7"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "else.7"
+        },
+        {
+          "dest": "v11",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "args": [
+            "v11"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "v12",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "endif.7"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v14",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v13",
+            "v14"
+          ],
+          "dest": "v15",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.1"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.1"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v2",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v1",
+            "v2"
+          ],
+          "dest": "v3",
+          "op": "le",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v3"
+          ],
+          "labels": [
+            "then.0",
+            "else.0"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.0"
+        },
+        {
+          "dest": "v4",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "v4"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else.0"
+        },
+        {
+          "label": "endif.0"
+        },
+        {
+          "dest": "v6",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "v6"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "for.cond.5"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v7",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v8",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v7",
+            "v8"
+          ],
+          "dest": "v9",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v9"
+          ],
+          "labels": [
+            "for.body.5",
+            "for.end.5"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "for.body.5"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v10",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v11",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v10",
+            "v11"
+          ],
+          "dest": "v12",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v12"
+          ],
+          "dest": "div",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "div"
+          ],
+          "dest": "v13",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v14",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v13",
+            "v14"
+          ],
+          "dest": "v15",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "v16",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v15",
+            "v16"
+          ],
+          "dest": "v17",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v17"
+          ],
+          "dest": "isDivisible",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "isDivisible"
+          ],
+          "dest": "v19",
+          "op": "id",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "v19"
+          ],
+          "labels": [
+            "then.18",
+            "else.18"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "then.18"
+        },
+        {
+          "dest": "v20",
+          "op": "const",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "args": [
+            "v20"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "else.18"
+        },
+        {
+          "label": "endif.18"
+        },
+        {
+          "args": [
+            "i"
+          ],
+          "dest": "v21",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "v22",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "v21",
+            "v22"
+          ],
+          "dest": "v23",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "v23"
+          ],
+          "dest": "i",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "labels": [
+            "for.cond.5"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "for.end.5"
+        },
+        {
+          "dest": "v24",
+          "op": "const",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "args": [
+            "v24"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "checkPrime",
+      "type": "bool"
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "n",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "args": [
+            "n",
+            "n"
+          ],
+          "dest": "n_sq",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "a",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "outer_loop"
+        },
+        {
+          "args": [
+            "one"
+          ],
+          "dest": "b",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "label": "inner_loop"
+        },
+        {
+          "args": [
+            "a",
+            "a"
+          ],
+          "dest": "a_sq",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "b"
+          ],
+          "dest": "b_sq",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a_sq",
+            "b_sq"
+          ],
+          "dest": "sum",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "sum",
+            "n_sq"
+          ],
+          "dest": "found",
+          "op": "eq",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "found"
+          ],
+          "labels": [
+            "found",
+            "inner_continue"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "found"
+        },
+        {
+          "args": [
+            "b",
+            "a"
+          ],
+          "op": "print"
+        },
+        {
+          "label": "inner_continue"
+        },
+        {
+          "args": [
+            "b",
+            "one"
+          ],
+          "dest": "b",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "b",
+            "a"
+          ],
+          "dest": "done",
+          "op": "ge",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "done"
+          ],
+          "labels": [
+            "outer_continue",
+            "inner_loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "outer_continue"
+        },
+        {
+          "args": [
+            "a",
+            "one"
+          ],
+          "dest": "a",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "a",
+            "n"
+          ],
+          "dest": "done",
+          "op": "ge",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "done"
+          ],
+          "labels": [
+            "finish",
+            "outer_loop"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "finish"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

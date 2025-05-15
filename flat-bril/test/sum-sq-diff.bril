@@ -1,0 +1,73 @@
+@sumOfSquares(n: int): int {
+  v0: int = const 0;
+  res: int = id v0;
+  v2: int = const 1;
+  i: int = id v2;
+.for.cond.1:
+  v3: int = id i;
+  v4: int = id n;
+  v5: bool = le v3 v4;
+  br v5 .for.body.1 .for.end.1;
+.for.body.1:
+  v6: int = id i;
+  v7: int = id i;
+  v8: int = mul v6 v7;
+  sq: int = id v8;
+  v9: int = id res;
+  v10: int = id sq;
+  v11: int = add v9 v10;
+  res: int = id v11;
+  v12: int = id i;
+  v13: int = const 1;
+  v14: int = add v12 v13;
+  i: int = id v14;
+  jmp .for.cond.1;
+.for.end.1:
+  v15: int = id res;
+  ret v15;
+}
+@squareOfSum(n: int): int {
+  v0: int = const 0;
+  res: int = id v0;
+  v2: int = const 1;
+  i: int = id v2;
+.for.cond.1:
+  v3: int = id i;
+  v4: int = id n;
+  v5: bool = le v3 v4;
+  br v5 .for.body.1 .for.end.1;
+.for.body.1:
+  v6: int = id res;
+  v7: int = id i;
+  v8: int = add v6 v7;
+  res: int = id v8;
+  v9: int = id i;
+  v10: int = const 1;
+  v11: int = add v9 v10;
+  i: int = id v11;
+  jmp .for.cond.1;
+.for.end.1:
+  v12: int = id res;
+  v13: int = id res;
+  v14: int = mul v12 v13;
+  square: int = id v14;
+  v15: int = id square;
+  ret v15;
+}
+# ARGS: 100
+@main(n: int) {
+  v0: int = id n;
+  sum: int = call @sumOfSquares v0;
+  sum: int = id sum;
+  v1: int = id n;
+  square: int = call @squareOfSum v1;
+  square: int = id square;
+  v2: int = id square;
+  v3: int = id sum;
+  v4: int = sub v2 v3;
+  diff: int = id v4;
+  v5: int = id diff;
+  print v5;
+  v6: int = const 0;
+  v7: int = id diff;
+}

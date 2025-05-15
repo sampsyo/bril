@@ -1,0 +1,16 @@
+{
+  "functions": [
+    {
+      "args": [],
+      "instrs": [
+        {
+          "dest": "v1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
