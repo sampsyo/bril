@@ -1,3 +1,0 @@
-@main {
-  v1: int = const 1;
-}

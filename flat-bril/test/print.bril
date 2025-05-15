@@ -1,4 +1,0 @@
-@main {
-  v: int = const 42;
-  print v;
-}
