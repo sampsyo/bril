@@ -131,6 +131,11 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   print: null, // Any number of arguments.
   br: 1,
   jmp: 0,
+  while: 1, // ADDED
+  block: 0, // ADDED
+  if: 1, // ADDED
+  break: 0, // ADDED
+  continue: 0, // ADDED
   ret: null, // (Should be 0 or 1.)
   nop: 0,
   call: null,
@@ -330,8 +335,12 @@ type Action =
   | { "action": "end"; "ret": Value | null }
   | { "action": "speculate" }
   | { "action": "commit" }
-  | { "action": "abort"; "label": bril.Ident };
+  | { "action": "abort", "label": bril.Ident }
+  | { "action": "break", "level": number } // Break out of n loops.
+  | { "action": "continue", "level": number }; // Continue to next iteration of innermost loop.
 const NEXT: Action = { "action": "next" };
+const BREAK: Action = { "action": "break", "level": 0 };
+const CONTINUE: Action = { "action": "continue", "level": 0 };
 
 /**
  * The interpreter state that's threaded through recursive calls.
@@ -824,9 +833,118 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       state.env.set(instr.dest, val);
       return NEXT;
     }
+
+    case "if": {
+      const cond = getBool(instr, state.env, 0);
+      if (cond) {
+        const trueBody = instr.children?.[0];
+        if (trueBody) {
+          return evalBlock(trueBody, state);
+        }
+      } else {
+        const falseBody = instr.children?.[1];
+        if (falseBody) {
+          return evalBlock(falseBody, state);
+        }
+      }
+      return NEXT;
+    }
+
+    case "block": {
+        const body = instr.children?.[0] || [];
+        const result = evalBlock(body, state);
+        if (result.action === "break") {
+            if (result.level > 0) {
+                return { action: "break", level: result.level - 1 };
+            } else {
+                return NEXT;
+            }
+        } else if (result.action === "continue") {
+            if (result.level > 0) {
+                return { action: "continue", level: result.level - 1};
+            } else {
+                return NEXT;
+            }
+        } else {
+            return result;
+        }
+    }
+
+    case "while": {
+      while (true) {
+        const cond = getBool(instr, state.env, 0);
+        if (!cond) {
+          return NEXT;
+        }
+
+        const body = instr.children?.[0] || [];
+        const result = evalBlock(body, state);
+        if (result.action === "break") {
+          if (result.level > 0) {
+            return { action: "break", level: result.level - 1 };
+          } else {
+            return NEXT;
+          }
+        } else if (result.action === "continue") {
+          if (result.level > 0) {
+            return { action: "continue", level: result.level - 1 };
+          } else {
+            continue;
+          }
+        } else if (
+          result.action === "end" ||
+          result.action === "speculate" ||
+          result.action === "commit" ||
+          result.action === "abort"
+        ) {
+          return result;
+        }
+      }
+    }
+
+    case "break": {
+      let level = instr.value;
+      return { action: "break", level: level };
+    }
+
+    case "continue": {
+      let level = instr.value;
+      return { action: "continue", level: level };
+    }
   }
   unreachable(instr);
   throw error(`unhandled opcode ${instr.op}`);
+}
+
+/**
+ * Evaluate a block of instructions and return the resulting action.
+ * This is a new function to handle blocks of instructions in the children array.
+ */
+function evalBlock(instrs: bril.Instruction[], state: State): Action {
+  for (let i = 0; i < instrs.length; ++i) {
+    const instr = instrs[i];
+    if ("op" in instr) {
+      const action = evalInstr(instr, state);
+
+      switch (action.action) {
+        case "next":
+          break;
+        case "break":
+        case "continue":
+        case "end":
+        case "speculate":
+        case "commit":
+        case "abort":
+          return action;
+        case "jump":
+            throw error(`label in structured control flow`);
+        default:
+          unreachable(action);
+          throw error(`unhandled action ${action.action}`);
+      }
+    }
+  }
+  return NEXT;
 }
 
 function evalFunc(func: bril.Function, state: State): Value | null {
@@ -869,6 +987,19 @@ function evalFunc(func: bril.Function, state: State): Value | null {
             specparent: state.specparent.specparent,
           });
           break;
+        }
+        case "break": {
+          // Break out of the innermost loop.
+          if (state.specparent) {
+            throw error(`break in speculative state`);
+          }
+          break;
+        }
+        case "continue": {
+          // Continue to the next iteration of the innermost loop.
+          if (state.specparent) {
+            throw error(`continue in speculative state`);
+          }
         }
         case "next":
         case "jump":
