@@ -23,10 +23,10 @@ struct: STRUCT IDENT "=" "{" mbr* "}"
 mbr: IDENT ":" type ";"
 
 func: FUNC ["(" arg_list? ")"] [tyann] "{" stmt* "}"
-stmt: continue_ | instr | while_ | if_ | block_ | break_
+stmt: continue_ | instr | loop_ | if_ | block_ | break_
 arg_list: | arg ("," arg)*
 arg: IDENT ":" type
-while_: WHILE IDENT "{" stmt* "}"
+loop_: LOOP "{" stmt* "}"
 if_: IF IDENT then_ [else_]
 then_: THEN "{" stmt* "}"
 else_: ELSE "{" stmt* "}"
@@ -63,7 +63,7 @@ COMMENT: /#.*/
 IF: "if"
 THEN: "then"
 ELSE: "else"
-WHILE: "while"
+LOOP: "loop"
 BREAK: "break"
 CONTINUE: "continue"
 BLOCK: "block"
@@ -130,7 +130,7 @@ class JSONTransformer(lark.Transformer):
     def stmt(self, items):
         return items.pop(0)
 
-    def while_(self, items):
+    def loop_(self, items):
         op = str(items[0])
         name = str(items[1])
         body = items[2:]
@@ -342,11 +342,10 @@ def formatted_children(instrs, indentLevel):
     return joined
 
 
-def while_to_string(instr, indentLevel):
+def loop_to_string(instr, indentLevel):
     indent = '  ' * indentLevel
-    return '{}while {} {{\n{}\n{}}}'.format(
+    return '{}loop {{\n{}\n{}}}'.format(
         indent,
-        instr['args'][0],
         formatted_children(instr['children'][0], indentLevel + 1),
         indent
     )
@@ -386,8 +385,8 @@ def block_to_string(instr, indentLevel):
 
 def instr_to_string(instr, indentLevel=1):
     indent = '  ' * indentLevel
-    if instr['op'] == 'while':
-        return while_to_string(instr, indentLevel)
+    if instr['op'] == 'loop':
+        return loop_to_string(instr, indentLevel)
     if instr['op'] == 'if':
         return if_to_string(instr, indentLevel)
     if instr['op'] == 'block':

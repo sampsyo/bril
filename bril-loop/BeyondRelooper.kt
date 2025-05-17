@@ -86,21 +86,10 @@ fun doTree(
     val codeForX = nodeWithin(node, mergeNodes, rpo, preds, blocks, labelToBlock)
     val instr: List<BriloopInstr> = if (isLoopHeader(x, rpo, preds)) {
         val ctxt1 = listOf(LoopHeadedBy(node)) + context
-        val name = generateVariableName()
-        val arg = BriloopOp(
-            op = "const",
-            value = BriloopValueBoolean(true),
-            type = BriloopPrimitiveType("bool"),
-            dest = name,
-            args = null,
-            funcs = null,
-        )
-        log("Creating while for $name")
-        val whil = BriloopWhileStmt(
-            arg = name,
+        val loop = BriloopLoopStmt(
             body = codeForX(ctxt1),
         )
-        listOf(arg, whil)
+        listOf(loop)
     } else {
         codeForX(context)
     }

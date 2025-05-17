@@ -131,7 +131,7 @@ const argCounts: { [key in bril.OpCode]: number | null } = {
   print: null, // Any number of arguments.
   br: 1,
   jmp: 0,
-  while: 1, // ADDED
+  loop: 0, // ADDED
   block: 0, // ADDED
   if: 1, // ADDED
   break: 0, // ADDED
@@ -870,13 +870,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         }
     }
 
-    case "while": {
+    case "loop": {
       while (true) {
-        const cond = getBool(instr, state.env, 0);
-        if (!cond) {
-          return NEXT;
-        }
-
         const body = instr.children?.[0] || [];
         const result = evalBlock(body, state);
         if (result.action === "break") {

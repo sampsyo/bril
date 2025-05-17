@@ -1,2 +1,2 @@
-#!/bin/bash 
-java -jar briloop.jar
+#!/bin/bash
+java -jar $BRIL/bril-loop/briloop.jar

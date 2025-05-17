@@ -51,8 +51,7 @@ data class BriloopBreakStmt(
     val value: BriloopValue?,
 ) : BriloopStmt
 
-data class BriloopWhileStmt(
-    val arg: String,
+data class BriloopLoopStmt(
     val body: List<BriloopInstr>,
 ) : BriloopStmt
 
@@ -88,8 +87,7 @@ class BriloopInstrAdapter {
                     briloopinstr
                 },
             )
-            "while" -> BriloopWhileStmt(
-                arg = json.args!!.first(),
+            "loop" -> BriloopLoopStmt(
                 body = json.children!!.first().mapNotNull { 
                     val briloopinstr: BriloopInstr? = fromJson(it)
                     briloopinstr
@@ -145,12 +143,12 @@ class BriloopInstrAdapter {
                 labels = null,
                 children = listOf(instr.body.mapNotNull { toJson(it) })
             )
-            is BriloopWhileStmt -> BriloopInstrJson(
-                op = "while",
+            is BriloopLoopStmt -> BriloopInstrJson(
+                op = "loop",
                 dest = null,
                 type = null,
                 value = null,
-                args = listOf(instr.arg),
+                args = null,
                 funcs = null,
                 labels = null,
                 children = listOf(instr.body.mapNotNull { toJson(it) })

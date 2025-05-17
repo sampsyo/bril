@@ -72,7 +72,7 @@ export interface ValueOperation extends Op {
  * An operation that is used for structured control flow.
  */
 export interface ControlFlowOperation extends Op {
-  op: "if" | "while" | "block" | "break" | "continue";
+  op: "if" | "loop" | "block" | "break" | "continue";
   children: Instruction[][];
   value: number;
 }
