@@ -95,10 +95,9 @@ def _pos(token):
 
 
 class JSONTransformer(lark.Transformer):
-    def __init__(self, include_pos=False, goof=False):
+    def __init__(self, include_pos=False):
         super().__init__()
         self.include_pos = include_pos
-        self.goof = goof
 
     def start(self, items):
         structs = [i for i in items if 'mbrs' in i]
@@ -168,20 +167,12 @@ class JSONTransformer(lark.Transformer):
     def if_(self, items):
         op = str(items[0])
         arg = str(items[1])
-        foo = items[2]
-        oof = items[3]
-        if self.goof:
-            return {
-                'op': op,
-                'args': [arg],
-                'foo': foo,
-                'oof': oof,
-            }
-
+        tru = items[2]
+        fls = items[3]
         return {
             'op': op,
             'args': [arg],
-            'children': [foo, oof],
+            'children': [tru, fls],
         }
 
     def then_(self, items):
@@ -313,14 +304,14 @@ class JSONTransformer(lark.Transformer):
         return value
 
 
-def parse_bril(txt, include_pos=False, goof=False):
+def parse_bril(txt, include_pos=False):
     """Parse a Bril program and return a JSON string.
 
     Optionally include source position information.
     """
     parser = lark.Lark(GRAMMAR, maybe_placeholders=True)
     tree = parser.parse(txt)
-    data = JSONTransformer(include_pos=include_pos, goof=goof).transform(tree)
+    data = JSONTransformer(include_pos=include_pos).transform(tree)
     return json.dumps(data, indent=2, sort_keys=True)
 
 
