@@ -22,9 +22,17 @@ start: (struct | func)*
 struct: STRUCT IDENT "=" "{" mbr* "}"
 mbr: IDENT ":" type ";"
 
-func: FUNC ["(" arg_list? ")"] [tyann] "{" instr* "}"
+func: FUNC ["(" arg_list? ")"] [tyann] "{" stmt* "}"
+stmt: continue_ | instr | loop_ | if_ | block_ | break_
 arg_list: | arg ("," arg)*
 arg: IDENT ":" type
+loop_: LOOP "{" stmt* "}"
+if_: IF IDENT then_ [else_]
+then_: THEN "{" stmt* "}"
+else_: ELSE "{" stmt* "}"
+block_: BLOCK "{" stmt* "}"
+break_: BREAK lit ";"
+continue_: CONTINUE lit ";"
 ?instr: const | vop | eop | label
 
 const.4: IDENT [tyann] "=" "const" lit ";"
@@ -52,7 +60,13 @@ IDENT: ("_"|"%"|LETTER) ("_"|"%"|"."|LETTER|DIGIT)*
 FUNC: "@" IDENT
 LABEL: "." IDENT
 COMMENT: /#.*/
-
+IF: "if"
+THEN: "then"
+ELSE: "else"
+LOOP: "loop"
+BREAK: "break"
+CONTINUE: "continue"
+BLOCK: "block"
 
 %import common.SIGNED_INT
 %import common.SIGNED_FLOAT
@@ -112,6 +126,66 @@ class JSONTransformer(lark.Transformer):
         if self.include_pos:
             func['pos'] = _pos(name)
         return func
+
+    def stmt(self, items):
+        return items.pop(0)
+
+    def loop_(self, items):
+        op = str(items[0])
+        name = str(items[1])
+        body = items[2:]
+        return {
+            'op': op,
+            'args': [name],
+            'children': [body],
+        }
+
+    def block_(self, items):
+        op = str(items[0])
+        body = items[1:]
+        return {
+            'op': op,
+            'children': [body],
+        }
+
+    def break_(self, items):
+        op = str(items[0])
+        val = int(str(items[1]))
+        return {
+            'op': op,
+            'value': val,
+        }
+
+    def continue_(self, items):
+        op = str(items[0])
+        val = int(str(items[1]))
+        return {
+            'op': op,
+            'value': val,
+        }
+
+    def if_(self, items):
+        op = str(items[0])
+        arg = str(items[1])
+        tru = items[2]
+        fls = items[3]
+        return {
+            'op': op,
+            'args': [arg],
+            'children': [tru, fls],
+        }
+
+    def then_(self, items):
+        return items[1:]
+        return {
+            'stmts': items[1:]
+        }
+
+    def else_(self, items):
+        return items[1:]
+        return {
+            'stmts': items[1:],
+        }
 
     def arg(self, items):
         name = items.pop(0)
@@ -237,7 +311,7 @@ def parse_bril(txt, include_pos=False):
     """
     parser = lark.Lark(GRAMMAR, maybe_placeholders=True)
     tree = parser.parse(txt)
-    data = JSONTransformer(include_pos).transform(tree)
+    data = JSONTransformer(include_pos=include_pos).transform(tree)
     return json.dumps(data, indent=2, sort_keys=True)
 
 
@@ -262,11 +336,76 @@ def value_to_str(type, value):
         return str(value).lower()
 
 
-def instr_to_string(instr):
+def formatted_children(instrs, indentLevel):
+    formatted = map(lambda x: instr_to_string(x, indentLevel), instrs)
+    joined = '\n'.join(formatted)
+    return joined
+
+
+def loop_to_string(instr, indentLevel):
+    indent = '  ' * indentLevel
+    return '{}loop {{\n{}\n{}}}'.format(
+        indent,
+        formatted_children(instr['children'][0], indentLevel + 1),
+        indent
+    )
+
+
+def if_to_string(instr, indentLevel):
+    indent = '  ' * indentLevel
+    if (len(instr['children']) == 1):
+        return '{}if {}\n{}then{{\n {}\n {}}}'.format(
+            indent,
+            instr['args'][0],
+            indent,
+            formatted_children(instr['children'][0], indentLevel + 1),
+            indent,
+        )
+
+    return '{}if {}\n{}then {{\n{}\n{}}}\n{}else {{\n{}\n{}}}'.format(
+        indent,
+        instr['args'][0],
+        indent,
+        formatted_children(instr['children'][0], indentLevel + 1),
+        indent,
+        indent,
+        formatted_children(instr['children'][1], indentLevel + 1),
+        indent,
+    )
+
+
+def block_to_string(instr, indentLevel):
+    indent = '  ' * indentLevel
+    return '{}block {{\n{}\n{}}}'.format(
+        indent,
+        formatted_children(instr['children'][0], indentLevel + 1),
+        indent
+    )
+
+
+def instr_to_string(instr, indentLevel=1):
+    indent = '  ' * indentLevel
+    if instr['op'] == 'loop':
+        return loop_to_string(instr, indentLevel)
+    if instr['op'] == 'if':
+        return if_to_string(instr, indentLevel)
+    if instr['op'] == 'block':
+        return block_to_string(instr, indentLevel)
+    if instr['op'] == 'break':
+        return '{}break {};'.format(
+            indent,
+            instr['value'] if instr['value'] else 0,
+        )
+    if instr['op'] == 'continue':
+        return '{}continue {};'.format(
+            indent,
+            instr['value'] if instr['value'] else 0,
+        )
     if instr['op'] == 'const':
         tyann = ': {}'.format(type_to_str(instr['type'])) \
             if 'type' in instr else ''
-        return '{}{} = const {}'.format(
+        return '{}{}{} = const {};'.format(
+            indent,
             instr['dest'],
             tyann,
             value_to_str(instr['type'], instr['value']),
@@ -286,17 +425,18 @@ def instr_to_string(instr):
         if 'dest' in instr:
             tyann = ': {}'.format(type_to_str(instr['type'])) \
                 if 'type' in instr else ''
-            return '{}{} = {}'.format(
+            return '{}{}{} = {};'.format(
+                indent,
                 instr['dest'],
                 tyann,
                 rhs,
             )
         else:
-            return rhs
+            return '{}{};'.format(indent, rhs)
 
 
 def print_instr(instr):
-    print('  {};'.format(instr_to_string(instr)))
+    print('{}'.format(instr_to_string(instr)))
 
 
 def print_label(label):

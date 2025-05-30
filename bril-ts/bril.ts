@@ -67,6 +67,16 @@ export interface ValueOperation extends Op {
   type: Type;
 }
 
+// deno-fmt-ignore
+/**
+ * An operation that is used for structured control flow.
+ */
+export interface ControlFlowOperation extends Op {
+  op: "if" | "loop" | "block" | "break" | "continue";
+  children: Instruction[][];
+  value: number;
+}
+
 /**
  * The type of Bril values that may appear in constants.
  */
@@ -86,7 +96,7 @@ export interface Constant {
 /**
  * Operations take arguments, which come from previously-assigned identifiers.
  */
-export type Operation = EffectOperation | ValueOperation;
+export type Operation = EffectOperation | ValueOperation | ControlFlowOperation;
 
 /**
  * Instructions can be operations (which have arguments) or constants (which
@@ -110,9 +120,14 @@ export type ValueOpCode = ValueOperation["op"];
 export type EffectOpCode = EffectOperation["op"];
 
 /**
+ * The valid opcodes for control flow operations.
+ */
+export type ControlFlowOpCode = ControlFlowOperation["op"];
+
+/**
  * All valid operation opcodes.
  */
-export type OpCode = ValueOpCode | EffectOpCode;
+export type OpCode = ValueOpCode | EffectOpCode | ControlFlowOpCode;
 
 /**
  * Jump labels just mark a position with a name.
