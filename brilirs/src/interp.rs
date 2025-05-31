@@ -662,7 +662,7 @@ fn execute<'a, T: std::io::Write>(
             state
               .env
               .set(numified_code.dest.unwrap(), Value::from(value));
-          };
+          }
         }
         Instruction::Value {
           op,
@@ -741,7 +741,7 @@ fn parse_args(
               ));
             }
             Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
-          };
+          }
           Ok(())
         }
         bril_rs::Type::Int => {
@@ -753,7 +753,7 @@ fn parse_args(
               ));
             }
             Ok(i) => env.set(*arg_as_num, Value::Int(i)),
-          };
+          }
           Ok(())
         }
         bril_rs::Type::Float => {
@@ -765,7 +765,7 @@ fn parse_args(
               ));
             }
             Ok(f) => env.set(*arg_as_num, Value::Float(f)),
-          };
+          }
           Ok(())
         }
         bril_rs::Type::Char => escape_control_chars(inputs.get(index).unwrap().as_ref())

@@ -1000,7 +1000,7 @@ fn build_instruction<'a, 'b>(
                     Type::Pointer(_) => {
                         unreachable!()
                     }
-                };
+                }
                 if i < len - 1 {
                     builder.build_call(print_sep, &[], "print_sep").unwrap();
                 }
