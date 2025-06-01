@@ -34,6 +34,7 @@ pub fn escape_control_chars(s: &str) -> Option<char> {
 pub struct Lines {
     use_pos: bool,
     with_end: bool,
+    #[expect(clippy::struct_field_names, reason = "Names are hard")]
     new_lines: Vec<usize>,
     src_name: Option<String>,
 }

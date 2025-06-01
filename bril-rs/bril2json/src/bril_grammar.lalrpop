@@ -9,7 +9,7 @@
 #![expect(clippy::use_self)]
 #![expect(clippy::cast_sign_loss)]
 #![expect(clippy::must_use_candidate)]
-#![expect(clippy::uninlined_format_args)]
+#![expect(clippy::elidable_lifetime_names)]
 #![expect(clippy::match_same_arms)]
 #![expect(clippy::option_if_let_else)]
 #![expect(clippy::extra_unused_lifetimes)]

@@ -243,7 +243,10 @@ fn locate_import<S: BuildHasher>(
     }
 
     if located_libs.len() > 1 {
-        eprintln!("Warning, more than one valid path for {path:?} was found, using the first one.");
+        eprintln!(
+            "Warning, more than one valid path for {} was found, using the first one.",
+            path.display()
+        );
     }
 
     let next_path = canonicalize(located_libs.first().unwrap().join(path))?;
