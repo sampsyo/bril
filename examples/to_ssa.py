@@ -150,9 +150,7 @@ def func_to_ssa(func):
     arg_names = {a["name"] for a in func["args"]} if "args" in func else set()
 
     gets = get_gets(blocks, df, defs)
-    sets, get_dests, inits = ssa_rename(
-        blocks, gets, succ, dom_tree(dom), arg_names
-    )
+    sets, get_dests, inits = ssa_rename(blocks, gets, succ, dom_tree(dom), arg_names)
     insert_sets_and_gets(blocks, sets, get_dests, types)
     insert_inits(next(iter(blocks.values())), inits, types)
 

@@ -16,14 +16,14 @@ def block_map(blocks):
 
     for block in blocks:
         # Generate a name for the block.
-        if 'label' in block[0]:
+        if "label" in block[0]:
             # The block has a label. Remove the label but use it for the
             # block's name.
-            name = block[0]['label']
+            name = block[0]["label"]
             block = block[1:]
         else:
             # Make up a new name for this anonymous block.
-            name = fresh('b', by_name)
+            name = fresh("b", by_name)
 
         # Add the block to the mapping.
         by_name[name] = block
@@ -37,12 +37,12 @@ def successors(instr):
     Raises a ValueError if the instruction is not a terminator (jump,
     branch, or return).
     """
-    if instr['op'] in ('jmp', 'br'):
-        return instr['labels']
-    elif instr['op'] == 'ret':
+    if instr["op"] in ("jmp", "br"):
+        return instr["labels"]
+    elif instr["op"] == "ret":
         return []  # No successors to an exit block.
     else:
-        raise ValueError('{} is not a terminator'.format(instr['op']))
+        raise ValueError("{} is not a terminator".format(instr["op"]))
 
 
 def add_terminators(blocks):
@@ -53,17 +53,17 @@ def add_terminators(blocks):
         if not block:
             if i == len(blocks) - 1:
                 # In the last block, return.
-                block.append({'op': 'ret', 'args': []})
+                block.append({"op": "ret", "args": []})
             else:
                 dest = list(blocks.keys())[i + 1]
-                block.append({'op': 'jmp', 'labels': [dest]})
-        elif block[-1]['op'] not in TERMINATORS:
+                block.append({"op": "jmp", "labels": [dest]})
+        elif block[-1]["op"] not in TERMINATORS:
             if i == len(blocks) - 1:
-                block.append({'op': 'ret', 'args': []})
+                block.append({"op": "ret", "args": []})
             else:
                 # Otherwise, jump to the next block.
                 dest = list(blocks.keys())[i + 1]
-                block.append({'op': 'jmp', 'labels': [dest]})
+                block.append({"op": "jmp", "labels": [dest]})
 
 
 def add_entry(blocks):
@@ -77,13 +77,13 @@ def add_entry(blocks):
 
     # Check for any references to the label.
     for instr in flatten(blocks.values()):
-        if 'labels' in instr and first_lbl in instr['labels']:
+        if "labels" in instr and first_lbl in instr["labels"]:
             break
     else:
         return
 
     # References exist; insert a new block.
-    new_lbl = fresh('entry', blocks)
+    new_lbl = fresh("entry", blocks)
     blocks[new_lbl] = []
     blocks.move_to_end(new_lbl, last=False)
 
@@ -108,6 +108,6 @@ def reassemble(blocks):
     # `jmp .next` and `ret` terminators where it is allowed.
     instrs = []
     for name, block in blocks.items():
-        instrs.append({'label': name})
+        instrs.append({"label": name})
         instrs += block
     return instrs

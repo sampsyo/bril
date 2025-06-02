@@ -1,5 +1,5 @@
-"""Local value numbering for Bril.
-"""
+"""Local value numbering for Bril."""
+
 import json
 import sys
 from collections import namedtuple
@@ -8,7 +8,7 @@ from form_blocks import form_blocks
 from util import flatten
 
 # A Value uniquely represents a computation in terms of sub-values.
-Value = namedtuple('Value', ['op', 'args'])
+Value = namedtuple("Value", ["op", "args"])
 
 
 class Numbering(dict):
@@ -43,11 +43,11 @@ def last_writes(instrs):
     out = [False] * len(instrs)
     seen = set()
     for idx, instr in reversed(list(enumerate(instrs))):
-        if 'dest' in instr:
-            dest = instr['dest']
+        if "dest" in instr:
+            dest = instr["dest"]
             if dest not in seen:
                 out[idx] = True
-                seen.add(instr['dest'])
+                seen.add(instr["dest"])
     return out
 
 
@@ -58,9 +58,9 @@ def read_first(instrs):
     read = set()
     written = set()
     for instr in instrs:
-        read.update(set(instr.get('args', [])) - written)
-        if 'dest' in instr:
-            written.add(instr['dest'])
+        read.update(set(instr.get("args", [])) - written)
+        if "dest" in instr:
+            written.add(instr["dest"])
     return read
 
 
@@ -110,82 +110,88 @@ def lvn_block(block, lookup, canonicalize, fold):
     for instr, last_write in zip(block, last_writes(block)):
         # Look up the value numbers for all variable arguments,
         # generating new numbers for unseen variables.
-        argvars = instr.get('args', [])
+        argvars = instr.get("args", [])
         argnums = tuple(var2num[var] for var in argvars)
 
         # Update argument variable names to canonical variables.
-        if 'args' in instr:
-            instr['args'] = [num2vars[n][0] for n in argnums]
+        if "args" in instr:
+            instr["args"] = [num2vars[n][0] for n in argnums]
 
         # If we write to a variable, we "clobber" any previous value it
         # may have held. Remove any entries that point to this variable
         # as the "home" for old values.
-        if 'dest' in instr:
+        if "dest" in instr:
             for rhs in num2vars.values():
-                if instr['dest'] in rhs:
-                    rhs.remove(instr['dest'])
+                if instr["dest"] in rhs:
+                    rhs.remove(instr["dest"])
 
         # Non-call value operations are candidates for replacement. (We
         # could conceivably include calls to pure functions as values,
         # but determining purity would require an interprocedural
         # analysis.)
         val = None
-        if 'dest' in instr and 'args' in instr and instr['op'] != 'call':
+        if "dest" in instr and "args" in instr and instr["op"] != "call":
             # Construct a Value for this computation.
-            val = canonicalize(Value(instr['op'], argnums))
+            val = canonicalize(Value(instr["op"], argnums))
 
             # Is this value already available?
             num = lookup(value2num, val)
             if num is not None:
                 # Mark this variable as containing the value.
-                var2num[instr['dest']] = num
+                var2num[instr["dest"]] = num
 
                 # Replace the instruction with a copy or a constant.
                 if num in num2const:  # Value is a constant.
-                    instr.update({
-                        'op': 'const',
-                        'value': num2const[num],
-                    })
-                    del instr['args']
+                    instr.update(
+                        {
+                            "op": "const",
+                            "value": num2const[num],
+                        }
+                    )
+                    del instr["args"]
                 else:  # Value is in a variable.
-                    instr.update({
-                        'op': 'id',
-                        'args': [num2vars[num][0]],
-                    })
-                    num2vars[num].append(instr['dest'])
+                    instr.update(
+                        {
+                            "op": "id",
+                            "args": [num2vars[num][0]],
+                        }
+                    )
+                    num2vars[num].append(instr["dest"])
                 continue
 
         # If this instruction produces a result, give it a number.
-        if 'dest' in instr:
-            newnum = var2num.add(instr['dest'])
+        if "dest" in instr:
+            newnum = var2num.add(instr["dest"])
 
             # Record constant values.
-            if instr['op'] == 'const':
-                num2const[newnum] = instr['value']
+            if instr["op"] == "const":
+                num2const[newnum] = instr["value"]
 
             if last_write:
                 # Preserve the variable name for other blocks.
-                var = instr['dest']
+                var = instr["dest"]
             else:
                 # We must put the value in a new variable so it can be
                 # reused by another computation in the feature (in case
                 # the current variable name is reassigned before then).
-                var = 'lvn.{}'.format(newnum)
+                var = "lvn.{}".format(newnum)
 
             # Record the variable name and update the instruction.
             num2vars[newnum] = [var]
-            instr['dest'] = var
+            instr["dest"] = var
 
             if val is not None:
                 # Is this value foldable to a constant?
                 const = fold(num2const, val)
                 if const is not None:
                     num2const[newnum] = const
-                    instr.update({
-                        'op': 'const',
-                        'value': const,
-                    })
-                    del instr['args']
+                    instr.update(
+                        {
+                            "op": "const",
+                            "value": const,
+                        }
+                    )
+                    del instr["args"]
                     continue
 
                 # If not, record the new variable as the canonical
@@ -194,28 +200,27 @@ def lvn_block(block, lookup, canonicalize, fold):
 
 
 def _lookup(value2num, value):
-    """Value lookup function with propagation through `id` values.
-    """
-    if value.op == 'id':
+    """Value lookup function with propagation through `id` values."""
+    if value.op == "id":
         return value.args[0]  # Use the underlying value number.
     else:
         return value2num.get(value)
 
 
 FOLDABLE_OPS = {
-    'add': lambda a, b: a + b,
-    'mul': lambda a, b: a * b,
-    'sub': lambda a, b: a - b,
-    'div': lambda a, b: a // b,
-    'gt': lambda a, b: a > b,
-    'lt': lambda a, b: a < b,
-    'ge': lambda a, b: a >= b,
-    'le': lambda a, b: a <= b,
-    'ne': lambda a, b: a != b,
-    'eq': lambda a, b: a == b,
-    'or': lambda a, b: a or b,
-    'and': lambda a, b: a and b,
-    'not': lambda a: not a
+    "add": lambda a, b: a + b,
+    "mul": lambda a, b: a * b,
+    "sub": lambda a, b: a - b,
+    "div": lambda a, b: a // b,
+    "gt": lambda a, b: a > b,
+    "lt": lambda a, b: a < b,
+    "ge": lambda a, b: a >= b,
+    "le": lambda a, b: a <= b,
+    "ne": lambda a, b: a != b,
+    "eq": lambda a, b: a == b,
+    "or": lambda a, b: a or b,
+    "and": lambda a, b: a and b,
+    "not": lambda a: not a,
 }
 
 
@@ -225,24 +230,23 @@ def _fold(num2const, value):
             const_args = [num2const[n] for n in value.args]
             return FOLDABLE_OPS[value.op](*const_args)
         except KeyError:  # At least one argument is not a constant.
-            if value.op in {'eq', 'ne', 'le', 'ge'} and \
-               value.args[0] == value.args[1]:
+            if value.op in {"eq", "ne", "le", "ge"} and value.args[0] == value.args[1]:
                 # Equivalent arguments may be evaluated for equality.
                 # E.g. `eq x x`, where `x` is not a constant evaluates
                 # to `true`.
-                return value.op != 'ne'
+                return value.op != "ne"
 
-            if value.op in {'and', 'or'} and \
-               any(v in num2const for v in value.args):
+            if value.op in {"and", "or"} and any(v in num2const for v in value.args):
                 # Short circuiting the logical operators `and` and `or`
                 # for two cases: (1) `and x c0` -> false, where `c0` a
                 # constant that evaluates to `false`. (2) `or x c1`  ->
                 # true, where `c1` a constant that evaluates to `true`.
-                const_val = num2const[value.args[0]
-                                      if value.args[0] in num2const
-                                      else value.args[1]]
-                if (value.op == 'and' and not const_val) or \
-                   (value.op == 'or' and const_val):
+                const_val = num2const[
+                    value.args[0] if value.args[0] in num2const else value.args[1]
+                ]
+                if (value.op == "and" and not const_val) or (
+                    value.op == "or" and const_val
+                ):
                     return const_val
             return None
         except ZeroDivisionError:  # If we hit a dynamic error, bail!
@@ -252,9 +256,8 @@ def _fold(num2const, value):
 
 
 def _canonicalize(value):
-    """Cannibalize values for commutative math operators.
-    """
-    if value.op in ('add', 'mul'):
+    """Cannibalize values for commutative math operators."""
+    if value.op in ("add", "mul"):
         return Value(value.op, tuple(sorted(value.args)))
     else:
         return value
@@ -264,8 +267,8 @@ def lvn(bril, prop=False, canon=False, fold=False):
     """Apply the local value numbering optimization to every basic block
     in every function.
     """
-    for func in bril['functions']:
-        blocks = list(form_blocks(func['instrs']))
+    for func in bril["functions"]:
+        blocks = list(form_blocks(func["instrs"]))
         for block in blocks:
             lvn_block(
                 block,
@@ -273,10 +276,10 @@ def lvn(bril, prop=False, canon=False, fold=False):
                 canonicalize=_canonicalize if canon else lambda v: v,
                 fold=_fold if fold else lambda n2c, v: None,
             )
-        func['instrs'] = flatten(blocks)
+        func["instrs"] = flatten(blocks)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     bril = json.load(sys.stdin)
-    lvn(bril, '-p' in sys.argv, '-c' in sys.argv, '-f' in sys.argv)
+    lvn(bril, "-p" in sys.argv, "-c" in sys.argv, "-f" in sys.argv)
     json.dump(bril, sys.stdout, indent=2, sort_keys=True)

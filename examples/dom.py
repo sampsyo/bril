@@ -71,8 +71,7 @@ def get_dom(succ, entry):
 
 
 def dom_fronts(dom, succ):
-    """Compute the dominance frontier, given the dominance relation.
-    """
+    """Compute the dominance frontier, given the dominance relation."""
     dom_inv = map_inv(dom)
 
     frontiers = {}
@@ -84,8 +83,9 @@ def dom_fronts(dom, succ):
 
         # You're in the frontier if you're not strictly dominated by the
         # current block.
-        frontiers[block] = [b for b in dominated_succs
-                            if b not in dom_inv[block] or b == block]
+        frontiers[block] = [
+            b for b in dominated_succs if b not in dom_inv[block] or b == block
+        ]
 
     return frontiers
 
@@ -94,10 +94,11 @@ def dom_tree(dom):
     # Get the blocks strictly dominated by a block strictly dominated by
     # a given block.
     dom_inv = map_inv(dom)
-    dom_inv_strict = {a: {b for b in bs if b != a}
-                      for a, bs in dom_inv.items()}
-    dom_inv_strict_2x = {a: set().union(*(dom_inv_strict[b] for b in bs))
-                         for a, bs in dom_inv_strict.items()}
+    dom_inv_strict = {a: {b for b in bs if b != a} for a, bs in dom_inv.items()}
+    dom_inv_strict_2x = {
+        a: set().union(*(dom_inv_strict[b] for b in bs))
+        for a, bs in dom_inv_strict.items()
+    }
     return {
         a: {b for b in bs if b not in dom_inv_strict_2x[a]}
         for a, bs in dom_inv_strict.items()
@@ -105,29 +106,29 @@ def dom_tree(dom):
 
 
 def print_dom(bril, mode):
-    for func in bril['functions']:
-        blocks = block_map(form_blocks(func['instrs']))
+    for func in bril["functions"]:
+        blocks = block_map(form_blocks(func["instrs"]))
         add_entry(blocks)
         add_terminators(blocks)
         succ = {name: successors(block[-1]) for name, block in blocks.items()}
         dom = get_dom(succ, list(blocks.keys())[0])
 
-        if mode == 'front':
+        if mode == "front":
             res = dom_fronts(dom, succ)
-        elif mode == 'tree':
+        elif mode == "tree":
             res = dom_tree(dom)
         else:
             res = dom
 
         # Format as JSON for stable output.
-        print(json.dumps(
-            {k: sorted(list(v)) for k, v in res.items()},
-            indent=2, sort_keys=True,
-        ))
+        print(
+            json.dumps(
+                {k: sorted(list(v)) for k, v in res.items()},
+                indent=2,
+                sort_keys=True,
+            )
+        )
 
 
-if __name__ == '__main__':
-    print_dom(
-        json.load(sys.stdin),
-        'dom' if len(sys.argv) < 2 else sys.argv[1]
-    )
+if __name__ == "__main__":
+    print_dom(json.load(sys.stdin), "dom" if len(sys.argv) < 2 else sys.argv[1])
