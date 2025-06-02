@@ -12,7 +12,7 @@ def get_types(func):
 
 
 def shadow(name):
-    return f'shadow.{name}'
+    return f"shadow.{name}"
 
 
 def func_from_ssa(func):

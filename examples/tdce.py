@@ -13,7 +13,7 @@ def trivial_dce_pass(func):
     to any other instruction. Return a bool indicating whether we deleted
     anything.
     """
-    blocks = list(form_blocks(func['instrs']))
+    blocks = list(form_blocks(func["instrs"]))
 
     # Find all the variables used as an argument to any instruction,
     # even once.
@@ -21,7 +21,7 @@ def trivial_dce_pass(func):
     for block in blocks:
         for instr in block:
             # Mark all the variable arguments as used.
-            used.update(instr.get('args', []))
+            used.update(instr.get("args", []))
 
     # Delete the instructions that write to unused variables.
     changed = False
@@ -30,8 +30,7 @@ def trivial_dce_pass(func):
         # result. The `'dest' in i` predicate is true for all the *value
         # functions*, which are pure and can be eliminated if their
         # results are never used.
-        new_block = [i for i in block
-                     if 'dest' not in i or i['dest'] in used]
+        new_block = [i for i in block if "dest" not in i or i["dest"] in used]
 
         # Record whether we deleted anything.
         changed |= len(new_block) != len(block)
@@ -40,7 +39,7 @@ def trivial_dce_pass(func):
         block[:] = new_block
 
     # Reassemble the function.
-    func['instrs'] = flatten(blocks)
+    func["instrs"] = flatten(blocks)
 
     return changed
 
@@ -70,15 +69,15 @@ def drop_killed_local(block):
     for i, instr in enumerate(block):
         # Check for uses. Anything we use is no longer a candidate for
         # deletion.
-        for var in instr.get('args', []):
+        for var in instr.get("args", []):
             if var in last_def:
                 del last_def[var]
 
         # Check for definitions. This *has* to happen after the use
         # check, so we don't count "a = a + 1" as killing a before using
         # it.
-        if 'dest' in instr:
-            dest = instr['dest']
+        if "dest" in instr:
+            dest = instr["dest"]
             if dest in last_def:
                 # Another definition since the most recent use. Drop the
                 # last definition.
@@ -86,8 +85,7 @@ def drop_killed_local(block):
             last_def[dest] = i
 
     # Remove the instructions marked for deletion.
-    new_block = [instr for i, instr in enumerate(block)
-                 if i not in to_drop]
+    new_block = [instr for i, instr in enumerate(block) if i not in to_drop]
     changed = len(new_block) != len(block)
     block[:] = new_block
     return changed
@@ -97,26 +95,25 @@ def drop_killed_pass(func):
     """Drop killed functions from *all* blocks. Return a bool indicating
     whether anything changed.
     """
-    blocks = list(form_blocks(func['instrs']))
+    blocks = list(form_blocks(func["instrs"]))
     changed = False
     for block in blocks:
         changed |= drop_killed_local(block)
-    func['instrs'] = flatten(blocks)
+    func["instrs"] = flatten(blocks)
     return changed
 
 
 def trivial_dce_plus(func):
-    """Like `trivial_dce`, but also deletes locally killed instructions.
-    """
+    """Like `trivial_dce`, but also deletes locally killed instructions."""
     while trivial_dce_pass(func) or drop_killed_pass(func):
         pass
 
 
 MODES = {
-    'tdce': trivial_dce,
-    'tdcep': trivial_dce_pass,
-    'dkp': drop_killed_pass,
-    'tdce+': trivial_dce_plus,
+    "tdce": trivial_dce,
+    "tdcep": trivial_dce_pass,
+    "dkp": drop_killed_pass,
+    "tdce+": trivial_dce_plus,
 }
 
 
@@ -128,10 +125,10 @@ def localopt():
 
     # Apply the change to all the functions in the input program.
     bril = json.load(sys.stdin)
-    for func in bril['functions']:
+    for func in bril["functions"]:
         modify_func(func)
     json.dump(bril, sys.stdout, indent=2, sort_keys=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     localopt()

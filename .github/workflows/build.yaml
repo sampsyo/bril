@@ -64,11 +64,3 @@ jobs:
         run: echo '::add-matcher::.github/brilck-matcher.json'
       - name: brilck
         run: PATH=$PATH:`yarn global bin` make check
-
-  style:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: TrueBrain/actions-flake8@master
-        with:
-          path: bril-txt

@@ -1,11 +1,10 @@
-"""Create and print out the basic blocks in a Bril function.
-"""
+"""Create and print out the basic blocks in a Bril function."""
 
 import json
 import sys
 
 # Instructions that terminate a basic block.
-TERMINATORS = 'br', 'jmp', 'ret'
+TERMINATORS = "br", "jmp", "ret"
 
 
 def form_blocks(instrs):
@@ -23,14 +22,14 @@ def form_blocks(instrs):
     cur_block = []
 
     for instr in instrs:
-        if 'op' in instr:  # It's an instruction.
+        if "op" in instr:  # It's an instruction.
             # Add the instruction to the currently-being-formed block.
             cur_block.append(instr)
 
             # If this is a terminator (branching instruction), it's the
             # last instruction in the block. Finish this block and
             # start a new one.
-            if instr['op'] in TERMINATORS:
+            if instr["op"] in TERMINATORS:
                 yield cur_block
                 cur_block = []
 
@@ -48,24 +47,23 @@ def form_blocks(instrs):
 
 
 def print_blocks(bril):
-    """Given a Bril program, print out its basic blocks.
-    """
+    """Given a Bril program, print out its basic blocks."""
     import briltxt
 
-    func = bril['functions'][0]  # We only process one function.
-    for block in form_blocks(func['instrs']):
+    func = bril["functions"][0]  # We only process one function.
+    for block in form_blocks(func["instrs"]):
         # Mark the block.
         leader = block[0]
-        if 'label' in leader:
-            print('block "{}":'.format(leader['label']))
+        if "label" in leader:
+            print('block "{}":'.format(leader["label"]))
             block = block[1:]  # Hide the label, for concision.
         else:
-            print('anonymous block:')
+            print("anonymous block:")
 
         # Print the instructions.
         for instr in block:
-            print('  {}'.format(briltxt.instr_to_string(instr)))
+            print("  {}".format(briltxt.instr_to_string(instr)))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print_blocks(json.load(sys.stdin))
