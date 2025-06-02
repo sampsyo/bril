@@ -1,10 +1,7 @@
 #!/usr/bin/python
 
-import sys
-import json
 from dom import Dominators
-from brilpy import *
-from functools import reduce
+from brilpy import CFG
 
 TERM = 'jmp', 'br', 'ret'
 
@@ -55,7 +52,7 @@ def to_ssa(prog):
         # program could end with a label, but we don't want that (i.e., an empty
         # block
         if label_last:
-            func['instrs'].append({'op':'ret'});
+            func['instrs'].append({'op':'ret'})
 
         g = CFG(func)
 
@@ -191,7 +188,7 @@ def to_ssa(prog):
             newinstrs += b
 
         if 'op' not in newinstrs[-1] or newinstrs[-1]['op'] not in TERM:
-            newinstrs.append({'op':'ret'});
+            newinstrs.append({'op':'ret'})
 
         func['instrs'] = newinstrs
 

@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 
-import sys
-import json
-from brilpy import *
+from brilpy import CFG
 from functools import reduce
 
 class Dominators:
@@ -80,58 +78,3 @@ class Dominators:
             # This node is in the frontier for the remaining nodes:
             for p in pre_doms:
                 self.frontier[p].add(i)
-
-
-
-
-
-def main():
-    prog = json.load(sys.stdin)
-
-    for func in prog['functions']:
-
-        print("**Function: {}".format(func['name']))
-
-        g = CFG(func)
-
-        f = open("graphs/" + func['name'] + "-cfg.dot", 'w')
-        f.write(g.to_dot())
-        f.close()
-        print(g.to_dot())
-
-        g.print_names()
-        print("  edges: {}".format(g.edges))
-        print("  preds: {}".format(g.preds))
-
-        d = dominators(func)
-
-        print("\n\n  doms:\n{}\n".format(d.doms))
-        for k,v in enumerate(doms):
-            print("    {}: ".format(g.names[k]), end="")
-            for mbr in v:
-                print("{} ".format(g.names[mbr]), end="")
-            print("")
-
-        # print("dom tree:\ndigraph g {")
-
-        print("  domtree:")
-        f = open("graphs/" + func['name'] + "-dt.dot", 'w')
-        print("digraph g {")
-        f.write("digraph g {\n")
-        for k,v in d.dom_tree.items():
-            for mbr in v:
-                print("{} -> {};".format(g.names[k], g.names[mbr]))
-                f.write("{} -> {};\n".format(g.names[k], g.names[mbr]))
-        print("}")
-        f.write("}\n")
-        f.close()
-
-        print("\n\n  dominance frontier:")
-        for k,v in enumerate(d.frontier):
-            print("    {}: ".format(g.names[k]), end="")
-            for mbr in v:
-                print("{} ".format(g.names[mbr]), end="")
-            print("")
-
-if __name__ == '__main__':
-    main()
