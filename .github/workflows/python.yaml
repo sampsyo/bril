@@ -16,19 +16,8 @@ jobs:
 
       - name: ruff check
         uses: astral-sh/ruff-action@v3
-        with:
-          src: >-
-            examples
-            bril-txt
-            brench
-            type-infer
 
       - name: ruff format
         uses: astral-sh/ruff-action@v3
         with:
           args: "format --check --diff"
-          src: >-
-            examples
-            bril-txt
-            brench
-            type-infer
