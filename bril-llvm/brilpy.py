@@ -4,7 +4,7 @@
 
 import sys
 
-TERM = 'jmp', 'br', 'ret'
+TERM = "jmp", "br", "ret"
 
 
 # From Lesson 2
@@ -12,11 +12,11 @@ def form_blocks(body):
     cur_block = []
 
     for inst in body:
-        if 'op' in inst:
+        if "op" in inst:
             cur_block.append(inst)
 
             # check for term
-            if inst['op'] in TERM:
+            if inst["op"] in TERM:
                 yield cur_block
                 cur_block = []
 
@@ -59,26 +59,26 @@ class CFG:
                 else:
                     resolve[label] = [idx]
 
-        for i, block in enumerate(form_blocks(func['instrs'])):
-
+        for i, block in enumerate(form_blocks(func["instrs"])):
             self.blocks.append(block)
             self.edges.append([])
 
             name = "b" + str(i)
 
-            if 'label' in block[0]:
-                name = block[0]['label']
+            if "label" in block[0]:
+                name = block[0]["label"]
                 labels[name] = i
 
             self.names.append(name)
 
-            if 'op' in block[-1] and (block[-1]['op'] == 'br' or
-                                      block[-1]['op'] == 'jmp'):
-                for label in block[-1]['labels']:
+            if "op" in block[-1] and (
+                block[-1]["op"] == "br" or block[-1]["op"] == "jmp"
+            ):
+                for label in block[-1]["labels"]:
                     make_edge(i, label)
 
-            elif 'op' in block[-1] and block[-1]['op'] != 'ret':
-                self.edges[i] = [i+1]
+            elif "op" in block[-1] and block[-1]["op"] != "ret":
+                self.edges[i] = [i + 1]
 
         self.n = len(self.names)
 
@@ -104,7 +104,6 @@ class CFG:
     # next_tree is called with no args after each time dfs_visit finishes a
     # connected component.
     def dfs(self, order=None, pre=None, post=None, next_tree=None, edges=None):
-
         if not order:
             order = list(range(self.n))
 
@@ -146,7 +145,6 @@ class CFG:
 
     # Unused first attempt. Computes SCCs in the graph.
     def natural_loops(self):
-
         sccs = []
         cur = []
 
@@ -187,8 +185,12 @@ class CFG:
 
         for u, nbrs in enumerate(self.edges):
             for v in nbrs:
-                s += (self.names[u].replace('.', '_') + " -> " +
-                      self.names[v].replace('.', '_') + ";\n")
+                s += (
+                    self.names[u].replace(".", "_")
+                    + " -> "
+                    + self.names[v].replace(".", "_")
+                    + ";\n"
+                )
 
         s += "}\n"
         return s
@@ -203,6 +205,7 @@ class CFG:
 #   Since we assume SSA, we can map from varname->single block defining
 # ------------------------------------------------------------------------------
 
+
 def rd_init(func, graph):
     in_b = []
     out_b = []
@@ -210,9 +213,9 @@ def rd_init(func, graph):
     in_b.append({})
     out_b.append({})
 
-    if 'args' in func:
-        for arg in func['args']:
-            in_b[0][arg['name']] = 0
+    if "args" in func:
+        for arg in func["args"]:
+            in_b[0][arg["name"]] = 0
 
     for i in range(graph.n - 1):
         in_b.append({})
@@ -221,35 +224,35 @@ def rd_init(func, graph):
 
 
 def rd_xfer(in_b, block, idx):
-
     out_b = in_b.copy()
 
     for i, inst in enumerate(block):
-        if 'dest' in inst:
-            if inst['dest'] in out_b and out_b[inst['dest']] != idx:
+        if "dest" in inst:
+            if inst["dest"] in out_b and out_b[inst["dest"]] != idx:
                 print(
-                    "warning: illegal redef of var `{}`.".format(inst['dest'])
+                    "warning: illegal redef of var `{}`.".format(inst["dest"])
                     + "This function assumes SSA.",
-                    file=sys.stderr
+                    file=sys.stderr,
                 )
-            out_b[inst['dest']] = idx
+            out_b[inst["dest"]] = idx
 
     return out_b
 
 
 def rd_merge(pred_list):
-
     result = {}
 
     for p in pred_list:
         for k, v in p.items():
             if k in result and v != result[k]:
-                print("warning: illegal redef of var `{}` (multiple blocks).".format(v) +
-                        " This function assumes SSA.", file=sys.stderr)
+                print(
+                    "warning: illegal redef of var `{}` (multiple blocks).".format(v)
+                    + " This function assumes SSA.",
+                    file=sys.stderr,
+                )
             result[k] = v
 
     return result
-
 
 
 # ------------------------------------------------------------------------------
@@ -262,6 +265,7 @@ def rd_merge(pred_list):
 # merge: List of out_b -> in_b:         Given a list of predecessors' out_b's,
 #                                       compute a single in_b.
 # ------------------------------------------------------------------------------
+
 
 def run_worklist(func, init, xfer, merge):
     graph = CFG(func)
