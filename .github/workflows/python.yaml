@@ -1,0 +1,34 @@
+on:
+  push:
+    branches:
+     - main
+  pull_request:
+    branches:
+     - main
+
+name: Quality checks for Python code
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ruff check
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: >-
+            examples
+            bril-txt
+            brench
+            type-infer
+
+      - name: ruff format
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check --diff"
+          src: >-
+            examples
+            bril-txt
+            brench
+            type-infer
