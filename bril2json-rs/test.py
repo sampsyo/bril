@@ -1,6 +1,10 @@
-import sys, subprocess, json
+import sys
+import subprocess
+import json
 import multiprocessing
 import difflib
+
+# ruff: noqa: E731
 
 
 def init_worker(shared_failure_event, shared_oracle):
