@@ -1,0 +1,42 @@
+@add_range(p: ptr<int>, lo: int, hi: int): void {
+  i   : int = id lo;
+  one : int = const 1;
+  sum : int = const 0;
+.loop:
+  c: bool = lt i hi;       # <  hi   (half-open [lo,hi) )
+  br c .body .done;
+.body:
+  sum: int = add sum i;
+  i  : int = add i one;
+  jmp .loop;
+.done:
+  store p sum;
+  ret;
+}
+
+@main(): void {
+  zero : int = const 0;
+  one : int = const 1;
+  two : int = const 2;
+  buf : ptr<int> = alloc two;
+
+  p0  : ptr<int> = ptradd buf zero;
+  p1  : ptr<int> = ptradd buf one;
+
+  lo  : int = const 1;
+  mid : int = const 50;         # 1 … 49   and 50 … 100
+  hi  : int = const 101;        # exclusive upper bound
+
+  t1: thread = spawn @add_range p0 lo  mid;
+  t2: thread = spawn @add_range p1 mid hi;
+  join t1;
+  join t2;
+
+  s0 : int = load p0;
+  s1 : int = load p1;
+  tot: int = add s0 s1;
+  print tot;            # always 5050
+
+  free buf;
+  ret;
+}

@@ -1,0 +1,10 @@
+@main(): void {
+  one: int = const 1;
+  cell: ptr<int> = alloc one;
+  z: int = const 0;
+  store cell z;
+  out: int = load cell;
+  print out;
+  free cell;
+  ret;
+}
