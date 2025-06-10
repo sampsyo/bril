@@ -12,6 +12,8 @@ use basic_block::BBProgram;
 use bril_rs::Program;
 use error::PositionalInterpError;
 
+/// An optimized version of bril_rs with less indirection
+pub mod ir;
 /// The internal representation of brilirs, provided a ```TryFrom<Program>``` conversion
 pub mod basic_block;
 /// Provides ```check::type_check``` to validate [Program]
@@ -42,8 +44,8 @@ pub fn run_input<T: std::io::Write, U: std::io::Write>(
   } else {
     bril_rs::load_abstract_program_from_read(input).try_into()?
   };
+  check::type_check(&prog)?;
   let bbprog: BBProgram = prog.try_into()?;
-  check::type_check(&bbprog)?;
 
   if !check {
     interp::execute_main(&bbprog, out, input_args, profiling, profiling_out)?;

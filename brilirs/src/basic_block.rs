@@ -1,4 +1,5 @@
-use bril_rs::{Function, Instruction, Position, Program};
+use crate::ir::{FlatIR, FuncIndex, LabelIndex, VarIndex, get_num_from_map};
+use bril_rs::{Function, Position, Program};
 use fxhash::FxHashMap;
 
 use crate::error::{InterpError, PositionalInterpError};
@@ -7,7 +8,7 @@ use crate::error::{InterpError, PositionalInterpError};
 #[derive(Debug)]
 pub struct BBProgram {
   #[doc(hidden)]
-  pub index_of_main: Option<usize>,
+  pub index_of_main: Option<FuncIndex>,
   #[doc(hidden)]
   pub func_index: Vec<BBFunction>,
 }
@@ -28,11 +29,11 @@ impl BBProgram {
   pub fn new(prog: Program) -> Result<Self, InterpError> {
     let num_funcs = prog.functions.len();
 
-    let func_map: FxHashMap<String, usize> = prog
+    let func_map: FxHashMap<String, FuncIndex> = prog
       .functions
       .iter()
       .enumerate()
-      .map(|(idx, func)| (func.name.clone(), idx))
+      .map(|(idx, func)| (func.name.clone(), FuncIndex(idx)))
       .collect();
 
     let func_index = prog
@@ -54,8 +55,8 @@ impl BBProgram {
 
   #[doc(hidden)]
   #[must_use]
-  pub fn get(&self, func_name: usize) -> Option<&BBFunction> {
-    self.func_index.get(func_name)
+  pub fn get(&self, func_name: FuncIndex) -> Option<&BBFunction> {
+    self.func_index.get(func_name.0)
   }
 }
 
@@ -66,49 +67,28 @@ pub struct BasicBlock {
   // These two vecs work in parallel
   // One is the normal instruction
   // The other contains the numified version of the destination and arguments
-  pub instrs: Vec<bril_rs::Instruction>,
-  pub numified_instrs: Vec<NumifiedInstruction>,
-  pub exit: Vec<usize>,
+  pub flat_instrs: Vec<FlatIR>,
+  pub positions: Vec<Option<Position>>,
+  pub exit: Vec<LabelIndex>,
 }
 
 impl BasicBlock {
   const fn new() -> Self {
     Self {
       label: None,
-      instrs: Vec::new(),
-      numified_instrs: Vec::new(),
+      flat_instrs: Vec::new(),
+      positions: Vec::new(),
       exit: Vec::new(),
     }
   }
 }
-
+/*
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct NumifiedInstruction {
-  pub dest: Option<usize>,
-  pub args: Vec<usize>,
-  pub funcs: Vec<usize>,
-}
-
-fn get_num_from_map(
-  variable_name: &str,
-  // The total number of variables so far. Only grows
-  num_of_vars: &mut usize,
-  // A map from variables to numbers
-  num_var_map: &mut FxHashMap<String, usize>,
-) -> usize {
-  #[expect(
-    clippy::option_if_let_else,
-    reason = "https://github.com/rust-lang/rust-clippy/issues/8346"
-  )]
-  if let Some(i) = num_var_map.get(variable_name) {
-    *i
-  } else {
-    let x = *num_of_vars;
-    num_var_map.insert(variable_name.to_string(), x);
-    *num_of_vars += 1;
-    x
-  }
+  pub dest: Option<VarIndex>,
+  pub args: Vec<VarIndex>,
+  pub funcs: Vec<FuncIndex>,
 }
 
 impl NumifiedInstruction {
@@ -117,13 +97,13 @@ impl NumifiedInstruction {
     // The total number of variables so far. Only grows
     num_of_vars: &mut usize,
     // A map from variables to numbers
-    num_var_map: &mut FxHashMap<String, usize>,
+    num_var_map: &mut FxHashMap<String, VarIndex>,
     // A map from function names to numbers
-    func_map: &FxHashMap<String, usize>,
+    func_map: &FxHashMap<String, FuncIndex>,
   ) -> Result<Self, PositionalInterpError> {
     Ok(match instr {
       Instruction::Constant { dest, .. } => Self {
-        dest: Some(get_num_from_map(dest, num_of_vars, num_var_map)),
+        dest: Some(get_num_from_map(dest, num_var_map)),
         args: Vec::new(),
         funcs: Vec::new(),
       },
@@ -147,7 +127,7 @@ impl NumifiedInstruction {
               .copied()
               .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(pos.clone()))
           })
-          .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
+          .collect::<Result<Vec<_>, PositionalInterpError>>()?,
       },
       Instruction::Effect {
         args, funcs, pos, ..
@@ -165,12 +145,12 @@ impl NumifiedInstruction {
               .copied()
               .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(pos.clone()))
           })
-          .collect::<Result<Vec<usize>, PositionalInterpError>>()?,
+          .collect::<Result<Vec<_>, PositionalInterpError>>()?,
       },
     })
   }
 }
-
+ */
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct BBFunction {
@@ -182,44 +162,61 @@ pub struct BBFunction {
   // Variable names are ordered from 0 to num_of_vars.
   // These replacements are found for function args and for code in the BasicBlocks
   pub num_of_vars: usize,
-  pub args_as_nums: Vec<usize>,
+  pub args_as_nums: Vec<VarIndex>,
   pub pos: Option<Position>,
 }
 
 impl BBFunction {
-  fn new(f: Function, func_map: &FxHashMap<String, usize>) -> Result<Self, InterpError> {
-    let (mut func, label_map) = Self::find_basic_blocks(f, func_map)?;
-    func.build_cfg(&label_map)?;
+  fn new(f: Function, func_map: &FxHashMap<String, FuncIndex>) -> Result<Self, InterpError> {
+    let mut func = Self::find_basic_blocks(f, func_map)?;
+    func.build_cfg()?;
     Ok(func)
   }
 
   fn find_basic_blocks(
     func: bril_rs::Function,
-    func_map: &FxHashMap<String, usize>,
-  ) -> Result<(Self, FxHashMap<String, usize>), PositionalInterpError> {
+    func_map: &FxHashMap<String, FuncIndex>,
+  ) -> Result<Self, PositionalInterpError> {
     let mut blocks = Vec::new();
     let mut label_map = FxHashMap::default();
 
-    let mut num_of_vars = 0;
+    let offset = func.instrs.iter().next().map_or(0, |code| {
+      if let bril_rs::Code::Label { .. } = code {
+        0
+      } else {
+        1
+      }
+    });
+
+    func.instrs.iter().try_for_each(|code| {
+      if let bril_rs::Code::Label { label, pos } = code {
+        if label_map.contains_key(label) {
+          return Err(InterpError::DuplicateLabel(label.clone()).add_pos(pos.clone()));
+        }
+        label_map.insert(label.clone(), LabelIndex(label_map.len() + offset));
+      }
+      Ok(())
+    })?;
+
+    let label_map = label_map;
+
     let mut num_var_map = FxHashMap::default();
 
     let args_as_nums = func
       .args
       .iter()
-      .map(|a| get_num_from_map(&a.name, &mut num_of_vars, &mut num_var_map))
+      .map(|a| get_num_from_map(a.name.clone(), &mut num_var_map))
       .collect();
 
     let mut curr_block = BasicBlock::new();
     for instr in func.instrs {
       match instr {
-        bril_rs::Code::Label { label, pos } => {
-          if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
+        bril_rs::Code::Label { label, .. } => {
+          if (!curr_block.flat_instrs.is_empty() && blocks.is_empty()) || curr_block.label.is_some()
+          {
             blocks.push(curr_block);
-            curr_block = BasicBlock::new();
           }
-          if label_map.insert(label.to_string(), blocks.len()).is_some() {
-            return Err(InterpError::DuplicateLabel(label).add_pos(pos));
-          }
+          curr_block = BasicBlock::new();
           curr_block.label = Some(label);
         }
         bril_rs::Code::Instruction(i @ bril_rs::Instruction::Effect { op, .. })
@@ -227,75 +224,63 @@ impl BBFunction {
             || op == bril_rs::EffectOps::Branch
             || op == bril_rs::EffectOps::Return =>
         {
-          curr_block.numified_instrs.push(NumifiedInstruction::new(
-            &i,
-            &mut num_of_vars,
-            &mut num_var_map,
-            func_map,
-          )?);
-          curr_block.instrs.push(i);
-          blocks.push(curr_block);
+          if curr_block.label.is_some() || blocks.is_empty() {
+            curr_block
+              .flat_instrs
+              .push(FlatIR::new(i, func_map, &mut num_var_map, &label_map)?);
+            blocks.push(curr_block);
+          }
           curr_block = BasicBlock::new();
         }
         bril_rs::Code::Instruction(code) => {
-          curr_block.numified_instrs.push(NumifiedInstruction::new(
-            &code,
-            &mut num_of_vars,
-            &mut num_var_map,
-            func_map,
-          )?);
-          curr_block.instrs.push(code);
+          curr_block
+            .flat_instrs
+            .push(FlatIR::new(code, func_map, &mut num_var_map, &label_map)?)
         }
       }
     }
 
-    if !curr_block.instrs.is_empty() || curr_block.label.is_some() {
+    if !curr_block.flat_instrs.is_empty() || curr_block.label.is_some() {
       blocks.push(curr_block);
     }
 
-    Ok((
-      Self {
-        name: func.name,
-        args: func.args,
-        return_type: func.return_type,
-        blocks,
-        args_as_nums,
-        num_of_vars,
-        pos: func.pos,
-      },
-      label_map,
-    ))
+    Ok(Self {
+      name: func.name,
+      args: func.args,
+      return_type: func.return_type,
+      blocks,
+      args_as_nums,
+      num_of_vars: num_var_map.len(),
+      pos: func.pos,
+    })
   }
 
-  fn build_cfg(&mut self, label_map: &FxHashMap<String, usize>) -> Result<(), InterpError> {
+  fn build_cfg(&mut self) -> Result<(), InterpError> {
     if self.blocks.is_empty() {
       return Ok(());
     }
     let last_idx = self.blocks.len() - 1;
     for (i, block) in self.blocks.iter_mut().enumerate() {
       // Get the last instruction
-      let last_instr = block.instrs.last().cloned();
-      if let Some(bril_rs::Instruction::Effect {
-        op: bril_rs::EffectOps::Jump | bril_rs::EffectOps::Branch,
-        labels,
-        ..
-      }) = last_instr
-      {
-        for l in labels {
-          block
-            .exit
-            .push(*label_map.get(&l).ok_or(InterpError::MissingLabel(l))?);
+      let last_instr = block.flat_instrs.last();
+
+      match last_instr {
+        Some(FlatIR::Jump { dest }) => block.exit.push(*dest),
+        Some(FlatIR::Branch {
+          true_dest,
+          false_dest,
+          ..
+        }) => {
+          block.exit.push(*true_dest);
+          block.exit.push(*false_dest)
         }
-      } else if let Some(bril_rs::Instruction::Effect {
-        op: bril_rs::EffectOps::Return,
-        ..
-      }) = last_instr
-      {
-        // We are done, there is no exit from this block
-      } else {
-        // If we're before the last block
-        if i < last_idx {
-          block.exit.push(i + 1);
+        Some(FlatIR::ReturnValue { .. } | FlatIR::ReturnVoid) => { // We are done, there is no exit from this block}
+        }
+        _ => {
+          // If we're before the last block
+          if i < last_idx {
+            block.exit.push(LabelIndex(i + 1));
+          }
         }
       }
     }

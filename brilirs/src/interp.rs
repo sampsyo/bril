@@ -1,6 +1,7 @@
-use crate::basic_block::{BBFunction, BBProgram, BasicBlock};
+use crate::basic_block::{BBFunction, BBProgram};
 use crate::error::{InterpError, PositionalInterpError};
-use bril_rs::Instruction;
+use crate::ir::{LabelIndex, VarIndex};
+use bril_rs::ValueOps;
 use bril2json::escape_control_chars;
 
 use fxhash::FxHashMap;
@@ -40,25 +41,25 @@ impl Environment {
     Self {
       current_pointer: 0,
       current_frame_size: size,
-      stack_pointers: Vec::new(),
+      stack_pointers: Vec::with_capacity(50),
       // Allocate a larger stack size so the interpreter needs to allocate less often
       env: vec![Value::default(); max(size, 50)],
     }
   }
 
-  pub fn get(&self, ident: usize) -> &Value {
+  pub fn get(&self, ident: &VarIndex) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
     self.env.get(self.current_pointer + ident).unwrap()
   }
 
   // Used for getting arguments that should be passed to the current frame from the previous one
-  pub fn get_from_last_frame(&self, ident: usize) -> &Value {
+  pub fn get_from_last_frame(&self, ident: &VarIndex) -> &Value {
     let past_pointer = self.stack_pointers.last().unwrap().0;
     self.env.get(past_pointer + ident).unwrap()
   }
 
-  pub fn set(&mut self, ident: usize, val: Value) {
+  pub fn set(&mut self, ident: &VarIndex, val: Value) {
     self.env[self.current_pointer + ident] = val;
   }
   // Push a new frame onto the stack
@@ -162,8 +163,8 @@ impl Heap {
 // A getter function for when you know what constructor of the Value enum you have and
 // you just want the underlying value(like a f64).
 // Or can just be used to get a owned version of the Value
-fn get_arg<'a, T: From<&'a Value>>(vars: &'a Environment, index: usize, args: &[usize]) -> T {
-  T::from(vars.get(args[index]))
+fn get_arg<'a, T: From<&'a Value>>(vars: &'a Environment, index: &VarIndex) -> T {
+  T::from(vars.get(index))
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -313,24 +314,24 @@ impl From<&Self> for Value {
 }
 
 // Sets up the Environment for the next function call with the supplied arguments
-fn make_func_args(callee_func: &BBFunction, args: &[usize], vars: &mut Environment) {
+fn make_func_args(callee_func: &BBFunction, args: &[VarIndex], vars: &mut Environment) {
   vars.push_frame(callee_func.num_of_vars);
 
   args
     .iter()
     .zip(callee_func.args_as_nums.iter())
     .for_each(|(arg_name, expected_arg)| {
-      let arg = vars.get_from_last_frame(*arg_name);
-      vars.set(*expected_arg, *arg);
+      let arg = vars.get_from_last_frame(arg_name);
+      vars.set(expected_arg, *arg);
     });
 }
-
+/*
 fn execute_value_op<T: std::io::Write>(
   state: &mut State<T>,
   op: bril_rs::ValueOps,
-  dest: usize,
-  args: &[usize],
-  funcs: &[usize],
+  dest: VarIndex,
+  args: &[VarIndex],
+  funcs: &[FuncIndex],
   shadow_env: &HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
   use bril_rs::ValueOps::{
@@ -539,8 +540,8 @@ fn execute_value_op<T: std::io::Write>(
     }
   }
   Ok(())
-}
-
+} */
+/*
 fn execute_effect_op<T: std::io::Write>(
   state: &mut State<T>,
   op: bril_rs::EffectOps,
@@ -548,7 +549,7 @@ fn execute_effect_op<T: std::io::Write>(
   funcs: &[usize],
   curr_block: &BasicBlock,
   // There are two output variables where values are stored to effect the loop execution.
-  next_block_idx: &mut Option<usize>,
+  next_block_idx: &mut Option<LabelIndex>,
   result: &mut Option<Value>,
   shadow_env: &mut HashMap<usize, Value>,
 ) -> Result<(), InterpError> {
@@ -613,12 +614,368 @@ fn execute_effect_op<T: std::io::Write>(
     Speculate | Commit | Guard => unimplemented!(),
   }
   Ok(())
+} */
+fn execute_unary_value<T: std::io::Write>(
+  state: &mut State<T>,
+  op: &ValueOps,
+  dest: &VarIndex,
+  arg: &VarIndex,
+) -> Result<(), InterpError> {
+  match op {
+    ValueOps::Id => {
+      let src = get_arg::<Value>(&state.env, arg);
+      state.env.set(dest, src);
+    }
+    ValueOps::Not => {
+      let arg0 = get_arg::<bool>(&state.env, arg);
+      state.env.set(dest, Value::Bool(!arg0));
+    }
+    ValueOps::Char2int => {
+      let arg0 = get_arg::<char>(&state.env, arg);
+      state.env.set(dest, Value::Int(u32::from(arg0).into()));
+    }
+    ValueOps::Int2char => {
+      let arg0 = get_arg::<i64>(&state.env, arg);
+
+      let arg0_char = u32::try_from(arg0)
+        .ok()
+        .and_then(char::from_u32)
+        .ok_or(InterpError::ToCharError(arg0))?;
+
+      state.env.set(dest, Value::Char(arg0_char));
+    }
+    ValueOps::Alloc => {
+      let arg0 = get_arg::<i64>(&state.env, arg);
+      let res = state.heap.alloc(arg0)?;
+      state.env.set(dest, res);
+    }
+    ValueOps::Load => {
+      let arg0 = get_arg::<&Pointer>(&state.env, arg);
+      let res = state.heap.read(arg0)?;
+      state.env.set(dest, *res);
+    }
+    ValueOps::Float2Bits => {
+      let float = get_arg::<f64>(&state.env, arg);
+      // https://users.rust-lang.org/t/i64-u64-mapping-revisited/109315
+      // the to and from native endian stuff is a nop
+      // if link dies try web archive
+      let int = i64::from_ne_bytes(float.to_ne_bytes());
+      state.env.set(dest, Value::Int(int));
+    }
+    ValueOps::Bits2Float => {
+      let int = get_arg::<i64>(&state.env, arg);
+      // see comment for Float2Bits
+      let float = f64::from_ne_bytes(int.to_ne_bytes());
+      state.env.set(dest, Value::Float(float));
+    }
+    _ => unreachable!(),
+  }
+  Ok(())
+}
+
+fn execute_binary_value<T: std::io::Write>(
+  state: &mut State<T>,
+  op: &ValueOps,
+  dest: &VarIndex,
+  arg0: &VarIndex,
+  arg1: &VarIndex,
+) -> Result<(), InterpError> {
+  match op {
+    ValueOps::Add => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Int(arg0.wrapping_add(arg1)));
+    }
+    ValueOps::Mul => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Int(arg0.wrapping_mul(arg1)));
+    }
+    ValueOps::Sub => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Int(arg0.wrapping_sub(arg1)));
+    }
+    ValueOps::Div => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      if arg1 == 0 {
+        return Err(InterpError::DivisionByZero);
+      }
+      state.env.set(dest, Value::Int(arg0.wrapping_div(arg1)));
+    }
+    ValueOps::And => {
+      let arg0 = get_arg::<bool>(&state.env, arg0);
+      let arg1 = get_arg::<bool>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 && arg1));
+    }
+    ValueOps::Or => {
+      let arg0 = get_arg::<bool>(&state.env, arg0);
+      let arg1 = get_arg::<bool>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 || arg1));
+    }
+    ValueOps::Eq => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 == arg1));
+    }
+    ValueOps::Lt => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 < arg1));
+    }
+    ValueOps::Gt => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 > arg1));
+    }
+    ValueOps::Le => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 <= arg1));
+    }
+    ValueOps::Ge => {
+      let arg0 = get_arg::<i64>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 >= arg1));
+    }
+    ValueOps::Fadd => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Float(arg0 + arg1));
+    }
+    ValueOps::Fmul => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Float(arg0 * arg1));
+    }
+    ValueOps::Fsub => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Float(arg0 - arg1));
+    }
+    ValueOps::Fdiv => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Float(arg0 / arg1));
+    }
+    ValueOps::Feq => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 == arg1));
+    }
+    ValueOps::Flt => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 < arg1));
+    }
+    ValueOps::Fgt => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 > arg1));
+    }
+    ValueOps::Fle => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 <= arg1));
+    }
+    ValueOps::Fge => {
+      let arg0 = get_arg::<f64>(&state.env, arg0);
+      let arg1 = get_arg::<f64>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 >= arg1));
+    }
+    ValueOps::Ceq => {
+      let arg0 = get_arg::<char>(&state.env, arg0);
+      let arg1 = get_arg::<char>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 == arg1));
+    }
+    ValueOps::Clt => {
+      let arg0 = get_arg::<char>(&state.env, arg0);
+      let arg1 = get_arg::<char>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 < arg1));
+    }
+    ValueOps::Cgt => {
+      let arg0 = get_arg::<char>(&state.env, arg0);
+      let arg1 = get_arg::<char>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 > arg1));
+    }
+    ValueOps::Cle => {
+      let arg0 = get_arg::<char>(&state.env, arg0);
+      let arg1 = get_arg::<char>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 <= arg1));
+    }
+    ValueOps::Cge => {
+      let arg0 = get_arg::<char>(&state.env, arg0);
+      let arg1 = get_arg::<char>(&state.env, arg1);
+      state.env.set(dest, Value::Bool(arg0 >= arg1));
+    }
+    ValueOps::PtrAdd => {
+      let arg0 = get_arg::<&Pointer>(&state.env, arg0);
+      let arg1 = get_arg::<i64>(&state.env, arg1);
+      let res = Value::Pointer(arg0.add(arg1));
+      state.env.set(dest, res);
+    }
+    _ => unreachable!(),
+  }
+  Ok(())
 }
 
 fn execute<'a, T: std::io::Write>(
   state: &mut State<'a, T>,
   func: &'a BBFunction,
 ) -> Result<Option<Value>, PositionalInterpError> {
+  let mut shadow_env = HashMap::new();
+  let mut curr_block_idx = LabelIndex(0);
+
+  loop {
+    let curr_block = &func.blocks[curr_block_idx.0];
+    let curr_instrs = &curr_block.flat_instrs;
+    let mut jumped = if curr_block.exit.len() == 1 {
+      curr_block_idx = curr_block.exit[0];
+      true
+    } else {
+      false
+    };
+
+    // WARNING!!! We can add the # of instructions at once because you can only jump to a new block at the end. This may need to be changed if speculation is implemented
+    state.instruction_count += curr_instrs.len();
+
+    for (idx, code) in curr_instrs.iter().enumerate() {
+/*       println!("{:?}", code); */
+      match code {
+        crate::ir::FlatIR::Const { dest, value } => {
+          state.env.set(dest, Value::from(value));
+        }
+        crate::ir::FlatIR::ZeroArity {
+          op: ValueOps::Undef,
+          dest,
+        } => state.env.set(dest, Value::Uninitialized),
+        crate::ir::FlatIR::ZeroArity {
+          op: ValueOps::Get,
+          dest,
+        } => match shadow_env.get(&dest) {
+          Some(v) => state.env.set(dest, *v),
+          None => {
+            return Err(InterpError::GetWithoutSet).map_err(|e| {
+              Into::<InterpError>::into(e)
+                .add_pos(curr_block.positions.get(idx).cloned().unwrap_or_default())
+            });
+          }
+        },
+        crate::ir::FlatIR::UnaryArity { op, dest, arg } => {
+          execute_unary_value(state, op, dest, arg).map_err(|e| {
+            Into::<InterpError>::into(e)
+              .add_pos(curr_block.positions.get(idx).cloned().unwrap_or_default())
+          })?
+        }
+        crate::ir::FlatIR::BinaryArity {
+          op,
+          dest,
+          arg0,
+          arg1,
+        } => execute_binary_value(state, op, dest, arg0, arg1).map_err(|e| {
+          Into::<InterpError>::into(e)
+            .add_pos(curr_block.positions.get(idx).cloned().unwrap_or_default())
+        })?,
+        crate::ir::FlatIR::MultiArityCall { func, dest, args } => {
+          let callee_func = state.prog.get(*func).unwrap();
+
+          make_func_args(callee_func, args, &mut state.env);
+
+          let result = execute(state, callee_func)?.unwrap();
+
+          state.env.pop_frame();
+
+          state.env.set(dest, result);
+        }
+        crate::ir::FlatIR::Nop => {}
+        crate::ir::FlatIR::Jump { dest } => {
+          curr_block_idx = *dest;
+          jumped = true;
+        }
+        crate::ir::FlatIR::Branch {
+          arg,
+          true_dest,
+          false_dest,
+        } => {
+          let cond = get_arg::<bool>(&state.env, arg);
+          curr_block_idx = if cond { *true_dest } else { *false_dest };
+          jumped = true;
+        }
+        crate::ir::FlatIR::ReturnValue { arg } => {
+          let res = get_arg::<Value>(&state.env, arg);
+          return Ok(Some(res));
+        }
+        crate::ir::FlatIR::ReturnVoid => {
+          return Ok(None);
+        }
+        crate::ir::FlatIR::EffectfulCall { func, args } => {
+          let callee_func = state.prog.get(*func).unwrap();
+
+          make_func_args(callee_func, args, &mut state.env);
+
+          execute(state, callee_func)?;
+          state.env.pop_frame();
+        }
+        crate::ir::FlatIR::PrintOne { arg } => {
+          optimized_val_output(&mut state.out, state.env.get(arg))
+            .and_then(|_| // Add new line
+            state.out.write_all(b"\n"))
+            .map_err(|e| {
+              Into::<InterpError>::into(e)
+                .add_pos(curr_block.positions.get(idx).cloned().unwrap_or_default())
+            })?;
+        }
+        crate::ir::FlatIR::PrintMultiple { args } => {
+          writeln!(
+            state.out,
+            "{}",
+            args
+              .iter()
+              .map(|a| state.env.get(a).to_string())
+              .collect::<Vec<String>>()
+              .join(" ")
+          )
+          .map_err(|e| {
+            Into::<InterpError>::into(e).add_pos(
+              curr_block
+                .positions
+                .get(idx)
+                .cloned()
+                .unwrap_or_else(|| None),
+            )
+          })?;
+        }
+        crate::ir::FlatIR::Store { arg0, arg1 } => {
+          let key = get_arg::<&Pointer>(&state.env, arg0);
+          let val = get_arg::<Value>(&state.env, arg1);
+          state.heap.write(key, val)?;
+        }
+        crate::ir::FlatIR::Set { arg0, arg1 } => {
+          let val = get_arg::<Value>(&state.env, arg1);
+          shadow_env.insert(arg0, val);
+        }
+        crate::ir::FlatIR::Free { arg } => {
+          let ptr = get_arg::<&Pointer>(&state.env, arg);
+          state.heap.free(ptr)?;
+        }
+        _ => {
+          unreachable!()
+        }
+      }
+    }
+
+    if !jumped {
+      return Ok(None);
+    }
+  }
+}
+/*
+fn execute<'a, T: std::io::Write>(
+  state: &mut State<'a, T>,
+  func: &'a BBFunction,
+) -> Result<Option<Value>, PositionalInterpError> {
+  // TODO: Replace Shadow env with vec?
   let mut shadow_env = HashMap::new();
   let mut curr_block_idx = 0;
   // A possible return value
@@ -714,12 +1071,12 @@ fn execute<'a, T: std::io::Write>(
       return Ok(result);
     }
   }
-}
+} */
 
 fn parse_args(
   mut env: Environment,
   args: &[bril_rs::Argument],
-  args_as_nums: &[usize],
+  args_as_nums: &[VarIndex],
   inputs: &[String],
 ) -> Result<Environment, InterpError> {
   if args.is_empty() && inputs.is_empty() {
@@ -740,7 +1097,7 @@ fn parse_args(
                 (*inputs.get(index).unwrap()).to_string(),
               ));
             }
-            Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
+            Ok(b) => env.set(arg_as_num, Value::Bool(b)),
           }
           Ok(())
         }
@@ -752,7 +1109,7 @@ fn parse_args(
                 (*inputs.get(index).unwrap()).to_string(),
               ));
             }
-            Ok(i) => env.set(*arg_as_num, Value::Int(i)),
+            Ok(i) => env.set(arg_as_num, Value::Int(i)),
           }
           Ok(())
         }
@@ -764,7 +1121,7 @@ fn parse_args(
                 (*inputs.get(index).unwrap()).to_string(),
               ));
             }
-            Ok(f) => env.set(*arg_as_num, Value::Float(f)),
+            Ok(f) => env.set(arg_as_num, Value::Float(f)),
           }
           Ok(())
         }
@@ -772,7 +1129,7 @@ fn parse_args(
           .map_or_else(
             || Err(InterpError::NotOneChar),
             |c| {
-              env.set(*arg_as_num, Value::Char(c));
+              env.set(arg_as_num, Value::Char(c));
               Ok(())
             },
           ),

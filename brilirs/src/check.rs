@@ -1,8 +1,5 @@
-use crate::{
-  basic_block::{BBFunction, BBProgram, NumifiedInstruction},
-  error::{InterpError, PositionalInterpError},
-};
-use bril_rs::{ConstOps, EffectOps, Instruction, Type, ValueOps};
+use crate::error::{InterpError, PositionalInterpError};
+use bril_rs::{Code, ConstOps, EffectOps, Function, Instruction, Program, Type, ValueOps};
 
 use fxhash::FxHashMap;
 
@@ -39,26 +36,29 @@ fn check_asmt_type(expected: &bril_rs::Type, actual: &bril_rs::Type) -> Result<(
 }
 
 fn update_env<'a>(
-  env: &mut FxHashMap<&'a str, &'a Type>,
+  env: &mut FxHashMap<&'a str, Type>,
   dest: &'a str,
-  typ: &'a Type,
+  typ: &Type,
 ) -> Result<(), InterpError> {
   if typ == &Type::Any {
-    env.insert(dest, typ);
     Ok(())
-  } else if let Some(current_typ) = env.get(dest) {
-    check_asmt_type(current_typ, typ)
   } else {
-    env.insert(dest, typ);
-    Ok(())
+    let current_typ = env.get(dest).unwrap();
+    if matches!(current_typ, Type::Any) {
+      env.insert(dest, typ.clone());
+      Ok(())
+    } else {
+      // If the current type is not Any, we check if the types match
+      check_asmt_type(current_typ, typ)
+    }
   }
 }
 
 fn get_type<'a, 'b>(
-  env: &'a FxHashMap<&'a str, &'b Type>,
+  env: &'a FxHashMap<&'a str, Type>,
   index: usize,
   args: &[String],
-) -> Result<&'a &'b Type, InterpError> {
+) -> Result<&'a Type, InterpError> {
   if index >= args.len() {
     return Err(InterpError::BadNumArgs(index, args.len()));
   }
@@ -77,10 +77,9 @@ fn get_ptr_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
 
 fn type_check_instruction<'a>(
   instr: &'a Instruction,
-  num_instr: &NumifiedInstruction,
-  func: &BBFunction,
-  prog: &BBProgram,
-  env: &mut FxHashMap<&'a str, &'a Type>,
+  func: &Function,
+  prog: &Program,
+  env: &mut FxHashMap<&'a str, Type>,
 ) -> Result<(), InterpError> {
   match instr {
     Instruction::Constant {
@@ -90,10 +89,12 @@ fn type_check_instruction<'a>(
       value,
       pos: _,
     } => {
-      if !(const_type == &Type::Float && value.get_type() == Type::Int) {
+      if const_type == &Type::Float && value.get_type() == Type::Int {
+        update_env(env, dest, const_type)
+      } else {
         check_asmt_type(const_type, &value.get_type())?;
+        update_env(env, dest, &value.get_type())
       }
-      update_env(env, dest, const_type)
     }
     Instruction::Value {
       op: ValueOps::Add | ValueOps::Sub | ValueOps::Mul | ValueOps::Div,
@@ -303,7 +304,7 @@ fn type_check_instruction<'a>(
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
-      let callee_func = prog.func_index.get(num_instr.funcs[0]).unwrap();
+      let callee_func = prog.functions.iter().find(|f| f.name == funcs[0]).unwrap();
 
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
@@ -490,7 +491,11 @@ fn type_check_instruction<'a>(
     } => {
       check_num_funcs(1, funcs)?;
       check_num_labels(0, labels)?;
-      let callee_func = prog.func_index.get(num_instr.funcs[0]).unwrap();
+      let callee_func = prog
+        .functions
+        .iter()
+        .find(|f| f.name == funcs[0])
+        .ok_or(InterpError::FuncNotFound(funcs[0].clone()))?;
 
       if args.len() != callee_func.args.len() {
         return Err(InterpError::BadNumArgs(callee_func.args.len(), args.len()));
@@ -549,8 +554,8 @@ fn type_check_instruction<'a>(
       check_num_args(2, args)?;
       check_num_funcs(0, funcs)?;
       check_num_labels(0, labels)?;
-      let ty1 = get_type(env, 1, args)?;
-      update_env(env, &args[0], ty1)
+      let ty1 = get_type(env, 1, args)?.clone();
+      update_env(env, &args[0], &ty1)
     }
     Instruction::Effect {
       op: EffectOps::Speculate | EffectOps::Guard | EffectOps::Commit,
@@ -564,38 +569,77 @@ fn type_check_instruction<'a>(
   }
 }
 
-fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
-  if bbfunc.name == "main" && bbfunc.return_type.is_some() {
-    return Err(InterpError::NonEmptyRetForFunc(bbfunc.name.clone()))
-      .map_err(|e| e.add_pos(bbfunc.pos.clone()));
+fn type_check_func(func: &Function, prog: &Program) -> Result<(), PositionalInterpError> {
+  if func.name == "main" && func.return_type.is_some() {
+    return Err(InterpError::NonEmptyRetForFunc(func.name.clone()))
+      .map_err(|e| e.add_pos(func.pos.clone()));
   }
 
-  let mut env: FxHashMap<&str, &Type> =
+  let mut env: FxHashMap<&str, Type> =
     FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default());
-  bbfunc.args.iter().for_each(|a| {
-    env.insert(&a.name, &a.arg_type);
+  func.args.iter().for_each(|a| {
+    env.insert(&a.name, a.arg_type.clone());
   });
 
-  let mut work_list = vec![0];
-  let mut done_list = Vec::new();
-
-  while let Some(b) = work_list.pop() {
-    let block = bbfunc.blocks.get(b).unwrap();
-    block
-      .instrs
-      .iter()
-      .zip(block.numified_instrs.iter())
-      .try_for_each(|(i, num_i)| {
-        type_check_instruction(i, num_i, bbfunc, bbprog, &mut env)
-          .map_err(|e| e.add_pos(i.get_pos()))
-      })?;
-    done_list.push(b);
-    block.exit.iter().for_each(|e| {
-      if !done_list.contains(e) && !work_list.contains(e) {
-        work_list.push(*e);
+  func.instrs.iter().try_for_each(|a| match a {
+    Code::Label { .. } => Ok(()),
+    Code::Instruction(Instruction::Constant {
+      dest,
+      const_type,
+      pos,
+      ..
+    }) => {
+      // TODO: fix this in 1.88 with let chaining
+      if let Some(t) = env.insert(dest, const_type.clone()) {
+        if t != const_type.clone() {
+          if !matches!(t, Type::Any) {
+            Ok(())
+          } else if !matches!(const_type, Type::Any) {
+            {
+              env.insert(dest, t);
+              Ok(())
+            }
+          } else {
+            Err(InterpError::BadAsmtType(t.clone(), const_type.clone()).add_pos(pos.clone()))
+          }
+        } else {
+          Ok(())
+        }
+      } else {
+        Ok(())
       }
-    });
-  }
+    }
+    Code::Instruction(Instruction::Value {
+      dest, op_type, pos, ..
+    }) => {
+      if let Some(t) = env.insert(dest, op_type.clone()) {
+        if t != op_type.clone() {
+          if !matches!(t, Type::Any) {
+            Ok(())
+          } else if !matches!(op_type, Type::Any) {
+            {
+              env.insert(dest, t);
+              Ok(())
+            }
+          } else {
+            Err(InterpError::BadAsmtType(t.clone(), op_type.clone()).add_pos(pos.clone()))
+          }
+        } else {
+          Ok(())
+        }
+      } else {
+        Ok(())
+      }
+    }
+    Code::Instruction(Instruction::Effect { .. }) => Ok(()),
+  })?;
+
+  func.instrs.iter().try_for_each(|i| match i {
+    bril_rs::Code::Label { .. } => Ok(()),
+    bril_rs::Code::Instruction(instr) => {
+      type_check_instruction(instr, func, prog, &mut env).map_err(|e| e.add_pos(instr.get_pos()))
+    }
+  })?;
 
   Ok(())
 }
@@ -605,9 +649,9 @@ fn type_check_func(bbfunc: &BBFunction, bbprog: &BBProgram) -> Result<(), Positi
 /// instructions.
 /// # Errors
 /// Will return an error if typechecking fails or if the input program is not well-formed.
-pub fn type_check(bbprog: &BBProgram) -> Result<(), PositionalInterpError> {
+pub fn type_check(bbprog: &Program) -> Result<(), PositionalInterpError> {
   bbprog
-    .func_index
+    .functions
     .iter()
     .try_for_each(|bbfunc| type_check_func(bbfunc, bbprog))
 }
