@@ -14,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
 
       - uses: actions/setup-python@v4
         with:
@@ -25,7 +25,7 @@ jobs:
         run: deno check brili.ts brilck.ts ts2bril.ts
 
       - name: Install all TypeScript tools
-        run: deno install brili.ts ; deno install brilck.ts ; deno install --allow-env --allow-read ts2bril.ts
+        run: deno install -g brili.ts ; deno install -g brilck.ts ; deno install -g --allow-env --allow-read ts2bril.ts
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -53,7 +53,7 @@ jobs:
         with:
             python-version: '3.13'
       - name: Install brilck
-        run: deno install brilck.ts
+        run: deno install -g brilck.ts
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
