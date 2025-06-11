@@ -85,7 +85,7 @@ function addType(
 ) {
   const oldType = env.get(id);
   if (oldType) {
-    if (!typeCompat(oldType, type)) {
+    if (!typeEq(oldType, type)) {
       err(
         `new type ${type} for ${id} conflicts with old type ${oldType}`,
         pos,
@@ -154,6 +154,29 @@ function typeCompat(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
   } else {
     return false;
   }
+}
+
+/**
+ * Check for type equality.
+ *
+ * The types must be syntactically equal. `any` is not equal to any other type.
+ * Type variariables are only equal to themselves.
+ */
+function typeEq(a: PolyType, b: PolyType): boolean {
+  if (typeof a === "object" && typeof b === "object") {
+    if ("tv" in a || "tv" in b) {
+      if ("tv" in a && "tv" in b) {
+        return a.tv === b.tv;
+      } else {
+        return false;
+      }
+    } else {
+      return typeEq(a.ptr, b.ptr);
+    }
+  } else if (typeof a === "string" && typeof b === "string") {
+    return a === b;
+  }
+  return false;
 }
 
 /**
