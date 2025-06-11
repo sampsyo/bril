@@ -24,8 +24,8 @@
     ret;
 
 .call_my_print_2:
-    data : any = load args;
-    call @my_print_2 data;
+    data2 : any = load args;
+    call @my_print_2 data2;
     ret;
 .end:
     ret;

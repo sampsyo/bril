@@ -17,13 +17,7 @@ TESTS := test/parse/*.bril \
 	benchmarks/mixed/*.bril \
 
 CHECKS := test/parse/*.bril \
-	test/interp/core/*.bril \
-	test/interp/char/*.bril \
-	test/interp/float/*.bril \
-	test/interp/mixed/*.bril \
-	test/interp/spec/*.bril \
-	test/interp/ssa/*.bril \
-	test/interp/mem/*.bril \
+	test/interp/*/*.bril \
 	examples/test/*/*.bril \
 	benchmarks/core/*.bril \
 	benchmarks/float/*.bril \
