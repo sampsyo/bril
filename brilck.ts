@@ -85,7 +85,7 @@ function addType(
 ) {
   const oldType = env.get(id);
   if (oldType) {
-    if (!typeEq(oldType, type)) {
+    if (!typeCompat(oldType, type)) {
       err(
         `new type ${type} for ${id} conflicts with old type ${oldType}`,
         pos,
@@ -124,12 +124,13 @@ function typeLookup(type: PolyType, tenv: TypeEnv | undefined): PolyType {
 }
 
 /**
- * Check for type equality.
+ * Check for type compatibility.
  *
  * If a type environemnt is supplied, attempt to unify any unset type
- * variables occuring in `b` to make the types match.
+ * variables occuring in `b` to make the types match. The `any` type
+ * is compatible with any other type.
  */
-function typeEq(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
+function typeCompat(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
   // Shall we bind a type variable in b?
   b = typeLookup(b, tenv);
   if (typeof b === "object" && "tv" in b) {
@@ -142,9 +143,14 @@ function typeEq(a: bril.Type, b: PolyType, tenv?: TypeEnv): boolean {
 
   // Normal type comparison.
   if (typeof a === "string" && typeof b === "string") {
-    return a == b;
+    if (a === "any" || b === "any") {
+      // With dynamic types, assigning to or from `any` is always allowed.
+      return true;
+    } else {
+      return a == b;
+    }
   } else if (typeof a === "object" && typeof b === "object") {
-    return typeEq(a.ptr, b.ptr, tenv);
+    return typeCompat(a.ptr, b.ptr, tenv);
   } else {
     return false;
   }
@@ -193,7 +199,7 @@ function checkSig(
   // Check destination type.
   if ("type" in instr) {
     if (sig.dest) {
-      if (!typeEq(instr.type, sig.dest, tenv)) {
+      if (!typeCompat(instr.type, sig.dest, tenv)) {
         err(
           `result type of ${name} should be ${
             typeFmt(typeLookup(sig.dest, tenv))
@@ -230,7 +236,7 @@ function checkSig(
         err(`${args[i]} (arg ${i}) undefined`, instr.pos);
         continue;
       }
-      if (!typeEq(argType, sig.args[i], tenv)) {
+      if (!typeCompat(argType, sig.args[i], tenv)) {
         err(
           `${args[i]} has type ${typeFmt(argType)}, but arg ${i} for ${name} ` +
             `should have type ${typeFmt(typeLookup(sig.args[i], tenv))}`,
@@ -333,6 +339,11 @@ function checkConst(instr: bril.Constant) {
 
   if (typeof instr.type !== "string") {
     err(`const of non-primitive type ${typeFmt(instr.type)}`, instr.pos);
+    return;
+  }
+
+  // Always allow the dynamic type.
+  if (instr.type === "any") {
     return;
   }
 
