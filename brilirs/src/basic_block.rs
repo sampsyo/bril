@@ -33,7 +33,7 @@ impl BBProgram {
       .functions
       .iter()
       .enumerate()
-      .map(|(idx, func)| (func.name.clone(), FuncIndex(idx)))
+      .map(|(idx, func)| (func.name.clone(), FuncIndex::new(idx)))
       .collect();
 
     let func_index = prog
@@ -56,7 +56,7 @@ impl BBProgram {
   #[doc(hidden)]
   #[must_use]
   pub fn get(&self, func_name: FuncIndex) -> Option<&BBFunction> {
-    self.func_index.get(func_name.0)
+    self.func_index.get(func_name.0 as usize)
   }
 }
 
@@ -193,7 +193,7 @@ impl BBFunction {
         if label_map.contains_key(label) {
           return Err(InterpError::DuplicateLabel(label.clone()).add_pos(pos.clone()));
         }
-        label_map.insert(label.clone(), LabelIndex(label_map.len() + offset));
+        label_map.insert(label.clone(), LabelIndex::new(label_map.len() + offset));
       }
       Ok(())
     })?;
@@ -279,7 +279,7 @@ impl BBFunction {
         _ => {
           // If we're before the last block
           if i < last_idx {
-            block.exit.push(LabelIndex(i + 1));
+            block.exit.push(LabelIndex::new(i + 1));
           }
         }
       }

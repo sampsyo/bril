@@ -5,45 +5,56 @@ use fxhash::FxHashMap;
 
 use crate::error::InterpError;
 
+/// A type alias for trying different index type sizes
+pub type IndexType = u16;
+
 /// A Newtype for function indexing
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct FuncIndex(pub usize);
+pub struct FuncIndex(pub IndexType);
+
+impl FuncIndex {
+  /// Creates a new `FuncIndex` from a usize.
+  pub fn new(value: usize) -> Self {
+    FuncIndex(value as IndexType)
+  }
+}
 
 impl<T> Index<FuncIndex> for [T] {
   type Output = T;
 
   fn index(&self, index: FuncIndex) -> &Self::Output {
-    &self[index.0]
+    &self[index.0 as usize]
   }
 }
 
 /// A Newtype for label indexing
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct LabelIndex(pub usize);
+pub struct LabelIndex(pub IndexType);
 
 impl<T> Index<LabelIndex> for [T] {
   type Output = T;
 
   fn index(&self, index: LabelIndex) -> &Self::Output {
-    &self[index.0]
+    &self[index.0 as usize]
   }
 }
 
-impl From<usize> for LabelIndex {
-  fn from(value: usize) -> Self {
-    LabelIndex(value)
+impl LabelIndex {
+  /// Creates a new `LabelIndex` from a usize.
+  pub fn new(value: usize) -> Self {
+    LabelIndex(value as IndexType)
   }
 }
 
 /// A Newtype for variable indexing
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct VarIndex(pub usize);
+pub struct VarIndex(pub IndexType);
 
 impl Add<VarIndex> for usize {
   type Output = usize;
 
   fn add(self, rhs: VarIndex) -> Self::Output {
-    self + rhs.0
+    self + (rhs.0 as usize)
   }
 }
 
@@ -51,13 +62,14 @@ impl Add<&VarIndex> for usize {
   type Output = usize;
 
   fn add(self, rhs: &VarIndex) -> Self::Output {
-    self + rhs.0
+    self + (rhs.0 as usize)
   }
 }
 
+// TODO: Maybe swap out the other new functions for this?
 impl From<usize> for VarIndex {
   fn from(value: usize) -> Self {
-    VarIndex(value)
+    VarIndex(value as IndexType)
   }
 }
 
@@ -123,6 +135,10 @@ pub enum FlatIR {
     arg: VarIndex,
   },
 }
+
+const _: () = {
+  assert!(32 == std::mem::size_of::<FlatIR>());
+};
 
 impl FlatIR {
   /// Converts a bril_rs [Instruction] into a [FlatIR] variant.

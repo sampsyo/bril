@@ -29,6 +29,29 @@ install:
 test:
 	turnt -e brilirs $(TESTS)
 
+# git worktree add ../brilirs-change HEAD (Or specify the commit)
+# Create the JSON version of these benchmarks
+# Make any changes
+# Run `make release` in both directories
+# Run `make compare` and Profit
+.PHONY: compare
+compare:
+	hyperfine --warmup 3 --shell=none \
+    -L interp ../../bril/brilirs/target/release/brilirs,./target/release/brilirs  \
+	'{interp} -f ackermann.json 3 6' --export-markdown ackermann.md
+	hyperfine --warmup 3 --shell=none \
+    -L interp ../../bril/brilirs/target/release/brilirs,./target/release/brilirs  \
+	'{interp} -f delannoy.json 8' --export-markdown delannoy.md
+	hyperfine --warmup 3 --shell=none \
+    -L interp ../../bril/brilirs/target/release/brilirs,./target/release/brilirs  \
+	'{interp} -f leibniz.json' --export-markdown leibniz.md
+	hyperfine --warmup 3 --shell=none \
+    -L interp ../../bril/brilirs/target/release/brilirs,./target/release/brilirs  \
+	'{interp} -f random_walk.json 2 5' --export-markdown random_walk.md
+	hyperfine --warmup 3 --shell=none \
+    -L interp ../../bril/brilirs/target/release/brilirs,./target/release/brilirs  \
+	'{interp} -f function_call.json 25' --export-markdown function_call.md
+
 .PHONY: benchmark
 benchmark:
 	turnt -e brilirs $(BENCHMARKS)

@@ -828,7 +828,7 @@ fn execute<'a, T: std::io::Write>(
   let mut curr_block_idx = LabelIndex(0);
 
   loop {
-    let curr_block = &func.blocks[curr_block_idx.0];
+    let curr_block = &func.blocks[curr_block_idx.0 as usize];
     let curr_instrs = &curr_block.flat_instrs;
     let mut jumped = if curr_block.exit.len() == 1 {
       curr_block_idx = curr_block.exit[0];
@@ -841,7 +841,7 @@ fn execute<'a, T: std::io::Write>(
     state.instruction_count += curr_instrs.len();
 
     for (idx, code) in curr_instrs.iter().enumerate() {
-/*       println!("{:?}", code); */
+      /*       println!("{:?}", code); */
       match code {
         crate::ir::FlatIR::Const { dest, value } => {
           state.env.set(dest, Value::from(value));
