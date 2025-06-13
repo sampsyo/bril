@@ -26,6 +26,9 @@ impl BBProgram {
   /// # Errors
   /// Will return an error if the program is invalid in some way.
   /// Reasons include the `Program` have multiple functions with the same name, a function name is not found, or a label is expected by an instruction but missing.
+  /// # Panics
+  /// Panics if there are more than 2^16 functions or 2^16 labels in a function
+  /// or 2^16 variables in a function.
   pub fn new(prog: Program) -> Result<Self, InterpError> {
     let num_funcs = prog.functions.len();
 
@@ -33,7 +36,7 @@ impl BBProgram {
       .functions
       .iter()
       .enumerate()
-      .map(|(idx, func)| (func.name.clone(), FuncIndex::new(idx)))
+      .map(|(idx, func)| (func.name.clone(), FuncIndex::try_from(idx).unwrap()))
       .collect();
 
     let func_index = prog
@@ -169,7 +172,7 @@ pub struct BBFunction {
 impl BBFunction {
   fn new(f: Function, func_map: &FxHashMap<String, FuncIndex>) -> Result<Self, InterpError> {
     let mut func = Self::find_basic_blocks(f, func_map)?;
-    func.build_cfg()?;
+    func.build_cfg();
     Ok(func)
   }
 
@@ -180,7 +183,7 @@ impl BBFunction {
     let mut blocks = Vec::new();
     let mut label_map = FxHashMap::default();
 
-    let offset = func.instrs.iter().next().map_or(0, |code| {
+    let offset = func.instrs.first().map_or(0, |code| {
       if let bril_rs::Code::Label { .. } = code {
         0
       } else {
@@ -193,7 +196,10 @@ impl BBFunction {
         if label_map.contains_key(label) {
           return Err(InterpError::DuplicateLabel(label.clone()).add_pos(pos.clone()));
         }
-        label_map.insert(label.clone(), LabelIndex::new(label_map.len() + offset));
+        label_map.insert(
+          label.clone(),
+          LabelIndex::try_from(label_map.len() + offset).unwrap(),
+        );
       }
       Ok(())
     })?;
@@ -235,7 +241,7 @@ impl BBFunction {
         bril_rs::Code::Instruction(code) => {
           curr_block
             .flat_instrs
-            .push(FlatIR::new(code, func_map, &mut num_var_map, &label_map)?)
+            .push(FlatIR::new(code, func_map, &mut num_var_map, &label_map)?);
         }
       }
     }
@@ -255,9 +261,9 @@ impl BBFunction {
     })
   }
 
-  fn build_cfg(&mut self) -> Result<(), InterpError> {
+  fn build_cfg(&mut self) {
     if self.blocks.is_empty() {
-      return Ok(());
+      return;
     }
     let last_idx = self.blocks.len() - 1;
     for (i, block) in self.blocks.iter_mut().enumerate() {
@@ -272,18 +278,17 @@ impl BBFunction {
           ..
         }) => {
           block.exit.push(*true_dest);
-          block.exit.push(*false_dest)
+          block.exit.push(*false_dest);
         }
         Some(FlatIR::ReturnValue { .. } | FlatIR::ReturnVoid) => { // We are done, there is no exit from this block}
         }
         _ => {
           // If we're before the last block
           if i < last_idx {
-            block.exit.push(LabelIndex::new(i + 1));
+            block.exit.push(LabelIndex::try_from(i + 1).unwrap());
           }
         }
       }
     }
-    Ok(())
   }
 }

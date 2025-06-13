@@ -54,7 +54,7 @@ fn update_env<'a>(
   }
 }
 
-fn get_type<'a, 'b>(
+fn get_type<'a>(
   env: &'a FxHashMap<&'a str, Type>,
   index: usize,
   args: &[String],
@@ -582,56 +582,32 @@ fn type_check_func(func: &Function, prog: &Program) -> Result<(), PositionalInte
   });
 
   func.instrs.iter().try_for_each(|a| match a {
-    Code::Label { .. } => Ok(()),
-    Code::Instruction(Instruction::Constant {
-      dest,
-      const_type,
-      pos,
-      ..
-    }) => {
-      // TODO: fix this in 1.88 with let chaining
-      if let Some(t) = env.insert(dest, const_type.clone()) {
-        if t != const_type.clone() {
-          if !matches!(t, Type::Any) {
+    Code::Label { .. } | Code::Instruction(Instruction::Effect { .. }) => Ok(()),
+    Code::Instruction(
+      Instruction::Constant {
+        dest,
+        const_type: op_type,
+        pos,
+        ..
+      }
+      | Instruction::Value {
+        dest, op_type, pos, ..
+      },
+    ) => env.insert(dest, op_type.clone()).map_or_else(
+      || Ok(()),
+      |t| {
+        if t == op_type.clone() || !matches!(t, Type::Any) {
+          Ok(())
+        } else if !matches!(op_type, Type::Any) {
+          {
+            env.insert(dest, t);
             Ok(())
-          } else if !matches!(const_type, Type::Any) {
-            {
-              env.insert(dest, t);
-              Ok(())
-            }
-          } else {
-            Err(InterpError::BadAsmtType(t.clone(), const_type.clone()).add_pos(pos.clone()))
           }
         } else {
-          Ok(())
+          Err(InterpError::BadAsmtType(t, op_type.clone()).add_pos(pos.clone()))
         }
-      } else {
-        Ok(())
-      }
-    }
-    Code::Instruction(Instruction::Value {
-      dest, op_type, pos, ..
-    }) => {
-      if let Some(t) = env.insert(dest, op_type.clone()) {
-        if t != op_type.clone() {
-          if !matches!(t, Type::Any) {
-            Ok(())
-          } else if !matches!(op_type, Type::Any) {
-            {
-              env.insert(dest, t);
-              Ok(())
-            }
-          } else {
-            Err(InterpError::BadAsmtType(t.clone(), op_type.clone()).add_pos(pos.clone()))
-          }
-        } else {
-          Ok(())
-        }
-      } else {
-        Ok(())
-      }
-    }
-    Code::Instruction(Instruction::Effect { .. }) => Ok(()),
+      },
+    ),
   })?;
 
   func.instrs.iter().try_for_each(|i| match i {

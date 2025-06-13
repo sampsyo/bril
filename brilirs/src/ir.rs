@@ -1,4 +1,8 @@
-use std::ops::{Add, Index};
+use std::{
+  fmt::Debug,
+  num::TryFromIntError,
+  ops::{Add, Index},
+};
 
 use bril_rs::{ConstOps, EffectOps, Instruction, Literal, ValueOps};
 use fxhash::FxHashMap;
@@ -9,13 +13,14 @@ use crate::error::InterpError;
 pub type IndexType = u16;
 
 /// A Newtype for function indexing
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FuncIndex(pub IndexType);
 
-impl FuncIndex {
-  /// Creates a new `FuncIndex` from a usize.
-  pub fn new(value: usize) -> Self {
-    FuncIndex(value as IndexType)
+impl TryFrom<usize> for FuncIndex {
+  type Error = TryFromIntError;
+
+  fn try_from(value: usize) -> Result<Self, Self::Error> {
+    Ok(Self(IndexType::try_from(value)?))
   }
 }
 
@@ -28,7 +33,7 @@ impl<T> Index<FuncIndex> for [T] {
 }
 
 /// A Newtype for label indexing
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LabelIndex(pub IndexType);
 
 impl<T> Index<LabelIndex> for [T] {
@@ -39,10 +44,11 @@ impl<T> Index<LabelIndex> for [T] {
   }
 }
 
-impl LabelIndex {
-  /// Creates a new `LabelIndex` from a usize.
-  pub fn new(value: usize) -> Self {
-    LabelIndex(value as IndexType)
+impl TryFrom<usize> for LabelIndex {
+  type Error = TryFromIntError;
+
+  fn try_from(value: usize) -> Result<Self, Self::Error> {
+    Ok(Self(IndexType::try_from(value)?))
   }
 }
 
@@ -51,29 +57,30 @@ impl LabelIndex {
 pub struct VarIndex(pub IndexType);
 
 impl Add<VarIndex> for usize {
-  type Output = usize;
+  type Output = Self;
 
   fn add(self, rhs: VarIndex) -> Self::Output {
-    self + (rhs.0 as usize)
+    self + (rhs.0 as Self)
   }
 }
 
 impl Add<&VarIndex> for usize {
-  type Output = usize;
+  type Output = Self;
 
   fn add(self, rhs: &VarIndex) -> Self::Output {
-    self + (rhs.0 as usize)
+    self + (rhs.0 as Self)
   }
 }
 
-// TODO: Maybe swap out the other new functions for this?
-impl From<usize> for VarIndex {
-  fn from(value: usize) -> Self {
-    VarIndex(value as IndexType)
+impl TryFrom<usize> for VarIndex {
+  type Error = TryFromIntError;
+
+  fn try_from(value: usize) -> Result<Self, Self::Error> {
+    Ok(Self(IndexType::try_from(value)?))
   }
 }
 
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Debug)]
 pub enum FlatIR {
   Const {
@@ -141,7 +148,12 @@ const _: () = {
 };
 
 impl FlatIR {
-  /// Converts a bril_rs [Instruction] into a [FlatIR] variant.
+  /// Converts a `bril_rs` [`Instruction`] into a [`FlatIR`] variant.
+  /// # Panics
+  /// Panics if the `func_map` does not contain the function name in a `Call`
+  /// instruction. (Amongst other reasons)
+  /// # Errors
+  /// If the label to jump to does not exist in the `num_label_map`.
   pub fn new(
     i: Instruction,
     func_map: &FxHashMap<String, FuncIndex>,
@@ -155,10 +167,11 @@ impl FlatIR {
         pos: _,
         const_type,
         value,
-      } => Ok(FlatIR::Const {
+      } => Ok(Self::Const {
         dest: get_num_from_map(dest, num_var_map),
         value: if const_type == bril_rs::Type::Float {
           match value {
+            #[expect(clippy::cast_precision_loss)]
             Literal::Int(i) => Literal::Float(i as f64),
             Literal::Float(_) => value,
             _ => unreachable!(),
@@ -178,7 +191,7 @@ impl FlatIR {
       } => {
         let dest = get_num_from_map(dest, num_var_map);
 
-        Ok(FlatIR::ZeroArity { op: op, dest })
+        Ok(Self::ZeroArity { op, dest })
       }
 
       Instruction::Value {
@@ -203,7 +216,7 @@ impl FlatIR {
         let mut iter = args.into_iter().map(|v| get_num_from_map(v, num_var_map));
         let arg = iter.next().unwrap();
 
-        Ok(FlatIR::UnaryArity { op, dest, arg })
+        Ok(Self::UnaryArity { op, dest, arg })
       }
       Instruction::Value {
         op:
@@ -246,7 +259,7 @@ impl FlatIR {
         let arg0 = iter.next().unwrap();
         let arg1 = iter.next().unwrap();
 
-        Ok(FlatIR::BinaryArity {
+        Ok(Self::BinaryArity {
           op,
           dest,
           arg0,
@@ -268,7 +281,7 @@ impl FlatIR {
           .map(|v| get_num_from_map(v, num_var_map))
           .collect();
         let func = func_map.get(&funcs[0]).copied().unwrap();
-        Ok(FlatIR::MultiArityCall { func, dest, args })
+        Ok(Self::MultiArityCall { func, dest, args })
       }
       Instruction::Effect {
         op: EffectOps::Nop,
@@ -276,7 +289,7 @@ impl FlatIR {
         funcs: _,
         labels: _,
         pos: _,
-      } => Ok(FlatIR::Nop),
+      } => Ok(Self::Nop),
       Instruction::Effect {
         op: EffectOps::Jump,
         args: _,
@@ -294,7 +307,7 @@ impl FlatIR {
           })
           .next()
           .unwrap()?;
-        Ok(FlatIR::Jump { dest })
+        Ok(Self::Jump { dest })
       }
       Instruction::Effect {
         op: EffectOps::Branch,
@@ -316,7 +329,7 @@ impl FlatIR {
         });
         let true_dest = iter.next().unwrap()?;
         let false_dest = iter.next().unwrap()?;
-        Ok(FlatIR::Branch {
+        Ok(Self::Branch {
           arg,
           true_dest,
           false_dest,
@@ -330,14 +343,14 @@ impl FlatIR {
         pos: _,
       } => {
         if args.is_empty() {
-          Ok(FlatIR::ReturnVoid)
+          Ok(Self::ReturnVoid)
         } else {
           let arg = args
             .into_iter()
             .map(|v| get_num_from_map(v, num_var_map))
             .next()
             .unwrap();
-          Ok(FlatIR::ReturnValue { arg })
+          Ok(Self::ReturnValue { arg })
         }
       }
       Instruction::Effect {
@@ -352,7 +365,7 @@ impl FlatIR {
           .map(|v| get_num_from_map(v, num_var_map))
           .collect();
         let func = func_map.get(&funcs[0]).copied().unwrap();
-        Ok(FlatIR::EffectfulCall { func, args })
+        Ok(Self::EffectfulCall { func, args })
       }
       Instruction::Effect {
         op: EffectOps::Print,
@@ -367,13 +380,13 @@ impl FlatIR {
             .map(|v| get_num_from_map(v, num_var_map))
             .next()
             .unwrap();
-          Ok(FlatIR::PrintOne { arg })
+          Ok(Self::PrintOne { arg })
         } else {
           let args = args
             .into_iter()
             .map(|v| get_num_from_map(v, num_var_map))
             .collect();
-          Ok(FlatIR::PrintMultiple { args })
+          Ok(Self::PrintMultiple { args })
         }
       }
       Instruction::Effect {
@@ -386,7 +399,7 @@ impl FlatIR {
         let mut iter = args.into_iter().map(|v| get_num_from_map(v, num_var_map));
         let arg0 = iter.next().unwrap();
         let arg1 = iter.next().unwrap();
-        Ok(FlatIR::Store { arg0, arg1 })
+        Ok(Self::Store { arg0, arg1 })
       }
       Instruction::Effect {
         op: EffectOps::Set,
@@ -398,7 +411,7 @@ impl FlatIR {
         let mut iter = args.into_iter().map(|v| get_num_from_map(v, num_var_map));
         let arg0 = iter.next().unwrap();
         let arg1 = iter.next().unwrap();
-        Ok(FlatIR::Set { arg0, arg1 })
+        Ok(Self::Set { arg0, arg1 })
       }
       Instruction::Effect {
         op: EffectOps::Free,
@@ -412,7 +425,7 @@ impl FlatIR {
           .map(|v| get_num_from_map(v, num_var_map))
           .next()
           .unwrap();
-        Ok(FlatIR::Free { arg })
+        Ok(Self::Free { arg })
       }
       Instruction::Effect {
         op: EffectOps::Speculate | EffectOps::Guard | EffectOps::Commit,
@@ -423,12 +436,18 @@ impl FlatIR {
 }
 
 /// Gets a number from the map, or inserts it if it doesn't exist.
-pub fn get_num_from_map<T: Copy + From<usize>>(
+/// # Panics
+/// If there are more than `T::MAX` variables.
+#[expect(
+  clippy::implicit_hasher,
+  reason = "Not sure why it asks for this when this should be using FxHashMap hasher"
+)]
+pub fn get_num_from_map<T: Copy + TryFrom<usize, Error = impl Debug>>(
   variable_name: String,
   num_var_map: &mut FxHashMap<String, T>,
 ) -> T {
   num_var_map.get(&variable_name).copied().unwrap_or_else(|| {
-    let x = num_var_map.len().into();
+    let x = num_var_map.len().try_into().unwrap();
     num_var_map.insert(variable_name, x);
     x
   })

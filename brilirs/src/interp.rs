@@ -47,19 +47,19 @@ impl Environment {
     }
   }
 
-  pub fn get(&self, ident: &VarIndex) -> &Value {
+  pub fn get(&self, ident: VarIndex) -> &Value {
     // A bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
     self.env.get(self.current_pointer + ident).unwrap()
   }
 
   // Used for getting arguments that should be passed to the current frame from the previous one
-  pub fn get_from_last_frame(&self, ident: &VarIndex) -> &Value {
+  pub fn get_from_last_frame(&self, ident: VarIndex) -> &Value {
     let past_pointer = self.stack_pointers.last().unwrap().0;
     self.env.get(past_pointer + ident).unwrap()
   }
 
-  pub fn set(&mut self, ident: &VarIndex, val: Value) {
+  pub fn set(&mut self, ident: VarIndex, val: Value) {
     self.env[self.current_pointer + ident] = val;
   }
   // Push a new frame onto the stack
@@ -163,7 +163,7 @@ impl Heap {
 // A getter function for when you know what constructor of the Value enum you have and
 // you just want the underlying value(like a f64).
 // Or can just be used to get a owned version of the Value
-fn get_arg<'a, T: From<&'a Value>>(vars: &'a Environment, index: &VarIndex) -> T {
+fn get_arg<'a, T: From<&'a Value>>(vars: &'a Environment, index: VarIndex) -> T {
   T::from(vars.get(index))
 }
 
@@ -321,8 +321,8 @@ fn make_func_args(callee_func: &BBFunction, args: &[VarIndex], vars: &mut Enviro
     .iter()
     .zip(callee_func.args_as_nums.iter())
     .for_each(|(arg_name, expected_arg)| {
-      let arg = vars.get_from_last_frame(arg_name);
-      vars.set(expected_arg, *arg);
+      let arg = vars.get_from_last_frame(*arg_name);
+      vars.set(*expected_arg, *arg);
     });
 }
 /*
@@ -617,9 +617,9 @@ fn execute_effect_op<T: std::io::Write>(
 } */
 fn execute_unary_value<T: std::io::Write>(
   state: &mut State<T>,
-  op: &ValueOps,
-  dest: &VarIndex,
-  arg: &VarIndex,
+  op: ValueOps,
+  dest: VarIndex,
+  arg: VarIndex,
 ) -> Result<(), InterpError> {
   match op {
     ValueOps::Id => {
@@ -675,10 +675,10 @@ fn execute_unary_value<T: std::io::Write>(
 
 fn execute_binary_value<T: std::io::Write>(
   state: &mut State<T>,
-  op: &ValueOps,
-  dest: &VarIndex,
-  arg0: &VarIndex,
-  arg1: &VarIndex,
+  op: ValueOps,
+  dest: VarIndex,
+  arg0: VarIndex,
+  arg1: VarIndex,
 ) -> Result<(), InterpError> {
   match op {
     ValueOps::Add => {
@@ -844,17 +844,17 @@ fn execute<'a, T: std::io::Write>(
       /*       println!("{:?}", code); */
       match code {
         crate::ir::FlatIR::Const { dest, value } => {
-          state.env.set(dest, Value::from(value));
+          state.env.set(*dest, Value::from(value));
         }
         crate::ir::FlatIR::ZeroArity {
           op: ValueOps::Undef,
           dest,
-        } => state.env.set(dest, Value::Uninitialized),
+        } => state.env.set(*dest, Value::Uninitialized),
         crate::ir::FlatIR::ZeroArity {
           op: ValueOps::Get,
           dest,
-        } => match shadow_env.get(&dest) {
-          Some(v) => state.env.set(dest, *v),
+        } => match shadow_env.get(dest) {
+          Some(v) => state.env.set(*dest, *v),
           None => {
             return Err(InterpError::GetWithoutSet).map_err(|e| {
               Into::<InterpError>::into(e)
@@ -863,17 +863,17 @@ fn execute<'a, T: std::io::Write>(
           }
         },
         crate::ir::FlatIR::UnaryArity { op, dest, arg } => {
-          execute_unary_value(state, op, dest, arg).map_err(|e| {
+          execute_unary_value(state, *op, *dest, *arg).map_err(|e| {
             Into::<InterpError>::into(e)
               .add_pos(curr_block.positions.get(idx).cloned().unwrap_or_default())
-          })?
+          })?;
         }
         crate::ir::FlatIR::BinaryArity {
           op,
           dest,
           arg0,
           arg1,
-        } => execute_binary_value(state, op, dest, arg0, arg1).map_err(|e| {
+        } => execute_binary_value(state, *op, *dest, *arg0, *arg1).map_err(|e| {
           Into::<InterpError>::into(e)
             .add_pos(curr_block.positions.get(idx).cloned().unwrap_or_default())
         })?,
@@ -886,7 +886,7 @@ fn execute<'a, T: std::io::Write>(
 
           state.env.pop_frame();
 
-          state.env.set(dest, result);
+          state.env.set(*dest, result);
         }
         crate::ir::FlatIR::Nop => {}
         crate::ir::FlatIR::Jump { dest } => {
@@ -898,12 +898,12 @@ fn execute<'a, T: std::io::Write>(
           true_dest,
           false_dest,
         } => {
-          let cond = get_arg::<bool>(&state.env, arg);
+          let cond = get_arg::<bool>(&state.env, *arg);
           curr_block_idx = if cond { *true_dest } else { *false_dest };
           jumped = true;
         }
         crate::ir::FlatIR::ReturnValue { arg } => {
-          let res = get_arg::<Value>(&state.env, arg);
+          let res = get_arg::<Value>(&state.env, *arg);
           return Ok(Some(res));
         }
         crate::ir::FlatIR::ReturnVoid => {
@@ -918,8 +918,8 @@ fn execute<'a, T: std::io::Write>(
           state.env.pop_frame();
         }
         crate::ir::FlatIR::PrintOne { arg } => {
-          optimized_val_output(&mut state.out, state.env.get(arg))
-            .and_then(|_| // Add new line
+          optimized_val_output(&mut state.out, state.env.get(*arg))
+            .and_then(|()| // Add new line
             state.out.write_all(b"\n"))
             .map_err(|e| {
               Into::<InterpError>::into(e)
@@ -932,35 +932,30 @@ fn execute<'a, T: std::io::Write>(
             "{}",
             args
               .iter()
-              .map(|a| state.env.get(a).to_string())
+              .map(|a| state.env.get(*a).to_string())
               .collect::<Vec<String>>()
               .join(" ")
           )
           .map_err(|e| {
-            Into::<InterpError>::into(e).add_pos(
-              curr_block
-                .positions
-                .get(idx)
-                .cloned()
-                .unwrap_or_else(|| None),
-            )
+            Into::<InterpError>::into(e)
+              .add_pos(curr_block.positions.get(idx).cloned().unwrap_or_default())
           })?;
         }
         crate::ir::FlatIR::Store { arg0, arg1 } => {
-          let key = get_arg::<&Pointer>(&state.env, arg0);
-          let val = get_arg::<Value>(&state.env, arg1);
+          let key = get_arg::<&Pointer>(&state.env, *arg0);
+          let val = get_arg::<Value>(&state.env, *arg1);
           state.heap.write(key, val)?;
         }
         crate::ir::FlatIR::Set { arg0, arg1 } => {
-          let val = get_arg::<Value>(&state.env, arg1);
-          shadow_env.insert(arg0, val);
+          let val = get_arg::<Value>(&state.env, *arg1);
+          shadow_env.insert(*arg0, val);
         }
         crate::ir::FlatIR::Free { arg } => {
-          let ptr = get_arg::<&Pointer>(&state.env, arg);
+          let ptr = get_arg::<&Pointer>(&state.env, *arg);
           state.heap.free(ptr)?;
         }
-        _ => {
-          unreachable!()
+        crate::ir::FlatIR::ZeroArity { .. } => {
+          unreachable!("hypothetically all of the other zero arity ops have been matched on")
         }
       }
     }
@@ -1097,7 +1092,7 @@ fn parse_args(
                 (*inputs.get(index).unwrap()).to_string(),
               ));
             }
-            Ok(b) => env.set(arg_as_num, Value::Bool(b)),
+            Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
           }
           Ok(())
         }
@@ -1109,7 +1104,7 @@ fn parse_args(
                 (*inputs.get(index).unwrap()).to_string(),
               ));
             }
-            Ok(i) => env.set(arg_as_num, Value::Int(i)),
+            Ok(i) => env.set(*arg_as_num, Value::Int(i)),
           }
           Ok(())
         }
@@ -1121,7 +1116,7 @@ fn parse_args(
                 (*inputs.get(index).unwrap()).to_string(),
               ));
             }
-            Ok(f) => env.set(arg_as_num, Value::Float(f)),
+            Ok(f) => env.set(*arg_as_num, Value::Float(f)),
           }
           Ok(())
         }
@@ -1129,7 +1124,7 @@ fn parse_args(
           .map_or_else(
             || Err(InterpError::NotOneChar),
             |c| {
-              env.set(arg_as_num, Value::Char(c));
+              env.set(*arg_as_num, Value::Char(c));
               Ok(())
             },
           ),
