@@ -1,0 +1,67 @@
+# benchmarks/concurrency/scatter_increment.bril
+
+@inc_range(p: ptr<int>, lo: int, hi: int): void {
+  i:   int  = id lo;
+  one: int  = const 1;
+
+.loop:
+  cond: bool = lt i hi;
+  br cond .body .done;
+
+.body:
+  loc: ptr<int> = ptradd p i;
+  v:   int      = load loc;
+  nv:  int      = add v i;   # add index
+  store loc nv;
+  i = add i one;
+  jmp .loop;
+
+.done:
+  ret;
+}
+
+@main(): void {
+  size:  int      = const 4;
+  arr:   ptr<int> = alloc size;
+
+  # zero‐initialize
+  i0:    int = const 0;
+  z:     int = const 0;
+  one:   int = const 1;
+
+.init:
+  c0: bool = lt i0 size;
+  br c0 .body0 .done0;
+
+.body0:
+  loc0: ptr<int> = ptradd arr i0;
+  store loc0 z;
+  i0 = add i0 one;
+  jmp .init;
+
+.done0:
+  zero: int    = const 0;
+  half: int    = const 2;
+  t1:   thread = spawn @inc_range arr zero    half;
+  t2:   thread = spawn @inc_range arr half size;
+  join t1;
+  join t2;
+
+  # print
+  i1:    int = const 0;
+
+.print:
+  c1: bool = lt i1 size;
+  br c1 .body1 .done1;
+
+.body1:
+  loc1: ptr<int> = ptradd arr i1;
+  v1:   int      = load loc1;
+  print v1;
+  i1 = add i1 one;
+  jmp .print;
+
+.done1:
+  free arr;
+  ret;
+}

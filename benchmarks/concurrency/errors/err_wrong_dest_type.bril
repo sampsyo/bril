@@ -1,0 +1,6 @@
+@f(): void { ret; }
+
+@main(): void {
+  t: int = spawn @f;   # dest is not thread
+  ret;
+}
