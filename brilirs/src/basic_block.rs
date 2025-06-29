@@ -1,4 +1,4 @@
-use crate::ir::{get_num_from_map, FlatIR, FuncIndex, LabelIndex, VarIndex};
+use crate::ir::{FlatIR, FuncIndex, LabelIndex, VarIndex, get_num_from_map};
 use bril_rs::{Function, Position, Program};
 use fxhash::FxHashMap;
 
