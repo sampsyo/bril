@@ -1,8 +1,4 @@
-use std::{
-  fmt::Debug,
-  num::TryFromIntError,
-  ops::{Add, Index},
-};
+use std::{fmt::Debug, num::TryFromIntError, ops::Add};
 
 use bril_rs::{ConstOps, EffectOps, Instruction, Literal, ValueOps};
 use fxhash::FxHashMap;
@@ -12,7 +8,7 @@ use crate::error::InterpError;
 /// A type alias for trying different index type sizes
 pub type IndexType = u16;
 
-/// A Newtype for function indexing
+/// A newtype for function indexing
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FuncIndex(pub IndexType);
 
@@ -24,25 +20,9 @@ impl TryFrom<usize> for FuncIndex {
   }
 }
 
-impl<T> Index<FuncIndex> for [T] {
-  type Output = T;
-
-  fn index(&self, index: FuncIndex) -> &Self::Output {
-    &self[index.0 as usize]
-  }
-}
-
-/// A Newtype for label indexing
+/// A newtype for label indexing
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LabelIndex(pub IndexType);
-
-impl<T> Index<LabelIndex> for [T] {
-  type Output = T;
-
-  fn index(&self, index: LabelIndex) -> &Self::Output {
-    &self[index.0 as usize]
-  }
-}
 
 impl TryFrom<usize> for LabelIndex {
   type Error = TryFromIntError;
@@ -52,7 +32,7 @@ impl TryFrom<usize> for LabelIndex {
   }
 }
 
-/// A Newtype for variable indexing
+/// A newtype for variable indexing
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct VarIndex(pub IndexType);
 
@@ -60,14 +40,6 @@ impl Add<VarIndex> for usize {
   type Output = Self;
 
   fn add(self, rhs: VarIndex) -> Self::Output {
-    self + (rhs.0 as Self)
-  }
-}
-
-impl Add<&VarIndex> for usize {
-  type Output = Self;
-
-  fn add(self, rhs: &VarIndex) -> Self::Output {
     self + (rhs.0 as Self)
   }
 }
@@ -80,7 +52,15 @@ impl TryFrom<usize> for VarIndex {
   }
 }
 
-#[expect(missing_docs)]
+/// A flattened internal representation for Bril which supports a translation
+/// from `bril_ir::Instruction`.
+///
+/// Inspired by
+/// <https://www.cs.cornell.edu/courses/cs6120/2025sp/blog/flat-bril/> and <https://www.cs.cornell.edu/~asampson/blog/flattening.html>
+#[expect(
+  missing_docs,
+  reason = "Hopefully self-explanatory coming from `bril_ir::Instruction`"
+)]
 #[derive(Debug)]
 pub enum FlatIR {
   Const {
@@ -144,7 +124,10 @@ pub enum FlatIR {
 }
 
 const _: () = {
-  assert!(32 == std::mem::size_of::<FlatIR>());
+  assert!(
+    32 == std::mem::size_of::<FlatIR>(),
+    "There is a performance improvement in shrinking the size down to 32 bytes."
+  );
 };
 
 impl FlatIR {
@@ -430,7 +413,7 @@ impl FlatIR {
       Instruction::Effect {
         op: EffectOps::Speculate | EffectOps::Guard | EffectOps::Commit,
         ..
-      } => unimplemented!(),
+      } => unimplemented!("brilirs does not currently support the speculative execution extension"),
     }
   }
 }

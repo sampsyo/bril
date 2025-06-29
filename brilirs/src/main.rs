@@ -18,7 +18,7 @@ fn main() {
     input,
     std::io::BufWriter::new(std::io::stdout()),
     std::io::stderr(),
-    args
+    args,
   ) {
     eprintln!("error: {e}");
     if let PositionalInterpError {
