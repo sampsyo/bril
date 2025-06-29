@@ -564,7 +564,7 @@ fn type_check_instruction<'a>(
       labels: _,
       pos: _,
     } => {
-      unimplemented!()
+      unimplemented!("brilirs does not currently support the speculative execution")
     }
   }
 }

@@ -1,10 +1,10 @@
-use crate::ir::{FlatIR, FuncIndex, LabelIndex, VarIndex, get_num_from_map};
+use crate::ir::{get_num_from_map, FlatIR, FuncIndex, LabelIndex, VarIndex};
 use bril_rs::{Function, Position, Program};
 use fxhash::FxHashMap;
 
 use crate::error::{InterpError, PositionalInterpError};
 
-/// A program represented as basic blocks. This is the IR of brilirs
+/// A program represented as basic blocks. This is the IR of `brilirs`
 #[derive(Debug)]
 pub struct BBProgram {
   #[doc(hidden)]
@@ -67,9 +67,6 @@ impl BBProgram {
 #[derive(Debug)]
 pub struct BasicBlock {
   pub label: Option<String>,
-  // These two vecs work in parallel
-  // One is the normal instruction
-  // The other contains the numified version of the destination and arguments
   pub flat_instrs: Vec<FlatIR>,
   pub positions: Vec<Option<Position>>,
   pub exit: Vec<LabelIndex>,
@@ -85,75 +82,7 @@ impl BasicBlock {
     }
   }
 }
-/*
-#[doc(hidden)]
-#[derive(Debug)]
-pub struct NumifiedInstruction {
-  pub dest: Option<VarIndex>,
-  pub args: Vec<VarIndex>,
-  pub funcs: Vec<FuncIndex>,
-}
 
-impl NumifiedInstruction {
-  fn new(
-    instr: &Instruction,
-    // The total number of variables so far. Only grows
-    num_of_vars: &mut usize,
-    // A map from variables to numbers
-    num_var_map: &mut FxHashMap<String, VarIndex>,
-    // A map from function names to numbers
-    func_map: &FxHashMap<String, FuncIndex>,
-  ) -> Result<Self, PositionalInterpError> {
-    Ok(match instr {
-      Instruction::Constant { dest, .. } => Self {
-        dest: Some(get_num_from_map(dest, num_var_map)),
-        args: Vec::new(),
-        funcs: Vec::new(),
-      },
-      Instruction::Value {
-        dest,
-        args,
-        funcs,
-        pos,
-        ..
-      } => Self {
-        dest: Some(get_num_from_map(dest, num_of_vars, num_var_map)),
-        args: args
-          .iter()
-          .map(|v| get_num_from_map(v, num_of_vars, num_var_map))
-          .collect(),
-        funcs: funcs
-          .iter()
-          .map(|f| {
-            func_map
-              .get(f)
-              .copied()
-              .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(pos.clone()))
-          })
-          .collect::<Result<Vec<_>, PositionalInterpError>>()?,
-      },
-      Instruction::Effect {
-        args, funcs, pos, ..
-      } => Self {
-        dest: None,
-        args: args
-          .iter()
-          .map(|v| get_num_from_map(v, num_of_vars, num_var_map))
-          .collect(),
-        funcs: funcs
-          .iter()
-          .map(|f| {
-            func_map
-              .get(f)
-              .copied()
-              .ok_or_else(|| InterpError::FuncNotFound(f.to_string()).add_pos(pos.clone()))
-          })
-          .collect::<Result<Vec<_>, PositionalInterpError>>()?,
-      },
-    })
-  }
-}
- */
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct BBFunction {
@@ -161,9 +90,9 @@ pub struct BBFunction {
   pub args: Vec<bril_rs::Argument>,
   pub return_type: Option<bril_rs::Type>,
   pub blocks: Vec<BasicBlock>,
-  // the following is an optimization by replacing the string representation of variables with a number
+  // The following is an optimization by replacing the string representation of variables with a number
   // Variable names are ordered from 0 to num_of_vars.
-  // These replacements are found for function args and for code in the BasicBlocks
+  // These replacements are found for function args and for code in the `BasicBlock`
   pub num_of_vars: usize,
   pub args_as_nums: Vec<VarIndex>,
   pub pos: Option<Position>,
@@ -184,6 +113,7 @@ impl BBFunction {
     let mut label_map = FxHashMap::default();
 
     let offset = func.instrs.first().map_or(0, |code| {
+      // Build in an offset if the first basic block does not have a label
       if let bril_rs::Code::Label { .. } = code {
         0
       } else {
@@ -225,11 +155,12 @@ impl BBFunction {
           curr_block = BasicBlock::new();
           curr_block.label = Some(label);
         }
-        bril_rs::Code::Instruction(i @ bril_rs::Instruction::Effect { op, .. })
-          if op == bril_rs::EffectOps::Jump
-            || op == bril_rs::EffectOps::Branch
-            || op == bril_rs::EffectOps::Return =>
-        {
+        bril_rs::Code::Instruction(
+          i @ bril_rs::Instruction::Effect {
+            op: bril_rs::EffectOps::Jump | bril_rs::EffectOps::Branch | bril_rs::EffectOps::Return,
+            ..
+          },
+        ) => {
           if curr_block.label.is_some() || blocks.is_empty() {
             curr_block
               .flat_instrs
