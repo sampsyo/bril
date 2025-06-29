@@ -8,6 +8,7 @@
 #![allow(clippy::too_many_arguments)]
 #![doc = include_str!("../README.md")]
 
+use crate::cli::Cli;
 use basic_block::BBProgram;
 use bril_rs::Program;
 use error::PositionalInterpError;
@@ -29,26 +30,34 @@ pub mod ir;
 pub fn run_input<T: std::io::Write, U: std::io::Write>(
   input: impl std::io::Read,
   out: T,
-  input_args: &[String],
-  profiling: bool,
   profiling_out: U,
+  cli_args: Cli,
+  /* input_args: &[String],
+  profiling: bool,
+
   check: bool,
   text: bool,
-  src_name: Option<String>,
+  src_name: Option<String>, */
 ) -> Result<(), PositionalInterpError> {
   // It's a little confusing because of the naming conventions.
   //      - bril_rs takes file.json as input
   //      - bril2json takes file.bril as input
-  let prog: Program = if text {
-    bril2json::parse_abstract_program_from_read(input, true, true, src_name).try_into()?
+  let prog: Program = if cli_args.text {
+    bril2json::parse_abstract_program_from_read(input, true, true, cli_args.file).try_into()?
   } else {
     bril_rs::load_abstract_program_from_read(input).try_into()?
   };
   check::type_check(&prog)?;
   let bbprog: BBProgram = prog.try_into()?;
 
-  if !check {
-    interp::execute_main(&bbprog, out, input_args, profiling, profiling_out)?;
+  if !cli_args.check {
+    interp::execute_main(
+      &bbprog,
+      out,
+      &cli_args.args,
+      cli_args.profile,
+      profiling_out,
+    )?;
   }
 
   Ok(())

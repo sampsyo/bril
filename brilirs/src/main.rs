@@ -17,12 +17,8 @@ fn main() {
   if let Err(e) = brilirs::run_input(
     input,
     std::io::BufWriter::new(std::io::stdout()),
-    &args.args,
-    args.profile,
     std::io::stderr(),
-    args.check,
-    args.text,
-    args.file,
+    args
   ) {
     eprintln!("error: {e}");
     if let PositionalInterpError {
