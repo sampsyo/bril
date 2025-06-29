@@ -1248,10 +1248,6 @@ pub fn create_module_from_program<'a>(
     let mut fresh = Fresh::new();
 
     // Add all functions to the module, initialize all variables in the heap, and setup for the second phase
-    #[expect(
-        clippy::needless_collect,
-        reason = "Important to collect, can't be done lazily because we need all functions to be loaded in before a call instruction of a function is processed."
-    )]
     let funcs: Vec<_> = functions
         .iter()
         .map(
