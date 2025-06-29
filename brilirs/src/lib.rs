@@ -13,7 +13,7 @@ use basic_block::BBProgram;
 use bril_rs::Program;
 use error::PositionalInterpError;
 
-/// The internal representation of brilirs, provided a ```TryFrom<Program>``` conversion
+/// The internal representation of `brilirs`, provided a ```TryFrom<Program>``` conversion
 pub mod basic_block;
 /// Provides ```check::type_check``` to validate [Program]
 pub mod check;
@@ -32,12 +32,6 @@ pub fn run_input<T: std::io::Write, U: std::io::Write>(
   out: T,
   profiling_out: U,
   cli_args: Cli,
-  /* input_args: &[String],
-  profiling: bool,
-
-  check: bool,
-  text: bool,
-  src_name: Option<String>, */
 ) -> Result<(), PositionalInterpError> {
   // It's a little confusing because of the naming conventions.
   //      - bril_rs takes file.json as input
