@@ -26,13 +26,13 @@ use std::fmt;
 //  |        |
 // [a, b, c, a, b]
 struct Environment {
-  // Pointer into env for the start of the current frame
+  // Pointer into `env` for the start of the current frame
   current_pointer: usize,
   // Size of the current frame
   current_frame_size: usize,
   // A list of all stack pointers for valid frames on the stack
   stack_pointers: Vec<(usize, usize)>,
-  // env is used like a stack. Assume it only grows
+  // `env` is used like a stack. Assume it only grows
   env: Vec<Value>,
 }
 
@@ -48,7 +48,7 @@ impl Environment {
   }
 
   pub fn get(&self, ident: VarIndex) -> &Value {
-    // A bril program is well formed when, dynamically, every variable is defined before its use.
+    // A Bril program is well formed when, dynamically, every variable is defined before its use.
     // If this is violated, this will return Value::Uninitialized and the whole interpreter will come crashing down.
     self.env.get(self.current_pointer + ident).unwrap()
   }
@@ -89,7 +89,7 @@ impl Environment {
   }
 }
 
-// todo: This is basically a copy of the heap implement in brili and we could probably do something smarter. This currently isn't that worth it to optimize because most benchmarks do not use the memory extension nor do they run for very long. You (the reader in the future) may be working with bril programs that you would like to speed up that extensively use the bril memory extension. In that case, it would be worth seeing how to implement Heap without a map based memory. Maybe try to re-implement malloc for a large Vec<Value>?
+// todo: This is basically a copy of the heap implement in `brili` and we could probably do something smarter. This currently isn't that worth it to optimize because most benchmarks do not use the memory extension nor do they run for very long. You (the reader in the future) may be working with Bril programs that you would like to speed up that extensively use the Bril memory extension. In that case, it would be worth seeing how to implement Heap without a map based memory. Maybe try to re-implement malloc for a large Vec<Value>?
 struct Heap {
   memory: FxHashMap<usize, Vec<Value>>,
   base_num_counter: usize,
@@ -162,7 +162,7 @@ impl Heap {
 
 // A getter function for when you know what constructor of the Value enum you have and
 // you just want the underlying value(like a f64).
-// Or can just be used to get a owned version of the Value
+// Or can just be used to get an owned version of the Value
 fn get_arg<'a, T: From<&'a Value>>(vars: &'a Environment, index: VarIndex) -> T {
   T::from(vars.get(index))
 }
@@ -368,7 +368,7 @@ fn execute_unary_value<T: std::io::Write>(
     ValueOps::Float2Bits => {
       let float = get_arg::<f64>(&state.env, arg);
       // https://users.rust-lang.org/t/i64-u64-mapping-revisited/109315
-      // the to and from native endian stuff is a nop
+      // the to and from native endian stuff is a no-op
       // if link dies try web archive
       let int = i64::from_ne_bytes(float.to_ne_bytes());
       state.env.set(dest, Value::Int(int));
@@ -552,7 +552,6 @@ fn execute<'a, T: std::io::Write>(
     state.instruction_count += curr_instrs.len();
 
     for (idx, code) in curr_instrs.iter().enumerate() {
-      /*       println!("{:?}", code); */
       match code {
         crate::ir::FlatIR::Const { dest, value } => {
           state.env.set(*dest, Value::from(value));
@@ -766,7 +765,7 @@ impl<'a, T: std::io::Write> State<'a, T> {
 
 /// The entrance point to the interpreter.
 ///
-/// It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [`std::io::Write`]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [`std::io::stderr`]
+/// It runs over a ```prog```:[`BBProgram`] starting at the "main" function with ```input_args``` as input. Print statements output to ```out``` which implements [`std::io::Write`]. You also need to include whether you want the interpreter to count the number of instructions run with ```profiling```. This information is outputted to [`std::io::stderr`].
 /// # Panics
 /// This should not panic with normal use except if there is a bug or if you are using an unimplemented feature
 /// # Errors
@@ -801,8 +800,8 @@ pub fn execute_main<T: std::io::Write, U: std::io::Write>(
 
   if profiling {
     writeln!(profiling_out, "total_dyn_inst: {}", state.instruction_count)
-      // We call flush here in case `profiling_out` is a https://doc.rust-lang.org/std/io/struct.BufWriter.html
-      // Otherwise we would expect this flush to be a nop.
+      // We call flush here in case `profiling_out` is a <https://doc.rust-lang.org/std/io/struct.BufWriter.html>
+      // Otherwise we would expect this flush to be a no-op.
       .and_then(|()| profiling_out.flush())
       .map_err(InterpError::IoError)?;
   }
