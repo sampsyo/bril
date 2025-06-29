@@ -8,7 +8,7 @@ use std::io::Read;
 fn main() {
   let args = Cli::parse();
 
-  let input: Box<dyn std::io::Read> = match args.file.clone() {
+  let input: Box<dyn std::io::Read> = match &args.file {
     None => Box::new(std::io::stdin()),
 
     Some(input_file) => Box::new(File::open(input_file).unwrap()),
