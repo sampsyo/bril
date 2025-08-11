@@ -98,6 +98,7 @@ The current benchmarks are:
 * `sum-digits`: Compute the sum of the (base-10) digits of the input integer.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `sum-of-cubes`: Computes the sum of the first n cubes using the closed-cube formula and prints the result.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
