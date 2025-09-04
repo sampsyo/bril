@@ -62,6 +62,7 @@ The current benchmarks are:
 * `max-subarray`: solution to the classic Maximum Subarray problem.
 * `mccarthy91`: Run the [McCarthy 91 function][mccarthy91], a nested-recursive function which always returns 91.
 * `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
+* `montecarlo`: Calculates the value of pi using a [xorshift](https://en.wikipedia.org/wiki/Xorshift) as the rng.
 * `montgomery`: Computes modular multiplication using the [Montgomery reduction][montgomery] algorithm.
 * `mod_pow`: Performs [modular exponentiation][modpow] using the right-to-left binary method.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
