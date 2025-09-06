@@ -1,0 +1,232 @@
+# A very slow monte-carlo simulation to derive the value of pi
+# 1. Generate random (x, y) coordinates uniformly in the square [-1, 1] x [-1, 1].
+# 2. Count how many points fall inside the unit circle (x^2 + y^2 <= 1).
+# 3. The ratio should approach pi/4
+
+@xor(a: int, b: int): int {
+    v_two: int = const 2;
+    result: int = const 0;
+    place: int = const 1;
+    
+.loop_start:
+    v0: int = const 0;
+    v1: bool = eq a v0;
+    v2: bool = eq b v0;
+    v3: bool = and v1 v2;
+    br v3 .loop_end .loop_body;
+
+.loop_body:
+    v_a1: int = div a v_two;
+    v_a1: int = mul v_two v_a1;
+    v_a1: int = sub a v_a1;
+    
+    v_b1: int = div b v_two;
+    v_b1: int = mul v_two v_b1;
+    v_b1: int = sub b v_b1;
+
+    v_s: int = add v_a1 v_b1;
+    
+    v_x: int = div v_s v_two;
+    v_x: int = mul v_two v_x;
+    v_x: int = sub v_s v_x;
+
+    tmp: int = mul place v_x;
+    result: int = add result tmp;
+
+    a: int = div a v_two;
+    b: int = div b v_two;
+
+    place: int = mul place v_two;
+    jmp .loop_start;
+.loop_end:
+    ret result;
+}
+
+@shift_left(value: int, k: int): int {
+    literal0: int = const 0;
+    literal1: int = const 1;
+    literal2: int = const 2;
+.loop_start:
+    v0: bool = gt k literal0;
+    k: int = sub k literal1;
+    br v0 .loop_body .loop_end;
+.loop_body:
+    value: int = mul value literal2;
+    jmp .loop_start;
+.loop_end:
+    ret value;
+}
+
+@shift_right(value: int, k: int): int {
+    literal0: int = const 0;
+    literal1: int = const 1;
+    literal2: int = const 2;
+.loop_start:
+    v0: bool = gt k literal0;
+    k: int = sub k literal1;
+    br v0 .loop_body .loop_end;
+.loop_body:
+    value: int = div value literal2;
+    jmp .loop_start;
+.loop_end:
+    ret value;
+}
+
+@xor64_shift64(seed: int): int {
+    literal13: int = const 13;
+    literal7: int = const 7;
+    literal17: int = const 7;
+
+    seed_tmp: int = call @shift_left seed literal13;
+    seed: int = call @xor seed seed_tmp;
+    
+    seed_tmp: int = call @shift_right seed literal7;
+    seed: int = call @xor seed seed_tmp;
+    
+    seed_tmp: int = call @shift_left seed literal17;
+    seed: int = call @xor seed seed_tmp;
+
+    ret seed;
+}
+
+@bit_length(n: int): int {
+    literal_0: int = const 0;
+    literal_1: int = const 1;
+    literal_2: int = const 2;
+    v0: int = const 0;
+.loop_start:
+    v1: bool = gt n literal_0;
+    n: int = div n literal_2;
+    br v1 .loop_body .loop_end;
+.loop_body:
+    v0: int = add v0 literal_1;
+    jmp .loop_start;
+.loop_end:
+    ret v0;
+}
+
+@to_float(n: int): float {
+    literal_0: int = const 0;
+    literal_1: int = const 1;
+    literal_52: int = const 52;
+    literal_63: int = const 63;
+    literal_1023: int = const 1023;
+    literal_INTMIN: int = const -9223372036854775808;
+    literal_INTMINFLOAT: float = const -9223372036854775808.0;
+
+    v0: bool = eq n literal_0;
+    br v0 .no_skip_ret .skip_ret;
+    # check special case if n = 0
+.no_skip_ret:
+    float_literal_0: float = const 0.0;
+    ret float_literal_0;
+.skip_ret:
+    # get sign bit
+    sign: int = const 0;
+    v0: bool = lt n literal_0;
+    br v0 .no_skip .skip;
+.no_skip:
+    sign: int = add sign literal_1;
+.skip:
+    sign: int = call @shift_left sign literal_63;
+
+    # get exponent bits
+    # bit_length will be incorrect with negative numbers
+    br v0 .is_negative .is_positive;
+    k: int = const 0;
+    pos_n: int = const 0;
+.is_negative:
+    is_min: bool = eq literal_INTMIN n;
+    br is_min .is_int_min .no_int_min;
+.is_int_min:
+    ret literal_INTMINFLOAT;
+.no_int_min:
+    pos_n: int = sub literal_0 n;
+    k: int = call @bit_length pos_n;
+    k: int = sub k literal_1;
+    jmp .k_join;
+.is_positive:
+    k: int = call @bit_length n;
+    k: int = sub k literal_1;
+    pos_n: int = add literal_0 n;
+.k_join:
+    exp: int = add k literal_1023;
+    exp: int = call @shift_left exp literal_52;
+
+    # get the mantissa bits
+    shifted: int = call @shift_left literal_1 k;
+    mantissa: int = sub pos_n shifted;
+
+    test: bool = gt k literal_52;
+    br test .greater .less;
+    fraction: int = const 0;
+.greater:
+    x: int = sub k literal_52;
+    fraction: int = call @shift_right mantissa x;
+    jmp .end_if;
+.less:
+    x: int = sub literal_52 k;
+    fraction: int = call @shift_left mantissa x;
+.end_if:
+    result: int = add sign exp; 
+    result: int = add result fraction;
+    result_float: float = bits2float result;
+    ret result_float;
+}
+
+# we only take the lowest 31 bits so there's no "compression" from the int extremes
+@to_unit_float(n: int): float {
+    literal_32: int = const 32;
+    literal_fmax: float = const 2147483647;
+    
+    # clear out upper 32 bits
+    n: int = call @shift_left n literal_32;
+    n: int = call @shift_right n literal_32;
+
+    v0: float = call @to_float n;
+    v0: float = fdiv v0 literal_fmax;
+    ret v0;
+}
+
+# ARGS: 10000 834783272583879352
+@main(num_it: int, seed: int) {
+    literal_1: int = const 1;
+    literal_1f: float = const 1.0;
+    idx: int = const 0;
+    
+    inside_cnt: int = const 0;
+    total_cnt: int = const 0;
+.loop_start:
+    progress: bool = lt idx num_it;
+    idx: int = add literal_1 idx;
+    br progress .loop_body .loop_end;
+.loop_body:
+    seed: int = call @xor64_shift64 seed;
+    x_val: float = call @to_unit_float seed;
+    seed: int = call @xor64_shift64 seed;
+    y_val: float = call @to_unit_float seed;
+
+    # circle of radius 1 inside a square of side length 2
+    x_val: float = fmul x_val x_val;
+    y_val: float = fmul y_val y_val;
+    sum: float = fadd x_val y_val;
+    inside: bool = fle sum literal_1f;
+
+    br inside .inc_circle .skip_inc;
+
+.inc_circle:
+    inside_cnt: int = add literal_1 inside_cnt;
+.skip_inc:
+    total_cnt: int = add literal_1 total_cnt;
+    jmp .loop_start;
+
+.loop_end:
+
+    inside_float: float = call @to_float inside_cnt;
+    total_float: float = call @to_float total_cnt;
+    area_ratio : float = const 4.0;
+    pi_approx: float = fdiv inside_float total_float;
+    pi_approx: float = fmul area_ratio pi_approx;
+    
+    print pi_approx;
+}
