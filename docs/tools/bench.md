@@ -29,6 +29,7 @@ The current benchmarks are:
 * `2dconvol`: Creates a 2d image and kernel and performs a 2d convolution on the image, and prints out the values of the image, kernel, and resulting output. 
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `csrmv`: Multiply a sparse matrix in the [Compressed Sparse Row (CSR)][csr] format with a dense vector. The matrix and input vector are generated using a [Linear Feedback Shift Register](https://en.wikipedia.org/wiki/Linear-feedback_shift_register) random number generator.
+* `dayofweek`: Returns the day of the week for a given date `(year, month, day)` as an integer: `1 = Monday`, ..., `7 = Sunday`.
 * `digial-root`: Computes the digital root of the input number.
 * `dead-branch`: Repeatedly call a br instruction whose condition always evaluates to false. The dead branch should be pruned by a smart compiler.
 * `delannoy`: Recusively computes the number of paths on square board with size `n` from southwest corner (0, 0) to northeast corner (n, n), using only single steps north, northeast or east. This number is known as the [Delannoy number](https://en.wikipedia.org/wiki/Delannoy_number).
