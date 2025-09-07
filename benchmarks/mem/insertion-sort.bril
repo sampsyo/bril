@@ -1,0 +1,99 @@
+# Insertion Sort in ascending order for a list containing 5 numbers
+# Inputs: An array of 5 elements (fixed), and a target
+# Output: Sorted elements in ascending order
+# Adopted pack and print_array code from bubblesort by Jiajie Li
+
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;
+
+    # Pack data into array manually. Cannot use loop because of the different var name.
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    ret array;
+}
+
+@print_array(array: ptr<int>, size: int) {
+    i: int = const 0;
+    one: int = const 1;
+.loop:
+    cond: bool = lt i size;
+    br cond .body .done;
+.body:
+    loc: ptr<int> = ptradd array i;
+    val: int = load loc;
+    print val;
+.loop_end:
+    i: int = add i one;
+    jmp .loop;
+.done:
+    ret;
+}
+
+# ARGS: 5 22 81 7 35 60
+@main(size: int, n1: int, n2: int, n3: int, n4: int, n5: int) {
+    array: ptr<int> = call @pack size n1 n2 n3 n4 n5;
+
+# Insertion Sort
+    zero: int = const 0;
+    one: int = const 1;
+    i: int = const 1;  # Start from the second element
+    
+.loop_outer:
+    cond_i: bool = lt i size;
+    br cond_i .body_outer .done_outer;
+    
+.body_outer:
+    # Load current element to insert
+    loc_i: ptr<int> = ptradd array i;
+    val_i: int = load loc_i;
+    j: int = sub i one;  # Start comparing with previous element
+    
+.loop_inner:
+    # Check if j >= 0 and array[j] > val_i
+    cond_j: bool = ge j zero;
+    br cond_j .check_value .insert;
+    
+.check_value:
+    loc_j: ptr<int> = ptradd array j;
+    val_j: int = load loc_j;
+    cond_val: bool = gt val_j val_i;
+    br cond_val .shift .insert;
+    
+.shift:
+    # Shift element to the right
+    j_plus_1: int = add j one;
+    loc_j_plus_1: ptr<int> = ptradd array j_plus_1;
+    store loc_j_plus_1 val_j;
+    
+    # Decrement j and continue
+    j: int = sub j one;
+    jmp .loop_inner;
+    
+.insert:
+    # Insert val_i at the correct position
+    j_plus_1: int = add j one;
+    loc_insert: ptr<int> = ptradd array j_plus_1;
+    store loc_insert val_i;
+    
+.loop_outer_end:
+    i: int = add i one;
+    jmp .loop_outer;
+    
+.done_outer:
+    call @print_array array size;
+    free array;
+}
