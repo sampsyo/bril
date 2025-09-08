@@ -1,0 +1,75 @@
+@mod(a: int, b: int): int {
+    q: int = div a b;
+    sub_ : int = mul q b;
+    remainder: int = sub a sub_;
+    zero: int = const 0;
+    flag: bool = ge remainder zero;
+    br flag .end .adjust;
+.adjust:
+    remainder: int = add remainder b;
+.end:    
+    ret remainder;
+}
+
+# Spigot algorithm for Pi
+@main {
+    div_factor: int = const 5;
+    inc: int = const 1;
+    mul_factor: int = const 2;
+    zero: int = const 0;
+    sub_factor: int = const 14;
+    a: int = const 10000;
+    b: int = const 0;
+    c: int = const 2800;
+    d: int = const 0;
+    f_size: int = const 2801;
+    # f[2800] = 0
+    f: ptr<int> = alloc f_size;
+    f_ptr: ptr<int> = ptradd f c;
+    store f_ptr zero;
+# init f
+.loop_1:
+    f_ptr: ptr<int> = ptradd f b;
+    v: int = div a div_factor;
+    store f_ptr v;
+    b: int = add b inc;
+    loop_1_flag: bool = ge b c;
+    br loop_1_flag .loop_2 .loop_1;
+
+.loop_2:
+    e: int = call @mod d a;
+    d: int = const 0;
+    g: int = mul c mul_factor;
+    # if g == 0: break
+    br_flag: bool = eq g zero;
+    br br_flag .end .loop_2_b_1;
+.loop_2_b_1:
+    b: int = add c zero;
+
+.loop_inner_1:
+    f_ptr: ptr<int> = ptradd f b;
+    f_b: int = load f_ptr; 
+    fb_a: int = mul f_b a;
+    d: int = add d fb_a;
+    g: int = sub g inc;
+    f_val: int = call @mod d g;
+    store f_ptr f_val;
+    d: int = div d g;
+    g: int = sub g inc;
+    b: int = sub b inc;
+    # if b == 0: break
+    loop_inner_1_flag: bool = eq b zero;
+    br loop_inner_1_flag .loop_2_b_2 .loop_inner_1_b_1;
+.loop_inner_1_b_1:
+    d: int = mul d b;
+    jmp .loop_inner_1;
+
+.loop_2_b_2:
+    c: int = sub c sub_factor;
+    d_div_a: int = div d a;
+    print_val: int = add e d_div_a;
+    print print_val;
+    jmp .loop_2;
+.end:
+    free f;
+}
