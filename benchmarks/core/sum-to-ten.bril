@@ -1,0 +1,27 @@
+@main {
+  v0: float = const 10;
+  n: float = id v0;
+  v1: float = const 0;
+  sum: float = id v1;
+  v3: float = const 1;
+  i: float = id v3;
+.for.cond.2:
+  v4: float = id i;
+  v5: float = id n;
+  v6: bool = fle v4 v5;
+  br v6 .for.body.2 .for.end.2;
+.for.body.2:
+  v7: float = id sum;
+  v8: float = id i;
+  v9: float = fadd v7 v8;
+  sum: float = id v9;
+  v10: float = id i;
+  v11: float = const 1;
+  v12: float = fadd v10 v11;
+  i: float = id v12;
+  jmp .for.cond.2;
+.for.end.2:
+  v13: float = id sum;
+  print v13;
+  v14: int = const 0;
+}
