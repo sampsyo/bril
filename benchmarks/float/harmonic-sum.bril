@@ -1,0 +1,30 @@
+# ARGS: 730000
+@main(input: float) {
+  v0: float = id input;
+  n: float = id v0;
+  v1: float = const 0;
+  sum: float = id v1;
+  v3: float = const 1;
+  i: float = id v3;
+.for.cond.2:
+  v4: float = id i;
+  v5: float = id n;
+  v6: bool = fle v4 v5;
+  br v6 .for.body.2 .for.end.2;
+.for.body.2:
+  v7: float = id sum;
+  v8: float = const 1;
+  v9: float = id i;
+  v10: float = fdiv v8 v9;
+  v11: float = fadd v7 v10;
+  sum: float = id v11;
+  v12: float = id i;
+  v13: float = const 1;
+  v14: float = fadd v12 v13;
+  i: float = id v14;
+  jmp .for.cond.2;
+.for.end.2:
+  v15: float = id sum;
+  print v15;
+  v16: int = const 0;
+}
