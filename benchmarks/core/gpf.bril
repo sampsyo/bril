@@ -1,0 +1,95 @@
+@isprime(x: int): int {
+    one: int = const 1;
+    two: int = const 2;
+    cmp1: bool = le x one; # if x <= 1
+    br cmp1 .ret_false .cont1;
+
+.cont1:
+    cmp2: bool = eq x two; # if x = 2
+    br cmp2 .ret_true .cont2;
+
+.cont2: # now check divisibility from 2 to x-1
+    i: int = const 2;
+
+.loop:
+    cmp3: bool = lt i x;
+    br cmp3 .check_prime .done;
+
+.check_prime:
+    q: int = div x i;
+    prod: int = mul q i;
+    zero: int = const 0;
+    cmp4: bool = eq prod x;
+    br cmp4 .ret_false .inc;
+
+.inc:
+    i: int = add i one;
+    jmp .loop;
+
+.done:
+    one_ret: int = const 1;
+    ret one_ret;
+
+.ret_false:
+    zero_ret: int = const 0;
+    ret zero_ret;
+
+.ret_true:
+    one_ret2: int = const 1;
+    ret one_ret2;
+}
+
+@greatest_prime_factor(n: int): int {
+    one: int = const 1;
+    two: int = const 2;
+    max_factor: int = const 1;
+    d: int = const 2;
+
+.outer_loop:
+    cmp1: bool = le d n;
+    br cmp1 .check_div .ret_max;
+
+.check_div:
+    q: int = div n d;
+    prod: int = mul q d;
+    cmp2: bool = eq prod n;
+    br cmp2 .handle_div .inc_d;
+
+.handle_div:
+    # d divides n, check if prime
+    p: int = call @isprime d;
+    cmp_prime: bool = eq p one;
+    br cmp_prime .update_max .div_done;
+
+.update_max:
+    zero: int = const 0;
+    max_factor: int = add d zero;
+    jmp .div_done;
+
+.div_done:
+    # divide factor d until no longer divisible
+    q2: int = div n d;
+    prod2: int = mul q2 d;
+    cmp3: bool = eq prod2 n;
+    br cmp3 .divide_out .after_div;
+
+.divide_out:
+    n: int = div n d;
+    jmp .div_done;
+
+.after_div:
+    jmp .inc_d;
+
+.inc_d:
+    d: int = add d one;
+    jmp .outer_loop;
+
+.ret_max:
+    ret max_factor;
+}
+
+# ARGS: 13195
+@main(input: int) {
+    res: int = call @greatest_prime_factor input;
+    print res;
+}
