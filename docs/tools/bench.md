@@ -56,6 +56,7 @@ The current benchmarks are:
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
+* `legendre`: Compute the exponent for the largest power of the given prime *p* which divides the factorial *n!* using [Legendre's formula](https://en.wikipedia.org/wiki/Legendre%27s_formula).
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
 * `lis`: Calculates the longest increasing subsequence of an 8-element array using dynamic programming.
 * `logistic`: Compute the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
