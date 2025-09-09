@@ -1,7 +1,10 @@
 # Systolic Array Matrix Multiplication in Bril
 # Simulates a 2x2 systolic array on CPU by modeling time steps
 
+# Credit of this function to Ankush Rayabhari in the matmul.bril benchmark.
 # Use a linear congruential generator to generate random numbers.
+# `seq` is the state of the random number generator.
+# Returns a value between 0 and max
 @rand(seq: ptr<int>, max: int) : int {
   a: int = const 25214903917;
   c: int = const 11;
@@ -69,7 +72,8 @@
 
 # Get matrix element at (row, col)
 @get_element(matrix: ptr<int>, rows: int, cols: int, row: int, col: int) : int {
-  idx: int = mul row cols;
+  # calculating matrix addresses in row major order: idx_r * num_cols + idx_col
+  idx: int = mul row cols; 
   idx: int = add idx col;
   loc: ptr<int> = ptradd matrix idx;
   val: int = load loc;
@@ -78,7 +82,8 @@
 
 # Set matrix element at (row, col)
 @set_element(matrix: ptr<int>, rows: int, cols: int, row: int, col: int, val: int) {
-  idx: int = mul row cols;
+  # calculating matrix addresses in row major order: idx_r * num_cols + idx_col
+  idx: int = mul row cols; 
   idx: int = add idx col;
   loc: ptr<int> = ptradd matrix idx;
   store loc val;
@@ -273,6 +278,9 @@
   call @print_matrix two two B;
   
   # Perform systolic array matrix multiplication
+  # Played around with a better design,
+  # whats cool is that the @systolic_gemm has more dyn_instr: 595,
+  # and that the timed one has 527 instrs.
   call @systolic_timed_gemm A B C;
   
   call @print_matrix two two C;
