@@ -49,6 +49,7 @@ The current benchmarks are:
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `geometric-sum`: Calculate [Geometric Sum](https://en.wikipedia.org/wiki/Geometric_series) given first term, common ratio and number of terms.
 * `gol`: Print the next iteration for a matrix in [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
+* `grad_desc` Use [gradient descent](https://en.wikipedia.org/wiki/Gradient_descent) to minimize f(w) = (w-t)^2.
 * `gpf`: Prints the greatest prime factor on an input integer
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `hamming`: Computes the hamming distance between two integers.
