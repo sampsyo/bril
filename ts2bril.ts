@@ -181,6 +181,20 @@ function emitBril(prog: ts.Node, checker: ts.TypeChecker): bril.Program {
           }
         }
       }
+      case ts.SyntaxKind.PrefixUnaryExpression: {
+        const un = expr as ts.PrefixUnaryExpression;
+        const operand = emitExpr(un.operand);
+        switch (un.operator) {
+          case ts.SyntaxKind.ExclamationToken:
+            return builder.buildValue("not", "bool", [operand.dest]);
+          default:
+            throw `unhandled prefix unary operator ${un.operator}`;
+        }
+      }
+      case ts.SyntaxKind.ParenthesizedExpression: {
+        const paren = expr as ts.ParenthesizedExpression;
+        return emitExpr(paren.expression);
+      }
       default:
         throw `unsupported expression kind: ${expr.getText()}`;
     }

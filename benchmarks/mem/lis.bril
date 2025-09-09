@@ -1,0 +1,106 @@
+# ARGS: 4 10 4 3 8 9 0 0
+
+@max(a: int, b: int): int {
+  cond: bool = gt a b;
+  br cond .t .f;
+.t:
+  ret a;
+.f:
+  ret b;
+}
+
+@lis(arr: ptr<int>): int {
+  zero: int = const 0;
+  one: int = const 1;
+  size: int = const 8;
+  dp: ptr<int> = alloc size;
+
+  i: int = const 0;
+.checkInit:
+  cond: bool = lt i size;
+  br cond .bodyInit .doneInit;
+.bodyInit:
+  elem: ptr<int> = ptradd dp i;
+  store elem one;
+  i: int = add i one;
+  jmp .checkInit;
+.doneInit:
+
+  i: int = const 0;
+.checkOuter:
+  cond: bool = lt i size;
+  br cond .bodyOuter .doneOuter;
+.bodyOuter:
+  j: int = const 0;
+
+.checkInner:
+  cond: bool = lt j i;
+  br cond .bodyInner .doneInner;
+.bodyInner:
+  ptr_i: ptr<int> = ptradd arr i;
+  ptr_j: ptr<int> = ptradd arr j;
+  val_i: int = load ptr_i;
+  val_j: int = load ptr_j;
+  cond: bool = lt val_j val_i;
+  br cond .i_lt_j .endif;
+.i_lt_j:
+  ptr_i: ptr<int> = ptradd dp i;
+  ptr_j: ptr<int> = ptradd dp j;
+  val_i: int = load ptr_i;
+  val_j: int = load ptr_j;
+  val_j: int = add val_j one;
+  val: int = call @max val_i val_j;
+  store ptr_i val;
+.endif:
+  j: int = add j one;
+  jmp .checkInner;
+.doneInner:
+  i: int = add i one;
+  jmp .checkOuter;
+.doneOuter:
+
+  i: int = const 0;
+  ans: int = const 1;
+.checkAns:
+  cond: bool = lt i size;
+  br cond .bodyAns .doneAns;
+.bodyAns:
+  ptr_i: ptr<int> = ptradd dp i;
+  val_i: int = load ptr_i;
+  ans: int = call @max ans val_i; 
+  i: int = add i one;
+  jmp .checkAns;
+.doneAns:
+  free dp;
+  ret ans;
+}
+
+@main(a: int, b: int, c: int, d: int, e: int, f: int, g: int, h: int) {
+  zero: int = const 0;
+  one: int = const 1;
+
+  size: int = const 8;
+  arr: ptr<int> = alloc size;
+  
+  p: ptr<int> = ptradd arr zero;
+  store p a;
+  p: ptr<int> = ptradd p one;
+  store p b;
+  p: ptr<int> = ptradd p one;
+  store p c;
+  p: ptr<int> = ptradd p one;
+  store p d;
+  p: ptr<int> = ptradd p one;
+  store p e;
+  p: ptr<int> = ptradd p one;
+  store p f;
+  p: ptr<int> = ptradd p one;
+  store p g;
+  p: ptr<int> = ptradd p one;
+  store p h;
+
+  val: int = call @lis arr;
+  print val;
+
+  free arr;
+}
