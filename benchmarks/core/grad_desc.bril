@@ -17,9 +17,9 @@
   grad:int = mul two err;     # 2(w-t)
   theta:int = mul lr grad;    # lr * grad
   delta:int = div theta s;    # scale back by 1000
-  w = sub w delta;            
+  w:int = sub w delta;            
   one:int = const 1;
-  i = add i one;
+  I:int = add i one;
   jmp .loop;
 
 .done:
