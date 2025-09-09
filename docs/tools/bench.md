@@ -100,6 +100,7 @@ The current benchmarks are:
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `sum-of-cubes`: Computes the sum of the first n cubes using the closed-cube formula and prints the result.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
+* `triangle`: Computes the *n*th [triangular number][triangle] by summing over the first *n* integers in a loop.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
@@ -151,4 +152,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
 [cordic]: https://en.wikipedia.org/wiki/CORDIC
 [int_lattice]: https://en.wikipedia.org/wiki/Integer_lattice
-
+[triangle]: https://en.wikipedia.org/wiki/Triangular_number
