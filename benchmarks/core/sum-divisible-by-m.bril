@@ -1,0 +1,21 @@
+# Compute the sum of integers between [1, n] which are divisible by m
+# ARGS: 3 300
+
+@main (m: int, n: int) {
+  v0: int = id n;
+  v1: int = id m;
+  v2: int = div v0 v1;
+  k: int = id v2;
+  v3: int = id m;
+  v4: int = id k;
+  v5: int = mul v3 v4;
+  v6: int = id k;
+  v7: int = const 1;
+  v8: int = add v6 v7;
+  v9: int = mul v5 v8;
+  v10: int = const 2;
+  v11: int = div v9 v10;
+  sum: int = id v11;
+  v12: int = id sum;
+  print v12;
+}
