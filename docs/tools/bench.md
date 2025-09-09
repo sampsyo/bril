@@ -56,6 +56,7 @@ The current benchmarks are:
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
+* `legendre`: Compute the exponent for the largest power of the given prime *p* which divides the factorial *n!* using [Legendre's formula](https://en.wikipedia.org/wiki/Legendre%27s_formula).
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
 * `lis`: Calculates the longest increasing subsequence of an 8-element array using dynamic programming.
 * `logistic`: Compute the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
@@ -108,6 +109,7 @@ The current benchmarks are:
 * `sum-to-ten`: Output the sum of all the numbers from 1 to 10
 * `sum-of-cubes`: Computes the sum of the first n cubes using the closed-cube formula and prints the result.
 * `tail-call`: Decrements a large counter recursively, nesting many function calls. It is written such that a smart interpreter or compiler could perform a tail call optimization to reduce stack usage.
+* `systolic`: Multiply two matrices using a simulated [systolic][systolic] array approach.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
@@ -160,4 +162,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
 [cordic]: https://en.wikipedia.org/wiki/CORDIC
 [int_lattice]: https://en.wikipedia.org/wiki/Integer_lattice
-
+[systolic]: https://en.wikipedia.org/wiki/Systolic_array
