@@ -10,6 +10,7 @@ The current benchmarks are:
 * `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `adler32`: Computes the [Adler-32 Checksum][adler32] of an integer array.
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
+* `bin-search`: Search a target integer within an integer range, outputs the target integer.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
 * `binpow`: Recursive binary exponentiation. Implemented to be as close to tail-recursive as possible.
@@ -51,6 +52,7 @@ The current benchmarks are:
 * `grad_desc` Use Gradient Descent(https://en.wikipedia.org/wiki/Gradient_descent) to minimize f(w) = (w-t)^2.
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `hamming`: Computes the hamming distance between two integers.
+* `harmonic-sum`: Computes the harmonic sum up to the index *n*.
 * `insertion-sort`: Insertion sort algorithm in ascending order. 
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
@@ -77,6 +79,7 @@ The current benchmarks are:
 * `palindrome`: Outputs a 0-1 value indicating whether the input is a [palindrome][palindrome] number.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
 * `permutation`: Calculates the number of possible permutations of k objects from a set of n.
+* `pi`: Compute and print digits of Pi using a spigot algorithm.
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `primes-between`: Print the primes in the interval `[a, b]`.
 * `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
@@ -103,6 +106,7 @@ The current benchmarks are:
 * `sum-digits`: Compute the sum of the (base-10) digits of the input integer.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `sum-to-ten`: Output the sum of all the numbers from 1 to 10
 * `sum-of-cubes`: Computes the sum of the first n cubes using the closed-cube formula and prints the result.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
