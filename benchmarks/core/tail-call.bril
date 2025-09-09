@@ -1,4 +1,4 @@
-#ARGS: 1850
+#ARGS: 1500
 @main(depth: int) {
   print depth;
   zero: int = const 0;
