@@ -1,0 +1,13 @@
+#ARGS: 1850
+@main(depth: int) {
+  print depth;
+  zero: int = const 0;
+  cond: bool = eq depth zero;
+  br cond .end .inc_depth;
+.inc_depth:
+  one: int = const 1;
+  new_depth: int = sub depth one;
+  call @main new_depth;
+.end:
+  ret;
+}

@@ -107,6 +107,7 @@ The current benchmarks are:
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `sum-to-ten`: Output the sum of all the numbers from 1 to 10
 * `sum-of-cubes`: Computes the sum of the first n cubes using the closed-cube formula and prints the result.
+* `tail-call`: Decrements a large counter recursively, nesting many function calls. It is written such that a smart interpreter or compiler could perform a tail call optimization to reduce stack usage.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
