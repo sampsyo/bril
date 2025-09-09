@@ -111,6 +111,7 @@ The current benchmarks are:
 * `tail-call`: Decrements a large counter recursively, nesting many function calls. It is written such that a smart interpreter or compiler could perform a tail call optimization to reduce stack usage.
 * `systolic`: Multiply two matrices using a simulated [systolic][systolic] array approach.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
+* `triangle`: Computes the *n*th [triangular number][triangle] by summing over the first *n* integers in a loop.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
@@ -162,4 +163,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
 [cordic]: https://en.wikipedia.org/wiki/CORDIC
 [int_lattice]: https://en.wikipedia.org/wiki/Integer_lattice
+[triangle]: https://en.wikipedia.org/wiki/Triangular_number
 [systolic]: https://en.wikipedia.org/wiki/Systolic_array
