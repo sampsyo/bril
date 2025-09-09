@@ -10,6 +10,7 @@ The current benchmarks are:
 * `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `adler32`: Computes the [Adler-32 Checksum][adler32] of an integer array.
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
+* `bin-search`: Search a target integer within an integer range, outputs the target integer.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
 * `binpow`: Recursive binary exponentiation. Implemented to be as close to tail-recursive as possible.
@@ -29,6 +30,7 @@ The current benchmarks are:
 * `2dconvol`: Creates a 2d image and kernel and performs a 2d convolution on the image, and prints out the values of the image, kernel, and resulting output. 
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `csrmv`: Multiply a sparse matrix in the [Compressed Sparse Row (CSR)][csr] format with a dense vector. The matrix and input vector are generated using a [Linear Feedback Shift Register](https://en.wikipedia.org/wiki/Linear-feedback_shift_register) random number generator.
+* `dayofweek`: Returns the day of the week for a given date `(year, month, day)` as an integer: `1 = Monday`, ..., `7 = Sunday`.
 * `digial-root`: Computes the digital root of the input number.
 * `dead-branch`: Repeatedly call a br instruction whose condition always evaluates to false. The dead branch should be pruned by a smart compiler.
 * `delannoy`: Recusively computes the number of paths on square board with size `n` from southwest corner (0, 0) to northeast corner (n, n), using only single steps north, northeast or east. This number is known as the [Delannoy number](https://en.wikipedia.org/wiki/Delannoy_number).
@@ -49,10 +51,14 @@ The current benchmarks are:
 * `gol`: Print the next iteration for a matrix in [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `hamming`: Computes the hamming distance between two integers.
+* `harmonic-sum`: Computes the harmonic sum up to the index *n*.
+* `insertion-sort`: Insertion sort algorithm in ascending order. 
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
+* `legendre`: Compute the exponent for the largest power of the given prime *p* which divides the factorial *n!* using [Legendre's formula](https://en.wikipedia.org/wiki/Legendre%27s_formula).
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
+* `lis`: Calculates the longest increasing subsequence of an 8-element array using dynamic programming.
 * `logistic`: Compute the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
 * `loopfact`: Compute *n!* imperatively using a loop.
 * `major-elm`: Find the majority element in an array using [a linear time voting algorithm](https://www.cs.utexas.edu/~moore/best-ideas/mjrty/).
@@ -62,6 +68,7 @@ The current benchmarks are:
 * `max-subarray`: solution to the classic Maximum Subarray problem.
 * `mccarthy91`: Run the [McCarthy 91 function][mccarthy91], a nested-recursive function which always returns 91.
 * `mod_inv`: Calculates the [modular inverse][modinv] of `n` under to a prime modulus p.
+* `montecarlo`: Calculates the value of pi using a [xorshift](https://en.wikipedia.org/wiki/Xorshift) as the rng.
 * `montgomery`: Computes modular multiplication using the [Montgomery reduction][montgomery] algorithm.
 * `mod_pow`: Performs [modular exponentiation][modpow] using the right-to-left binary method.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
@@ -72,6 +79,7 @@ The current benchmarks are:
 * `palindrome`: Outputs a 0-1 value indicating whether the input is a [palindrome][palindrome] number.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
 * `permutation`: Calculates the number of possible permutations of k objects from a set of n.
+* `pi`: Compute and print digits of Pi using a spigot algorithm.
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `primes-between`: Print the primes in the interval `[a, b]`.
 * `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
@@ -98,7 +106,10 @@ The current benchmarks are:
 * `sum-digits`: Compute the sum of the (base-10) digits of the input integer.
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `sum-to-ten`: Output the sum of all the numbers from 1 to 10
 * `sum-of-cubes`: Computes the sum of the first n cubes using the closed-cube formula and prints the result.
+* `tail-call`: Decrements a large counter recursively, nesting many function calls. It is written such that a smart interpreter or compiler could perform a tail call optimization to reduce stack usage.
+* `systolic`: Multiply two matrices using a simulated [systolic][systolic] array approach.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
 * `triangle`: Computes the *n*th [triangular number][triangle] by summing over the first *n* integers in a loop.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
@@ -153,3 +164,4 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [cordic]: https://en.wikipedia.org/wiki/CORDIC
 [int_lattice]: https://en.wikipedia.org/wiki/Integer_lattice
 [triangle]: https://en.wikipedia.org/wiki/Triangular_number
+[systolic]: https://en.wikipedia.org/wiki/Systolic_array

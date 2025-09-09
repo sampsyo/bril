@@ -1,0 +1,295 @@
+# Systolic Array Matrix Multiplication in Bril
+# Simulates a 2x2 systolic array on CPU by modeling time steps
+
+# Credit of this function to Ankush Rayabhari in the matmul.bril benchmark.
+# Use a linear congruential generator to generate random numbers.
+# `seq` is the state of the random number generator.
+# Returns a value between 0 and max
+@rand(seq: ptr<int>, max: int) : int {
+  a: int = const 25214903917;
+  c: int = const 11;
+  m: int = const 281474976710656;
+  x: int = load seq;
+  ax: int = mul a x;
+  axpc: int = add ax c;
+  next: int = div axpc m;
+  next: int = mul next m;
+  next: int = sub axpc next;
+  store seq next;
+  val: int = div next max;
+  val: int = mul val max;
+  val: int = sub next val;
+  ret val;
+}
+
+# Initialize a matrix with random values
+@init_matrix(rows: int, cols: int, rng: ptr<int>) : ptr<int> {
+  size: int = mul rows cols;
+  arr: ptr<int> = alloc size;
+  i: int = const 0;
+  max: int = const 10;
+  one: int = const 1;
+.loop:
+  cond: bool = lt i size;
+  br cond .body .done;
+.body:
+  val: int = call @rand rng max;
+  loc: ptr<int> = ptradd arr i;
+  store loc val;
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret arr;
+}
+
+# Print a matrix
+@print_matrix(rows: int, cols: int, arr: ptr<int>) {
+  i: int = const 0;
+  zero: int = const 0;
+  one: int = const 1;
+.row_loop:
+  cond: bool = lt i rows;
+  br cond .row_body .done;
+.row_body:
+  j: int = const 0;
+.col_loop:
+  cond: bool = lt j cols;
+  br cond .col_body .row_end;
+.col_body:
+  idx: int = mul i cols;
+  idx: int = add idx j;
+  loc: ptr<int> = ptradd arr idx;
+  val: int = load loc;
+  print val;
+  j: int = add j one;
+  jmp .col_loop;
+.row_end:
+  i: int = add i one;
+  jmp .row_loop;
+.done:
+  ret;
+}
+
+# Get matrix element at (row, col)
+@get_element(matrix: ptr<int>, rows: int, cols: int, row: int, col: int) : int {
+  # calculating matrix addresses in row major order: idx_r * num_cols + idx_col
+  idx: int = mul row cols; 
+  idx: int = add idx col;
+  loc: ptr<int> = ptradd matrix idx;
+  val: int = load loc;
+  ret val;
+}
+
+# Set matrix element at (row, col)
+@set_element(matrix: ptr<int>, rows: int, cols: int, row: int, col: int, val: int) {
+  # calculating matrix addresses in row major order: idx_r * num_cols + idx_col
+  idx: int = mul row cols; 
+  idx: int = add idx col;
+  loc: ptr<int> = ptradd matrix idx;
+  store loc val;
+  ret;
+}
+
+# Systolic array simulation for 2x2 matrices
+# This simulates the dataflow and timing of a systolic array
+@systolic_gemm(A: ptr<int>, B: ptr<int>, C: ptr<int>) {
+  # Matrix dimensions (hardcoded for 2x2)
+  M: int = const 2;
+  N: int = const 2; 
+  K: int = const 2;
+  
+  # Extended array dimensions (M+2, N+2) to include boundary PEs
+  P0: int = const 4;  # M + 2
+  P1: int = const 4;  # N + 2
+  
+  # Simulation parameters
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  three: int = const 3;
+  
+  # Data storage for the systolic array
+  # We need to simulate data movement through the array over time
+  # For simplicity, we'll simulate the core computation directly
+  
+  # Initialize result matrix
+  call @set_element C two two zero zero zero;
+  call @set_element C two two zero one zero;
+  call @set_element C two two one zero zero;
+  call @set_element C two two one one zero;
+  
+  # Simulate systolic computation for each output element
+  # C[0,0] computation
+  i: int = const 0;
+  j: int = const 0;
+  result: int = const 0;
+  k: int = const 0;
+.compute_00:
+  cond: bool = lt k K;
+  br cond .body_00 .done_00;
+.body_00:
+  a_val: int = call @get_element A M K i k;
+  b_val: int = call @get_element B K N k j;
+  prod: int = mul a_val b_val;
+  result: int = add result prod;
+  k: int = add k one;
+  jmp .compute_00;
+.done_00:
+  call @set_element C M N i j result;
+  
+  # C[0,1] computation  
+  i: int = const 0;
+  j: int = const 1;
+  result: int = const 0;
+  k: int = const 0;
+.compute_01:
+  cond: bool = lt k K;
+  br cond .body_01 .done_01;
+.body_01:
+  a_val: int = call @get_element A M K i k;
+  b_val: int = call @get_element B K N k j;
+  prod: int = mul a_val b_val;
+  result: int = add result prod;
+  k: int = add k one;
+  jmp .compute_01;
+.done_01:
+  call @set_element C M N i j result;
+  
+  # C[1,0] computation
+  i: int = const 1;
+  j: int = const 0;
+  result: int = const 0;
+  k: int = const 0;
+.compute_10:
+  cond: bool = lt k K;
+  br cond .body_10 .done_10;
+.body_10:
+  a_val: int = call @get_element A M K i k;
+  b_val: int = call @get_element B K N k j;
+  prod: int = mul a_val b_val;
+  result: int = add result prod;
+  k: int = add k one;
+  jmp .compute_10;
+.done_10:
+  call @set_element C M N i j result;
+  
+  # C[1,1] computation
+  i: int = const 1;
+  j: int = const 1;
+  result: int = const 0;
+  k: int = const 0;
+.compute_11:
+  cond: bool = lt k K;
+  br cond .body_11 .done_11;
+.body_11:
+  a_val: int = call @get_element A M K i k;
+  b_val: int = call @get_element B K N k j;
+  prod: int = mul a_val b_val;
+  result: int = add result prod;
+  k: int = add k one;
+  jmp .compute_11;
+.done_11:
+  call @set_element C M N i j result;
+  
+  ret;
+}
+
+# More sophisticated systolic simulation with time steps
+@systolic_timed_gemm(A: ptr<int>, B: ptr<int>, C: ptr<int>) {
+  # This version simulates the actual timing and data flow
+  M: int = const 2;
+  N: int = const 2;
+  K: int = const 2;
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  
+  # Simulate PE array (2x2 core PEs)
+  # Each PE accumulates partial results
+  pe_00: int = const 0;
+  pe_01: int = const 0;
+  pe_10: int = const 0;
+  pe_11: int = const 0;
+  
+  # Simulate data injection and processing
+  # In a real systolic array, data flows through over multiple cycles
+  # Here we simulate K cycles of computation
+  
+  cycle: int = const 0;
+.cycle_loop:
+  cond: bool = lt cycle K;
+  br cond .cycle_body .cycles_done;
+.cycle_body:
+  
+  # PE[0,0] processes A[0,cycle] * B[cycle,0]
+  a_val: int = call @get_element A M K zero cycle;
+  b_val: int = call @get_element B K N cycle zero;
+  prod: int = mul a_val b_val;
+  pe_00: int = add pe_00 prod;
+  
+  # PE[0,1] processes A[0,cycle] * B[cycle,1]  
+  a_val: int = call @get_element A M K zero cycle;
+  b_val: int = call @get_element B K N cycle one;
+  prod: int = mul a_val b_val;
+  pe_01: int = add pe_01 prod;
+  
+  # PE[1,0] processes A[1,cycle] * B[cycle,0]
+  a_val: int = call @get_element A M K one cycle;
+  b_val: int = call @get_element B K N cycle zero;
+  prod: int = mul a_val b_val;
+  pe_10: int = add pe_10 prod;
+  
+  # PE[1,1] processes A[1,cycle] * B[cycle,1]
+  a_val: int = call @get_element A M K one cycle;
+  b_val: int = call @get_element B K N cycle one;
+  prod: int = mul a_val b_val;
+  pe_11: int = add pe_11 prod;
+  
+  cycle: int = add cycle one;
+  jmp .cycle_loop;
+  
+.cycles_done:
+  # Store final results
+  call @set_element C M N zero zero pe_00;
+  call @set_element C M N zero one pe_01;
+  call @set_element C M N one zero pe_10;
+  call @set_element C M N one one pe_11;
+  
+  ret;
+}
+
+# ARGS: 12345
+@main(seed: int) {
+  # Initialize random number generator
+  one: int = const 1;
+  two: int = const 2;
+  four: int = const 4;
+  
+  rng: ptr<int> = alloc one;
+  store rng seed;
+  
+  # Create 2x2 matrices A, B, C
+  A: ptr<int> = call @init_matrix two two rng;
+  B: ptr<int> = call @init_matrix two two rng;
+  C: ptr<int> = alloc four;  # 2x2 result matrix
+  
+  call @print_matrix two two A;
+  
+  call @print_matrix two two B;
+  
+  # Perform systolic array matrix multiplication
+  # Played around with a better design,
+  # whats cool is that the @systolic_gemm has more dyn_instr: 595,
+  # and that the timed one has 527 instrs.
+  call @systolic_timed_gemm A B C;
+  
+  call @print_matrix two two C;
+  
+  # Clean up
+  free A;
+  free B; 
+  free C;
+  free rng;
+  
+  ret;
+}
