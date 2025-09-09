@@ -1,0 +1,21 @@
+# Compute the nth triangular number.
+# ARGS: 36
+@tri(n: int): int {
+  one: int = const 1;
+  t: int = const 0;
+  c: int = const 1;
+.c:
+  cond_c: bool = le c n;
+  br cond_c .c_le .c_gt;
+.c_gt:
+  ret t;
+.c_le:
+  t: int = add t c;
+  c: int = add c one;
+  jmp .c;
+}
+
+@main(n: int) {
+  tmp: int = call @tri n;
+  print tmp;
+}
