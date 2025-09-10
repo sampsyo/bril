@@ -1,0 +1,56 @@
+# Input is an integer
+# The output is whether the integer is a non-decreasing segment followed by a non-increasing segment
+# ARGS: 012349420 
+@main (n: int) {
+  out: bool = const false;
+  tmp0: int = const 0;
+  ten: int = const 10;
+  zero: int = const 0;
+
+.label1:                      
+  tmp1: int = call @mod_ten n;
+  n: int = div n ten;
+
+.label5:                      
+  drop: bool = lt tmp1 tmp0;      
+  tmp0: int = id tmp1;
+  br drop .label2 .label5b;
+
+.label5b:
+  more: bool = gt n zero;
+  br more .label1 .label3;   
+
+.label2:                       
+  out: bool = const true;        
+
+.label7:
+  tmp1: int = call @mod_ten n;
+  n: int = div n ten;
+
+.label6:
+  bad: bool = gt tmp1 tmp0; 
+  br bad .labelfail .label6b;
+
+.label6b:
+  tmp0: int = id tmp1;
+  more2: bool = gt n zero;
+  br more2 .label7 .label4;  
+
+.labelfail:                   
+  out: bool = const false;
+  br out .label4 .label4;
+
+.label3:                       
+  out: bool = const true;
+
+.label4:                        
+  print out;
+}
+
+@mod_ten(n: int): int {
+  ten: int = const 10;
+  v1: int = div n ten;
+  v2: int = mul v1 ten;
+  v3: int = sub n v2;
+  ret v3;
+}

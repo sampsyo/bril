@@ -75,6 +75,7 @@ The current benchmarks are:
 * `montecarlo`: Calculates the value of pi using a [xorshift](https://en.wikipedia.org/wiki/Xorshift) as the rng.
 * `montgomery`: Computes modular multiplication using the [Montgomery reduction][montgomery] algorithm.
 * `mod_pow`: Performs [modular exponentiation][modpow] using the right-to-left binary method.
+* `mountain`: Determines if a given input is a mountain; that is, a non-decreasing segment of digits followed by a non-increasing segment.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `norm`: Calculate the [euclidean norm][euclidean] of a vector
 * `n_root`: Calculate nth root of a float using newton's method.
