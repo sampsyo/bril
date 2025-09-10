@@ -1,0 +1,82 @@
+@pack(size: int, n1: int, n2: int, n3: int, n4: int, n5: int, n6: int, n7: int, n8: int, n9: int) : ptr<int> {
+    one: int = const 1;
+    i: int = const 0;
+    array: ptr<int> = alloc size;
+# Pack data into array manually. Cannot use loop because of the different var name.     
+    loc: ptr<int> = ptradd array i;
+    store loc n1;
+    i: int = add i one;
+    loc: ptr<int> = ptradd array i;
+    store loc n2;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n3;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n4;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n5;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n6;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n7;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n8;
+    i: int = add i one;        
+    loc: ptr<int> = ptradd array i;
+    store loc n9;
+    ret array;
+}
+
+@main() {
+# Pack the input elements into an array with a starting pointer
+    one: int = const 1;
+    zero: int = const 0;
+    size: int = const 9;
+    n1: int = const -2;
+    n2: int = const 1;
+    n3: int = const -3;
+    n4: int = const 4;
+    n5: int = const -1;
+    n6: int = const 2;
+    n7: int = const 1;
+    n8: int = const -5;
+    n9: int = const 4;
+    array: ptr<int> = call @pack size n1 n2 n3 n4 n5 n6 n7 n8 n9;
+    i: int = const 1;
+    i_min_one: int = sub i one;
+    loc: ptr<int> = ptradd array i_min_one;
+    max1: int = load loc;
+    max2: int = load loc;
+    sum: int = load loc;
+.loop:
+    cond: bool = lt i size;
+    br cond .body .out;
+.body:
+    loc:ptr<int> = ptradd array i;
+    num: int = load loc;
+    sum: int = add sum num;
+    cond1: bool = gt num sum;
+    br cond1 .yes1 .no1;
+.yes1:
+    max1: int = add zero num;
+    sum: int = add zero num;
+    jmp .done1;
+.no1:
+    max1: int = add zero sum;
+.done1:
+    cond2: bool = gt max1 max2;
+    br cond2 .yes2 .done2;
+.yes2:
+    max2: int = add zero max1;
+.done2:
+    i:int = add i one;
+    jmp .loop;
+.out:
+    print max2;
+    free array;
+}
