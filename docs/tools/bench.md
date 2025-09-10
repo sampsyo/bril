@@ -95,6 +95,7 @@ The current benchmarks are:
 * `ray-bbox-intersection`: Finds whether a ray intersects an axis-aligned bounding box.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
+* `rgb2gray`: Convert an RGB pixel to a grayscale color.
 * `fitsinside`: Output whether or not a rectangle fits inside of another rectangle given the width and height lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
