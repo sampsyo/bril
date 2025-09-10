@@ -125,6 +125,7 @@ The current benchmarks are:
 * `combination`: Compute binomial combination, ie. n choose k, for positive integers.
 * `fib_recursive`: Computes the *n*th Fibonacci number using recursion, where `fib(n) = fib(n-1) + fib(n-2)`, with base cases `fib(0) = 0` and `fib(1) = 1`. Demonstrates recursive function calls and branching.
 * `cordic`: Compute the sine of a number using the [CORDIC][cordic] algorithm
+* `kadane`: Compute the maximum sum of a contiguous subarray within a given array of numbers.
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
