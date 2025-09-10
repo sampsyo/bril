@@ -10,7 +10,7 @@
     cb: float = fmul vb b;
 
     res: float = fadd cr cg;
-    res = fadd res cb;
+    res: float = fadd res cb;
     ret res;
 }
 
