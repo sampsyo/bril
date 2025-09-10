@@ -1,0 +1,29 @@
+# Input RGB values in range [0, 255].
+@rgb2gray(r: float, g: float, b: float) : float
+{
+    vr: float = const 0.299;
+    vg: float = const 0.587;
+    vb: float = const 0.114;
+
+    cr: float = fmul vr r;
+    cg: float = fmul vg g;
+    cb: float = fmul vb b;
+
+    res: float = fadd cr cg;
+    res = fadd res cb;
+    ret res;
+}
+
+@main()
+{
+    r: float = const 120;
+    g: float = const 200;
+    b: float = const 150;
+
+    gray: float = call @rgb2gray r g b;
+
+    # Expected result: 170.37999999999996703
+    print gray;
+
+    # ret 0;
+}
