@@ -28,6 +28,7 @@ install:
 .PHONY: test
 test:
 	turnt -e brilirs $(TESTS)
+	cargo test --doc
 
 # git worktree add ../brilirs-change HEAD (Or specify the commit)
 # Create the JSON version of these benchmarks
