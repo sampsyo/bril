@@ -42,6 +42,7 @@ The current benchmarks are:
 * `fact`: Prints the factorial of *n*, computing it recursively.
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
+* `filter`: Filter records from a single table based on a condition.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `fnv1-hash`: Compute the [Fowler-Noll-Vo hash function](https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function) of an integer array.
 * `function_call`: For benchmarking the overhead of simple function calls.
@@ -107,6 +108,7 @@ The current benchmarks are:
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-check`: Compute the sum of [1, n] by both loop and formula, and check if the result is the same.
 * `sum-digits`: Compute the sum of the (base-10) digits of the input integer.
+* `sum-divisible-by-m`: Compute the sum of integers between [1, n] which are divisible by m
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
 * `sum-to-ten`: Output the sum of all the numbers from 1 to 10
