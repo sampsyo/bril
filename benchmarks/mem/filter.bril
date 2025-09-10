@@ -1,0 +1,90 @@
+# Filter benchmark: Filter records from a single table based on a condition 
+# Table: employees with id and department_id columns
+# Filter: Find all employees in department 2
+
+@main {
+  # Initialize table size
+  table_size: int = const 5;
+  
+  # Allocate arrays for table columns
+  emp_ids: ptr<int> = alloc table_size;
+  dept_ids: ptr<int> = alloc table_size;
+  
+  # Fill the table with sample data
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  three: int = const 3;
+  four: int = const 4;
+  
+  # Employee 1: ID=101, Dept=1
+  emp_id_1: int = const 101;
+  dept_id_1: int = const 1;
+  store emp_ids emp_id_1;
+  store dept_ids dept_id_1;
+  
+  # Employee 2: ID=102, Dept=2
+  emp_id_2: int = const 102;
+  dept_id_2: int = const 2;
+  emp_ids_ptr: ptr<int> = ptradd emp_ids one;
+  dept_ids_ptr: ptr<int> = ptradd dept_ids one;
+  store emp_ids_ptr emp_id_2;
+  store dept_ids_ptr dept_id_2;
+  
+  # Employee 3: ID=103, Dept=2
+  emp_id_3: int = const 103;
+  dept_id_3: int = const 2;
+  emp_ids_ptr_2: ptr<int> = ptradd emp_ids two;
+  dept_ids_ptr_2: ptr<int> = ptradd dept_ids two;
+  store emp_ids_ptr_2 emp_id_3;
+  store dept_ids_ptr_2 dept_id_3;
+  
+  # Employee 4: ID=104, Dept=1
+  emp_id_4: int = const 104;
+  dept_id_4: int = const 1;
+  emp_ids_ptr_3: ptr<int> = ptradd emp_ids three;
+  dept_ids_ptr_3: ptr<int> = ptradd dept_ids three;
+  store emp_ids_ptr_3 emp_id_4;
+  store dept_ids_ptr_3 dept_id_4;
+  
+  # Employee 5: ID=105, Dept=2
+  emp_id_5: int = const 105;
+  dept_id_5: int = const 2;
+  emp_ids_ptr_4: ptr<int> = ptradd emp_ids four;
+  dept_ids_ptr_4: ptr<int> = ptradd dept_ids four;
+  store emp_ids_ptr_4 emp_id_5;
+  store dept_ids_ptr_4 dept_id_5;
+  
+  # Filter: Find employees in department 2
+  target_dept: int = const 2;
+  i: int = const 0;
+  
+.loop:
+  done: bool = ge i table_size;
+  br done .cleanup .body;
+  
+.body:
+  # Load current employee's department
+  curr_dept_ptr: ptr<int> = ptradd dept_ids i;
+  curr_dept: int = load curr_dept_ptr;
+  
+  # Check if it matches our filter condition
+  matches: bool = eq curr_dept target_dept;
+  br matches .print_result .next;
+  
+.print_result:
+  # Print the matching employee ID
+  curr_emp_ptr: ptr<int> = ptradd emp_ids i;
+  curr_emp: int = load curr_emp_ptr;
+  print curr_emp;
+  jmp .next;
+  
+.next:
+  i: int = add i one;
+  jmp .loop;
+  
+.cleanup:
+  # Free allocated memory
+  free emp_ids;
+  free dept_ids;
+}
