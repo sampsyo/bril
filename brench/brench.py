@@ -1,7 +1,6 @@
 """Simple comparative benchmark runner."""
 
 import click
-import tomlkit
 import subprocess
 import re
 import csv
@@ -9,6 +8,11 @@ import sys
 import os
 from concurrent import futures
 import glob
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib  # type:ignore
 
 __version__ = "1.0.0"
 
@@ -82,7 +86,7 @@ def get_result(strings, extract_re):
 def brench(config_path, files, jobs):
     """Run a batch of benchmarks and emit a CSV of results."""
     with open(config_path) as f:
-        config = tomlkit.loads(f.read())
+        config = tomllib.loads(f.read())
 
     # Use configured file list, if none is specified via the CLI.
     if not files and "benchmarks" in config:
@@ -98,7 +102,9 @@ def brench(config_path, files, jobs):
         futs = {}
         for fn in files:
             for name, run in config["runs"].items():
-                futs[(fn, name)] = pool.submit(run_bench, run["pipeline"], fn, timeout)
+                futs[(fn, name)] = pool.submit(
+                    run_bench, run["pipeline"], fn, timeout
+                )
 
         # Collect results and print CSV.
         writer = csv.writer(sys.stdout)

@@ -10,7 +10,7 @@ home-page = "https://github.com/sampsyo/bril"
 requires-python = ">=3.4"
 requires = [
     "click",
-    "tomlkit",
+    'tomli ; python_version < "3.11"',
 ]
 
 [tool.flit.scripts]
