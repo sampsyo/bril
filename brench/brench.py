@@ -102,9 +102,7 @@ def brench(config_path, files, jobs):
         futs = {}
         for fn in files:
             for name, run in config["runs"].items():
-                futs[(fn, name)] = pool.submit(
-                    run_bench, run["pipeline"], fn, timeout
-                )
+                futs[(fn, name)] = pool.submit(run_bench, run["pipeline"], fn, timeout)
 
         # Collect results and print CSV.
         writer = csv.writer(sys.stdout)
