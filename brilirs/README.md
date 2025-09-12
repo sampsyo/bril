@@ -21,9 +21,22 @@ path         = "../brilirs"
 Check out `cargo doc --open` for exposed functions. One possible workflow is that you have a `bril_rs::Program` called `program` and a list of `args` that you want to run through the interpreter.
 
 ```rust
+use bril2json::parse_abstract_program_from_read;
+use brilirs::{basic_block::BBProgram, check, interp};
+
+use std::io::Cursor; // to allow `std::io::Read` of `&str`
+
+let program = "@main {
+  v: int = const 5;
+  print v;
+}";
+let program = parse_abstract_program_from_read(Cursor::new(program), true, true, None).try_into()?;
+let args = [];
+
+check::type_check(&program)?;
 let bbprog = BBProgram::new(program)?;
-check::type_check(&bbprog)?;
 interp::execute_main(&bbprog, std::io::stdout(), &args, false, std::io::stderr())?;
+# Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
 You can also use a `bril_rs::AbstractProgram` called `abstract_program` by converting it into a `bril_rs::Program` using `abstract_program.try_into()?`.

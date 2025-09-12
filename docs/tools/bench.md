@@ -10,6 +10,7 @@ The current benchmarks are:
 * `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `adler32`: Computes the [Adler-32 Checksum][adler32] of an integer array.
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
+* `bin-search`: Search a target integer within an integer range, outputs the target integer.
 * `binary-fmt`: Print the binary format for the given positive integer.
 * `binary-search`: Search a target integer within an integer array, outputs the index of target.
 * `binpow`: Recursive binary exponentiation. Implemented to be as close to tail-recursive as possible.
@@ -41,6 +42,7 @@ The current benchmarks are:
 * `fact`: Prints the factorial of *n*, computing it recursively.
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
+* `filter`: Filter records from a single table based on a condition.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
 * `fnv1-hash`: Compute the [Fowler-Noll-Vo hash function](https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function) of an integer array.
 * `function_call`: For benchmarking the overhead of simple function calls.
@@ -48,12 +50,17 @@ The current benchmarks are:
 * `gcd`: Calculate Greatest Common Divisor (GCD) of two input positive integer using [Euclidean algorithm][euclidean_into].
 * `geometric-sum`: Calculate [Geometric Sum](https://en.wikipedia.org/wiki/Geometric_series) given first term, common ratio and number of terms.
 * `gol`: Print the next iteration for a matrix in [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
+* `gpf`: Prints the greatest prime factor on an input integer
+* `grad_desc` Use [gradient descent](https://en.wikipedia.org/wiki/Gradient_descent) to minimize f(w) = (w-t)^2.
+* `graycode`: Compute the first *n* [Gray codes](https://en.wikipedia.org/wiki/Gray_code) using the formula `G(i) = i ^ (i >> 1)`.
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `hamming`: Computes the hamming distance between two integers.
+* `harmonic-sum`: Computes the harmonic sum up to the index *n*.
 * `insertion-sort`: Insertion sort algorithm in ascending order. 
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
+* `legendre`: Compute the exponent for the largest power of the given prime *p* which divides the factorial *n!* using [Legendre's formula](https://en.wikipedia.org/wiki/Legendre%27s_formula).
 * `leibniz`: Approximates Pi using [Leibniz formula](https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80).
 * `lis`: Calculates the longest increasing subsequence of an 8-element array using dynamic programming.
 * `logistic`: Compute the [logistic map](https://en.wikipedia.org/wiki/Logistic_map).
@@ -68,6 +75,7 @@ The current benchmarks are:
 * `montecarlo`: Calculates the value of pi using a [xorshift](https://en.wikipedia.org/wiki/Xorshift) as the rng.
 * `montgomery`: Computes modular multiplication using the [Montgomery reduction][montgomery] algorithm.
 * `mod_pow`: Performs [modular exponentiation][modpow] using the right-to-left binary method.
+* `mountain`: Determines if a given input is a mountain; that is, a non-decreasing segment of digits followed by a non-increasing segment.
 * `newton`: Calculate the square root of 99,999 using the [newton method][newton]
 * `norm`: Calculate the [euclidean norm][euclidean] of a vector
 * `n_root`: Calculate nth root of a float using newton's method.
@@ -76,6 +84,7 @@ The current benchmarks are:
 * `palindrome`: Outputs a 0-1 value indicating whether the input is a [palindrome][palindrome] number.
 * `perfect`: Check if input argument is a perfect number.  Returns output as Unix style return code.
 * `permutation`: Calculates the number of possible permutations of k objects from a set of n.
+* `pi`: Compute and print digits of Pi using a spigot algorithm.
 * `pow`: Computes the n^<sup>th</sup> power of a given (float) number.
 * `primes-between`: Print the primes in the interval `[a, b]`.
 * `primitive-root`: Computes a [primitive root][primitive_root] modulo a prime number input.
@@ -88,6 +97,7 @@ The current benchmarks are:
 * `ray-bbox-intersection`: Finds whether a ray intersects an axis-aligned bounding box.
 * `recfact`: Compute *n!* using recursive function calls.
 * `rectangles-area-difference`: Output the difference between the areas of rectangles (as a positive value) given their respective side lengths.
+* `rgb2gray`: Convert an [RGB pixel](https://en.wikipedia.org/wiki/RGB_color_model) to a [grayscale color](https://en.wikipedia.org/wiki/Grayscale).
 * `fitsinside`: Output whether or not a rectangle fits inside of another rectangle given the width and height lengths.
 * `relative-primes`: Print all numbers relatively prime to *n* using [Euclidean algorithm][euclidean_into].
 * `riemann`: Prints the left, midpoint, and right [Riemann][riemann] Sums for a specified function, which is the square function in this benchmark.
@@ -100,10 +110,15 @@ The current benchmarks are:
 * `sum-bit`: Print the number of 1-bits in the binary representation of the input integer.
 * `sum-check`: Compute the sum of [1, n] by both loop and formula, and check if the result is the same.
 * `sum-digits`: Compute the sum of the (base-10) digits of the input integer.
+* `sum-divisible-by-m`: Compute the sum of integers between [1, n] which are divisible by m
 * `sum-divisors`: Prints the positive integer divisors of the input integer, followed by the sum of the divisors.
 * `sum-sq-diff`: Output the difference between the sum of the squares of the first *n* natural numbers and the square of their sum.
+* `sum-to-ten`: Output the sum of all the numbers from 1 to 10
 * `sum-of-cubes`: Computes the sum of the first n cubes using the closed-cube formula and prints the result.
+* `tail-call`: Decrements a large counter recursively, nesting many function calls. It is written such that a smart interpreter or compiler could perform a tail call optimization to reduce stack usage.
+* `systolic`: Multiply two matrices using a simulated [systolic][systolic] array approach.
 * `totient`: Computes [Euler's totient function][totient] on an input integer *n*.
+* `triangle`: Computes the *n*th [triangular number][triangle] by summing over the first *n* integers in a loop.
 * `two-sum`: Print the indices of two distinct elements in the list [2, 7, 11, 13] whose sum equals the input.
 * `up-arrow`: Computes [Knuth's up arrow][uparrow] notation, with the first argument being the number, the second argument being the number of Knuth's up arrows, and the third argument being the number of repeats.
 * `vsmul`: Multiplies a constant scalar to each element of a large array. Tests the performance of vectorization optimizations.
@@ -113,6 +128,7 @@ The current benchmarks are:
 * `cordic`: Compute the sine of a number using the [CORDIC][cordic] algorithm
 * `squares`: Print the squares of all integers from 1 up to input.
 * `braille`: Convert the input integer into a Braille code.
+* `kadane`: Compute the maximum sum of a contiguous subarray within a given array of numbers.
 
 Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yauney, who implemented them for their [global value numbering project][gvnblog].
 
@@ -157,4 +173,5 @@ Credit for several of these benchmarks goes to Alexa VanHattum and Gregory Yaune
 [modpow]: https://en.wikipedia.org/wiki/Modular_exponentiation
 [cordic]: https://en.wikipedia.org/wiki/CORDIC
 [int_lattice]: https://en.wikipedia.org/wiki/Integer_lattice
-
+[triangle]: https://en.wikipedia.org/wiki/Triangular_number
+[systolic]: https://en.wikipedia.org/wiki/Systolic_array
