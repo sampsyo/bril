@@ -1,3 +1,4 @@
+# ARGS: 7
 @main(n: int) {
   a: int = const 1;
   b: int = add n a;
