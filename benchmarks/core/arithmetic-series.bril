@@ -1,0 +1,10 @@
+# ARGS: 7
+@main(n: int) {
+  a: int = const 1;
+  b: int = add n a;
+  c: int = mul n b;
+  d: int = const 2;
+  e: int = div c d;
+  print e;
+  ret;
+}

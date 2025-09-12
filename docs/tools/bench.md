@@ -7,6 +7,7 @@ The `bench` directory in the Bril repository contains a fledgling suite of micro
 The current benchmarks are:
 
 * `ackermann`: Print the value of `Ack(m, n)`, the [two-argument Ackermann–Péter function][ackermann].
+* `arithmetic-series`: Print the summation operator from 1 to n, via the closed form solution.
 * `adj2csr`: Convert a graph in [adjacency matrix][adj] format (dense representation) to [Compressed Sparse Row (CSR)][csr] format (sparse representation). The random graph is generated using the same [linear congruential generator][rng].
 * `adler32`: Computes the [Adler-32 Checksum][adler32] of an integer array.
 * `armstrong`: Determines if the input is an [Armstrong number][armstrong], a number that is the sum of its own digits each raised to the power of the number of digits.
