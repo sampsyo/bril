@@ -1,0 +1,63 @@
+# Gray code generator in Bril
+# Given an integer n, generate the first n Gray codes.
+# ARGS: 16
+@main(n: int) {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  i: int = id zero;
+
+.for.cond:
+  cond: bool = lt i n;
+  br cond .for.body .for.end;
+
+.for.body:
+  half: int = div i two;
+  g: int = call @xor i half;
+  print g;
+
+  next: int = add i one;
+  i: int = id next;
+  jmp .for.cond;
+
+.for.end:
+  done: int = const 0;
+}
+
+@xor(a: int, b: int): int {
+  result: int = const 0;
+  base: int = const 1;
+  two: int = const 2;
+  zero: int = const 0;
+
+.loop.cond:
+  more_a: bool = gt a zero;
+  more_b: bool = gt b zero;
+  more: bool = or more_a more_b;
+  br more .loop.body .loop.end;
+
+.loop.body:
+  qa: int = div a two;
+  double_qa: int = mul qa two;
+  ra: int = sub a double_qa;
+
+  qb: int = div b two;
+  double_qb: int = mul qb two;
+  rb: int = sub b double_qb;
+
+  sum: int = add ra rb;
+  half_sum: int = div sum two;
+  double_half_sum: int = mul half_sum two;
+  rbit: int = sub sum double_half_sum;
+
+  contrib: int = mul rbit base;
+  result: int = add result contrib;
+
+  a: int = id qa;
+  b: int = id qb;
+  base: int = add base base;
+  jmp .loop.cond;
+
+.loop.end:
+  ret result;
+}

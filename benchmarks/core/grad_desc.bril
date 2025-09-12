@@ -1,0 +1,34 @@
+# Use Gradient Descent to minimize f(w) = (w-t)^2, grad = 2(w-t)
+# to use int, scale the real numbers by 1000
+
+# ARGS: 6000 2000 100 20
+
+@main(w:int, t:int, lr:int, steps:int) {
+  s:int = const 1000;
+  i:int = const 0;
+
+.loop:
+  cond:bool = lt i steps;
+  br cond .body .done;
+
+.body:
+  err:int = sub w t;
+  two:int = const 2;
+  grad:int = mul two err;     # 2(w-t)
+  theta:int = mul lr grad;    # lr * grad
+  delta:int = div theta s;    # scale back by 1000
+  w:int = sub w delta;            
+  one:int = const 1;
+  i:int = add i one;
+  jmp .loop;
+
+.done:
+  err2:int = sub w t;
+  loss:int = mul err2 err2;
+  print w;
+  print loss;
+  ret;
+}
+
+
+
