@@ -239,7 +239,7 @@
 
 
 # ARGS: 408
-@main(input: int): int {
+@main(input: int) {
 	printable: int = call @printable_first_row input;
 	print printable;
 	printable: int = call @printable_second_row input;

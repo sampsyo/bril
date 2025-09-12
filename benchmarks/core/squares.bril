@@ -8,7 +8,7 @@
 	square: int = mul cur cur;
 	print square;
 	isdone: bool = eq cur input;
-	cur = add cur one;
+	cur: int = add cur one;
 	br isdone .done .print;
 .done:
 }
