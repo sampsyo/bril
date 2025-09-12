@@ -1,0 +1,70 @@
+# ARGS: 6 2
+@main(n: int, p: int) {
+  v0: int = const 0;
+  v_p: int = id v0;
+  v1: int = const 1;
+  i: int = id v1;
+
+.loop:
+  # addend = n / i
+  addend: int = id n;
+
+  # exp = i
+  exp: int = id i;
+
+  # p_to_exp = naivePower(p, exp)
+  v8: int = id p;
+  v9: int = id exp;
+  p_to_exp: int = call @naivePower v8 v9;
+
+  # addend = addend / p_to_exp
+  v10: int = id addend;
+  v11: int = id p_to_exp;
+  v12: int = div v10 v11;
+  addend: int = id v12;
+
+  # if (addend == 0) break;
+  v13: int = id addend;
+  v14: int = const 0;
+  v15: bool = eq v13 v14;
+  br v15 .end .body;
+
+.body:
+  # v_p += addend
+  v16: int = id v_p;
+  v17: int = id addend;
+  v18: int = add v16 v17;
+  v_p: int = id v18;
+
+  # i++
+  v19: int = id i;
+  v20: int = const 1;
+  v21: int = add v19 v20;
+  i: int = id v21;
+
+  jmp .loop;
+
+.end:
+  v22: int = id v_p;
+  print v22;
+}
+
+@naivePower(base: int, exponent: int): int {
+  v1: int = id exponent;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  br v3 .then.0 .else.0;
+.then.0:
+  v4: int = const 1;
+  ret v4;
+.else.0:
+  v5: int = id base;
+  v6: int = id base;
+  v7: int = id exponent;
+  v8: int = const 1;
+  v9: int = sub v7 v8;
+  v10: int = call @naivePower v6 v9;
+  v11: int = mul v5 v10;
+  ret v11;
+}
+
