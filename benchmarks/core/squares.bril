@@ -1,0 +1,14 @@
+# ARGS: 30
+# prints squares of all integers from 1 up to input.
+@main(input: int) {
+	one: int = const 1;
+	zero: int = const 0;
+	cur: int = const 1;
+.print:
+	square: int = mul cur cur;
+	print square;
+	isdone: bool = eq cur input;
+	cur: int = add cur one;
+	br isdone .done .print;
+.done:
+}

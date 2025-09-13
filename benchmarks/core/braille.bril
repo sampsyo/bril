@@ -1,0 +1,249 @@
+# converts the input integer into a braille code.
+#
+# Example
+# - input: 408
+# - output:
+#   701110110
+#   701011111
+#   711000000
+#   (7 is a convention; a header to print leading zeros)
+#
+# * Braille code for the numeric indicator:
+#   (placed only once before each number)
+# 01
+# 01
+# 11
+#
+# * Braille codes for 
+#   digits 0, 1, ... 9:
+# 1   2   3   4   5   6   7   8   9   0
+# 10  10  11  11  10  11  11  10  01  01
+# 00  10  00  01  01  10  11  11  10  11
+# 00  00  00  00  00  00  00  00  00  00
+
+
+@braille_in_printable_int(input: int): int {
+	one: int = const 1;
+	two: int = const 2;
+	three: int = const 3;
+	four: int = const 4;
+	five: int = const 5;
+	six: int = const 6;
+	seven: int = const 7;
+	eight: int = const 8;
+	nine: int = const 9;
+	ten: int = const 10;
+	quotient: int = div input ten;
+	tmp: int = mul ten quotient;
+	last_digit: int = sub input tmp;
+	
+}
+
+# 1, 2, 5, 8 -> 10
+# 9, 0 -> 1
+# 3, 4, 6, 7 -> 11
+@firstrow(input: int): int {
+	zero: int = const 0;
+	one: int = const 1;
+	two: int = const 2;
+	three: int = const 3;
+	four: int = const 4;
+	five: int = const 5;
+	six: int = const 6;
+	seven: int = const 7;
+	eight: int = const 8;
+	nine: int = const 9;
+	ten: int = const 10;
+	eleven: int = const 11;
+	
+	isnine: bool = eq input nine;
+	br isnine .is_nine .else0;
+.is_nine:
+	ret one;
+.else0:
+	iszero: bool = eq input zero;
+	br iszero .is_zero .else1;
+.is_zero:
+	ret one;
+.else1:
+	isfive: bool = eq input five;
+	br isfive .is_five .else2;
+.is_five:
+	ret ten;
+.else2:
+	iseight: bool = eq input eight;
+	br iseight .is_eight .else3;
+.is_eight:
+	ret ten;
+.else3:
+	gethree: bool = ge input three;
+	br gethree .ge_three .else4;
+.ge_three:
+	ret eleven;
+.else4:
+	ret ten;
+}
+
+@secondrow(input: int): int {
+	zero: int = const 0;
+	one: int = const 1;
+	two: int = const 2;
+	three: int = const 3;
+	four: int = const 4;
+	five: int = const 5;
+	six: int = const 6;
+	seven: int = const 7;
+	eight: int = const 8;
+	nine: int = const 9;
+	ten: int = const 10;
+	eleven: int = const 11;
+	
+	istwo: bool = eq input two;
+	br istwo .is_two .else0;
+.is_two:
+	ret ten;
+.else0:
+	iszero: bool = eq input zero;
+	br iszero .is_zero .else000;
+.is_zero:
+	ret eleven;
+.else000:
+	lethree: bool = le input three;
+	br lethree .le_three .else1;
+.le_three:
+	ret zero;
+.else1:
+	lefive: bool = le input five;
+	br lefive .le_five .else2;
+.le_five:
+	ret one;
+.else2:
+	issix: bool = eq input six;
+	br issix .is_six .else3;
+.is_six:
+	ret ten;
+.else3:
+	isnine: bool = eq input nine;
+	br isnine .is_nine .else4;
+.is_nine:
+	ret ten;
+.else4:
+	ret eleven;
+}
+
+
+@thirdrow(input: int): int {
+	zero: int = const 0;
+	ret zero;
+}
+
+	
+@printable_first_row(input: int): int {
+	zero: int = const 0;
+	one: int = const 1;
+	two: int = const 2;
+	three: int = const 3;
+	four: int = const 4;
+	five: int = const 5;
+	six: int = const 6;
+	seven: int = const 7;
+	eight: int = const 8;
+	nine: int = const 9;
+	ten: int = const 10;
+	hundred: int = const 100;
+	retval: int = const 7;
+
+	base: bool = lt input ten;
+	br base .base .else;
+.else:
+	upper: int = div input ten;
+	upper_ : int = mul upper ten;
+	lastdigit: int = sub input upper_;
+	printable_lastdigit: int = call @firstrow lastdigit;
+	_prefix: int = call @printable_first_row upper;
+	prefix: int = mul _prefix hundred;
+	retval: int = add prefix printable_lastdigit;
+	ret retval;
+.base:
+	printable: int = call @firstrow input;
+	hdr: int = const 70100;
+	retval: int = add hdr printable;
+	ret retval;
+}
+
+
+@printable_second_row(input: int): int {
+	zero: int = const 0;
+	one: int = const 1;
+	two: int = const 2;
+	three: int = const 3;
+	four: int = const 4;
+	five: int = const 5;
+	six: int = const 6;
+	seven: int = const 7;
+	eight: int = const 8;
+	nine: int = const 9;
+	ten: int = const 10;
+	hundred: int = const 100;
+
+	base: bool = lt input ten;
+	br base .base .else;
+.else:
+	upper: int = div input ten;
+	upper_ : int = mul upper ten;
+	lastdigit: int = sub input upper_;
+	printable_lastdigit: int = call @secondrow lastdigit;
+	_prefix: int = call @printable_second_row upper;
+	prefix: int = mul _prefix hundred;
+	retval: int = add prefix printable_lastdigit;
+	ret retval;
+.base:
+	printable: int = call @secondrow input;
+	hdr: int = const 70100;
+	retval: int = add hdr printable;
+	ret retval;
+}
+
+
+@printable_third_row(input: int): int {
+	zero: int = const 0;
+	one: int = const 1;
+	two: int = const 2;
+	three: int = const 3;
+	four: int = const 4;
+	five: int = const 5;
+	six: int = const 6;
+	seven: int = const 7;
+	eight: int = const 8;
+	nine: int = const 9;
+	ten: int = const 10;
+	hundred: int = const 100;
+
+	base: bool = lt input ten;
+	br base .base .else;
+.else:
+	upper: int = div input ten;
+	upper_ : int = mul upper ten;
+	lastdigit: int = sub input upper_;
+	printable_lastdigit: int = call @thirdrow lastdigit;
+	_prefix: int = call @printable_third_row upper;
+	prefix: int = mul _prefix hundred;
+	retval: int = add prefix printable_lastdigit;
+	ret retval;
+.base:
+	printable: int = call @thirdrow input;
+	hdr: int = const 71100;
+	retval: int = add hdr printable;
+	ret retval;
+}
+
+
+# ARGS: 408
+@main(input: int) {
+	printable: int = call @printable_first_row input;
+	print printable;
+	printable: int = call @printable_second_row input;
+	print printable;
+	printable: int = call @printable_third_row input;
+	print printable;
+}
