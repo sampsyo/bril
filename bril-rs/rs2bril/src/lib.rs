@@ -245,7 +245,7 @@ fn from_span_to_position(
     src: Option<String>,
 ) -> Position {
     let start = starting_span.start();
-    let end = ending_span.map_or(starting_span.end(), |s| s.end());
+    let end = ending_span.map_or_else(|| starting_span.end(), |s| s.end());
     Position {
         pos: ColRow {
             col: start.column as u64,

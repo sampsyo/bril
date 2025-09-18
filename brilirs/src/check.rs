@@ -328,22 +328,7 @@ fn type_check_instruction<'a>(
       update_env(env, dest, op_type)
     }
     Instruction::Value {
-      op: ValueOps::Get,
-      dest,
-      op_type,
-      args,
-      funcs,
-      labels,
-      pos: _,
-    } => {
-      check_num_args(0, args)?;
-      check_num_funcs(0, funcs)?;
-      check_num_labels(0, labels)?;
-
-      update_env(env, dest, op_type)
-    }
-    Instruction::Value {
-      op: ValueOps::Undef,
+      op: ValueOps::Get | ValueOps::Undef,
       dest,
       op_type,
       args,
