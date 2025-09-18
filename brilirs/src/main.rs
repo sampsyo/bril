@@ -40,17 +40,17 @@ fn main() {
       eprintln!("{:>width$}", "^", width = pos.col as usize);
 
       // Then check if there is more
-      if let Some(end) = pos_end {
-        if pos.row != end.row {
-          let mut row = pos.row + 1;
-          while row < end.row {
-            eprintln!("{}", lines.nth((row - 1) as usize).unwrap());
-            eprintln!("^");
-            row += 1;
-          }
-          eprintln!("{}", lines.nth((end.row - 1) as usize).unwrap());
-          eprintln!("{:>width$}", "^", width = end.col as usize);
+      if let Some(end) = pos_end
+        && pos.row != end.row
+      {
+        let mut row = pos.row + 1;
+        while row < end.row {
+          eprintln!("{}", lines.nth((row - 1) as usize).unwrap());
+          eprintln!("^");
+          row += 1;
         }
+        eprintln!("{}", lines.nth((end.row - 1) as usize).unwrap());
+        eprintln!("{:>width$}", "^", width = end.col as usize);
       }
     }
     std::process::exit(2)
