@@ -28,6 +28,12 @@ enum RTFunc {
     Free,
 }
 
+/// A trap code we'll use for unreachable code. This doesn't actually give
+/// Cranelift permission to assume unreachability, which would be nice, but this
+/// at least will fail loudly when there is a bug.
+const UNREACHABLE: cranelift_codegen::ir::TrapCode =
+    cranelift_codegen::ir::TrapCode::user(1).unwrap();
+
 impl RTFunc {
     fn sig(
         &self,
@@ -638,9 +644,7 @@ impl CompileEnv<'_> {
             } else {
                 // An implicit return is illegal when there is a return type,
                 // so this code is unreachable.
-                builder
-                    .ins()
-                    .trap(cranelift_codegen::ir::TrapCode::UnreachableCodeReached);
+                builder.ins().trap(UNREACHABLE);
             }
         }
     }
