@@ -1,7 +1,6 @@
 use crate::rt;
 use bril_rs as bril;
 use core::mem;
-use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::settings::Configurable;
@@ -720,10 +719,9 @@ impl<M: Module> Translator<M> {
         let var_types = all_vars(func);
         let vars: HashMap<&String, Variable> = var_types
             .iter()
-            .enumerate()
-            .map(|(i, (name, typ))| {
-                let var = Variable::new(i);
-                builder.declare_var(var, translate_type(typ, self.module.isa().pointer_type()));
+            .map(|(name, typ)| {
+                let var =
+                    builder.declare_var(translate_type(typ, self.module.isa().pointer_type()));
                 (*name, var)
             })
             .collect();
