@@ -1,6 +1,5 @@
 // Implements an approximate sin via polynomial evaluation with coefficients from Hart et. al
 // https://www.hpmuseum.org/cgi-bin/archv021.cgi?read=256069
-// It appears to be very bad- I assume this is an error on my part.
 
 var pi = 3.14159;
 var a = 1.57079;
