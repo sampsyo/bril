@@ -28,7 +28,7 @@ The current benchmarks are:
 * `conjugate-gradient`: Uses conjugate gradients to solve `Ax=b` for any arbitrary positive semidefinite `A`.
 * `connected-components`: Compute and print each [connected component][component] in the [adjacency matrix][adj] of an undirected graph.
 * `1dconv`: Creates a kernel and array, performs a one-dimensional convolution operation, and prints out the values in the resulting array.
-* `2dconvol`: Creates a 2d image and kernel and performs a 2d convolution on the image, and prints out the values of the image, kernel, and resulting output. 
+* `2dconvol`: Creates a 2d image and kernel and performs a 2d convolution on the image, and prints out the values of the image, kernel, and resulting output.
 * `cordic`: Print an approximation of sine(radians) using 8 iterations of the [CORDIC algorithm](https://en.wikipedia.org/wiki/CORDIC).
 * `csrmv`: Multiply a sparse matrix in the [Compressed Sparse Row (CSR)][csr] format with a dense vector. The matrix and input vector are generated using a [Linear Feedback Shift Register](https://en.wikipedia.org/wiki/Linear-feedback_shift_register) random number generator.
 * `dayofweek`: Returns the day of the week for a given date `(year, month, day)` as an integer: `1 = Monday`, ..., `7 = Sunday`.
@@ -57,7 +57,7 @@ The current benchmarks are:
 * `hanoi`: Print the solution to the *n*-disk [Tower of Hanoi][hanoi] puzzle.
 * `hamming`: Computes the hamming distance between two integers.
 * `harmonic-sum`: Computes the harmonic sum up to the index *n*.
-* `insertion-sort`: Insertion sort algorithm in ascending order. 
+* `insertion-sort`: Insertion sort algorithm in ascending order.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
@@ -105,6 +105,7 @@ The current benchmarks are:
 * `rot13`: Prints the [rot13][rot13] substitution of a character (represented as an integer in the range 0 to 25).
 * `shufflesort`: Sorts a list by shuffling it until it is sorted.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
+* `sin`: Approximate the sin function via polynomial evalution
 * `sorting-network-five`: An optimal sorting network for 5 integer inputs.
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sqrt_bin_search`: Uses a binary search to find the floor of the square root of an integer
