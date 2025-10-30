@@ -65,7 +65,7 @@ fn get_type<'a>(
 
   env
     .get(&args[index] as &str)
-    .ok_or_else(|| InterpError::VarUndefined(args[index].to_string()))
+    .ok_or_else(|| InterpError::VarUndefined(args[index].clone()))
 }
 
 fn get_ptr_type(typ: &bril_rs::Type) -> Result<&bril_rs::Type, InterpError> {
@@ -315,7 +315,7 @@ fn type_check_instruction<'a>(
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
             .get(arg_name as &str)
-            .ok_or_else(|| InterpError::VarUndefined(arg_name.to_string()))?;
+            .ok_or_else(|| InterpError::VarUndefined(arg_name.clone()))?;
 
           check_asmt_type(ty, &expected_arg.arg_type)
         })?;
@@ -491,7 +491,7 @@ fn type_check_instruction<'a>(
         .try_for_each(|(arg_name, expected_arg)| {
           let ty = env
             .get(arg_name as &str)
-            .ok_or_else(|| InterpError::VarUndefined(arg_name.to_string()))?;
+            .ok_or_else(|| InterpError::VarUndefined(arg_name.clone()))?;
 
           check_asmt_type(ty, &expected_arg.arg_type)
         })?;

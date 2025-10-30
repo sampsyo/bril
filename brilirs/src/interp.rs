@@ -697,7 +697,7 @@ fn parse_args(
             Err(_) => {
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Bool,
-                (*inputs.get(index).unwrap()).to_string(),
+                inputs.get(index).unwrap().clone(),
               ));
             }
             Ok(b) => env.set(*arg_as_num, Value::Bool(b)),
@@ -709,7 +709,7 @@ fn parse_args(
             Err(_) => {
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Int,
-                (*inputs.get(index).unwrap()).to_string(),
+                inputs.get(index).unwrap().clone(),
               ));
             }
             Ok(i) => env.set(*arg_as_num, Value::Int(i)),
@@ -721,7 +721,7 @@ fn parse_args(
             Err(_) => {
               return Err(InterpError::BadFuncArgType(
                 bril_rs::Type::Float,
-                (*inputs.get(index).unwrap()).to_string(),
+                inputs.get(index).unwrap().clone(),
               ));
             }
             Ok(f) => env.set(*arg_as_num, Value::Float(f)),

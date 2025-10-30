@@ -105,7 +105,7 @@ fn mangle_function(
         name: if is_toplevel && name == "main" {
             name
         } else {
-            name_resolution_map.get(&name).unwrap().to_string()
+            name_resolution_map.get(&name).unwrap().clone()
         },
         args,
         instrs: instrs
