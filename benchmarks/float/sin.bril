@@ -1,4 +1,4 @@
-@main {
+@main (x: float){
   v0: float = const 3.14159;
   pi: float = id v0;
   v1: float = const 1.57079;
@@ -13,8 +13,6 @@
   v7: float = const 0.00433;
   v8: float = fsub v6 v7;
   d: float = id v8;
-  v9: float = const 2.5;
-  x: float = id v9;
   v10: float = const 1;
   sign: float = id v10;
   v12: float = id x;
