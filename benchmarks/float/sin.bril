@@ -1,0 +1,76 @@
+# ARGS: 2
+@main (x: float){
+  v0: float = const 3.14159;
+  pi: float = id v0;
+  v1: float = const 1.57079;
+  a: float = id v1;
+  v2: float = const 0;
+  v3: float = const 0.64589;
+  v4: float = fsub v2 v3;
+  b: float = id v4;
+  v5: float = const 0.07943;
+  c: float = id v5;
+  v6: float = const 0;
+  v7: float = const 0.00433;
+  v8: float = fsub v6 v7;
+  d: float = id v8;
+  v10: float = const 1;
+  sign: float = id v10;
+  v12: float = id x;
+  v13: float = const 0;
+  v14: bool = flt v12 v13;
+  br v14 .then.11 .else.11;
+.then.11:
+  v15: float = const 0;
+  v16: float = const 1;
+  v17: float = fsub v15 v16;
+  sign: float = id v17;
+  v18: float = const 0;
+  v19: float = id x;
+  v20: float = fsub v18 v19;
+  x: float = id v20;
+  jmp .endif.11;
+.else.11:
+.endif.11:
+  v22: float = id x;
+  v23: float = id pi;
+  v24: float = const 2;
+  v25: float = fdiv v23 v24;
+  v26: bool = fgt v22 v25;
+  br v26 .then.21 .else.21;
+.then.21:
+  v27: float = id pi;
+  v28: float = id x;
+  v29: float = fsub v27 v28;
+  x: float = id v29;
+  jmp .endif.21;
+.else.21:
+.endif.21:
+  v30: float = id x;
+  v31: float = id x;
+  v32: float = fmul v30 v31;
+  x2: float = id v32;
+  v33: float = id x;
+  v34: float = id a;
+  v35: float = id x2;
+  v36: float = id b;
+  v37: float = id x2;
+  v38: float = id c;
+  v39: float = id x2;
+  v40: float = id d;
+  v41: float = fmul v39 v40;
+  v42: float = fadd v38 v41;
+  v43: float = fmul v37 v42;
+  v44: float = fadd v36 v43;
+  v45: float = fmul v35 v44;
+  v46: float = fadd v34 v45;
+  v47: float = fmul v33 v46;
+  result: float = id v47;
+  v48: float = id sign;
+  v49: float = id result;
+  v50: float = fmul v48 v49;
+  result: float = id v50;
+  v51: float = id result;
+  print v51;
+  v52: int = const 0;
+}
