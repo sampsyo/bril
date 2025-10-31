@@ -1,3 +1,4 @@
+# ARGS: 2
 @main (x: float){
   v0: float = const 3.14159;
   pi: float = id v0;
