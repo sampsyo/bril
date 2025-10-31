@@ -105,7 +105,7 @@ The current benchmarks are:
 * `rot13`: Prints the [rot13][rot13] substitution of a character (represented as an integer in the range 0 to 25).
 * `shufflesort`: Sorts a list by shuffling it until it is sorted.
 * `sieve`: Print all prime numbers up to *n* using the [Sieve of Eratosthenes][sievee].
-* `sin`: Approximate the sin function via polynomial evalution.
+* `sin`: Approximate the sine function with a polynomial.
 * `sorting-network-five`: An optimal sorting network for 5 integer inputs.
 * `sqrt`: Implements the [Newton–Raphson Method][newton] of approximating the square root of a number to arbitrary precision
 * `sqrt_bin_search`: Uses a binary search to find the floor of the square root of an integer
