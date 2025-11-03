@@ -1,0 +1,46 @@
+# Write VAL into ARR[IDX].
+@writer(arr: ptr<int>, idx: int, val: int): void {
+  loc: ptr<int> = ptradd arr idx;
+  store loc val;
+  ret;
+}
+
+@main(): void {
+  four : int = const 4;
+  arr  : ptr<int> = alloc four;
+
+  # spawn four writers in parallel
+  zero : int = const 0;
+  one  : int = const 1;
+  two  : int = const 2;
+  three: int = const 3;
+
+  t0: thread = spawn @writer arr zero  zero;
+  t1: thread = spawn @writer arr one   one;
+  t2: thread = spawn @writer arr two   two;
+  t3: thread = spawn @writer arr three three;
+
+  join t0; join t1; join t2; join t3;
+
+  # sum the array
+  s : int = const 0;
+  loc0: ptr<int> = ptradd arr zero;
+  v0 : int = load loc0;
+  s  : int = add s v0;
+
+  loc1: ptr<int> = ptradd arr one;
+  v1 : int = load loc1;
+  s  : int = add s v1;
+
+  loc2: ptr<int> = ptradd arr two;
+  v2 : int = load loc2;
+  s  : int = add s v2;
+
+  loc3: ptr<int> = ptradd arr three;
+  v3 : int = load loc3;
+  s  : int = add s v3;
+
+  print s;          # 0+1+2+3 = 6
+  free arr;
+  ret;
+}
