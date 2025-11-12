@@ -623,7 +623,7 @@ fn build_instruction<'a, 'b>(
                         )
                         .unwrap()
                         .try_as_basic_value()
-                        .left()
+                        .basic()
                         .unwrap()
                 },
                 args,
@@ -1271,13 +1271,17 @@ pub fn create_module_from_program<'a>(
 
                 let llvm_func = runtime_module.add_function(func_name, ty, None);
                 args.iter().zip(llvm_func.get_param_iter()).for_each(
-                    |(Argument { name, .. }, bve)| match bve {
-                        inkwell::values::BasicValueEnum::IntValue(i) => i.set_name(name),
-                        inkwell::values::BasicValueEnum::FloatValue(f) => f.set_name(name),
-                        inkwell::values::BasicValueEnum::PointerValue(p) => p.set_name(name),
-                        inkwell::values::BasicValueEnum::ArrayValue(_)
-                        | inkwell::values::BasicValueEnum::StructValue(_)
-                        | inkwell::values::BasicValueEnum::VectorValue(_) => unreachable!(),
+                    |(Argument { name, .. }, bve)| {
+                        use inkwell::values::BasicValueEnum::*;
+                        match bve {
+                            IntValue(i) => i.set_name(name),
+                            FloatValue(f) => f.set_name(name),
+                            PointerValue(p) => p.set_name(name),
+                            ArrayValue(_)
+                            | StructValue(_)
+                            | VectorValue(_)
+                            | ScalableVectorValue(_) => unreachable!(),
+                        }
                     },
                 );
 
@@ -1435,17 +1439,20 @@ pub fn create_module_from_program<'a>(
                     .build_call(parse_int, &[arg_str.into()], "parse_int")
                     .unwrap()
                     .try_as_basic_value()
-                    .unwrap_left(),
+                    .basic()
+                    .unwrap(),
                 Type::Bool => builder
                     .build_call(parse_bool, &[arg_str.into()], "parse_bool")
                     .unwrap()
                     .try_as_basic_value()
-                    .unwrap_left(),
+                    .basic()
+                    .unwrap(),
                 Type::Float => builder
                     .build_call(parse_float, &[arg_str.into()], "parse_float")
                     .unwrap()
                     .try_as_basic_value()
-                    .unwrap_left(),
+                    .basic()
+                    .unwrap(),
                 Type::Pointer(_) => unreachable!(),
             };
             builder.build_store(ptr, arg).unwrap();
