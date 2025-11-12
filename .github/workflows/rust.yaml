@@ -27,7 +27,7 @@ on:
 name: Workflow checks for rust code
 
 env:
-  LLVM_VERSION: 18.0
+  LLVM_VERSION: 21.1
   RUST_VERSION: 1.88.0
 
 jobs:
