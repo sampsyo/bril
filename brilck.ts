@@ -385,6 +385,13 @@ function checkConst(instr: bril.Constant) {
   }
 }
 
+/**
+ * Check whether an instruction is of a given opcode.
+ */
+function isOp(instr: bril.Instruction | bril.Label, opcode: string): boolean {
+  return "op" in instr && instr.op == opcode;
+}
+
 function checkFunc(funcs: FuncEnv, func: bril.Function) {
   const vars: VarEnv = new Map();
   const labels = new Set<bril.Ident>();
@@ -423,7 +430,7 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
 
     // When there is a return typpe, check that there is at least one `ret`.
     if (func.type) {
-      if (!func.instrs.some((instr) => instr.op === "ret")) {
+      if (!func.instrs.some((instr) => isOp(instr, "ret"))) {
         err("function with return type must have at least one `ret`", func.pos);
       }
     }
