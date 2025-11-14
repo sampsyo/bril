@@ -16,7 +16,7 @@ default-run = "main"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
-inkwell = { version = "0.5", features = ["llvm18-0"] }
+inkwell = { version = "0.7", features = ["llvm21-1"] }
 
 [dependencies.bril-rs]
 path = ".."
