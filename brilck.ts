@@ -420,6 +420,13 @@ function checkFunc(funcs: FuncEnv, func: bril.Function) {
         }
       }
     }
+
+    // When there is a return typpe, check that there is at least one `ret`.
+    if (func.type) {
+      if (!func.instrs.some((instr) => instr.op === "ret")) {
+        err("function with return type must have at least one `ret`", func.pos);
+      }
+    }
   }
 }
 
