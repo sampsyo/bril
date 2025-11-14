@@ -1,0 +1,7 @@
+@noret(): int {
+  x: int = const 5;
+}
+
+@main {
+  a: int = call @noret;
+}
