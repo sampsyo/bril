@@ -1,4 +1,4 @@
-@noret() : int {
+@noret(): int {
   x: int = const 5;
 }
 
