@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use bril_rs::{Position, conversion::PositionalConversionError};
+use bril_rs::{Position, Type, conversion::PositionalConversionError};
 use std::error::Error;
 use thiserror::Error;
 
@@ -27,6 +27,8 @@ pub enum InterpError {
   DuplicateLabel(String),
   #[error("Expected empty return for `{0}`, found value")]
   NonEmptyRetForFunc(String),
+  #[error("non-void function (type {0}) didn't return anything")]
+  NonVoidFuncNoRet(Type),
   #[error("cannot allocate `{0}` entries")]
   CannotAllocSize(i64),
   #[error("Tried to free illegal memory location base: `{0}`, offset: `{1}`. Offset must be 0.")]

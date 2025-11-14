@@ -560,6 +560,8 @@ fn type_check_func(func: &Function, prog: &Program) -> Result<(), PositionalInte
       .map_err(|e| e.add_pos(func.pos.clone()));
   }
 
+  let mut has_return_type_should_have_return = func.return_type.is_none();
+
   let mut env: FxHashMap<&str, Type> =
     FxHashMap::with_capacity_and_hasher(20, fxhash::FxBuildHasher::default());
   func.args.iter().for_each(|a| {
@@ -598,11 +600,24 @@ fn type_check_func(func: &Function, prog: &Program) -> Result<(), PositionalInte
   func.instrs.iter().try_for_each(|i| match i {
     bril_rs::Code::Label { .. } => Ok(()),
     bril_rs::Code::Instruction(instr) => {
+      if matches!(
+        instr,
+        Instruction::Effect {
+          op: EffectOps::Return,
+          ..
+        }
+      ) {
+        has_return_type_should_have_return = true;
+      }
       type_check_instruction(instr, func, prog, &mut env).map_err(|e| e.add_pos(instr.get_pos()))
     }
   })?;
 
-  Ok(())
+  if has_return_type_should_have_return {
+    Ok(())
+  } else {
+    Err(InterpError::NonVoidFuncNoRet(func.return_type.clone().unwrap()).add_pos(func.pos.clone()))
+  }
 }
 
 /// Provides validation of Bril programs. This involves
@@ -610,9 +625,9 @@ fn type_check_func(func: &Function, prog: &Program) -> Result<(), PositionalInte
 /// instructions.
 /// # Errors
 /// Will return an error if typechecking fails or if the input program is not well-formed.
-pub fn type_check(bbprog: &Program) -> Result<(), PositionalInterpError> {
-  bbprog
+pub fn type_check(prog: &Program) -> Result<(), PositionalInterpError> {
+  prog
     .functions
     .iter()
-    .try_for_each(|bbfunc| type_check_func(bbfunc, bbprog))
+    .try_for_each(|bbfunc| type_check_func(bbfunc, prog))
 }

@@ -671,6 +671,22 @@ fn execute<'a, T: std::io::Write>(
     }
 
     if !jumped {
+      if let Some(ty) = &func.return_type {
+        return Err(
+          InterpError::NonVoidFuncNoRet(ty.clone()).add_pos(if curr_instrs.is_empty() {
+            // Ideally we use the last instruction in the block before the fatal
+            // (implicit) return... but if that block is empty, we should just
+            // point to the function itself
+            func.pos.clone()
+          } else {
+            curr_block
+              .positions
+              .get(curr_instrs.len() - 1)
+              .cloned()
+              .unwrap_or_default()
+          }),
+        );
+      }
       return Ok(None);
     }
   }
