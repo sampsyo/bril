@@ -686,9 +686,8 @@ fn execute<'a, T: std::io::Write>(
               .unwrap_or_default()
           }),
         );
-      } else {
-        return Ok(None);
       }
+      return Ok(None);
     }
   }
 }

@@ -613,10 +613,10 @@ fn type_check_func(func: &Function, prog: &Program) -> Result<(), PositionalInte
     }
   })?;
 
-  if !has_return_type_should_have_return {
-    Err(InterpError::NonVoidFuncNoRet(func.return_type.clone().unwrap()).add_pos(func.pos.clone()))
-  } else {
+  if has_return_type_should_have_return {
     Ok(())
+  } else {
+    Err(InterpError::NonVoidFuncNoRet(func.return_type.clone().unwrap()).add_pos(func.pos.clone()))
   }
 }
 
