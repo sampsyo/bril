@@ -162,6 +162,7 @@ impl BBFunction {
           },
         ) => {
           if curr_block.label.is_some() || blocks.is_empty() {
+            curr_block.positions.push(i.get_pos());
             curr_block
               .flat_instrs
               .push(FlatIR::new(i, func_map, &mut num_var_map, &label_map)?);
@@ -170,6 +171,7 @@ impl BBFunction {
           curr_block = BasicBlock::new();
         }
         bril_rs::Code::Instruction(code) => {
+          curr_block.positions.push(code.get_pos());
           curr_block
             .flat_instrs
             .push(FlatIR::new(code, func_map, &mut num_var_map, &label_map)?);
