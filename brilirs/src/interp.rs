@@ -671,7 +671,19 @@ fn execute<'a, T: std::io::Write>(
     }
 
     if !jumped {
-      return Ok(None);
+      if let Some(ty) = &func.return_type {
+        return Err(
+          InterpError::NonVoidFuncNoRet(ty.clone()).add_pos(
+            curr_block
+              .positions
+              .get(curr_instrs.len() - 1)
+              .cloned()
+              .unwrap_or_default(),
+          ),
+        );
+      } else {
+        return Ok(None);
+      }
     }
   }
 }
