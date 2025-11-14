@@ -610,9 +610,9 @@ fn type_check_func(func: &Function, prog: &Program) -> Result<(), PositionalInte
 /// instructions.
 /// # Errors
 /// Will return an error if typechecking fails or if the input program is not well-formed.
-pub fn type_check(bbprog: &Program) -> Result<(), PositionalInterpError> {
-  bbprog
+pub fn type_check(prog: &Program) -> Result<(), PositionalInterpError> {
+  prog
     .functions
     .iter()
-    .try_for_each(|bbfunc| type_check_func(bbfunc, bbprog))
+    .try_for_each(|bbfunc| type_check_func(bbfunc, prog))
 }
