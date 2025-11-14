@@ -1272,18 +1272,15 @@ pub fn create_module_from_program<'a>(
                 let llvm_func = runtime_module.add_function(func_name, ty, None);
                 args.iter().zip(llvm_func.get_param_iter()).for_each(
                     |(Argument { name, .. }, bve)| {
-                        use inkwell::values::BasicValueEnum::{
-                            ArrayValue, FloatValue, IntValue, PointerValue, ScalableVectorValue,
-                            StructValue, VectorValue,
-                        };
+                        use inkwell::values::BasicValueEnum;
                         match bve {
-                            IntValue(i) => i.set_name(name),
-                            FloatValue(f) => f.set_name(name),
-                            PointerValue(p) => p.set_name(name),
-                            ArrayValue(_)
-                            | StructValue(_)
-                            | VectorValue(_)
-                            | ScalableVectorValue(_) => unreachable!(),
+                            BasicValueEnum::IntValue(i) => i.set_name(name),
+                            BasicValueEnum::FloatValue(f) => f.set_name(name),
+                            BasicValueEnum::PointerValue(p) => p.set_name(name),
+                            BasicValueEnum::ArrayValue(_)
+                            | BasicValueEnum::StructValue(_)
+                            | BasicValueEnum::VectorValue(_)
+                            | BasicValueEnum::ScalableVectorValue(_) => unreachable!(),
                         }
                     },
                 );
