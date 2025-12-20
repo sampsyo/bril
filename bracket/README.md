@@ -20,6 +20,10 @@ A compiler connecting two educational intermediate languages: [exprs-lang-v7](ht
    raco pkg install https://github.com/cpsc411/cpsc411-pub.git?path=cpsc411-lib#2022w2
    ```
 
+3. **Install Bril tools** (for interpreting/viewing output)
+   ```bash
+   # Follow instructions at https://github.com/sampsyo/bril
+   ```
 ### Building bracket
 
 ```bash
