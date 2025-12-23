@@ -27,6 +27,7 @@ A compiler connecting two educational intermediate languages: [exprs-lang-v7](ht
 ### Building bracket
 
 ```bash
+mkdir -p bin
 raco exe -o bin/bracket src/bracket.rkt
 ```
 
