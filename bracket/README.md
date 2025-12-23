@@ -27,7 +27,7 @@ A compiler connecting two educational intermediate languages: [exprs-lang-v7](ht
 ### Building bracket
 
 ```bash
-raco exe -o bracket bracket.rkt
+raco exe -o bin/bracket src/bracket.rkt
 ```
 
 ## Usage
@@ -36,21 +36,21 @@ raco exe -o bracket bracket.rkt
 
 Compile an exprs-lang-v7 program to Bril JSON:
 ```bash
-./bracket tests/fib_recursive.rkt
+./bin/bracket tests/fib_recursive.rkt
 ```
 
 ### View as Bril Text
 
 Convert the JSON output to human-readable Bril text:
 ```bash
-./bracket tests/fib_recursive.rkt | bril2txt
+./bin/bracket tests/fib_recursive.rkt | bril2txt
 ```
 
 ### Interpret with brili
 
 Execute the compiled program:
 ```bash
-./bracket tests/fib_recursive.rkt | brili
+./bin/bracket tests/fib_recursive.rkt | brili
 ```
 
 **Expected output:** `55` (the 10th Fibonacci number as computed in `tests/fib_recursive.rkt`)
@@ -71,6 +71,21 @@ Execute the compiled program:
 ```
 
 **Output:** Bril JSON program that computes the 10th Fibonacci number
+
+## Benchmarking
+
+Run the benchmark suite with:
+
+```bash
+brench turnt.toml
+```
+
+This executes all programs in `tests/` using two pipelines:
+
+* **exprs**: direct interpretation of exprs-lang-v7 with `interp-exprs-lang-v7`
+* **bril**: compilation to Bril and interpretation with `brili`
+
+The output reports each benchmark’s result; matching values indicate correctness across pipelines.
 
 ## References
 

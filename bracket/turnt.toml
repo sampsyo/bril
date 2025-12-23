@@ -1,0 +1,14 @@
+timeout = 120
+extract = '(\d+)'
+benchmarks = 'tests/*.rkt'
+
+[runs.exprs]
+pipeline = [
+    "racket src/interp.rkt",
+]
+
+[runs.bril]
+pipeline = [
+    "./bin/bracket",
+    "brili",
+]
