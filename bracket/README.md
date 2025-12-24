@@ -73,21 +73,6 @@ Execute the compiled program:
 
 **Output:** Bril JSON program that computes the 10th Fibonacci number
 
-## Benchmarking
-
-Run the benchmark suite with:
-
-```bash
-brench turnt.toml
-```
-
-This executes all programs in `tests/` using two pipelines:
-
-* **exprs**: direct interpretation of exprs-lang-v7 with `interp-exprs-lang-v7`
-* **bril**: compilation to Bril and interpretation with `brili`
-
-The output reports each benchmark’s result; matching values indicate correctness across pipelines.
-
 ## References
 
 - [More about bracket](https://www.cs.cornell.edu/courses/cs6120/2025fa/blog/bracket/)

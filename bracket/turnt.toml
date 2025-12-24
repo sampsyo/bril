@@ -1,14 +1,12 @@
-timeout = 120
-extract = '(\d+)'
-benchmarks = 'tests/*.rkt'
+[envs.interp_exprs]
+command = "cat {filename} | racket src/interp.rkt"
+output.exprs_out = "-"
 
-[runs.exprs]
-pipeline = [
-    "racket src/interp.rkt",
-]
+[envs.interp_bril]
+command = "./bin/bracket {filename} | brili"
+output.bril_out = "-"
 
-[runs.bril]
-pipeline = [
-    "./bin/bracket",
-    "brili",
-]
+[envs.bril]
+command = "./bin/bracket {filename} | bril2txt"
+output.bril = "-"
+
