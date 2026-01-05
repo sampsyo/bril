@@ -41,9 +41,12 @@ def run_pipe(cmds, input, timeout):
 
     try:
         # Send stdin and collect stdout.
-        procs[0].stdin.write(input)
-        procs[0].stdin.close()
-        return procs[-1].communicate(timeout=timeout)
+        if len(procs) == 1:
+            return procs[0].communicate(input=input, timeout=timeout)
+        else:
+            procs[0].stdin.write(input)
+            procs[0].stdin.close()
+            return procs[-1].communicate(timeout=timeout)
     finally:
         for proc in procs:
             proc.kill()
