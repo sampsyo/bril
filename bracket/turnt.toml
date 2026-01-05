@@ -1,0 +1,12 @@
+[envs.interp_exprs]
+command = "cat {filename} | racket src/interp.rkt"
+output.out = "-"
+
+[envs.interp_bril]
+command = "./bin/bracket {filename} | brili"
+output.out = "-"
+
+[envs.bril]
+command = "./bin/bracket {filename} | bril2txt"
+output.bril = "-"
+

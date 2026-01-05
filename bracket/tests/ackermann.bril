@@ -1,0 +1,287 @@
+@bit(x: int): int {
+  two: int = const 2;
+  div2: int = div x two;
+  mul2: int = mul div2 two;
+  bit: int = sub x mul2;
+  ret bit;
+}
+@bitand(a: int, b: int): int {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  result: int = const 0;
+  pow: int = const 1;
+.loop.cond:
+  acond: bool = gt a zero;
+  bcond: bool = gt b zero;
+  cond: bool = or acond bcond;
+  br cond .loop.body .loop.end;
+.loop.body:
+  abit: int = call @bit a;
+  bbit: int = call @bit b;
+  abit1: bool = eq abit one;
+  bbit1: bool = eq bbit one;
+  rbitb: bool = and abit1 bbit1;
+  rbit: int = const 0;
+  br rbitb .setone .skip;
+.setone:
+  rbit: int = const 1;
+.skip:
+  term: int = mul rbit pow;
+  result: int = add result term;
+  a: int = div a two;
+  b: int = div b two;
+  pow: int = mul pow two;
+  jmp .loop.cond;
+.loop.end:
+  ret result;
+}
+@bitor(a: int, b: int): int {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  result: int = const 0;
+  pow: int = const 1;
+.loop.cond.or:
+  acond: bool = gt a zero;
+  bcond: bool = gt b zero;
+  cond: bool = or acond bcond;
+  br cond .loop.body.or .loop.end.or;
+.loop.body.or:
+  abit: int = call @bit a;
+  bbit: int = call @bit b;
+  abit1: bool = eq abit one;
+  bbit1: bool = eq bbit one;
+  rbitb: bool = or abit1 bbit1;
+  rbit: int = const 0;
+  br rbitb .setone.or .skip.or;
+.setone.or:
+  rbit: int = const 1;
+.skip.or:
+  term: int = mul rbit pow;
+  result: int = add result term;
+  a: int = div a two;
+  b: int = div b two;
+  pow: int = mul pow two;
+  jmp .loop.cond.or;
+.loop.end.or:
+  ret result;
+}
+@bitxor(a: int, b: int): int {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+  result: int = const 0;
+  pow: int = const 1;
+.loop.cond.xor:
+  acond: bool = gt a zero;
+  bcond: bool = gt b zero;
+  cond: bool = or acond bcond;
+  br cond .loop.body.xor .loop.end.xor;
+.loop.body.xor:
+  abit: int = call @bit a;
+  bbit: int = call @bit b;
+  abit1: bool = eq abit one;
+  bbit1: bool = eq bbit one;
+  nb: bool = not bbit1;
+  na: bool = not abit1;
+  t1: bool = and abit1 nb;
+  t2: bool = and na bbit1;
+  rbitb: bool = or t1 t2;
+  rbit: int = const 0;
+  br rbitb .setone.xor .skip.xor;
+.setone.xor:
+  rbit: int = const 1;
+.skip.xor:
+  term: int = mul rbit pow;
+  result: int = add result term;
+  a: int = div a two;
+  b: int = div b two;
+  pow: int = mul pow two;
+  jmp .loop.cond.xor;
+.loop.end.xor:
+  ret result;
+}
+@ashr(x: int, n: int): int {
+  zero: int = const 0;
+  one: int = const 1;
+  two: int = const 2;
+.loop.cond.shr:
+  npos: bool = gt n zero;
+  br npos .loop.body.shr .loop.end.shr;
+.loop.body.shr:
+  q: int = div x two;
+  q2: int = mul q two;
+  r: int = sub x q2;
+  neg: bool = lt x zero;
+  rzero: bool = eq r zero;
+  odd: bool = not rzero;
+  fix: bool = and neg odd;
+  br fix .adjust .no_adjust;
+.adjust:
+  q: int = sub q one;
+  jmp .after;
+.no_adjust:
+  jmp .after;
+.after:
+  x: int = id q;
+  n: int = sub n one;
+  jmp .loop.cond.shr;
+.loop.end.shr:
+  ret x;
+}
+@L.ack.1(m.1: any, n.2: any): any {
+  tmp.25: any = const 0;
+  tmp.26: any = call @L.eq.p.2 m.1 tmp.25;
+  tmp.19: any = id tmp.26;
+  tmp.28: any = const 6;
+  tmp.27: any = eq tmp.19 tmp.28;
+  tmp.29: any = not tmp.27;
+  br tmp.29 .L.then.5 .L.else.6;
+.L.then.5:
+  tmp.30: any = const 8;
+  tmp.31: any = call @L.+.3 n.2 tmp.30;
+  ret tmp.31;
+.L.else.6:
+  tmp.32: any = const 0;
+  tmp.33: any = call @L.eq.p.2 n.2 tmp.32;
+  tmp.20: any = id tmp.33;
+  tmp.35: any = const 6;
+  tmp.34: any = eq tmp.20 tmp.35;
+  tmp.36: any = not tmp.34;
+  br tmp.36 .L.then.7 .L.else.8;
+.L.then.7:
+  tmp.37: any = const 8;
+  tmp.38: any = call @L._.4 m.1 tmp.37;
+  tmp.21: any = id tmp.38;
+  tmp.39: any = const 8;
+  tmp.40: any = call @L.ack.1 tmp.21 tmp.39;
+  ret tmp.40;
+.L.else.8:
+  tmp.41: any = const 8;
+  tmp.42: any = call @L._.4 m.1 tmp.41;
+  tmp.22: any = id tmp.42;
+  tmp.43: any = const 8;
+  tmp.44: any = call @L._.4 n.2 tmp.43;
+  tmp.24: any = id tmp.44;
+  tmp.45: any = call @L.ack.1 m.1 tmp.24;
+  tmp.23: any = id tmp.45;
+  tmp.46: any = call @L.ack.1 tmp.22 tmp.23;
+  ret tmp.46;
+}
+@L._.4(tmp.9: any, tmp.10: any): any {
+  tmp.47: any = const 7;
+  tmp.48: any = call @bitand tmp.10 tmp.47;
+  tmp.16: any = id tmp.48;
+  tmp.50: any = const 0;
+  tmp.49: any = eq tmp.16 tmp.50;
+  br tmp.49 .L.then.11 .L.else.12;
+.L.then.11:
+  tmp.51: any = const 14;
+  tmp.15: any = id tmp.51;
+  jmp .L.endif.13;
+.L.else.12:
+  tmp.52: any = const 6;
+  tmp.15: any = id tmp.52;
+.L.endif.13:
+  tmp.54: any = const 6;
+  tmp.53: any = eq tmp.15 tmp.54;
+  tmp.55: any = not tmp.53;
+  br tmp.55 .L.then.9 .L.else.10;
+.L.then.9:
+  tmp.56: any = const 7;
+  tmp.57: any = call @bitand tmp.9 tmp.56;
+  tmp.18: any = id tmp.57;
+  tmp.59: any = const 0;
+  tmp.58: any = eq tmp.18 tmp.59;
+  br tmp.58 .L.then.16 .L.else.17;
+.L.then.16:
+  tmp.60: any = const 14;
+  tmp.17: any = id tmp.60;
+  jmp .L.endif.18;
+.L.else.17:
+  tmp.61: any = const 6;
+  tmp.17: any = id tmp.61;
+.L.endif.18:
+  tmp.63: any = const 6;
+  tmp.62: any = eq tmp.17 tmp.63;
+  tmp.64: any = not tmp.62;
+  br tmp.64 .L.then.14 .L.else.15;
+.L.then.14:
+  tmp.65: any = sub tmp.9 tmp.10;
+  ret tmp.65;
+.L.else.15:
+  tmp.66: any = const 830;
+  ret tmp.66;
+.L.else.10:
+  tmp.67: any = const 830;
+  ret tmp.67;
+}
+@L.+.3(tmp.7: any, tmp.8: any): any {
+  tmp.68: any = const 7;
+  tmp.69: any = call @bitand tmp.8 tmp.68;
+  tmp.12: any = id tmp.69;
+  tmp.71: any = const 0;
+  tmp.70: any = eq tmp.12 tmp.71;
+  br tmp.70 .L.then.21 .L.else.22;
+.L.then.21:
+  tmp.72: any = const 14;
+  tmp.11: any = id tmp.72;
+  jmp .L.endif.23;
+.L.else.22:
+  tmp.73: any = const 6;
+  tmp.11: any = id tmp.73;
+.L.endif.23:
+  tmp.75: any = const 6;
+  tmp.74: any = eq tmp.11 tmp.75;
+  tmp.76: any = not tmp.74;
+  br tmp.76 .L.then.19 .L.else.20;
+.L.then.19:
+  tmp.77: any = const 7;
+  tmp.78: any = call @bitand tmp.7 tmp.77;
+  tmp.14: any = id tmp.78;
+  tmp.80: any = const 0;
+  tmp.79: any = eq tmp.14 tmp.80;
+  br tmp.79 .L.then.26 .L.else.27;
+.L.then.26:
+  tmp.81: any = const 14;
+  tmp.13: any = id tmp.81;
+  jmp .L.endif.28;
+.L.else.27:
+  tmp.82: any = const 6;
+  tmp.13: any = id tmp.82;
+.L.endif.28:
+  tmp.84: any = const 6;
+  tmp.83: any = eq tmp.13 tmp.84;
+  tmp.85: any = not tmp.83;
+  br tmp.85 .L.then.24 .L.else.25;
+.L.then.24:
+  tmp.86: any = add tmp.7 tmp.8;
+  ret tmp.86;
+.L.else.25:
+  tmp.87: any = const 574;
+  ret tmp.87;
+.L.else.20:
+  tmp.88: any = const 574;
+  ret tmp.88;
+}
+@L.eq.p.2(tmp.5: any, tmp.6: any): any {
+  tmp.89: any = eq tmp.5 tmp.6;
+  br tmp.89 .L.then.29 .L.else.30;
+.L.then.29:
+  tmp.90: any = const 14;
+  ret tmp.90;
+.L.else.30:
+  tmp.91: any = const 6;
+  ret tmp.91;
+}
+@main: any {
+  tmp.92: any = const 24;
+  arg.x.3: any = id tmp.92;
+  tmp.93: any = const 48;
+  arg.y.4: any = id tmp.93;
+  tmp.94: any = call @L.ack.1 arg.x.3 arg.y.4;
+  tmp.95: any = const 8;
+  tmp.94: any = div tmp.94 tmp.95;
+  print tmp.94;
+}

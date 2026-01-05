@@ -5,13 +5,13 @@
 (require
  json
  cpsc411/compiler-lib
- "src/uniquify.rkt"
- "src/implement-safe-primops.rkt"
- "src/specify-representation.rkt"
- "src/remove-complex-opera.rkt"
- "src/sequentialize-let.rkt"
- "src/normalize-bind.rkt"
- "src/compile-bril.rkt")
+ "uniquify.rkt"
+ "implement-safe-primops.rkt"
+ "specify-representation.rkt"
+ "remove-complex-opera.rkt"
+ "sequentialize-let.rkt"
+ "normalize-bind.rkt"
+ "compile-bril.rkt")
 
 (provide
  bracket)
