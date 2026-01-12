@@ -1,0 +1,38 @@
+# Add up the integers in [lo..hi], storing into *shared* cell
+@add_range(p: ptr<int>, lo: int, hi: int): void {
+  i: int = id lo;
+  one: int = const 1;
+.loop:
+  cond: bool = le i hi;
+  br cond .body .done;
+.body:
+  acc: int = load p;
+  acc2: int = add acc i;
+  store p acc2;
+  i: int = add i one;
+  jmp .loop;
+.done:
+  ret;
+}
+
+@main(): void {
+  one: int = const 1;
+  cell: ptr<int> = alloc one;
+  z: int = const 0;
+  store cell z;
+
+  # split 1..10 000 000 into [1..5 000 000] and [5 000 001..10 000 000]
+  lo:  int = const 1;
+  mid: int = const 5000000;
+  hi:  int = const 10000000;
+
+  t1: thread = spawn @add_range cell lo    mid;
+  t2: thread = spawn @add_range cell mid   hi;
+  join t1;
+  join t2;
+
+  r: int = load cell;
+  print r;           # expect 10 000 000×(10 000 000+1)/2 = 50000005000000
+  free cell;
+  ret;
+}
