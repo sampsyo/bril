@@ -1,0 +1,15 @@
+@mk(): ptr<int> {
+  one: int = const 1;
+  p: ptr<int> = alloc one;
+  seven: int = const 7;
+  store p seven;
+  ret p;
+}
+
+@main(): void {
+  p: ptr<int> = call @mk;
+  v: int = load p;
+  print v;   # 7
+  free p;
+  ret;
+}

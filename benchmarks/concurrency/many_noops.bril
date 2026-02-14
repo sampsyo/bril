@@ -1,0 +1,21 @@
+@noop(): void { ret; }
+
+@main(): void {
+  t0: thread = spawn @noop;
+  t1: thread = spawn @noop;
+  t2: thread = spawn @noop;
+  t3: thread = spawn @noop;
+  t4: thread = spawn @noop;
+  t5: thread = spawn @noop;
+  t6: thread = spawn @noop;
+  t7: thread = spawn @noop;
+  t8: thread = spawn @noop;
+  t9: thread = spawn @noop;
+
+  join t0; join t1; join t2; join t3; join t4;
+  join t5; join t6; join t7; join t8; join t9;
+
+  z: int = const 0;
+  print z;
+  ret;
+}

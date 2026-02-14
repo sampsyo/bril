@@ -23,7 +23,8 @@ Type
 
 There are two kinds of types: primitive types, whose syntax is just a string, and parameterized types, which wrap a smaller type.
 The semantics chapters list the particular types that are available---for example, [core Bril](core.md) defines the basic primitive types `int` and `bool`
-and the [memory extension](memory.md) defines a parameterized pointer type.
+the [memory extension](memory.md) defines a parameterized pointer type,
+and the [concurrency extension](concurrency.md) introduces the primitive type `thread`.
 
 Function
 --------

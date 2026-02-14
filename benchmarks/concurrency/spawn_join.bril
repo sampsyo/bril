@@ -1,0 +1,15 @@
+@echo(x: int): void { print x; ret; }
+
+@main(): void {
+  one : int = const 1;
+  t1  : thread = spawn @echo one;
+  join t1;
+
+  two : int = const 2;
+  t2  : thread = spawn @echo two;
+  join t2;
+
+  zero: int = const 0;
+  print one two zero;
+  ret;
+}
