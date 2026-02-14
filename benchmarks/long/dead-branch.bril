@@ -1,6 +1,7 @@
 @main {
   v1: int = const 1;
   v2: int = const 0;
+  v4: int = const 100; # last use of v4 must have a dominating def :)
   counter: int = const 0;
 
 .loop_start:
