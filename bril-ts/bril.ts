@@ -10,7 +10,7 @@ export type Ident = string;
 /**
  * Primitive types.
  */
-export type PrimType = "int" | "bool" | "float" | "char" | "any";
+export type PrimType = "int" | "bool" | "float" | "char" | "any" | "thread";
 
 /**
  * Parameterized types. (We only have pointers for now.)
@@ -43,8 +43,8 @@ interface Op {
  */
 export interface EffectOperation extends Op {
   op: "br" | "jmp" | "print" | "ret" | "call" |
-    "store" | "free" |
-    "speculate" | "guard" | "commit";
+  "store" | "free" |
+  "speculate" | "guard" | "commit" | "join";
 }
 
 // deno-fmt-ignore
@@ -54,15 +54,15 @@ export interface EffectOperation extends Op {
  */
 export interface ValueOperation extends Op {
   op: "add" | "mul" | "sub" | "div" |
-      "id" | "nop" |
-      "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
-      "call" |
-      "load" | "ptradd" | "alloc" |
-      "fadd" | "fmul" | "fsub" | "fdiv" |
-      "feq" | "flt" | "fle" | "fgt" | "fge" |
-      "ceq" | "clt" | "cle" | "cgt" | "cge" |
-      "char2int" | "int2char" |
-      "get" | "set" | "undef";
+  "id" | "nop" |
+  "eq" | "lt" | "gt" | "ge" | "le" | "not" | "and" | "or" |
+  "call" |
+  "load" | "ptradd" | "alloc" |
+  "fadd" | "fmul" | "fsub" | "fdiv" |
+  "feq" | "flt" | "fle" | "fgt" | "fge" |
+  "ceq" | "clt" | "cle" | "cgt" | "cge" |
+  "char2int" | "int2char" |
+  "get" | "set" | "undef" | "spawn";
   dest: Ident;
   type: Type;
 }

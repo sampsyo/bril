@@ -1,0 +1,28 @@
+@worker(q: ptr<int>): void {
+  one: int = const 1;
+  store q one;
+  ret;
+}
+
+@main(): void {
+  one: int = const 1;
+  zero: int = const 0;
+  # local block
+  local: ptr<int> = alloc one;
+  store local zero;
+
+  # shared block
+  shared: ptr<int> = alloc one;
+  store shared zero;
+
+  t: thread = spawn @worker shared;
+  join t;
+
+  a: int = load local;
+  b: int = load shared;
+  sum: int = add a b;   # 1
+  print sum;
+  free local;
+  free shared;
+  ret;
+}

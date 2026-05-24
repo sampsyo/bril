@@ -1,0 +1,8 @@
+@g(x: int): void { ret; }
+
+@main(): void {
+  a: int = const 1;
+  b: int = const 2;
+  t: thread = spawn @g a b;   # too many args
+  ret;
+}

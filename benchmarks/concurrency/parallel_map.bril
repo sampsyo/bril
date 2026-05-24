@@ -1,0 +1,68 @@
+# benchmarks/concurrency/parallel_map.bril
+
+@map(p: ptr<int>, lo: int, hi: int): void {
+  i: int   = id lo;
+  one: int = const 1;
+  two: int = const 2;
+
+.loop:
+  cond: bool = lt i hi;
+  br cond .body .done;
+
+.body:
+  loc: ptr<int> = ptradd p i;
+  v:   int      = load loc;
+  dv:  int      = mul v two;
+  store loc dv;
+  i = add i one;
+  jmp .loop;
+
+.done:
+  ret;
+}
+
+@main(): void {
+  size: int   = const 4;
+  arr:  ptr<int> = alloc size;
+  # initialize arr[i]=i
+  i:    int = const 0;
+  one:  int = const 1;
+
+.init:
+  c1: bool = lt i size;
+  br c1 .body1 .done1;
+
+.body1:
+  loc1: ptr<int> = ptradd arr i;
+  store loc1 i;
+  i = add i one;
+  jmp .init;
+
+.done1:
+  # spawn two halves
+  zero: int    = const 0;
+  half: int    = const 2;
+  t1:   thread = spawn @map arr zero half;
+  t2:   thread = spawn @map arr half size;
+  join t1;
+  join t2;
+
+  # print all elements
+  i2:   int = const 0;
+  one2: int = const 1;
+
+.print:
+  c2:   bool = lt i2 size;
+  br c2 .body2 .done2;
+
+.body2:
+  loc2: ptr<int> = ptradd arr i2;
+  v2:  int      = load loc2;
+  print v2;
+  i2 = add i2 one2;
+  jmp .print;
+
+.done2:
+  free arr;
+  ret;
+}
