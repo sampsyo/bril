@@ -1,0 +1,6 @@
+{
+    "cmake.sourceDirectory": "/Users/albert/Documents/school/fa2023/cs6120/bril-fp/bril-cpp",
+    "cmake.buildDirectory": "${workspaceFolder}/_build/${buildType}",
+    "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json"
+}
+    

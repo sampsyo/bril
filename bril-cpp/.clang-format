@@ -1,0 +1,10 @@
+BasedOnStyle: Google
+ColumnLimit: 88
+
+# Some folks prefer to write "int& foo" while others prefer "int &foo".  The
+# Google Style Guide only asks for consistency within a project, we chose
+# "int& foo" for this project:
+DerivePointerAlignment: false
+PointerAlignment: Left
+IndentWidth: 2
+IndentCaseLabels: false
