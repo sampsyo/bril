@@ -1,0 +1,3 @@
+command = "python gen.py ; bril2json < {filename} | brili > {base}.out ; diff {base}.out {base}.ref"
+output.refdiff = "-"
+
