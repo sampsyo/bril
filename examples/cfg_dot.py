@@ -42,9 +42,7 @@ def cfg_dot(bril, verbose):
         for i, (name, block) in enumerate(blocks.items()):
             succ = successors(block[-1])
             for label in succ:
-                print(
-                    f"  {quote_if_needed(name)} -> {quote_if_needed(label)};"
-                )
+                print(f"  {quote_if_needed(name)} -> {quote_if_needed(label)};")
 
         print("}")
 
