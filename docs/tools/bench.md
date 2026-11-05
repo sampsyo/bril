@@ -42,6 +42,7 @@ The current benchmarks are:
 * `exponentiation-by-squaring`: Fast iterative computation of large integer powers using [exponentiation by squaring][exp_by_squaring].
 * `fact`: Prints the factorial of *n*, computing it recursively.
 * `factors`: Print the factors of the *n* using the [trial division][trialdivision] method.
+* `fastinvsqrt`: Uses the famous [Quake 3 Fast Inverse Square Root](https://en.wikipedia.org/wiki/Fast_inverse_square_root) algorithm to approximate 1 / sqrt(x). Requires an extension that provides `bits2float` and `float2bits`. Otherwise, use `iterativefastinvsqrt`.
 * `fib`: Calculate the *n*th Fibonacci number by allocating and filling an [array](../lang/memory.md) of numbers up to that point.
 * `filter`: Filter records from a single table based on a condition.
 * `fizz-buzz`: The infamous [programming test][fizzbuzz].
@@ -59,6 +60,7 @@ The current benchmarks are:
 * `harmonic-sum`: Computes the harmonic sum up to the index *n*.
 * `insertion-sort`: Insertion sort algorithm in ascending order.
 * `is-decreasing`: Print if a number contains strictly decreasing digits.
+* `iterativefastinvsqrt`: Uses the significantly more boring Newton's method to approximate 1 / sqrt(x), starting with 1 / x and iterating until the step becomes smaller than a specified precision. Works if the cooler `fastinvsqrt` is not an option.
 * `karatsuba`: Computes the product of 2 integers using [Karatsuba's Algorithm](https://en.wikipedia.org/wiki/Karatsuba_algorithm).
 * `lcm`: Compute LCM for two numbers using a very inefficient loop.
 * `legendre`: Compute the exponent for the largest power of the given prime *p* which divides the factorial *n!* using [Legendre's formula](https://en.wikipedia.org/wiki/Legendre%27s_formula).
