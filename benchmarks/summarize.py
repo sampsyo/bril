@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import json
-import sys
-import os
 import csv
-import statistics
+import json
+import os
 import re
+import statistics
+import sys
 from collections import defaultdict
 
 MODES = {

@@ -1,8 +1,8 @@
-import sys
-import subprocess
+import difflib
 import json
 import multiprocessing
-import difflib
+import subprocess
+import sys
 
 # ruff: noqa: E731
 

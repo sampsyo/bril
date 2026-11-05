@@ -1,13 +1,14 @@
 """Simple comparative benchmark runner."""
 
-import click
-import subprocess
-import re
 import csv
-import sys
-import os
-from concurrent import futures
 import glob
+import os
+import re
+import subprocess
+import sys
+from concurrent import futures
+
+import click
 
 try:
     import tomllib

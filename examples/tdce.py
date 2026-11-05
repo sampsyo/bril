@@ -2,8 +2,9 @@
 local optimization.
 """
 
-import sys
 import json
+import sys
+
 from form_blocks import form_blocks
 from util import flatten
 

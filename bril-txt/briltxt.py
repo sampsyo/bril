@@ -7,9 +7,10 @@ pretty-prints it in the text format, and `bril2json`, which parses the
 format and emits the ordinary JSON representation.
 """
 
-import lark
-import sys
 import json
+import sys
+
+import lark
 
 __version__ = "0.0.1"
 

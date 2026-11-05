@@ -1,6 +1,7 @@
 from collections import OrderedDict
-from util import fresh, flatten
+
 from form_blocks import TERMINATORS
+from util import flatten, fresh
 
 
 def block_map(blocks):

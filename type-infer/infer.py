@@ -1,8 +1,8 @@
 """Type inference for Bril"""
 
+import copy
 import json
 import sys
-import copy
 
 ARITHMETIC_OPS = ["add", "mul", "sub", "div"]
 COMPARISON_OPS = ["eq", "lt", "gt", "le", "ge"]

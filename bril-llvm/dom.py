@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-from brilpy import CFG
 from functools import reduce
+
+from brilpy import CFG
 
 
 class Dominators:

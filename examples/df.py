@@ -1,9 +1,9 @@
-import sys
 import json
+import sys
 from collections import namedtuple
 
-from form_blocks import form_blocks
 import cfg
+from form_blocks import form_blocks
 
 # A single dataflow analysis consists of these part:
 # - forward: True for forward, False for backward.

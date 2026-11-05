@@ -2,10 +2,11 @@
 emit a GraphViz file.
 """
 
-from form_blocks import form_blocks
 import json
 import sys
-from cfg import block_map, successors, add_terminators
+
+from cfg import add_terminators, block_map, successors
+from form_blocks import form_blocks
 
 
 def cfg_dot(bril, verbose):

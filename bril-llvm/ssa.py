@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-from dom import Dominators
 from brilpy import CFG
+from dom import Dominators
 
 TERM = "jmp", "br", "ret"
 

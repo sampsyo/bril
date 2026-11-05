@@ -1,7 +1,7 @@
 import json
 import sys
 
-from cfg import block_map, successors, add_terminators, add_entry
+from cfg import add_entry, add_terminators, block_map, successors
 from form_blocks import form_blocks
 
 

@@ -2,9 +2,9 @@ import json
 import sys
 from collections import defaultdict
 
-from cfg import block_map, successors, add_terminators, add_entry, reassemble
+from cfg import add_entry, add_terminators, block_map, reassemble, successors
+from dom import dom_fronts, dom_tree, get_dom
 from form_blocks import form_blocks
-from dom import get_dom, dom_fronts, dom_tree
 
 
 def def_blocks(blocks):
