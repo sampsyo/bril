@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# ruff: noqa: B023
+
 from brilpy import CFG
 from dom import Dominators
 
@@ -13,7 +15,7 @@ def to_ssa(prog):
         # the args anywhere in the function.
         # We don't want the first block to be a place we can jump to, because
         # we can't have a phi as the first instruction to disambiguate args
-        if "args" in func and func["args"]:
+        if func.get("args"):
             for a in func["args"]:
                 func["instrs"] = [
                     {
@@ -94,13 +96,13 @@ def to_ssa(prog):
                             "labels": [],
                         }  # will handle dest/args later
 
-                    if b not in defs[v]:
-                        defs[v].append(b)
+                    if b not in vdefs:
+                        vdefs.append(b)
 
         # ``Step two''
         stack = {}
         next_name = {}
-        for v in defs.keys():
+        for v in defs:
             stack[v] = []
             next_name[v] = 0
 

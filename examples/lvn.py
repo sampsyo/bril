@@ -16,8 +16,8 @@ class Numbering(dict):
     for you when adding new values.
     """
 
-    def __init__(self, init={}):
-        super(Numbering, self).__init__(init)
+    def __init__(self, init=None):
+        super().__init__(init or {})
         self._next_fresh = 0
 
     def _fresh(self):

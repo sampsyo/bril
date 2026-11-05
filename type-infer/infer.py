@@ -9,9 +9,13 @@ COMPARISON_OPS = ["eq", "lt", "gt", "le", "ge"]
 LOGIC_OPS = ["not", "and", "or"]
 
 
+class TypeInferError(Exception):
+    pass
+
+
 def type_var(gamma, var, expected_type, i):
     if var in gamma and gamma[var] != expected_type:
-        raise Exception(
+        raise TypeInferError(
             '(stmt {}) Expected "{}" to have type "{}" but found "{}"'.format(
                 i, var, expected_type, gamma[var]
             )
@@ -114,7 +118,7 @@ def analyze_vars(typed_func):
 
 def typecheck_label(label, gamma):
     if label in gamma:
-        raise Exception(
+        raise TypeInferError(
             'Expected "{}" to be a label, but it was a variable of type "{}"'.format(
                 label, gamma[label]
             )
@@ -122,10 +126,10 @@ def typecheck_label(label, gamma):
 
 
 def typecheck_func(original_func, typed_func):
-    gamma, labels = analyze_vars(typed_func)
+    gamma, _ = analyze_vars(typed_func)
     for instr in original_func["instrs"]:
         if "label" in instr and instr["label"] in gamma:
-            raise Exception(
+            raise TypeInferError(
                 'Expected "{}" to be a label, but it was a'
                 ' variable of type "{}"'.format(instr["label"], gamma[instr["label"]])
             )
@@ -136,7 +140,7 @@ def typecheck_func(original_func, typed_func):
                 and "type" in instr
                 and instr["type"] != gamma[instr["dest"]]
             ):
-                raise Exception(
+                raise TypeInferError(
                     'Expected "{}" to have type, but it was explicitly'
                     ' typed as "{}"'.format(gamma[instr["dest"]], instr["type"])
                 )

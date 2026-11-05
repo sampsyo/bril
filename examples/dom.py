@@ -123,7 +123,7 @@ def print_dom(bril, mode):
         # Format as JSON for stable output.
         print(
             json.dumps(
-                {k: sorted(list(v)) for k, v in res.items()},
+                {k: sorted(v) for k, v in res.items()},
                 indent=2,
                 sort_keys=True,
             )

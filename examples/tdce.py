@@ -71,8 +71,7 @@ def drop_killed_local(block):
         # Check for uses. Anything we use is no longer a candidate for
         # deletion.
         for var in instr.get("args", []):
-            if var in last_def:
-                del last_def[var]
+            last_def.pop(var, None)  # Remove if present.
 
         # Check for definitions. This *has* to happen after the use
         # check, so we don't count "a = a + 1" as killing a before using
