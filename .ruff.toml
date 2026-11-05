@@ -1,5 +1,4 @@
 [lint]
 ignore = [
     "UP032",    # Use f-string instead of `format` call
-    "PLW1510",  # `subprocess.run` without explicit `check` argument
 ]

@@ -19,11 +19,13 @@ def check_file(file):
         "bril2txt",
         input=json.dumps(oracle_output).encode("utf-8"),
         stdout=subprocess.PIPE,
+        check=True,
     ).stdout.decode("utf-8")
     my_pretty = subprocess.run(
         "bril2txt",
         input=json.dumps(my_output).encode("utf-8"),
         stdout=subprocess.PIPE,
+        check=True,
     ).stdout.decode("utf-8")
     if oracle_pretty == my_pretty:
         print(f"\x1b[32m{file} OK\x1b[m")
