@@ -99,7 +99,9 @@ def brench(config_path, files, jobs):
         files = config["benchmarks"]
         if isinstance(files, str):
             files = [files]
-        files = functools.reduce(operator.iadd, [glob.glob(f, recursive=True) for f in files], [])
+        files = functools.reduce(
+            operator.iadd, [glob.glob(f, recursive=True) for f in files], []
+        )
 
     timeout = config.get("timeout", 5)
 
