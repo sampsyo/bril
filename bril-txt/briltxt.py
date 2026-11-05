@@ -246,7 +246,7 @@ def type_to_str(type):
     if isinstance(type, dict):
         assert len(type) == 1
         key, value = next(iter(type.items()))
-        return "{}<{}>".format(key, type_to_str(value))
+        return f"{key}<{type_to_str(value)}>"
     else:
         return type
 
@@ -256,7 +256,7 @@ def value_to_str(type, value):
         control_chars_reverse = {y: x for x, y in control_chars.items()}
         if ord(value) in control_chars_reverse:
             value = control_chars_reverse[ord(value)]
-        return "'{}'".format(value)
+        return f"'{value}'"
     else:
         return str(value).lower()
 
@@ -272,11 +272,11 @@ def instr_to_string(instr):
     else:
         rhs = instr["op"]
         if instr.get("funcs"):
-            rhs += " {}".format(" ".join("@{}".format(f) for f in instr["funcs"]))
+            rhs += " {}".format(" ".join(f"@{f}" for f in instr["funcs"]))
         if instr.get("args"):
             rhs += " {}".format(" ".join(instr["args"]))
         if instr.get("labels"):
-            rhs += " {}".format(" ".join(".{}".format(f) for f in instr["labels"]))
+            rhs += " {}".format(" ".join(f".{f}" for f in instr["labels"]))
         if "dest" in instr:
             tyann = ": {}".format(type_to_str(instr["type"])) if "type" in instr else ""
             return "{}{} = {}".format(
@@ -289,7 +289,7 @@ def instr_to_string(instr):
 
 
 def print_instr(instr):
-    print("  {};".format(instr_to_string(instr)))
+    print(f"  {instr_to_string(instr)};")
 
 
 def print_label(label):
@@ -313,7 +313,7 @@ def print_func(func):
         "@{}{}{} {{".format(
             func["name"],
             args_to_string(func.get("args", [])),
-            ": {}".format(type_to_str(typ)) if typ != "void" else "",
+            f": {type_to_str(typ)}" if typ != "void" else "",
         )
     )
     for instr_or_label in func["instrs"]:

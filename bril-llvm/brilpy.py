@@ -197,7 +197,7 @@ class CFG:
 
     def print_names(self):
         for i, n in enumerate(self.names):
-            print("{} {}".format(i, n))
+            print(f"{i} {n}")
 
 
 # ------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ def rd_merge(pred_list):
         for k, v in p.items():
             if k in result and v != result[k]:
                 print(
-                    "warning: illegal redef of var `{}` (multiple blocks).".format(v)
+                    f"warning: illegal redef of var `{v}` (multiple blocks)."
                     + " This function assumes SSA.",
                     file=sys.stderr,
                 )

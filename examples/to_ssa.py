@@ -45,7 +45,7 @@ def ssa_rename(blocks, gets, succ, domtree, args):
     counters = defaultdict(int)
 
     def _push_fresh(var):
-        fresh = "{}.{}".format(var, counters[var])
+        fresh = f"{var}.{counters[var]}"
         counters[var] += 1
         stack[var].insert(0, fresh)
         return fresh

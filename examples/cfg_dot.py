@@ -36,14 +36,14 @@ def cfg_dot(bril, verbose):
                     )
                 )
             else:
-                print("  {};".format(name))
+                print(f"  {name};")
 
         # Add the control-flow edges.
         for i, (name, block) in enumerate(blocks.items()):
             succ = successors(block[-1])
             for label in succ:
                 print(
-                    "  {} -> {};".format(quote_if_needed(name), quote_if_needed(label))
+                    f"  {quote_if_needed(name)} -> {quote_if_needed(label)};"
                 )
 
         print("}")

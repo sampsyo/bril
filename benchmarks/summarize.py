@@ -46,7 +46,7 @@ def summarize(bench_files):
     speedups = {k: [] for k in MODES}
     for bench, mode, res in results:
         speedup = means[bench][BASELINE] / res["mean"]
-        print("{} {} {:.2f}x".format(bench, mode, speedup), file=sys.stderr)
+        print(f"{bench} {mode} {speedup:.2f}x", file=sys.stderr)
         speedups[mode].append(speedup)
 
         writer.writerow(
@@ -63,8 +63,9 @@ def summarize(bench_files):
     speedups = {k: v for k, v in speedups.items() if v}
 
     for mode, speedup_list in speedups.items():
+        mean = statistics.harmonic_mean(speedup_list)
         print(
-            "{}: {:.2f}x".format(mode, statistics.harmonic_mean(speedup_list)),
+            f"{mode}: {mean:.2f}x",
             file=sys.stderr,
         )
 

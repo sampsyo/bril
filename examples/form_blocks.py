@@ -62,7 +62,7 @@ def print_blocks(bril):
 
         # Print the instructions.
         for instr in block:
-            print("  {}".format(briltxt.instr_to_string(instr)))
+            print(f"  {briltxt.instr_to_string(instr)}")
 
 
 if __name__ == "__main__":

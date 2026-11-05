@@ -71,7 +71,7 @@ def fmt(val):
             return "∅"
     elif isinstance(val, dict):
         if val:
-            return ", ".join("{}: {}".format(k, v) for k, v in sorted(val.items()))
+            return ", ".join(f"{k}: {v}" for k, v in sorted(val.items()))
         else:
             return "∅"
     else:
@@ -86,7 +86,7 @@ def run_df(bril, analysis):
 
         in_, out = df_worklist(blocks, analysis)
         for block in blocks:
-            print("{}:".format(block))
+            print(f"{block}:")
             print("  in: ", fmt(in_[block]))
             print("  out:", fmt(out[block]))
 

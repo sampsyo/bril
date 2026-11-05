@@ -174,7 +174,7 @@ def lvn_block(block, lookup, canonicalize, fold):
                 # We must put the value in a new variable so it can be
                 # reused by another computation in the feature (in case
                 # the current variable name is reassigned before then).
-                var = "lvn.{}".format(newnum)
+                var = f"lvn.{newnum}"
 
             # Record the variable name and update the instruction.
             num2vars[newnum] = [var]

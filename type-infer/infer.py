@@ -16,9 +16,7 @@ class TypeInferError(Exception):
 def type_var(gamma, var, expected_type, i):
     if var in gamma and gamma[var] != expected_type:
         raise TypeInferError(
-            '(stmt {}) Expected "{}" to have type "{}" but found "{}"'.format(
-                i, var, expected_type, gamma[var]
-            )
+            f'(stmt {i}) Expected "{var}" to have type "{expected_type}" but found "{gamma[var]}"'
         )
     gamma[var] = expected_type
 
@@ -119,9 +117,7 @@ def analyze_vars(typed_func):
 def typecheck_label(label, gamma):
     if label in gamma:
         raise TypeInferError(
-            'Expected "{}" to be a label, but it was a variable of type "{}"'.format(
-                label, gamma[label]
-            )
+            f'Expected "{label}" to be a label, but it was a variable of type "{gamma[label]}"'
         )
 
 
