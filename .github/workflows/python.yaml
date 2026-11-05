@@ -13,9 +13,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: ruff check
-        uses: astral-sh/ruff-action@v4
+        uses: astral-sh/ruff-action@v4.1.0
 
       - name: ruff format
-        uses: astral-sh/ruff-action@v4
+        uses: astral-sh/ruff-action@v4.1.0
         with:
           args: "format --check --diff"
