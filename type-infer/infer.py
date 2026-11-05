@@ -102,7 +102,7 @@ def infer_types(bril):
 
 def analyze_vars(typed_func):
     labels = set()
-    gamma = dict()
+    gamma = {}
     for instr in typed_func["instrs"]:
         if "label" in instr:
             labels.add(instr["label"])

@@ -13,18 +13,17 @@ def to_ssa(prog):
         # the args anywhere in the function.
         # We don't want the first block to be a place we can jump to, because
         # we can't have a phi as the first instruction to disambiguate args
-        if "args" in func:
-            if func["args"]:
-                for a in func["args"]:
-                    func["instrs"] = [
-                        {
-                            "op": "id",
-                            "args": [a["name"]],
-                            "type": a["type"],
-                            "dest": a["name"],
-                        }
-                    ] + func["instrs"]
-                func["instrs"] = [{"label": "pre_entry"}] + func["instrs"]
+        if "args" in func and func["args"]:
+            for a in func["args"]:
+                func["instrs"] = [
+                    {
+                        "op": "id",
+                        "args": [a["name"]],
+                        "type": a["type"],
+                        "dest": a["name"],
+                    }
+                ] + func["instrs"]
+            func["instrs"] = [{"label": "pre_entry"}] + func["instrs"]
 
         # Next we need to canonicalize labels, in case any labels appear
         # directly in a row, this would break things later

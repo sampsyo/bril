@@ -13,7 +13,7 @@ class Dominators:
         # IMPORTANT: This computes, for each block, the set of blocks that dominate
         # it, not the other way around
         self.doms = []
-        self.doms.append(set([0]))  # Entry block is special, it's its own dominator
+        self.doms.append({0})  # Entry block is special, it's its own dominator
         for i in range(1, g.n):
             self.doms.append(set(range(g.n)))
 
@@ -81,7 +81,7 @@ class Dominators:
             # Union of dominators for this node's preds
             pre_doms = reduce(set.union, [self.doms[p] for p in g.preds[i]], set())
             # Subtract out strict dominators for this node
-            pre_doms = pre_doms.difference(self.doms[i].difference(set([i])))
+            pre_doms = pre_doms.difference(self.doms[i].difference({i}))
 
             # This node is in the frontier for the remaining nodes:
             for p in pre_doms:

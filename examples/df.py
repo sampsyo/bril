@@ -28,7 +28,7 @@ def df_worklist(blocks, analysis):
 
     # Switch between directions.
     if analysis.forward:
-        first_block = list(blocks.keys())[0]  # Entry.
+        first_block = next(iter(blocks.keys()))  # Entry.
         in_edges = preds
         out_edges = succs
     else:

@@ -90,7 +90,7 @@ def ssa_rename(blocks, gets, succ, domtree, args):
         stack.clear()
         stack.update(old_stack)
 
-    entry = list(blocks.keys())[0]
+    entry = next(iter(blocks.keys()))
     _rename(entry)
 
     return sets, get_dests, inits
@@ -142,7 +142,7 @@ def func_to_ssa(func):
     add_entry(blocks)
     add_terminators(blocks)
     succ = {name: successors(block[-1]) for name, block in blocks.items()}
-    dom = get_dom(succ, list(blocks.keys())[0])
+    dom = get_dom(succ, next(iter(blocks.keys())))
 
     df = dom_fronts(dom, succ)
     defs = def_blocks(blocks)

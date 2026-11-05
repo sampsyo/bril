@@ -4,8 +4,6 @@ import multiprocessing
 import subprocess
 import sys
 
-# ruff: noqa: E731
-
 
 def init_worker(shared_failure_event, shared_oracle):
     global failure_event

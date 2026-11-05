@@ -111,7 +111,7 @@ def print_dom(bril, mode):
         add_entry(blocks)
         add_terminators(blocks)
         succ = {name: successors(block[-1]) for name, block in blocks.items()}
-        dom = get_dom(succ, list(blocks.keys())[0])
+        dom = get_dom(succ, next(iter(blocks.keys())))
 
         if mode == "front":
             res = dom_fronts(dom, succ)

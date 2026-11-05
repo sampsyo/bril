@@ -1,7 +1,9 @@
 """Simple comparative benchmark runner."""
 
 import csv
+import functools
 import glob
+import operator
 import os
 import re
 import subprocess
@@ -97,7 +99,7 @@ def brench(config_path, files, jobs):
         files = config["benchmarks"]
         if isinstance(files, str):
             files = [files]
-        files = sum([glob.glob(f, recursive=True) for f in files], [])
+        files = functools.reduce(operator.iadd, [glob.glob(f, recursive=True) for f in files], [])
 
     timeout = config.get("timeout", 5)
 

@@ -207,10 +207,7 @@ class JSONTransformer(lark.Transformer):
         return int(str(items[0]))
 
     def bool(self, items):
-        if str(items[0]) == "true":
-            return True
-        else:
-            return False
+        return str(items[0]) == "true"
 
     def paramtype(self, items):
         return {items[0]: items[1]}
