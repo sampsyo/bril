@@ -1,0 +1,31 @@
+@main {
+  sum_even: int = const 0;      
+  sum_odd: int = const 0;       
+  i: int = const 1;             
+  limit: int = const 10;        
+  one: int = const 1;           
+  two: int = const 2;           
+
+.loop:
+  square: int = mul i i;        
+  half: int = div i two;        
+  check: int = mul half two;    
+  is_even: bool = eq check i;   
+  br is_even .even_case .odd_case; 
+
+.even_case:
+  sum_even: int = add sum_even square; 
+  jmp .increment;
+
+.odd_case:
+  sum_odd: int = add sum_odd square;   
+
+.increment:
+  i: int = add i one;           
+  cond: bool = le i limit;      
+  br cond .loop .exit;          
+
+.exit:
+  print sum_even;               
+  print sum_odd;                
+}
